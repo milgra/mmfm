@@ -25,19 +25,27 @@
     height: 100%;
     background-color: #FEFEFEFF;
     width: 100%;
-    overflow: scroll;
+    overflow: hidden;
+}
+
+#metaview {
+    overflow: hidden;
+}
+
+#cliplistbck {
+    height: 300px;
+    width: 100%;
 }
 
 #cliplist {
-    height: 300px;
-    background-color: #EFEFEFFF;
+    height: 100%;
     width: 100%;
-    overflow: scroll;
 }
 
 #vertgap30 {
-    height: 30px;
+    height: 10px;
     width: 100%;
+    background-color: #DEDEDEFF;
 }
 
 #headerbck {
@@ -51,6 +59,15 @@
     height: 100%;
     display: flex;
     flex-direction: row;    
+}
+
+#toolbar {
+    width: 100%;
+    height: 30px;
+    margin: auto;
+    top: 10px;
+    display: flex;
+    flex-direction: row;
 }
 
 #filterbarbck {
@@ -111,17 +128,8 @@
 
 #filterrightgap {
     background-color: #FFFF00FF;
-    width: 350px;
+    widtvh: 350px;
     height: 100%;
-}
-
-#toolbar {
-    width: 460px;
-    height: 30px;
-    margin: auto;
-    top: 10px;
-    display: flex;
-    flex-direction: row;
 }
 
 .popup_page {
@@ -230,10 +238,9 @@
 }
 
 #seekknob {
+    margin: auto;
     width: 100px;
     height: 100px;
-    right: 20px;
-    padding: 0px;
 }
 
 #playbtn {
@@ -647,11 +654,33 @@
     align-items: center;
 }
 
+#visuleft {
+    width: 100px;
+    height: 30px;
+    left: 20px;
+    bottom: 15px;
+    background-color: #550000FF;
+    border-radius: 5px;
+    box-shadow: 3px;
+    align-items: center;
+}
+
+#visuright {
+    width: 100px;
+    height: 30px;
+    right: 20px;
+    bottom: 15px;
+    background-color: #005500FF;
+    border-radius: 5px;
+    box-shadow: 3px;
+    align-items: center;
+}
+
 .visuvideo {
     width: 290px;
     height: 290px;
     border-radius: 15px;
-    background-color: #000000FF;
+    background-color: #FF0000FF;
     box-shadow: 3px;
     margin: auto;
 }
@@ -708,7 +737,6 @@
     background-color: #FFFFFFFF;
     width: 30px;
     height: 30px;
-    right: 10px;
     border-radius: 14px;
     box-shadow: 5px #0000000A;
 }
@@ -724,7 +752,6 @@
     background-color: #FFFFFFFF;
     width: 30px;
     height: 30px;
-    left: 10px;
     border-radius: 14px;
     box-shadow: 5px #0000000A;
 }

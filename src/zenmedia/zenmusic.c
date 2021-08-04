@@ -131,7 +131,8 @@ void init(int width, int height, char* path)
 
   // init paths
 
-  char* wrk_path = cstr_new_path_normalize(path, NULL); // REL 0
+  //char* wrk_path = cstr_new_path_normalize(path, NULL); // REL 0
+  char* wrk_path = cstr_new_cstring("/home/milgra/Projects/zenmedia/tst");
 #ifdef __linux__
   char* res_path = zm.res_par ? cstr_new_path_normalize(zm.res_par, wrk_path) : cstr_new_cstring("/usr/share/zenmedia"); // REL 1
 #else
@@ -292,7 +293,7 @@ void destroy()
 
 void load_directory()
 {
-  assert(config_get("lib_path") != NULL);
+  assert(config_get("wrk_path") != NULL);
 
   //  db_reset();
   // db_read(config_get("lib_path"));

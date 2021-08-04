@@ -543,6 +543,8 @@ void video_show(void* opaque, int index, int w, int h, bm_t* bitmap, int edge)
 {
   VideoState* is = opaque;
 
+  printf("RINDEX %i\n", is->pictq.rindex_shown);
+
   if (!display_disable && is->pictq.rindex_shown)
   {
     if (is->width != w)

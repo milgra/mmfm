@@ -13,9 +13,11 @@ void ui_destroy();
 #include "callbacks.c"
 #include "config.c"
 #include "player.c"
+#include "tg_text.c"
 #include "ui_about_popup.c"
 #include "ui_activity_popup.c"
 #include "ui_alert_popup.c"
+#include "ui_cliplist.c"
 #include "ui_decision_popup.c"
 #include "ui_editor_popup.c"
 #include "ui_filter_bar.c"
@@ -23,6 +25,7 @@ void ui_destroy();
 #include "ui_inputfield_popup.c"
 #include "ui_lib_init_popup.c"
 #include "ui_manager.c"
+#include "ui_meta_view.c"
 #include "ui_play_controls.c"
 #include "ui_popup_switcher.c"
 #include "ui_settings_popup.c"
@@ -69,14 +72,16 @@ void ui_init(float width, float height)
   // attach ui components
 
   ui_songlist_attach(view_base); // DETACH 0
+  ui_cliplist_attach(view_base); // DETACH 0
+  ui_meta_view_attach(view_base);
   /* ui_song_infos_attach(view_base);       // DETACH 1 */
-  /* ui_visualizer_attach(view_base);       // DETACH 2 */
+  ui_visualizer_attach(view_base); // DETACH 2
   /* ui_filter_bar_attach(view_base);       // DETACH 3 */
   /* ui_about_popup_attach(view_base);      // DETACH 4 */
   /* ui_alert_popup_attach(view_base);      // DETACH 5 */
   /* ui_filter_popup_attach(view_base);     // DETACH 6 */
   /* ui_editor_popup_attach(view_base);     // DETACH 7 */
-  /* ui_play_controls_attach(view_base);    // DETACH 8 */
+  ui_play_controls_attach(view_base); // DETACH 8
   /* ui_decision_popup_attach(view_base);   // DETACH 9 */
   /* ui_lib_init_popup_attach(view_base);   // DETACH 10 */
   /* ui_activity_popup_attach(view_base);   // DETACH 11 */
@@ -99,6 +104,22 @@ void ui_init(float width, float height)
   // finally attach and remove popups, it removes views so it has to be the last command
 
   /* ui_popup_switcher_attach(view_base); // DETACH 15 */
+
+  textstyle_t ts  = {0};
+  ts.font         = config_get("font_path");
+  ts.align        = TA_CENTER;
+  ts.margin_right = 0;
+  ts.size         = 60.0;
+  ts.textcolor    = 0x55555555;
+  ts.backcolor    = 0;
+  ts.multiline    = 0;
+
+  view_t* clipback = view_get_subview(view_base, "cliplistbck");
+
+  printf("CLIPBACK %s\n", clipback->id);
+
+  tg_text_add(clipback);
+  tg_text_set(clipback, "PASTEBOX", ts);
 
   // show texture map for debug
 

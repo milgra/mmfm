@@ -8,13 +8,14 @@ void ui_meta_view_attach(view_t* view);
 void ui_meta_view_detach();
 void ui_meta_view_update();
 void ui_meta_view_refresh();
-void ui_meta_view_show();
+void ui_meta_view_show_file(map_t* file);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
 #include "callbacks.c"
+#include "coder.c"
 #include "column.c"
 #include "config.c"
 #include "selection.c"
@@ -28,6 +29,7 @@ void ui_meta_view_show();
 #include "vh_list_head.c"
 #include "vh_list_item.c"
 #include "zc_callback.c"
+#include "zc_cstring.c"
 
 void ui_meta_view_on_header_field_select(view_t* view, char* id, ev_t ev);
 void ui_meta_view_on_header_field_insert(view_t* view, int src, int tgt);
@@ -121,16 +123,48 @@ void ui_meta_view_detach()
   REL(uimv.items);
 }
 
-void ui_meta_view_show()
+void ui_meta_view_show_file(map_t* file)
 {
-  ui_meta_view_update_item(uimv.items->data[0], 0, "Library Path", config_get("lib_path"));
-  ui_meta_view_update_item(uimv.items->data[1], 1, "Organize Library", config_get("organize_lib"));
-  //  ui_meta_view_update_item(uimv.items->data[2], 2, "Dark Mode", config_get("dark_mode"));
-  ui_meta_view_update_item(uimv.items->data[2], 2, "Remote Control", config_get("remote_enabled"));
-  ui_meta_view_update_item(uimv.items->data[3], 3, "Config Path", config_get("cfg_path"));
-  ui_meta_view_update_item(uimv.items->data[4], 4, "HTML/Style Path", config_get("res_path"));
+  char* path = MGET(file, "path");
 
-  ui_popup_switcher_toggle("settings_popup_page");
+  map_t* song = MNEW(); // REL 0
+  vec_t* keys = VNEW();
+
+  int res = coder_load_metadata_into(path, song);
+
+  if (res == 0)
+  {
+    if (MGET(song, "meta/artist") == NULL) MPUTR(song, "meta/artist", cstr_new_cstring("Unknown"));
+    if (MGET(song, "meta/album") == NULL) MPUTR(song, "meta/album", cstr_new_cstring("Unknown"));
+  }
+
+  map_keys(song, keys);
+
+  for (int index = 0; index < keys->length; index++)
+  {
+    view_t* item;
+    if (index < uimv.items->length)
+    {
+      item = uimv.items->data[index];
+    }
+    else
+    {
+      item = ui_meta_view_new_item(); // REL 4
+      VADD(uimv.items, item);
+      REL(item);
+    }
+    char* key = keys->data[index];
+    ui_meta_view_update_item(uimv.items->data[index], index, key, MGET(song, key));
+  }
+
+  REL(song); // REL 0
+
+  /* ui_meta_view_update_item(uimv.items->data[0], 0, "Library Path", config_get("lib_path")); */
+  /* ui_meta_view_update_item(uimv.items->data[1], 1, "Organize Library", config_get("organize_lib")); */
+  /* ui_meta_view_update_item(uimv.items->data[2], 2, "Dark Mode", config_get("dark_mode")); */
+  /* ui_meta_view_update_item(uimv.items->data[2], 2, "Remote Control", config_get("remote_enabled")); */
+  /* ui_meta_view_update_item(uimv.items->data[3], 3, "Config Path", config_get("cfg_path")); */
+  /* ui_meta_view_update_item(uimv.items->data[4], 4, "HTML/Style Path", config_get("res_path")); */
 }
 
 void ui_meta_view_update()
@@ -282,7 +316,7 @@ view_t* ui_meta_view_new_item()
   char       idbuffer[100] = {0};
   snprintf(idbuffer, 100, "uimvist_item%i", item_cnt++);
 
-  view_t* rowview = view_new(idbuffer, (r2_t){0, 0, 1000, 50}); // REL 0
+  view_t* rowview = view_new(idbuffer, (r2_t){0, 0, 1000, 30}); // REL 0
 
   vh_litem_add(rowview, NULL);
   vh_litem_set_on_select(rowview, ui_meta_view_on_item_select);
@@ -291,7 +325,7 @@ view_t* ui_meta_view_new_item()
   {
     col_t*  cell     = uimv.columns->data[i];
     char*   id       = cstr_new_format(100, "%s%s", rowview->id, cell->id); // REL 1
-    view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 50});          // REL 2
+    view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 30});          // REL 2
 
     tg_text_add(cellview);
 

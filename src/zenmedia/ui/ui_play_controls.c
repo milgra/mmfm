@@ -25,6 +25,7 @@ void ui_play_update();
 #include "database.c"
 #include "player.c"
 #include "tg_knob.c"
+#include "ui_meta_view.c"
 #include "ui_song_infos.c"
 #include "ui_songlist.c"
 #include "ui_visualizer.c"
@@ -152,6 +153,8 @@ void ui_play_index(int index)
 
     player_play(uipc.current_path);
     player_set_volume(0.9);
+
+    ui_meta_view_show_file(songmap);
 
     vh_button_set_state(uipc.playbtn, VH_BUTTON_DOWN);
   }

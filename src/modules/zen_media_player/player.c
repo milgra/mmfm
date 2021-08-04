@@ -200,7 +200,7 @@ void player_draw_waves(int channel, bm_t* bm, int edge)
 {
   if (is != NULL)
   {
-    if (is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh))
+    if (is->audio_stream >= 0 && is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh))
     {
       render_draw_waves(is, channel, bm, edge);
     }
@@ -211,7 +211,7 @@ void player_draw_rdft(int channel, bm_t* bm, int edge)
 {
   if (is != NULL)
   {
-    if (is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh))
+    if (is->audio_stream >= 0 && is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh))
     {
       render_draw_rdft(is, channel, bm, edge);
     }

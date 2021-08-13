@@ -3,6 +3,9 @@
 
 **near future**
 
+- .. parent selector should show parent path
+- hexa viewer
+- pdf viewer
 - full path search barban
 - seek knob over visualizer
 - working visu

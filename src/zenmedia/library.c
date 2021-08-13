@@ -46,27 +46,36 @@ void lib_read_files(char* lib_path, map_t* files)
   lib.files = files;
   lib.path  = lib_path;
 
+  map_t* parent = MNEW();
+
+  MPUTR(parent, "type", cstr_new_format(5, "%s", "d"));
+  MPUTR(parent, "path", cstr_new_format(PATH_MAX + NAME_MAX, "%s", ".."));
+
   nftw(lib_path, lib_file_data_step, 20, FTW_PHYS);
+
+  MPUT(files, "..", parent); // use relative path as path
 
   LOG("lib : scanned, files : %i", files->count);
 }
 
-static int lib_file_data_step(const char* fpath, const struct stat* sb, int tflag, struct FTW* ftwbuf)
+static int lib_file_data_step(const char* fpath, const struct stat* sb, int tflag, struct FTW* ftwinfo)
 {
   /* printf("%-3s %2d %7jd   %-40s %d %s\n", */
   /*        (tflag == FTW_D) ? "d" : (tflag == FTW_DNR) ? "dnr" : (tflag == FTW_DP) ? "dp" : (tflag == FTW_F) ? "f" : (tflag == FTW_NS) ? "ns" : (tflag == FTW_SL) ? "sl" : (tflag == FTW_SLN) ? "sln" : "???", */
-  /*        ftwbuf->level, */
+  /*        ftwinfo->level, */
   /*        (intmax_t)sb->st_size, */
   /*        fpath, */
-  /*        ftwbuf->base, */
-  /*        fpath + ftwbuf->base); */
+  /*        ftwinfo->base, */
+  /*        fpath + ftwinfo->base); */
+
+  if (ftwinfo->level > 1) return 0;
 
   map_t* file = MNEW();
 
   MPUTR(file, "type", cstr_new_format(5, "%s", (tflag == FTW_D) ? "d" : (tflag == FTW_DNR) ? "dnr" : (tflag == FTW_DP) ? "dp" : (tflag == FTW_F) ? "f" : (tflag == FTW_NS) ? "ns" : (tflag == FTW_SL) ? "sl" : (tflag == FTW_SLN) ? "sln" : "???"));
   MPUTR(file, "path", cstr_new_format(PATH_MAX + NAME_MAX, "%s", fpath));
-  MPUTR(file, "basename", cstr_new_format(NAME_MAX, "%s", fpath + ftwbuf->base));
-  MPUTR(file, "level", cstr_new_format(20, "%li", ftwbuf->level));
+  MPUTR(file, "basename", cstr_new_format(NAME_MAX, "%s", fpath + ftwinfo->base));
+  MPUTR(file, "level", cstr_new_format(20, "%li", ftwinfo->level));
   MPUTR(file, "device", cstr_new_format(20, "%li", sb->st_dev));
   MPUTR(file, "size", cstr_new_format(20, "%li", sb->st_size));
   MPUTR(file, "inode", cstr_new_format(20, "%li", sb->st_ino));

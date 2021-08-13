@@ -52,9 +52,8 @@ void ui_song_menu_popup_attach(view_t* baseview)
   VADDR(slp.items, ui_song_menu_popupitem_new(0, "Select song"));
   VADDR(slp.items, ui_song_menu_popupitem_new(1, "Select range"));
   VADDR(slp.items, ui_song_menu_popupitem_new(2, "Select all"));
-  VADDR(slp.items, ui_song_menu_popupitem_new(3, "Jump to current song"));
-  VADDR(slp.items, ui_song_menu_popupitem_new(4, "Edit selected songs"));
-  VADDR(slp.items, ui_song_menu_popupitem_new(5, "Delete selected songs"));
+  VADDR(slp.items, ui_song_menu_popupitem_new(3, "Move item to PasteBox"));
+  VADDR(slp.items, ui_song_menu_popupitem_new(4, "Move selected to PasteBox"));
 
   // add list handler to view
 

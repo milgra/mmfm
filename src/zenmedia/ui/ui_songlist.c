@@ -26,6 +26,7 @@ void ui_songlist_select_and_show(int index);
 #include "selection.c"
 #include "tg_css.c"
 #include "tg_text.c"
+#include "ui_filter_bar.c"
 #include "ui_play_controls.c"
 #include "ui_popup_switcher.c"
 #include "vh_button.c"
@@ -355,6 +356,12 @@ void ui_songlist_on_item_select(view_t* itemview, int index, vh_lcell_t* cell, e
     {
       ui_play_index(index);
     }
+
+    vec_t* songs   = visible_get_songs();
+    map_t* songmap = songs->data[index];
+    char*  path    = MGET(songmap, "path");
+
+    ui_filter_bar_show_query(path);
 
     vh_list_refresh(sl.view);
   }

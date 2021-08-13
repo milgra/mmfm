@@ -445,8 +445,8 @@ void ui_cliplist_item_recycle(view_t* item, void* userdata, view_t* listview)
 
 view_t* ui_cliplist_item_for_index(int index, void* userdata, view_t* listview, int* item_count)
 {
-  if (index < 0) return NULL;                     // no items before 0
-  if (index >= visible_song_count()) return NULL; // no more items
+  if (index < 0) return NULL;  // no items before 0
+  if (index >= 0) return NULL; // no more items
 
   *item_count = visible_song_count();
 

@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 void init(int width, int height, char* path);
 void update(ev_t ev);
@@ -131,8 +132,18 @@ void init(int width, int height, char* path)
 
   // init paths
 
-  //char* wrk_path = cstr_new_path_normalize(path, NULL); // REL 0
-  char* wrk_path = cstr_new_cstring("/home/milgra/Projects/zenmedia/tst");
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) != NULL)
+  {
+    printf("Current working dir: %s %s\n", cwd, path);
+  }
+  else
+  {
+    perror("getcwd() error");
+  }
+
+  char* top_path = cstr_new_path_normalize(cwd, NULL);
+  char* wrk_path = cstr_new_path_normalize(path, NULL); // REL 0
 #ifdef __linux__
   char* res_path = zm.res_par ? cstr_new_path_normalize(zm.res_par, wrk_path) : cstr_new_cstring("/usr/share/zenmedia"); // REL 1
 #else
@@ -148,7 +159,8 @@ void init(int width, int height, char* path)
 
   // print path info to console
 
-  printf("working path     : %s\n", wrk_path);
+  printf("top path  : %s\n", top_path);
+  printf("working path  : %s\n", wrk_path);
   printf("config path   : %s\n", cfg_path);
   printf("resource path : %s\n", res_path);
   printf("css path      : %s\n", css_path);
@@ -169,6 +181,7 @@ void init(int width, int height, char* path)
 
   // init non-configurable defaults
 
+  config_set("top_path", top_path);
   config_set("wrk_path", wrk_path);
   config_set("cfg_path", cfg_path);
   config_set("css_path", css_path);
@@ -293,16 +306,16 @@ void destroy()
 
 void load_directory()
 {
-  assert(config_get("wrk_path") != NULL);
+  assert(config_get("top_path") != NULL);
 
   //  db_reset();
   // db_read(config_get("lib_path"));
 
   map_t* files = MNEW();                         // REL 0
-  lib_read_files(config_get("wrk_path"), files); // read all files under library path
+  lib_read_files(config_get("top_path"), files); // read all files under library path
 
-  printf("FILES\n");
-  mem_describe(files, 0);
+  /* printf("FILES\n"); */
+  /* mem_describe(files, 0); */
 
   visible_set_files(files);
 

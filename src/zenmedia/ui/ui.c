@@ -76,7 +76,7 @@ void ui_init(float width, float height)
   ui_meta_view_attach(view_base);
   /* ui_song_infos_attach(view_base);       // DETACH 1 */
   ui_visualizer_attach(view_base); // DETACH 2
-  /* ui_filter_bar_attach(view_base);       // DETACH 3 */
+  ui_filter_bar_attach(view_base); // DETACH 3
   /* ui_about_popup_attach(view_base);      // DETACH 4 */
   /* ui_alert_popup_attach(view_base);      // DETACH 5 */
   /* ui_filter_popup_attach(view_base);     // DETACH 6 */
@@ -86,7 +86,7 @@ void ui_init(float width, float height)
   /* ui_lib_init_popup_attach(view_base);   // DETACH 10 */
   /* ui_activity_popup_attach(view_base);   // DETACH 11 */
   /* ui_settings_popup_attach(view_base);   // DETACH 12 */
-  /* ui_song_menu_popup_attach(view_base);  // DETACH 13 */
+  ui_song_menu_popup_attach(view_base); // DETACH 13
   /* ui_inputfield_popup_attach(view_base); // DETACH 14 */
 
   // setup views
@@ -103,7 +103,7 @@ void ui_init(float width, float height)
 
   // finally attach and remove popups, it removes views so it has to be the last command
 
-  /* ui_popup_switcher_attach(view_base); // DETACH 15 */
+  ui_popup_switcher_attach(view_base); // DETACH 15
 
   textstyle_t ts  = {0};
   ts.font         = config_get("font_path");
@@ -111,7 +111,7 @@ void ui_init(float width, float height)
   ts.margin_right = 0;
   ts.size         = 60.0;
   ts.textcolor    = 0x55555555;
-  ts.backcolor    = 0;
+  ts.backcolor    = 0xFFFFFFFF;
   ts.multiline    = 0;
 
   view_t* clipback = view_get_subview(view_base, "cliplistbck");

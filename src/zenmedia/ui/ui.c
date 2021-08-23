@@ -19,7 +19,6 @@ void ui_destroy();
 #include "ui_alert_popup.c"
 #include "ui_cliplist.c"
 #include "ui_decision_popup.c"
-#include "ui_editor_popup.c"
 #include "ui_filelist.c"
 #include "ui_filter_bar.c"
 #include "ui_filter_popup.c"
@@ -80,7 +79,6 @@ void ui_init(float width, float height)
   /* ui_about_popup_attach(view_base);      // DETACH 4 */
   /* ui_alert_popup_attach(view_base);      // DETACH 5 */
   /* ui_filter_popup_attach(view_base);     // DETACH 6 */
-  /* ui_editor_popup_attach(view_base);     // DETACH 7 */
   ui_play_controls_attach(view_base); // DETACH 8
   /* ui_decision_popup_attach(view_base);   // DETACH 9 */
   /* ui_lib_init_popup_attach(view_base);   // DETACH 10 */
@@ -151,7 +149,6 @@ void ui_destroy()
   ui_about_popup_detach();      // DETACH 4
   ui_alert_popup_detach();      // DETACH 5
   ui_filter_popup_detach();     // DETACH 6
-  ui_editor_popup_detach();     // DETACH 7
   ui_play_controls_detach();    // DETACH 8
   ui_decision_popup_detach();   // DETACH 9
   ui_lib_init_popup_detach();   // DETACH 10
@@ -187,7 +184,6 @@ void ui_on_button_down(void* userdata, void* data)
 
   // todo sanitize button names
 
-  if (strcmp(id, "editbtn") == 0) ui_editor_popup_show();
   if (strcmp(id, "aboutbtn") == 0) ui_popup_switcher_toggle("about_popup_page");
   if (strcmp(id, "song_info") == 0) ui_popup_switcher_toggle("messages_popup_page");
   if (strcmp(id, "settingsbtn") == 0) ui_settings_popup_show();

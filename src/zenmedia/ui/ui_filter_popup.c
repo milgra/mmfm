@@ -13,7 +13,6 @@ void ui_filter_popup_show();
 
 #include "callbacks.c"
 #include "config.c"
-#include "database.c"
 #include "textlist.c"
 #include "tg_text.c"
 #include "ui_filelist.c"
@@ -59,9 +58,6 @@ void ui_filter_popup_show()
   vec_t* genres  = VNEW(); // REL 0
   vec_t* artists = VNEW(); // REL 1
 
-  db_get_genres(genres);
-  db_get_artists(artists);
-
   textlist_set_datasource(ufp.genrelist, genres);
   textlist_set_datasource(ufp.artistlist, artists);
 
@@ -80,8 +76,6 @@ void ui_filter_popup_on_genre_select(int index)
 
   vec_t* genres = VNEW(); // REL 0
 
-  db_get_genres(genres);
-
   char* genre = genres->data[index];
 
   char* query = cstr_new_format(100, "genre is %s", genre); // REL 1
@@ -99,8 +93,6 @@ void ui_filter_popup_on_artist_select(int index)
   printf("on artist select %i\n", index);
 
   vec_t* artists = VNEW(); // REL 0
-
-  db_get_artists(artists);
 
   char* artist = artists->data[index];
 

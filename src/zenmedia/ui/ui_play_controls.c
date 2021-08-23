@@ -22,7 +22,6 @@ void ui_play_update();
 #if __INCLUDE_LEVEL__ == 0
 
 #include "config.c"
-#include "database.c"
 #include "player.c"
 #include "tg_knob.c"
 #include "ui_filelist.c"
@@ -101,47 +100,6 @@ void ui_play_index(int index)
   if (uipc.lastindex < 0) uipc.lastindex = 0;
   if (uipc.lastindex < visible_song_count())
   {
-    if (uipc.current_path != NULL)
-    {
-      map_t* entry    = MGET(db_get_db(), uipc.current_path);
-      char*  time_str = CAL(80, NULL, cstr_describe); // REL 0
-
-      mem_describe(entry, 0);
-
-      time_t now;
-      time(&now);
-      struct tm ts = *localtime(&now);
-      strftime(time_str, 80, "%Y-%m-%d %H:%M", &ts);
-
-      if (entry)
-      {
-        if (player_finished())
-        {
-          // increase play count of song
-          char* play_count_s = MGET(entry, "file/play_count");
-          int   play_count_i = 0;
-
-          if (play_count_s != NULL) play_count_i = atoi(play_count_s);
-          play_count_i += 1;
-          MPUTR(entry, "file/play_count", cstr_new_format(10, "%i", play_count_i));
-          MPUT(entry, "file/last_played", time_str);
-        }
-        else
-        {
-          // increase skip count of song
-          char* skip_count_s = MGET(entry, "file/skip_count");
-          int   skip_count_i = 0;
-
-          if (skip_count_s != NULL) skip_count_i = atoi(skip_count_s);
-          skip_count_i += 1;
-          MPUTR(entry, "file/skip_count", cstr_new_format(10, "%i", skip_count_i));
-          MPUT(entry, "file/last_skipped", time_str);
-        }
-      }
-      db_write(config_get("lib_path"));
-
-      REL(time_str); // REL 0
-    }
 
     // ui_song_infos_show(uipc.lastindex);
     vec_t* songs   = visible_get_songs();

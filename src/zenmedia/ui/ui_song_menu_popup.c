@@ -12,12 +12,10 @@ void ui_song_menu_popup_detach();
 #if __INCLUDE_LEVEL__ == 0
 
 #include "config.c"
-#include "database.c"
 #include "library.c"
 #include "text.c"
 #include "tg_text.c"
 #include "ui_decision_popup.c"
-#include "ui_editor_popup.c"
 #include "ui_filelist.c"
 #include "ui_play_controls.c"
 #include "ui_popup_switcher.c"
@@ -76,7 +74,6 @@ void ui_song_menu_popup_on_item_delete(void* userdata, void* data)
   {
     map_t* entry = selected->data[index];
     lib_delete_file(config_get("lib_path"), entry);
-    db_remove_entry(entry);
     visible_update();
     ui_filelist_update();
   }
@@ -92,7 +89,6 @@ void ui_song_menu_popup_on_item_select(view_t* itemview, int index, vh_lcell_t* 
   if (index == 1) ui_filelist_select_range(index);
   if (index == 2) ui_filelist_select_all();
   if (index == 3) ui_play_jump_to();
-  if (index == 4) ui_editor_popup_show();
   if (index == 5)
   {
     vec_t* selected = VNEW(); // REL 0

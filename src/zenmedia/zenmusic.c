@@ -1,12 +1,10 @@
 #include "callbacks.c"
 #include "coder.c"
 #include "config.c"
-#include "database.c"
 #include "evrecorder.c"
 #include "files.c"
 #include "library.c"
 #include "player.c"
-#include "remote.c"
 #include "tg_css.c"
 #include "ui.c"
 #include "ui_compositor.c"
@@ -42,19 +40,11 @@ void render(uint32_t time);
 void destroy();
 
 void load_directory();
-void on_change_remote(void* userdata, void* data);
-void on_change_library(void* userdata, void* data);
-void on_change_organize(void* userdata, void* data);
-void get_analyzed_songs();
-void get_remote_events();
 void update_player();
 void save_screenshot(uint32_t time);
 
 struct
 {
-  ch_t* lib_ch; // library channel
-  ch_t* rem_ch; // remote channel
-
   char* cfg_par; // config path parameter
   char* res_par; // resources path parameter
 
@@ -229,28 +219,10 @@ void init(int width, int height, char* path)
 
   renderpdf("/home/milgra/Projects/zenmedia/ajanlat.pdf");
 
-  zm.lib_ch = ch_new(100); // REL -1 // comm channel for library entries
-  zm.rem_ch = ch_new(10);  // REL -2 // remote channel
-
-  db_init();        // destroy 1
   config_init();    // destroy 2
   player_init();    // destroy 3
   visible_init();   // destroy 4
   callbacks_init(); // destroy 5
-
-  // init callbacks
-
-  cb_t* change_remote   = cb_new(on_change_remote, NULL);
-  cb_t* change_library  = cb_new(on_change_library, NULL);
-  cb_t* change_organize = cb_new(on_change_organize, NULL);
-
-  callbacks_set("on_change_remote", change_remote);
-  callbacks_set("on_change_library", change_library);
-  callbacks_set("on_change_organize", change_organize);
-
-  REL(change_remote);
-  REL(change_library);
-  REL(change_organize);
 
   // init paths
 
@@ -291,9 +263,6 @@ void init(int width, int height, char* path)
 
   // init config
 
-  config_set("remote_enabled", "false");
-  config_set("remote_port", "23723");
-  config_set("organize_lib", "false");
   config_set("dark_mode", "false");
   config_set("res_path", res_path);
 
@@ -318,10 +287,6 @@ void init(int width, int height, char* path)
   // load ui from descriptors
 
   ui_init(width, height); // destroy 8
-
-  // start listening for remote control events if set
-
-  if (config_get("remote_enabled") && config_get_bool("remote_enabled")) remote_listen(zm.rem_ch, config_get_int("remote_port")); // CLOSE 0
 
   // load current directoru
 
@@ -359,8 +324,6 @@ void update(ev_t ev)
 {
   if (ev.type == EV_TIME)
   {
-    get_analyzed_songs();
-    get_remote_events();
     ui_play_update();
     ui_visualizer_show_image(zm.pdfbmp); // show pdf
 
@@ -400,7 +363,6 @@ void render(uint32_t time)
 
 void destroy()
 {
-  remote_close(); // CLOSE 0
 
   if (zm.rep_par) evrec_destroy(); // destroy 7
   if (zm.rec_par) evrec_destroy(); // destroy 6
@@ -408,7 +370,6 @@ void destroy()
   visible_destroy();               // destroy 4
   player_destroy();                // destroy 3
   config_destroy();                // destroy 2
-  db_destroy();                    // destroy 1
   wm_destroy();                    // destroy 0
 
   ui_destroy(); // destroy 8
@@ -418,9 +379,6 @@ void destroy()
   if (zm.rec_par) REL(zm.rec_par); // REL 2
   if (zm.rep_par) REL(zm.rep_par); // REL 3
   if (zm.frm_par) REL(zm.frm_par); // REL 4
-
-  REL(zm.lib_ch); // REL -1
-  REL(zm.rem_ch); // REL -2
 
 #ifdef DEBUG
   mem_stats();
@@ -457,109 +415,6 @@ void load_directory()
   // visible_set_sortfield("meta/artist", 0);
 
   REL(files); // REL 0
-}
-
-void on_change_remote(void* userdata, void* data)
-{
-  if (config_get_bool("remote_enabled"))
-    remote_listen(zm.rem_ch, config_get_int("remote_port"));
-  else
-    remote_close();
-}
-
-void on_change_library(void* userdata, void* data)
-{
-  char* new_path = data;
-  char* lib_path = NULL;
-
-  // construct path if needed
-
-  lib_path = cstr_new_path_normalize(new_path, config_get("wrk_path")); // REL 0
-
-  printf("new path %s lib path %s\n", new_path, lib_path);
-
-  // change library if exists
-
-  if (files_path_exists(lib_path))
-  {
-    config_set("lib_path", lib_path);
-    config_write(config_get("cfg_path"));
-
-    load_directory();
-
-    //    ui_lib_init_popup_hide();
-  }
-  /* else */
-  /*   ui_lib_init_popup_show("Location doesn't exists, please enter valid location."); */
-
-  REL(lib_path); // REL 0
-}
-
-void on_change_organize(void* userdata, void* data)
-{
-  if (config_get_bool("organize_lib"))
-  {
-    int succ = db_organize(config_get("lib_path"), db_get_db());
-    if (succ == 0) db_write(config_get("lib_path"));
-    //    ui_filelist_refresh();
-  }
-}
-
-void get_analyzed_songs()
-{
-  map_t* entry;
-
-  // get analyzed song entries
-
-  while ((entry = ch_recv(zm.lib_ch))) // REL 0
-  {
-    char* path = MGET(entry, "file/path");
-
-    if (strcmp(path, "//////") != 0)
-    {
-      // store entry in db
-
-      db_add_entry(path, entry);
-
-      if (db_count() % 100 == 0)
-      {
-        // filter and sort current db and show in ui partial analysis result
-
-        visible_set_sortfield("meta/artist", 0);
-        // ui_filelist_refresh();
-      }
-    }
-    else
-    {
-      db_write(config_get("lib_path"));
-
-      if (config_get_bool("organize_lib"))
-      {
-        // organize db if needed
-
-        int succ = db_organize(config_get("lib_path"), db_get_db());
-        if (succ == 0) db_write(config_get("lib_path"));
-      }
-
-      visible_set_sortfield("meta/artist", 0);
-      // ui_filelist_refresh();
-    }
-
-    // cleanup, ownership was passed with the channel from analyzer
-
-    REL(entry); // REL 0
-  }
-}
-
-void get_remote_events()
-{
-  char* buffer = NULL;
-  if ((buffer = ch_recv(zm.rem_ch)))
-  {
-    if (buffer[0] == '0') ui_play_pause();
-    if (buffer[0] == '1') ui_play_prev();
-    if (buffer[0] == '2') ui_play_next();
-  }
 }
 
 void save_screenshot(uint32_t time)

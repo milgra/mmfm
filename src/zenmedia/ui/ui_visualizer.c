@@ -7,6 +7,7 @@ void ui_visualizer_attach(view_t* baseview);
 void ui_visualizer_detach();
 void ui_visualizer_update();
 void ui_visualizer_update_video();
+void ui_visualizer_show_image(bm_t* bm);
 
 #endif
 
@@ -17,6 +18,7 @@ void ui_visualizer_update_video();
 #include "vh_button.c"
 #include "vh_roll.c"
 #include "zc_callback.c"
+#include "zc_graphics.c"
 
 struct vizualizer_t
 {
@@ -91,8 +93,17 @@ void ui_visualizer_update()
 
 void ui_visualizer_update_video()
 {
-  player_draw_video(uiv.visuvideo->texture.bitmap, 3);
-  uiv.visuvideo->texture.changed = 1;
+  /* player_draw_video(uiv.visuvideo->texture.bitmap, 3); */
+  /* uiv.visuvideo->texture.changed = 1; */
+}
+
+void ui_visualizer_show_image(bm_t* bm)
+{
+  if (uiv.visuvideo->texture.bitmap != NULL)
+  {
+    gfx_insert(uiv.visuvideo->texture.bitmap, bm, 0, 0);
+    uiv.visuvideo->texture.changed = 1;
+  }
 }
 
 /* void ui_visualizer_on_roll_in(void* userdata, void* data) */

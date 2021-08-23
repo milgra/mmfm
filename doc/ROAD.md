@@ -11,4 +11,5 @@
 - working visu
 - working metadata info table
 - working hexa view
-- zen media to zen music
+- zen media to zen ~music
+- flatpak for linux

@@ -41,6 +41,7 @@ CFLAGS = \
 LDFLAGS = \
 	-L/usr/local/lib \
 	-lm \
+	-lz \
 	-lGL \
 	-lGLEW \
 	-lSDL2 \
@@ -51,7 +52,9 @@ LDFLAGS = \
 	-lavfilter \
 	-lswresample \
 	-lswscale \
-	-lpthread
+	-lpthread \
+	/usr/local/lib/libmupdf.so \
+	/usr/local/lib/libfreetype.so
 
 OBJECTSDEV := $(addprefix $(OBJDIRDEV)/,$(SOURCES:.c=.o))
 OBJECTSREL := $(addprefix $(OBJDIRREL)/,$(SOURCES:.c=.o))

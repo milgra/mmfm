@@ -412,12 +412,12 @@ void gfx_insert(bm_t* base, bm_t* src, int sx, int sy)
   int w = src->w;
   int h = src->h;
 
-  if (sx + w > base->w) return; // w = base->w - sx;
-  if (sy + h > base->h) return; // h = base->h - sy;
+  if (sx + w > base->w) w = base->w - sx;
+  if (sy + h > base->h) h = base->h - sy;
 
   if (w <= 0 || h <= 0) return;
 
-  for (int y = sy; y < sy + src->h; y++)
+  for (int y = sy; y < sy + h; y++)
   {
     int bi = (y * base->w + sx) * 4;
     int si = (y - sy) * src->w * 4;

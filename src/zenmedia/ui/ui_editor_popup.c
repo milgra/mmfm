@@ -21,10 +21,10 @@ void ui_editor_popup_show();
 #include "tg_text.c"
 #include "ui_alert_popup.c"
 #include "ui_decision_popup.c"
+#include "ui_filelist.c"
 #include "ui_inputfield_popup.c"
 #include "ui_manager.c"
 #include "ui_popup_switcher.c"
-#include "ui_songlist.c"
 #include "vh_button.c"
 #include "vh_list.c"
 #include "vh_list_head.c"
@@ -168,7 +168,7 @@ void ui_editor_popup_detach()
 void ui_editor_popup_show()
 {
   vec_t* selected = VNEW(); // REL 0
-  ui_songlist_get_selected(selected);
+  ui_filelist_get_selected(selected);
 
   if (selected->length > 0)
   {
@@ -628,7 +628,7 @@ void ui_editor_popup_on_accept()
   ui_popup_switcher_toggle("song_editor_popup_page");
 
   vec_t* songs = VNEW(); // REL 0
-  ui_songlist_get_selected(songs);
+  ui_filelist_get_selected(songs);
 
   /* /\* printf("SELECTED\n"); *\/ */
   /* /\* mem_describe(selected, 0); *\/ */
@@ -658,7 +658,7 @@ void ui_editor_popup_on_accept()
 
   REL(songs); // REL 0
 
-  ui_songlist_refresh();
+  ui_filelist_refresh();
 }
 
 #endif

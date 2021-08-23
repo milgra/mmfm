@@ -25,9 +25,9 @@ void ui_play_update();
 #include "database.c"
 #include "player.c"
 #include "tg_knob.c"
+#include "ui_filelist.c"
 #include "ui_meta_view.c"
 #include "ui_song_infos.c"
-#include "ui_songlist.c"
 #include "ui_visualizer.c"
 #include "vh_button.c"
 #include "vh_knob.c"
@@ -167,7 +167,7 @@ void ui_play_next()
   else
     ui_play_index(uipc.lastindex + 1);
 
-  ui_songlist_select_and_show(uipc.lastindex);
+  ui_filelist_select_and_show(uipc.lastindex);
 }
 
 void ui_play_prev()
@@ -177,13 +177,13 @@ void ui_play_prev()
   else
     ui_play_index(uipc.lastindex - 1);
 
-  ui_songlist_select_and_show(uipc.lastindex);
+  ui_filelist_select_and_show(uipc.lastindex);
 }
 
 void ui_play_pause()
 {
   int state = player_toggle_pause();
-  ui_songlist_toggle_pause(state);
+  ui_filelist_toggle_pause(state);
   vh_button_set_state(uipc.playbtn, state ? VH_BUTTON_UP : VH_BUTTON_DOWN);
 }
 
@@ -249,7 +249,7 @@ void ui_play_on_button_down(void* userdata, void* data)
 
 void ui_play_jump_to()
 {
-  ui_songlist_select_and_show(uipc.lastindex);
+  ui_filelist_select_and_show(uipc.lastindex);
 }
 
 void ui_play_update()

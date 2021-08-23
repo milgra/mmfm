@@ -18,9 +18,9 @@ void ui_song_menu_popup_detach();
 #include "tg_text.c"
 #include "ui_decision_popup.c"
 #include "ui_editor_popup.c"
+#include "ui_filelist.c"
 #include "ui_play_controls.c"
 #include "ui_popup_switcher.c"
-#include "ui_songlist.c"
 #include "vh_list.c"
 #include "vh_list_item.c"
 #include "visible.c"
@@ -69,7 +69,7 @@ void ui_song_menu_popup_on_item_delete(void* userdata, void* data)
 {
   vec_t* selected = VNEW(); // REL 0
 
-  ui_songlist_get_selected(selected);
+  ui_filelist_get_selected(selected);
   mem_describe(selected, 0);
 
   for (int index = 0; index < selected->length; index++)
@@ -78,7 +78,7 @@ void ui_song_menu_popup_on_item_delete(void* userdata, void* data)
     lib_delete_file(config_get("lib_path"), entry);
     db_remove_entry(entry);
     visible_update();
-    ui_songlist_update();
+    ui_filelist_update();
   }
 
   REL(selected); // REL 0
@@ -88,15 +88,15 @@ void ui_song_menu_popup_on_item_select(view_t* itemview, int index, vh_lcell_t* 
 {
   ui_popup_switcher_toggle("song_popup_page");
 
-  if (index == 0) ui_songlist_select(index);
-  if (index == 1) ui_songlist_select_range(index);
-  if (index == 2) ui_songlist_select_all();
+  if (index == 0) ui_filelist_select(index);
+  if (index == 1) ui_filelist_select_range(index);
+  if (index == 2) ui_filelist_select_all();
   if (index == 3) ui_play_jump_to();
   if (index == 4) ui_editor_popup_show();
   if (index == 5)
   {
     vec_t* selected = VNEW(); // REL 0
-    ui_songlist_get_selected(selected);
+    ui_filelist_get_selected(selected);
 
     cb_t* acc_cb = cb_new(ui_song_menu_popup_on_item_delete, NULL);                                     // REL 1
     char* text   = cstr_new_format(100, "Are you sure you want to delete %i items?", selected->length); // REL 2

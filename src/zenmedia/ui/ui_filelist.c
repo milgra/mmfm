@@ -1,21 +1,21 @@
-#ifndef ui_songlist_h
-#define ui_songlist_h
+#ifndef ui_filelist_h
+#define ui_filelist_h
 
 #include "view.c"
 #include "zc_map.c"
 
-void ui_songlist_select(int index);
-void ui_songlist_select_all();
-void ui_songlist_select_range(int index);
-void ui_songlist_get_selected(vec_t* vec);
+void ui_filelist_select(int index);
+void ui_filelist_select_all();
+void ui_filelist_select_range(int index);
+void ui_filelist_get_selected(vec_t* vec);
 
-void ui_songlist_attach(view_t* base);
-void ui_songlist_detach();
+void ui_filelist_attach(view_t* base);
+void ui_filelist_detach();
 
-void ui_songlist_update();
-void ui_songlist_refresh();
-void ui_songlist_toggle_pause(int state);
-void ui_songlist_select_and_show(int index);
+void ui_filelist_update();
+void ui_filelist_refresh();
+void ui_filelist_toggle_pause(int state);
+void ui_filelist_select_and_show(int index);
 
 #endif
 
@@ -39,10 +39,10 @@ void on_header_field_select(view_t* view, char* id, ev_t ev);
 void on_header_field_insert(view_t* view, int src, int tgt);
 void on_header_field_resize(view_t* view, char* id, int size);
 
-view_t* ui_songlist_item_for_index(int index, void* userdata, view_t* listview, int* item_count);
-void    ui_songlist_item_recycle(view_t* item, void* userdata, view_t* listview);
+view_t* ui_filelist_item_for_index(int index, void* userdata, view_t* listview, int* item_count);
+void    ui_filelist_item_recycle(view_t* item, void* userdata, view_t* listview);
 
-struct ui_songlist_t
+struct ui_filelist_t
 {
   view_t*     view;    // table view
   vec_t*      items;   // all items
@@ -57,7 +57,7 @@ struct ui_songlist_t
   void (*on_select)(int index);
 } sl = {0};
 
-void ui_songlist_attach(view_t* base)
+void ui_filelist_attach(view_t* base)
 {
   assert(base != NULL);
 
@@ -132,7 +132,7 @@ void ui_songlist_attach(view_t* base)
 
   // add header handler
 
-  view_t* header                  = view_new("songlist_header", (r2_t){0, 0, 10, 30}); // REL 3
+  view_t* header                  = view_new("filelist_header", (r2_t){0, 0, 10, 30}); // REL 3
   header->layout.background_color = 0x33333355;
   /* header->layout.shadow_blur      = 3; */
   /* header->layout.border_radius    = 3; */
@@ -172,8 +172,8 @@ void ui_songlist_attach(view_t* base)
 
   vh_list_add(sl.view,
               ((vh_list_inset_t){30, 200, 0, 10}),
-              ui_songlist_item_for_index,
-              ui_songlist_item_recycle,
+              ui_filelist_item_for_index,
+              ui_filelist_item_recycle,
               NULL);
   vh_list_set_header(sl.view, header);
 
@@ -184,7 +184,7 @@ void ui_songlist_attach(view_t* base)
   REL(header); // REL 3
 }
 
-void ui_songlist_detach()
+void ui_filelist_detach()
 {
   vh_list_reset(sl.view);
 
@@ -194,18 +194,18 @@ void ui_songlist_detach()
   REL(sl.fields);  // REL 2
 }
 
-void ui_songlist_update()
+void ui_filelist_update()
 {
   selection_res();
   vh_list_reset(sl.view);
 }
 
-void ui_songlist_refresh()
+void ui_filelist_refresh()
 {
   vh_list_refresh(sl.view);
 }
 
-void ui_songlist_toggle_pause(int state)
+void ui_filelist_toggle_pause(int state)
 {
   /* if (state) */
   /*   sl.color_s = 0xFF5555FF; */
@@ -228,7 +228,7 @@ void on_header_field_select(view_t* view, char* id, ev_t ev)
     {
       char* field = sl.fields->data[index];
       visible_set_sortfield(field, 1);
-      ui_songlist_refresh();
+      ui_filelist_refresh();
     }
   }
 }
@@ -297,20 +297,20 @@ void on_header_field_resize(view_t* view, char* id, int size)
   }
 }
 
-void ui_songlist_select(int index)
+void ui_filelist_select(int index)
 {
   // selection_res();
   selection_add(sl.index_s);
   vh_list_refresh(sl.view);
 }
 
-void ui_songlist_select_range(int index)
+void ui_filelist_select_range(int index)
 {
   selection_rng(sl.index_s);
   vh_list_refresh(sl.view);
 }
 
-void ui_songlist_select_all()
+void ui_filelist_select_all()
 {
   selection_res();
   selection_add(0);
@@ -318,7 +318,7 @@ void ui_songlist_select_all()
   vh_list_refresh(sl.view);
 }
 
-void ui_songlist_get_selected(vec_t* vec)
+void ui_filelist_get_selected(vec_t* vec)
 {
   // if selection is empty, select current index
   if (selection_cnt() > 0)
@@ -327,7 +327,7 @@ void ui_songlist_get_selected(vec_t* vec)
   }
 }
 
-void ui_songlist_select_and_show(int index)
+void ui_filelist_select_and_show(int index)
 {
   selection_res();
   selection_add(index);
@@ -336,7 +336,7 @@ void ui_songlist_select_and_show(int index)
 
 // items
 
-void ui_songlist_on_item_select(view_t* itemview, int index, vh_lcell_t* cell, ev_t ev)
+void ui_filelist_on_item_select(view_t* itemview, int index, vh_lcell_t* cell, ev_t ev)
 {
   sl.index_s = index;
   if (ev.button == 1)
@@ -388,7 +388,7 @@ view_t* songitem_new()
   view_t* rowview = view_new(idbuffer, (r2_t){0, 0, 0, 35}); // REL 0
 
   vh_litem_add(rowview, NULL);
-  vh_litem_set_on_select(rowview, ui_songlist_on_item_select);
+  vh_litem_set_on_select(rowview, ui_filelist_on_item_select);
 
   for (int i = 0; i < sl.columns->length; i++)
   {
@@ -438,7 +438,7 @@ void songitem_update_row(view_t* rowview, int index, map_t* file, uint32_t color
   tg_text_set(vh_litem_get_cell(rowview, "ind"), indbuffer, sl.textstyle);
 }
 
-void ui_songlist_item_recycle(view_t* item, void* userdata, view_t* listview)
+void ui_filelist_item_recycle(view_t* item, void* userdata, view_t* listview)
 {
   uint32_t index = vec_index_of_data(sl.cache, item);
 
@@ -450,7 +450,7 @@ void ui_songlist_item_recycle(view_t* item, void* userdata, view_t* listview)
     printf("item exists in sl.cache %s\n", item->id);
 }
 
-view_t* ui_songlist_item_for_index(int index, void* userdata, view_t* listview, int* item_count)
+view_t* ui_filelist_item_for_index(int index, void* userdata, view_t* listview, int* item_count)
 {
   if (index < 0) return NULL;                     // no items before 0
   if (index >= visible_song_count()) return NULL; // no more items

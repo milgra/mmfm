@@ -10,12 +10,12 @@
 #include "tg_css.c"
 #include "ui.c"
 #include "ui_compositor.c"
+#include "ui_filelist.c"
 #include "ui_filter_bar.c"
 #include "ui_lib_init_popup.c"
 #include "ui_manager.c"
 #include "ui_play_controls.c"
 #include "ui_song_infos.c"
-#include "ui_songlist.c"
 #include "ui_visualizer.c"
 #include "visible.c"
 #include "wm_connector.c"
@@ -444,7 +444,7 @@ void load_directory()
 
   visible_set_sortfield("basename", 0);
 
-  ui_songlist_refresh();
+  ui_filelist_refresh();
 
   /* db_update(files);                              // remove deleted files from db, remove existing files from files */
 
@@ -501,7 +501,7 @@ void on_change_organize(void* userdata, void* data)
   {
     int succ = db_organize(config_get("lib_path"), db_get_db());
     if (succ == 0) db_write(config_get("lib_path"));
-    //    ui_songlist_refresh();
+    //    ui_filelist_refresh();
   }
 }
 
@@ -526,7 +526,7 @@ void get_analyzed_songs()
         // filter and sort current db and show in ui partial analysis result
 
         visible_set_sortfield("meta/artist", 0);
-        // ui_songlist_refresh();
+        // ui_filelist_refresh();
       }
     }
     else
@@ -542,7 +542,7 @@ void get_analyzed_songs()
       }
 
       visible_set_sortfield("meta/artist", 0);
-      // ui_songlist_refresh();
+      // ui_filelist_refresh();
     }
 
     // cleanup, ownership was passed with the channel from analyzer

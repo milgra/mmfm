@@ -16,9 +16,9 @@ void ui_filter_popup_show();
 #include "database.c"
 #include "textlist.c"
 #include "tg_text.c"
+#include "ui_filelist.c"
 #include "ui_filter_bar.c"
 #include "ui_popup_switcher.c"
-#include "ui_songlist.c"
 #include "visible.c"
 #include "zc_cstring.c"
 
@@ -87,7 +87,7 @@ void ui_filter_popup_on_genre_select(int index)
   char* query = cstr_new_format(100, "genre is %s", genre); // REL 1
 
   visible_set_filter(query);
-  ui_songlist_update();
+  ui_filelist_update();
   ui_filter_bar_show_query(genre);
 
   REL(genres); // REL 0
@@ -107,7 +107,7 @@ void ui_filter_popup_on_artist_select(int index)
   char* query = cstr_new_format(100, "artist is %s", artist); // REL 1
 
   visible_set_filter(query);
-  ui_songlist_update();
+  ui_filelist_update();
   ui_filter_bar_show_query(artist);
 
   REL(artists); // REL 0

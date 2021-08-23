@@ -16,9 +16,9 @@ void ui_filter_bar_show_filters(void* userdata, void* data);
 void ui_filter_bar_clear_search(void* userdata, void* data);
 
 #include "config.c"
+#include "ui_filelist.c"
 #include "ui_filter_popup.c"
 #include "ui_manager.c"
-#include "ui_songlist.c"
 #include "vh_button.c"
 #include "vh_textinput.c"
 #include "visible.c"
@@ -27,13 +27,13 @@ void ui_filter_bar_filter(view_t* view, void* userdata);
 
 struct _ui_filter_bar_t
 {
-  view_t* songlist_filter_bar;
+  view_t* filelist_filter_bar;
 
 } ufb = {0};
 
 void ui_filter_bar_attach(view_t* baseview)
 {
-  ufb.songlist_filter_bar = view_get_subview(baseview, "filterfield");
+  ufb.filelist_filter_bar = view_get_subview(baseview, "filterfield");
 
   textstyle_t ts  = {0};
   ts.font         = config_get("font_path");
@@ -55,9 +55,9 @@ void ui_filter_bar_attach(view_t* baseview)
   REL(filter_cb); // REL 0
   REL(clear_cb);  // REL 1
 
-  vh_textinput_add(ufb.songlist_filter_bar, "", "Search/Filter", ts, NULL);
-  vh_textinput_set_on_text(ufb.songlist_filter_bar, ui_filter_bar_filter);
-  //vh_textinput_set_on_activate(ufb.songlist_filter_bar, ui_on_filter_activate);
+  vh_textinput_add(ufb.filelist_filter_bar, "", "Search/Filter", ts, NULL);
+  vh_textinput_set_on_text(ufb.filelist_filter_bar, ui_filter_bar_filter);
+  //vh_textinput_set_on_activate(ufb.filelist_filter_bar, ui_on_filter_activate);
 }
 
 void ui_filter_bar_detach()
@@ -71,7 +71,7 @@ void ui_filter_bar_filter(view_t* view, void* userdata)
   char* ctext = str_new_cstring(text); // REL 0
 
   visible_set_filter(ctext);
-  ui_songlist_update();
+  ui_filelist_update();
 
   REL(ctext); // REL 0
 }
@@ -82,14 +82,14 @@ void ui_filter_bar_show_filters(void* userdata, void* data)
 }
 void ui_filter_bar_clear_search(void* userdata, void* data)
 {
-  vh_textinput_set_text(ufb.songlist_filter_bar, "");
-  ui_manager_activate(ufb.songlist_filter_bar);
-  vh_textinput_activate(ufb.songlist_filter_bar, 1);
+  vh_textinput_set_text(ufb.filelist_filter_bar, "");
+  ui_manager_activate(ufb.filelist_filter_bar);
+  vh_textinput_activate(ufb.filelist_filter_bar, 1);
 }
 
 void ui_filter_bar_show_query(char* text)
 {
-  vh_textinput_set_text(ufb.songlist_filter_bar, text);
+  vh_textinput_set_text(ufb.filelist_filter_bar, text);
 }
 
 #endif

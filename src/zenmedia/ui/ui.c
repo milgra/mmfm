@@ -20,6 +20,7 @@ void ui_destroy();
 #include "ui_cliplist.c"
 #include "ui_decision_popup.c"
 #include "ui_editor_popup.c"
+#include "ui_filelist.c"
 #include "ui_filter_bar.c"
 #include "ui_filter_popup.c"
 #include "ui_inputfield_popup.c"
@@ -31,7 +32,6 @@ void ui_destroy();
 #include "ui_settings_popup.c"
 #include "ui_song_infos.c"
 #include "ui_song_menu_popup.c"
-#include "ui_songlist.c"
 #include "ui_visualizer.c"
 #include "vh_button.c"
 #include "vh_key.c"
@@ -71,7 +71,7 @@ void ui_init(float width, float height)
 
   // attach ui components
 
-  ui_songlist_attach(view_base); // DETACH 0
+  ui_filelist_attach(view_base); // DETACH 0
   ui_cliplist_attach(view_base); // DETACH 0
   ui_meta_view_attach(view_base);
   /* ui_song_infos_attach(view_base);       // DETACH 1 */
@@ -97,7 +97,7 @@ void ui_init(float width, float height)
   /* cb_t* key_cb = cb_new(ui_on_key_down, view_base); // REL 1 */
   /* cb_t* but_cb = cb_new(ui_on_button_down, NULL);   // REL 2 */
 
-  main_view->needs_touch = 0; // don't cover events from songlist
+  main_view->needs_touch = 0; // don't cover events from filelist
   /* vh_key_add(view_base, key_cb);                      // listen on view_base for shortcuts */
   /* vh_button_add(song_info, VH_BUTTON_NORMAL, but_cb); // show messages on song info click */
 
@@ -144,7 +144,7 @@ void ui_init(float width, float height)
 
 void ui_destroy()
 {
-  ui_songlist_detach();         // DETACH 0
+  ui_filelist_detach();         // DETACH 0
   ui_song_infos_detach();       // DETACH 1
   ui_visualizer_detach();       // DETACH 2
   ui_filter_bar_detach();       // DETACH 3

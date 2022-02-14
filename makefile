@@ -34,7 +34,8 @@ CFLAGS = \
 	-Isrc/modules/zen_ui/text \
 	-Isrc/modules/zen_ui/html \
 	-Isrc/zenmedia \
-	-Isrc/zenmedia/ui
+	-Isrc/zenmedia/ui \
+	-Iinc
 
 ifeq ($(UNAME),FreeBSD)
      CFLAGS += -I/usr/local/include \
@@ -62,8 +63,10 @@ LDFLAGS = \
 	-lswresample \
 	-lswscale \
 	-lpthread \
-	/usr/local/lib/libmupdf.so \
-	/usr/local/lib/libfreetype.so
+	-lfreetype \
+	-ljpeg \
+	lib/libmupdf.a \
+	lib/libmupdf-third.a
 
 
 OBJECTSDEV := $(addprefix $(OBJDIRDEV)/,$(SOURCES:.c=.o))

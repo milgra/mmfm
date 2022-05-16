@@ -221,7 +221,9 @@ void ui_about_popup_attach(view_t* baseview)
   VADDR(donl.items, donateitem_new(4));
   VADDR(donl.items, donateitem_new(5));
 
-  char* version = cstr_new_format(200, "Zen Music v%i.%i beta\nby Milan Toth\nFree and Open Source Software.", VERSION, BUILD); // REL 2
+  // char* version = cstr_new_format(200, "Zen Music v%i.%i beta\nby Milan Toth\nFree and Open Source Software.", VERSION, BUILD); // REL 2
+
+  char* version = cstr_new_format(200, "MultiMedia File Manager v%s beta\nby Milan Toth\nFree and Open Source Software.", MMFM_VERSION); // REL 2
 
   donateitem_update_row(donl.items->data[0], 0, version);
   donateitem_update_row(donl.items->data[1], 1, "Support on Patreon");

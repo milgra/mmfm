@@ -176,7 +176,7 @@ void renderpdf(char* filename)
 
 int main(int argc, char* argv[])
 {
-  printf("Zen Music v%i.%i beta by Milan Toth\n", VERSION, BUILD);
+  printf("Zen Music v%s beta by Milan Toth\n", MMFM_VERSION);
 
   const struct option long_options[] =
       {

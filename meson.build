@@ -10,6 +10,7 @@ cc = meson.get_compiler('c')
 
 freetype = dependency('freetype2')
 math = cc.find_library('m')
+z = cc.find_library('z')
 rt = cc.find_library('rt')
 gl = cc.find_library('GL')
 glew = cc.find_library('GLEW')
@@ -23,7 +24,10 @@ swresample = cc.find_library('swresample')
 swscale = cc.find_library('swscale')
 pthread = cc.find_library('pthread')
 jpeg = cc.find_library('jpeg')
-
+jbig = cc.find_library('jbig2dec')
+ojpeg = cc.find_library('openjp2')
+hb = cc.find_library('harfbuzz')
+gumbo = cc.find_library('gumbo')
 
 libdir = meson.current_source_dir() + './lib/'
 
@@ -53,7 +57,8 @@ mmfm_inc = include_directories(
 	'src/modules/zen_ui/text',
 	'src/modules/zen_ui/html',
 	'src/mmfm',
-	'src/mmfm/ui')
+	'src/mmfm/ui',
+	'inc')
 
 
 com_sources = ['src/mmfm/ui/column.c',
@@ -95,6 +100,7 @@ com_sources = ['src/mmfm/ui/column.c',
 	       'src/modules/zen_core/zc_log.c',
 	       'src/modules/zen_core/zc_map.c',
 	       'src/modules/zen_core/zc_memory.c',
+	       'src/modules/zen_core/zc_number.c',
 	       'src/modules/zen_core/zc_string.c',
 	       'src/modules/zen_core/zc_strutil.c',
 	       'src/modules/zen_core/zc_texmap.c',
@@ -153,7 +159,7 @@ com_sources = ['src/mmfm/ui/column.c',
 	       'src/modules/zen_ui/ui_generator.c',
 	       'src/modules/zen_ui/ui_manager.c']
 
-mmfm_dependencies = [rt, freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,mupdf,mupdfthird]
+mmfm_dependencies = [rt, freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,gumbo,mupdf,mupdfthird]
 
 executable(
   'mmfm',

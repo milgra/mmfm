@@ -26,6 +26,7 @@ void lib_analyze_files(ch_t* channel, map_t* files);
 #include <limits.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <time.h>
 
 static int lib_file_data_step(const char* fpath, const struct stat* sb, int tflag, struct FTW* ftwbuf);
@@ -72,7 +73,13 @@ static int lib_file_data_step(const char* fpath, const struct stat* sb, int tfla
 
   map_t* file = MNEW();
 
-  MPUTR(file, "type", cstr_new_format(5, "%s", (tflag == FTW_D) ? "d" : (tflag == FTW_DNR) ? "dnr" : (tflag == FTW_DP) ? "dp" : (tflag == FTW_F) ? "f" : (tflag == FTW_NS) ? "ns" : (tflag == FTW_SL) ? "sl" : (tflag == FTW_SLN) ? "sln" : "???"));
+  MPUTR(file, "type", cstr_new_format(5, "%s", (tflag == FTW_D) ? "d" : (tflag == FTW_DNR) ? "dnr"
+                                                                    : (tflag == FTW_DP)    ? "dp"
+                                                                    : (tflag == FTW_F)     ? "f"
+                                                                    : (tflag == FTW_NS)    ? "ns"
+                                                                    : (tflag == FTW_SL)    ? "sl"
+                                                                    : (tflag == FTW_SLN)   ? "sln"
+                                                                                           : "???"));
   MPUTR(file, "path", cstr_new_format(PATH_MAX + NAME_MAX, "%s", fpath));
   MPUTR(file, "basename", cstr_new_format(NAME_MAX, "%s", fpath + ftwinfo->base));
   MPUTR(file, "level", cstr_new_format(20, "%li", ftwinfo->level));
@@ -85,9 +92,9 @@ static int lib_file_data_step(const char* fpath, const struct stat* sb, int tfla
   MPUTR(file, "deviceid", cstr_new_format(20, "%li", sb->st_rdev));
   MPUTR(file, "blocksize", cstr_new_format(20, "%li", sb->st_blksize));
   MPUTR(file, "blocks", cstr_new_format(20, "%li", sb->st_blocks));
-  MPUTR(file, "last_access", cstr_new_format(20, "%li", sb->st_atim));
-  MPUTR(file, "last_modification", cstr_new_format(20, "%li", sb->st_mtim));
-  MPUTR(file, "last_status", cstr_new_format(20, "%li", sb->st_ctim));
+  MPUTR(file, "last_access", cstr_new_format(20, "%li", sb->st_atime));
+  MPUTR(file, "last_modification", cstr_new_format(20, "%li", sb->st_mtime));
+  MPUTR(file, "last_status", cstr_new_format(20, "%li", sb->st_ctime));
 
   struct passwd* pws;
   pws = getpwuid(sb->st_uid);

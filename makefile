@@ -17,10 +17,13 @@ SOURCES = \
 	$(wildcard src/modules/zen_ui/view/*.c) \
 	$(wildcard src/modules/zen_ui/text/*.c) \
 	$(wildcard src/modules/zen_ui/html/*.c) \
-	$(wildcard src/zenmedia/*.c) \
-	$(wildcard src/zenmedia/ui/*.c)
+	$(wildcard src/mmfm/*.c) \
+	$(wildcard src/mmfm/ui/*.c)
 
 CFLAGS = \
+	-I/usr/include \
+	-I/usr/include/GL \
+	-I/usr/include/SDL2 \
 	-Isrc/modules \
 	-Isrc/modules/zen_core \
 	-Isrc/modules/zen_math \
@@ -33,20 +36,9 @@ CFLAGS = \
 	-Isrc/modules/zen_ui/view \
 	-Isrc/modules/zen_ui/text \
 	-Isrc/modules/zen_ui/html \
-	-Isrc/zenmedia \
-	-Isrc/zenmedia/ui \
+	-Isrc/mmfm \
+	-Isrc/mmfm/ui \
 	-Iinc
-
-ifeq ($(UNAME),FreeBSD)
-     CFLAGS += -I/usr/local/include \
-	       -I/usr/local/include/GL \
-	       -I/usr/local/include/SDL2
-endif		
-ifeq ($(UNAME),Linux)
-     CFLAGS += -I/usr/include \
-	       -I/usr/include/GL \
-	       -I/usr/include/SDL2
-endif		
 
 LDFLAGS = \
 	-L/usr/local/lib \
@@ -73,10 +65,10 @@ OBJECTSDEV := $(addprefix $(OBJDIRDEV)/,$(SOURCES:.c=.o))
 OBJECTSREL := $(addprefix $(OBJDIRREL)/,$(SOURCES:.c=.o))
 
 rel: $(OBJECTSREL)
-	$(CC) $^ -o bin/zenmedia $(LDFLAGS)
+	$(CC) $^ -o bin/mmfm $(LDFLAGS)
 
 dev: $(OBJECTSDEV)
-	$(CC) $^ -o bin/zenmediadev $(LDFLAGS)
+	$(CC) $^ -o bin/mmfmdev $(LDFLAGS)
 
 $(OBJECTSDEV): $(OBJDIRDEV)/%.o: %.c
 	mkdir -p $(@D)
@@ -87,8 +79,8 @@ $(OBJECTSREL): $(OBJDIRREL)/%.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS) -O3 -DVERSION=$(VERSION) -DBUILD=$(shell cat version.num)
 
 clean:
-	rm -f $(OBJECTSDEV) zenmedia
-	rm -f $(OBJECTSREL) zenmedia
+	rm -f $(OBJECTSDEV) mmfm
+	rm -f $(OBJECTSREL) mmfm
 
 deps:
 	@sudo pkg install ffmpeg sdl2 glew
@@ -103,10 +95,10 @@ runtest:
 	tst/test_run.sh
 
 install: rel
-	/usr/bin/install -c -s -m 755 bin/zenmedia /usr/local/bin
-	/usr/bin/install -d -m 755 /usr/local/share/zenmedia
-	cp res/* /usr/local/share/zenmedia/
+	/usr/bin/install -c -s -m 755 bin/mmfm /usr/local/bin
+	/usr/bin/install -d -m 755 /usr/local/share/mmfm
+	cp res/* /usr/local/share/mmfm/
 
 remove:
-	rm /usr/local/bin/zenmedia
-	rm -r /usr/local/share/zenmedia
+	rm /usr/local/bin/mmfm
+	rm -r /usr/local/share/mmfm

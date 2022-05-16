@@ -217,7 +217,7 @@ void init(int width, int height, char* path)
 {
   srand((unsigned int)time(NULL));
 
-  renderpdf("/home/milgra/Projects/zenmedia/ajanlat.pdf");
+  renderpdf("/home/milgra/Projects/mmfm/ajanlat.pdf");
 
   config_init();    // destroy 2
   player_init();    // destroy 3

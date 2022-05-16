@@ -3,6 +3,7 @@
 
 **near future**
 
+- use linux file command for detailed file info
 - .. parent selector should show parent path
 - hexa viewer
 - pdf viewer

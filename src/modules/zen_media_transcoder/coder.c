@@ -15,7 +15,7 @@ int   coder_write_png(char* path, bm_t* bm);
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
-
+#include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libavutil/avutil.h"
 #include "libavutil/imgutils.h"

@@ -2,7 +2,7 @@
 #define text_h
 
 #include "zc_text.c"
-#include "zc_bitmap.c"
+#include "zc_bm_rgba.c"
 #include "zc_string.c"
 #include <stdint.h>
 
@@ -70,13 +70,13 @@ void text_break_glyphs(glyph_t* glyphs, int count, textstyle_t style, int wth, i
 
 void text_align_glyphs(glyph_t* glyphs, int count, textstyle_t style, int w, int h);
 
-void text_render_glyph(glyph_t g, textstyle_t style, bm_t* bitmap);
+void text_render_glyph(glyph_t g, textstyle_t style, bm_rgba_t* bitmap);
 
-void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_t* bitmap);
+void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_rgba_t* bitmap);
 
 void text_layout(glyph_t* glyphs, int count, textstyle_t style, int wth, int hth, int* nwth, int* nhth);
 
-void text_render(str_t* text, textstyle_t style, bm_t* bitmap);
+void text_render(str_t* text, textstyle_t style, bm_rgba_t* bitmap);
 
 void text_measure(str_t* text, textstyle_t style, int w, int h, int* nw, int* nh);
 
@@ -423,7 +423,7 @@ void text_shift_glyphs(glyph_t* glyphs, int count, textstyle_t style)
   }
 }
 
-void text_render_glyph(glyph_t g, textstyle_t style, bm_t* bitmap)
+void text_render_glyph(glyph_t g, textstyle_t style, bm_rgba_t* bitmap)
 {
   if (g.w > 0 && g.h > 0)
   {
@@ -460,7 +460,7 @@ void text_render_glyph(glyph_t g, textstyle_t style, bm_t* bitmap)
   }
 }
 
-void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_t* bitmap)
+void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_rgba_t* bitmap)
 {
   // if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
@@ -549,7 +549,7 @@ void text_layout(glyph_t* glyphs, int count, textstyle_t style, int wth, int hth
   text_shift_glyphs(glyphs, count, style);
 }
 
-void text_render(str_t* text, textstyle_t style, bm_t* bitmap)
+void text_render(str_t* text, textstyle_t style, bm_rgba_t* bitmap)
 {
   glyph_t* glyphs = malloc(sizeof(glyph_t) * text->length); // REL 0
   for (int i = 0; i < text->length; i++) glyphs[i].cp = text->codepoints[i];

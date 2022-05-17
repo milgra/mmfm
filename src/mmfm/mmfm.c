@@ -1,4 +1,4 @@
-#include "bm_util.c"
+#include "bm_rgba_util.c"
 #include "callbacks.c"
 #include "coder.c"
 #include "config.c"
@@ -56,7 +56,7 @@ struct
 
   view_t* rep_cur; // replay cursor
 
-  bm_t* pdfbmp;
+  bm_rgba_t* pdfbmp;
 } zm = {0};
 
 void renderpdf(char* filename)
@@ -147,7 +147,7 @@ void renderpdf(char* filename)
   printf("w %d h %d s %td\n", pix->w, pix->h, pix->stride);
   printf("255\n");
 
-  zm.pdfbmp     = bm_new(pix->w, pix->h);
+  zm.pdfbmp     = bm_rgba_new(pix->w, pix->h);
   uint8_t* data = zm.pdfbmp->data;
 
   for (y = 0; y < pix->h; ++y)
@@ -425,7 +425,7 @@ void save_screenshot(uint32_t time)
     static int cnt    = 0;
     view_t*    root   = ui_manager_get_root();
     r2_t       frame  = root->frame.local;
-    bm_t*      screen = bm_new(frame.w, frame.h); // REL 0
+    bm_rgba_t* screen = bm_rgba_new(frame.w, frame.h); // REL 0
 
     // remove cursor for screenshot to remain identical
 
@@ -438,9 +438,9 @@ void save_screenshot(uint32_t time)
 
     ui_compositor_render_to_bmp(screen);
 
-    char* name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1
-    char* path    = path_new_append(config_get("lib_path"), name);    // REL 2
-    bm_t* flipped = bm_new_flip_y(screen);                            // REL 3
+    char*      name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1
+    char*      path    = path_new_append(config_get("lib_path"), name);    // REL 2
+    bm_rgba_t* flipped = bm_rgba_new_flip_y(screen);                       // REL 3
 
     coder_write_png(path, flipped);
 

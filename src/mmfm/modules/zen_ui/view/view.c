@@ -2,7 +2,7 @@
 #define view_h
 
 #include "wm_event.c"
-#include "zc_bitmap.c"
+#include "zc_bm_rgba.c"
 #include "zc_util2.c"
 #include "zc_vec2.c"
 #include "zc_vector.c"
@@ -93,10 +93,10 @@ typedef struct _texture_t
 
   // internal texture
 
-  texst_t state;         /* render state of texture */
-  bm_t*   bitmap;        /* texture bitmap */
-  char    changed;       /* texture is changed */
-  char    alpha_changed; /* alpha channel is changed */
+  texst_t    state;         /* render state of texture */
+  bm_rgba_t* bitmap;        /* texture bitmap */
+  char       changed;       /* texture is changed */
+  char       alpha_changed; /* alpha channel is changed */
 
   // decoration
 
@@ -160,7 +160,7 @@ void view_set_frame(view_t* view, r2_t frame);
 void view_set_region(view_t* view, r2_t frame);
 void view_set_layout(view_t* view, vlayout_t layout);
 void view_set_block_touch(view_t* view, char block, char recursive);
-void view_set_texture_bmp(view_t* view, bm_t* tex);
+void view_set_texture_bmp(view_t* view, bm_rgba_t* tex);
 void view_set_texture_page(view_t* view, uint32_t page);
 void view_set_texture_type(view_t* view, textype_t type);
 void view_set_texture_alpha(view_t* view, float alpha, char recur);
@@ -418,7 +418,7 @@ void view_set_block_touch(view_t* view, char block, char recursive)
   }
 }
 
-void view_set_texture_bmp(view_t* view, bm_t* bitmap)
+void view_set_texture_bmp(view_t* view, bm_rgba_t* bitmap)
 {
   if (view->texture.bitmap) REL(view->texture.bitmap);
   view->texture.bitmap  = RET(bitmap);

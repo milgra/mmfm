@@ -17,10 +17,10 @@ void vh_knob_add(view_t* view,
 
 typedef struct _vh_knob_t
 {
-  float angle;
-  char* id;
-  bm_t* top;
-  bm_t* bottom;
+  float      angle;
+  char*      id;
+  bm_rgba_t* top;
+  bm_rgba_t* bottom;
 
   void (*ratio_changed)(view_t* view, float ratio);
   void (*button_pushed)(view_t* view);

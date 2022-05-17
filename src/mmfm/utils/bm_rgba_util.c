@@ -1,19 +1,19 @@
-#ifndef bm_util_h
-#define bm_util_h
+#ifndef bm_rgba_util_h
+#define bm_rgba_util_h
 
-#include "zc_bitmap.c"
+#include "zc_bm_rgba.c"
 #include <string.h>
 
-bm_t* bm_new_flip_y(bm_t* bm);
-void  bm_write(bm_t* bm, char* path);
+bm_rgba_t* bm_rgba_new_flip_y(bm_rgba_t* bm);
+void       bm_rgba_write(bm_rgba_t* bm, char* path);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-bm_t* bm_new_flip_y(bm_t* bm)
+bm_rgba_t* bm_rgba_new_flip_y(bm_rgba_t* bm)
 {
-  bm_t* tmp = bm_new(bm->w, bm->h);
+  bm_rgba_t* tmp = bm_rgba_new(bm->w, bm->h);
   for (int y = 0; y < bm->h; y++)
   {
     int src_y = bm->h - y - 1;
@@ -22,7 +22,7 @@ bm_t* bm_new_flip_y(bm_t* bm)
   return tmp;
 }
 
-void bm_write(bm_t* bm, char* path)
+void bm_rgba_write(bm_rgba_t* bm, char* path)
 {
   int w = bm->w;
   int h = bm->h;

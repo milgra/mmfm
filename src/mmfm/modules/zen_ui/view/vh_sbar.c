@@ -53,13 +53,13 @@ void vh_sbar_evt(view_t* view, ev_t ev)
       if (view->frame.local.w >= 1.0 &&
           view->frame.local.h >= 1.0)
       {
-        bm_t* bm = view->texture.bitmap;
+        bm_rgba_t* bm = view->texture.bitmap;
 
         if (bm == NULL ||
             bm->w != (int)view->frame.local.w ||
             bm->h != (int)view->frame.local.h)
         {
-          bm = bm_new((int)view->frame.local.w, (int)view->frame.local.h);
+          bm = bm_rgba_new((int)view->frame.local.w, (int)view->frame.local.h);
           view_set_texture_bmp(view, bm);
         }
 
@@ -68,7 +68,7 @@ void vh_sbar_evt(view_t* view, ev_t ev)
         {
           // dot state
           ratio = (float)vh->step / ((float)vh->steps / 3.0);
-          bm_reset(bm);
+          bm_rgba_reset(bm);
           if (vh->delta > 0) gfx_rect(bm, 0, 0, bm->w, bm->h, 0x00000022, 0);
 
           if (vh->type == SBAR_V)
@@ -87,7 +87,7 @@ void vh_sbar_evt(view_t* view, ev_t ev)
         {
           // bar state
           ratio = (float)(vh->step - vh->steps / 3) / (float)(vh->steps / 3 * 2);
-          bm_reset(bm);
+          bm_rgba_reset(bm);
           if (vh->delta > 0) gfx_rect(bm, 0, 0, bm->w, bm->h, 0x00000022, 0);
 
           float size = vh->size * ratio;
@@ -116,8 +116,8 @@ void vh_sbar_evt(view_t* view, ev_t ev)
       vh->pos += (vh->fpos - vh->pos) / 5.0;
       vh->size += (vh->fsize - vh->size) / 5.0;
 
-      bm_t* bm = view->texture.bitmap;
-      bm_reset(bm);
+      bm_rgba_t* bm = view->texture.bitmap;
+      bm_rgba_reset(bm);
 
       gfx_rect(bm, 0, 0, bm->w, bm->h, 0x00000022, 0);
 

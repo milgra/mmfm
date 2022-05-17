@@ -1,7 +1,7 @@
 #ifndef _zc_texmap_h
 #define _zc_texmap_h
 
-#include "zc_bitmap.c"
+#include "zc_bm_rgba.c"
 #include "zc_map.c"
 #include "zc_mat4.c"
 #include "zc_vec4.c"

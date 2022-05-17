@@ -1,16 +1,16 @@
 #ifndef coder_h
 #define coder_h
 
-#include "zc_bitmap.c"
+#include "zc_bm_rgba.c"
 #include "zc_map.c"
 #include "zc_vector.c"
 
-bm_t* coder_load_image(const char* path);
-void  coder_load_image_into(const char* path, bm_t* bitmap);
-void  coder_load_cover_into(const char* path, bm_t* bitmap);
-int   coder_load_metadata_into(const char* path, map_t* map);
-int   coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* data, vec_t* drop);
-int   coder_write_png(char* path, bm_t* bm);
+bm_rgba_t* coder_load_image(const char* path);
+void       coder_load_image_into(const char* path, bm_rgba_t* bitmap);
+void       coder_load_cover_into(const char* path, bm_rgba_t* bitmap);
+int        coder_load_metadata_into(const char* path, map_t* map);
+int        coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* data, vec_t* drop);
+int        coder_write_png(char* path, bm_rgba_t* bm);
 
 #endif
 
@@ -27,10 +27,10 @@ int   coder_write_png(char* path, bm_t* bm);
 #include "zc_path.c"
 #include <limits.h>
 
-bm_t* coder_load_image(const char* path)
+bm_rgba_t* coder_load_image(const char* path)
 {
-  bm_t* bitmap  = NULL;
-  int   success = 0;
+  bm_rgba_t* bitmap  = NULL;
+  int        success = 0;
 
   AVFormatContext* src_ctx = avformat_alloc_context(); // FREE 0
 
@@ -75,7 +75,7 @@ bm_t* coder_load_image(const char* path)
 
         if (img_convert_ctx != NULL)
         {
-          bitmap = bm_new(frame->width, frame->height); // REL 0
+          bitmap = bm_rgba_new(frame->width, frame->height); // REL 0
 
           uint8_t* scaledpixels[1];
           scaledpixels[0] = malloc(bitmap->w * bitmap->h * 4);
@@ -122,7 +122,7 @@ bm_t* coder_load_image(const char* path)
   return bitmap;
 }
 
-void coder_load_image_into(const char* path, bm_t* bitmap)
+void coder_load_image_into(const char* path, bm_rgba_t* bitmap)
 {
   AVFormatContext* src_ctx = avformat_alloc_context(); // FREE 0
 
@@ -210,7 +210,7 @@ void coder_load_image_into(const char* path, bm_t* bitmap)
   avformat_free_context(src_ctx); // FREE 0
 }
 
-void coder_load_cover_into(const char* path, bm_t* bitmap)
+void coder_load_cover_into(const char* path, bm_rgba_t* bitmap)
 {
   assert(path != NULL);
 
@@ -227,7 +227,7 @@ void coder_load_cover_into(const char* path, bm_t* bitmap)
     printf("avformat_open_input() failed");
   }
 
-  // bm_t* result = NULL;
+  // bm_rgba_t* result = NULL;
 
   // find the first attached picture, if available
   for (i = 0; i < src_ctx->nb_streams; i++)
@@ -761,7 +761,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* dat
     return -1;
 }
 
-int coder_write_png(char* path, bm_t* bm)
+int coder_write_png(char* path, bm_rgba_t* bm)
 {
   int            success;
   const AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_PNG);

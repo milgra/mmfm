@@ -13,7 +13,7 @@
 #define ui_compositor_h
 
 #include "gl_connector.c"
-#include "zc_bitmap.c"
+#include "zc_bm_rgba.c"
 #include "zc_util2.c"
 #include "zc_vec2.c"
 
@@ -37,12 +37,12 @@ void ui_compositor_add(char* id,
                        int   tex_w,
                        int   tex_h); // texture id
 void ui_compositor_upd_pos(int index, r2_t frame, float border);
-char ui_compositor_upd_bmp(int index, r2_t frame, float border, bm_t* bm);
+char ui_compositor_upd_bmp(int index, r2_t frame, float border, bm_rgba_t* bm);
 void ui_compositor_upd_alpha(int index, float alpha);
 void ui_compositor_upd_region(int index, r2_t frame, r2_t region);
 
 void ui_compositor_render(uint32_t time, int width, int height, int wpwr, int hpwr);
-void ui_compositor_render_to_bmp(bm_t* bitmap);
+void ui_compositor_render_to_bmp(bm_rgba_t* bitmap);
 
 #endif
 
@@ -283,7 +283,7 @@ void ui_compositor_upd_alpha(int index, float alpha)
   uic.upd_geo = 1;
 }
 
-char ui_compositor_upd_bmp(int index, r2_t frame, float border, bm_t* bm)
+char ui_compositor_upd_bmp(int index, r2_t frame, float border, bm_rgba_t* bm)
 {
   crect_t* rect = uic.cache->data[index];
 
@@ -416,7 +416,7 @@ void ui_compositor_render(uint32_t time, int width, int height, int tex_w, int t
   /* } */
 }
 
-void ui_compositor_render_to_bmp(bm_t* bm)
+void ui_compositor_render_to_bmp(bm_rgba_t* bm)
 {
   // proxy render_to_bmp to current backend which is opengl right now
   gl_save_framebuffer(bm);

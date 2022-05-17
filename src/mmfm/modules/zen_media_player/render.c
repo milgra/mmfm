@@ -2,11 +2,11 @@
 #ifndef render_h
 #define render_h
 
-#include "zc_bitmap.c"
+#include "zc_bm_rgba.c"
 
-void video_show(void* opaque, int index, int w, int h, bm_t* bitmap, int edge);
-void render_draw_waves(void* opaque, int channel, bm_t* bitmap, int edge);
-void render_draw_rdft(void* opaque, int channel, bm_t* bitmap, int edge);
+void video_show(void* opaque, int index, int w, int h, bm_rgba_t* bitmap, int edge);
+void render_draw_waves(void* opaque, int channel, bm_rgba_t* bitmap, int edge);
+void render_draw_rdft(void* opaque, int channel, bm_rgba_t* bitmap, int edge);
 void video_refresh(void* opaque, double* remaining_time, int index);
 
 #endif
@@ -152,7 +152,7 @@ void check_external_clock_speed(VideoState* is)
   }
 }
 
-static void video_audio_display(VideoState* s, int index, bm_t* bitmap, int edge, enum ShowMode showmode)
+static void video_audio_display(VideoState* s, int index, bm_rgba_t* bitmap, int edge, enum ShowMode showmode)
 {
   int     i, i_start, x, y1, y2, y, ys, delay, n, nb_display_channels;
   int     ch, channels, h, h2;
@@ -342,7 +342,7 @@ uint8_t* scaledpixels[1];
 
 static unsigned sws_flags = SWS_BICUBIC;
 
-static int upload_texture(SDL_Texture** tex, AVFrame* frame, SDL_Rect rect, struct SwsContext** img_convert_ctx, int index, int w, int h, bm_t* bitmap, int edge)
+static int upload_texture(SDL_Texture** tex, AVFrame* frame, SDL_Rect rect, struct SwsContext** img_convert_ctx, int index, int w, int h, bm_rgba_t* bitmap, int edge)
 {
   int ret = 0;
 
@@ -417,7 +417,7 @@ static void calculate_display_rect(SDL_Rect*  rect,
   rect->h = FFMAX((int)height, 1);
 }
 
-static void video_image_display(VideoState* is, int index, int w, int h, bm_t* bitmap, int edge)
+static void video_image_display(VideoState* is, int index, int w, int h, bm_rgba_t* bitmap, int edge)
 {
   Frame*   vp;
   Frame*   sp = NULL;
@@ -539,7 +539,7 @@ static int video_open(VideoState* is)
   return 0;
 }
 
-void video_show(void* opaque, int index, int w, int h, bm_t* bitmap, int edge)
+void video_show(void* opaque, int index, int w, int h, bm_rgba_t* bitmap, int edge)
 {
   VideoState* is = opaque;
 
@@ -568,7 +568,7 @@ void video_show(void* opaque, int index, int w, int h, bm_t* bitmap, int edge)
   }
 }
 
-void render_draw_waves(void* opaque, int index, bm_t* bitmap, int edge)
+void render_draw_waves(void* opaque, int index, bm_rgba_t* bitmap, int edge)
 {
   VideoState* is = opaque;
 
@@ -584,7 +584,7 @@ void render_draw_waves(void* opaque, int index, bm_t* bitmap, int edge)
   }
 }
 
-void render_draw_rdft(void* opaque, int index, bm_t* bitmap, int edge)
+void render_draw_rdft(void* opaque, int index, bm_rgba_t* bitmap, int edge)
 {
   VideoState* is = opaque;
 

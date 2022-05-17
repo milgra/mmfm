@@ -6,9 +6,9 @@
 
 typedef struct _tg_knob_t
 {
-  float angle;
-  bm_t* back;
-  bm_t* fore;
+  float      angle;
+  bm_rgba_t* back;
+  bm_rgba_t* fore;
 } tg_knob_t;
 
 void tg_knob_add(view_t* view);
@@ -28,9 +28,9 @@ void tg_knob_gen(view_t* view)
   {
     if (view->texture.bitmap == NULL && view->frame.local.w > 0 && view->frame.local.h > 0)
     {
-      bm_t* bmp = bm_new(view->frame.local.w, view->frame.local.h); // REL 0
-      tg->back  = bm_new(view->frame.local.w, view->frame.local.h); // REL 1
-      tg->fore  = bm_new(view->frame.local.w, view->frame.local.h); // REL 2
+      bm_rgba_t* bmp = bm_rgba_new(view->frame.local.w, view->frame.local.h); // REL 0
+      tg->back       = bm_rgba_new(view->frame.local.w, view->frame.local.h); // REL 1
+      tg->fore       = bm_rgba_new(view->frame.local.w, view->frame.local.h); // REL 2
 
       /* gfx_arc_grad(tg->back, */
       /*              (view->frame.local.w - 1.0) / 2.0, */

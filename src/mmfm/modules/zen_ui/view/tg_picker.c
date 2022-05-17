@@ -17,7 +17,7 @@ void tg_picker_gen(view_t* view)
   {
     if (view->texture.bitmap == NULL && view->frame.local.w > 0 && view->frame.local.h > 0)
     {
-      bm_t* bmp = bm_new(view->frame.local.w, view->frame.local.h); // REL 0
+      bm_rgba_t* bmp = bm_rgba_new(view->frame.local.w, view->frame.local.h); // REL 0
 
       int r  = 0;
       int g  = 0;

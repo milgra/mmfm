@@ -7,7 +7,7 @@ void ui_visualizer_attach(view_t* baseview);
 void ui_visualizer_detach();
 void ui_visualizer_update();
 void ui_visualizer_update_video();
-void ui_visualizer_show_image(bm_t* bm);
+void ui_visualizer_show_image(bm_rgba_t* bm);
 
 #endif
 
@@ -97,7 +97,7 @@ void ui_visualizer_update_video()
   /* uiv.visuvideo->texture.changed = 1; */
 }
 
-void ui_visualizer_show_image(bm_t* bm)
+void ui_visualizer_show_image(bm_rgba_t* bm)
 {
   if (uiv.visuvideo->texture.bitmap != NULL)
   {

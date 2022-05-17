@@ -5,7 +5,7 @@
 #ifndef player_h
 #define player_h
 
-#include "zc_bitmap.c"
+#include "zc_bm_rgba.c"
 #include "zc_map.c"
 
 void  player_init();
@@ -23,10 +23,10 @@ double player_time();
 double player_volume();
 double player_duration();
 
-void player_draw_video(bm_t* bm, int edge);
+void player_draw_video(bm_rgba_t* bm, int edge);
 void player_draw_video_to_texture(int index, int w, int h);
-void player_draw_waves(int channel, bm_t* bm, int edge);
-void player_draw_rdft(int channel, bm_t* bm, int edge);
+void player_draw_waves(int channel, bm_rgba_t* bm, int edge);
+void player_draw_rdft(int channel, bm_rgba_t* bm, int edge);
 int  player_refresh();
 int  player_finished();
 
@@ -186,7 +186,7 @@ void player_draw_video_to_texture(int index, int w, int h)
   }
 }
 
-void player_draw_video(bm_t* bm, int edge)
+void player_draw_video(bm_rgba_t* bm, int edge)
 {
   if (is != NULL)
   {
@@ -197,7 +197,7 @@ void player_draw_video(bm_t* bm, int edge)
   }
 }
 
-void player_draw_waves(int channel, bm_t* bm, int edge)
+void player_draw_waves(int channel, bm_rgba_t* bm, int edge)
 {
   if (is != NULL)
   {
@@ -208,7 +208,7 @@ void player_draw_waves(int channel, bm_t* bm, int edge)
   }
 }
 
-void player_draw_rdft(int channel, bm_t* bm, int edge)
+void player_draw_rdft(int channel, bm_rgba_t* bm, int edge)
 {
   if (is != NULL)
   {

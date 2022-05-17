@@ -7,13 +7,13 @@
 #define texgen_css_h
 
 #include "view.c"
-#include "zc_bitmap.c"
+#include "zc_bm_rgba.c"
 
 typedef struct _tg_css_t
 {
-  char* id;
-  char* path;
-  bm_t* bitmap;
+  char*      id;
+  char*      path;
+  bm_rgba_t* bitmap;
 } tg_bitmap_t;
 
 void tg_css_add(view_t* view);
@@ -35,13 +35,13 @@ void tg_css_gen(view_t* view)
   {
     if (view->layout.background_image)
     {
-      bm_t* bm = view->texture.bitmap;
+      bm_rgba_t* bm = view->texture.bitmap;
 
       if (bm == NULL ||
           bm->w != (int)view->frame.local.w ||
           bm->h != (int)view->frame.local.h)
       {
-        bm = bm_new((int)view->frame.local.w, (int)view->frame.local.h); // REL 0
+        bm = bm_rgba_new((int)view->frame.local.w, (int)view->frame.local.h); // REL 0
         view_set_texture_bmp(view, bm);
         REL(bm);
       }
@@ -50,7 +50,7 @@ void tg_css_gen(view_t* view)
       view->texture.changed = 0;
       view->texture.state   = TS_READY;
 
-      /* bm_t* bmap = coder_get_image(view->layout.background_image); */
+      /* bm_rgba_t* bmap = coder_get_image(view->layout.background_image); */
       /* view_set_texture_bmp(view, bmap); */
       /* REL(bmap); */
     }
@@ -61,18 +61,18 @@ void tg_css_gen(view_t* view)
       float w = view->frame.local.w + 2 * view->layout.shadow_blur;
       float h = view->frame.local.h + 2 * view->layout.shadow_blur;
 
-      bm_t* bm = view->texture.bitmap;
+      bm_rgba_t* bm = view->texture.bitmap;
 
       if (bm == NULL ||
           bm->w != (int)w ||
           bm->h != (int)h)
       {
-        bm = bm_new((int)w, (int)h); // REL 0
+        bm = bm_rgba_new((int)w, (int)h); // REL 0
         view_set_texture_bmp(view, bm);
         REL(bm);
       }
 
-      bm_reset(bm);
+      bm_rgba_reset(bm);
 
       gfx_rounded_rect(bm,
                        0,

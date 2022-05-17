@@ -13,10 +13,10 @@ void ui_song_infos_show(int index);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "config.c"
-#include "text.c"
 #include "tg_text.c"
 #include "visible.c"
 #include "zc_cstring.c"
+#include "zc_text.c"
 
 struct ui_song_infos_t
 {

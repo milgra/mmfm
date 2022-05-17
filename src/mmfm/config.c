@@ -21,8 +21,8 @@ void  config_set_bool(char* key, int val);
 #include "kvlist.c"
 #include "library.c"
 #include "zc_cstring.c"
-#include "zc_cstrpath.c"
 #include "zc_log.c"
+#include "zc_path.c"
 #include <limits.h>
 
 map_t* confmap;
@@ -66,8 +66,8 @@ void config_read(char* path)
 
 void config_write(char* path)
 {
-  map_t* data    = MNEW();                                    // REL 0
-  char*  dirpath = cstr_new_path_remove_last_component(path); // REL 1
+  map_t* data    = MNEW();                               // REL 0
+  char*  dirpath = path_new_remove_last_component(path); // REL 1
 
   printf("CONFIG DIR %s FILE %s\n", dirpath, path);
 

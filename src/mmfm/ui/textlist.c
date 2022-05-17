@@ -1,8 +1,8 @@
 #ifndef textlist_h
 #define textlist_h
 
-#include "text.c"
 #include "view.c"
+#include "zc_text.c"
 
 typedef struct _textlist_t
 {

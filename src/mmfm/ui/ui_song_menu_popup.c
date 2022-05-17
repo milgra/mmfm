@@ -13,7 +13,6 @@ void ui_song_menu_popup_detach();
 
 #include "config.c"
 #include "library.c"
-#include "text.c"
 #include "tg_text.c"
 #include "ui_decision_popup.c"
 #include "ui_filelist.c"
@@ -22,6 +21,7 @@ void ui_song_menu_popup_detach();
 #include "vh_list.c"
 #include "vh_list_item.c"
 #include "visible.c"
+#include "zc_text.c"
 
 struct ui_song_menu_popup_t
 {

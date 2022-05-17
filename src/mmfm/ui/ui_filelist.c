@@ -476,7 +476,7 @@ view_t* ui_filelist_item_for_index(int index, void* userdata, view_t* listview, 
   else
   {
     uint32_t color1 = (index % 2 == 0) ? 0xEFEFEFFF : 0xE5E5E5FF;
-    uint32_t color2 = (index % 2 == 0) ? 0xE5E5E5FF : 0xEFEFEFFF;
+    // uint32_t color2 = (index % 2 == 0) ? 0xE5E5E5FF : 0xEFEFEFFF;
 
     songitem_update_row(item, index, visible_song_at_index(index), color1);
   }

@@ -103,7 +103,7 @@ void ui_decision_popup_accept(void* userdata, void* data)
   map_t* request = vec_tail(udp.requests);
   if (request)
   {
-    char* text   = MGET(request, "text");
+    // char* text   = MGET(request, "text");
     cb_t* acc_cb = MGET(request, "acc_cb");
 
     if (acc_cb) (*acc_cb->fp)(acc_cb->userdata, NULL);
@@ -118,7 +118,7 @@ void ui_decision_popup_reject(void* userdata, void* data)
   map_t* request = vec_tail(udp.requests);
   if (request)
   {
-    char* text   = MGET(request, "text");
+    // char* text   = MGET(request, "text");
     cb_t* rej_cb = MGET(request, "rej_cb");
 
     if (rej_cb) (*rej_cb->fp)(rej_cb->userdata, NULL);

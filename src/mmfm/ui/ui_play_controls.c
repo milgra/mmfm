@@ -156,7 +156,7 @@ void ui_play_on_play_button_down(view_t* view)
   {
     ui_play_index(0);
   }
-  //ui_toggle_pause();
+  // ui_toggle_pause();
 }
 
 /* void ui_play_on_mute_button_down(view_t* view) */
@@ -234,7 +234,7 @@ void ui_play_update()
 
   /* // update player */
 
-  int finished = player_refresh();
+  // int finished = player_refresh();
   /* if (finished) ui_play_next(); */
 }
 

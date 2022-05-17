@@ -19,8 +19,9 @@ void lib_analyze_files(ch_t* channel, map_t* files);
 #include "coder.c"
 #include "files.c"
 #include "zc_cstring.c"
-#include "zc_cstrpath.c"
 #include "zc_log.c"
+#include "zc_path.c"
+#include <SDL.h>
 #include <errno.h>
 #include <grp.h>
 #include <limits.h>
@@ -200,7 +201,7 @@ int analyzer_thread(void* chptr)
       {
         if (MGET(song, "meta/artist") == NULL) MPUTR(song, "meta/artist", cstr_new_cstring("Unknown"));
         if (MGET(song, "meta/album") == NULL) MPUTR(song, "meta/album", cstr_new_cstring("Unknown"));
-        if (MGET(song, "meta/title") == NULL) MPUTR(song, "meta/title", cstr_new_path_filename(path));
+        if (MGET(song, "meta/title") == NULL) MPUTR(song, "meta/title", path_new_filename(path));
 
         // try to send it to main thread
         if (ch_send(channel, song)) song = NULL;

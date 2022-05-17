@@ -5,20 +5,16 @@
 
 typedef enum
 {
-    ZC_LOG_DEBUG = 0,
-    ZC_LOG_INFO  = 1,
-    ZC_LOG_WARN  = 2,
-    ZC_LOG_ERROR = 3,
+  ZC_LOG_DEBUG = 0,
+  ZC_LOG_INFO  = 1,
+  ZC_LOG_WARN  = 2,
+  ZC_LOG_ERROR = 3,
 } zc_log_importance;
 
 void zc_log(zc_log_importance importance, const char* file, int line, const char* fmt, ...);
-
 void zc_log_set_level(zc_log_importance importance);
-
-int zc_log_get_level();
-
+int  zc_log_get_level();
 void zc_log_inc_verbosity(void);
-
 void zc_log_use_colors(bool use_colors);
 
 #define zc_log_debug(...) zc_log(ZC_LOG_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
@@ -85,70 +81,68 @@ static const char* verbosity_colors[] = {
 
 void zc_log(const zc_log_importance importance, const char* file, const int line, const char* fmt, ...)
 {
-    if (importance < min_importance_to_log)
-    {
-	return;
-    }
+  if (importance < min_importance_to_log)
+  {
+    return;
+  }
 
-    struct timespec ts;
-    if (clock_gettime(CLOCK_REALTIME, &ts) != 0)
-    {
-	fprintf(stderr, "clock_gettime() failed: %s\n", strerror(errno));
-	ts.tv_sec  = 0;
-	ts.tv_nsec = 0;
-    }
+  struct timespec ts;
+  if (clock_gettime(CLOCK_REALTIME, &ts) != 0)
+  {
+    fprintf(stderr, "clock_gettime() failed: %s\n", strerror(errno));
+    ts.tv_sec  = 0;
+    ts.tv_nsec = 0;
+  }
 
-    // formatting time via localtime() requires open syscall (to read /etc/localtime)
-    // and that is problematic with seccomp rules in place
-    if (use_colors)
-    {
-	fprintf(
-	    stderr,
-	    "%jd.%06ld %s%-5s%s %s%s:%d:%s ",
-	    (intmax_t) ts.tv_sec,
-	    ts.tv_nsec / 1000,
-	    verbosity_colors[importance],
-	    verbosity_names[importance],
-	    COLOR_RESET,
-	    COLOR_LIGHT_GRAY,
-	    file,
-	    line,
-	    COLOR_RESET);
-    }
-    else
-    {
-	fprintf(stderr, "%jd.%06ld %s %s:%d: ", (intmax_t) ts.tv_sec, ts.tv_nsec / 1000, verbosity_names[importance], file, line);
-    }
+  if (use_colors)
+  {
+    fprintf(
+        stderr,
+        "%jd.%06ld %s%-5s%s %s%s:%d:%s ",
+        (intmax_t)ts.tv_sec,
+        ts.tv_nsec / 1000,
+        verbosity_colors[importance],
+        verbosity_names[importance],
+        COLOR_RESET,
+        COLOR_LIGHT_GRAY,
+        file,
+        line,
+        COLOR_RESET);
+  }
+  else
+  {
+    fprintf(stderr, "%jd.%06ld %s %s:%d: ", (intmax_t)ts.tv_sec, ts.tv_nsec / 1000, verbosity_names[importance], file, line);
+  }
 
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-    fprintf(stderr, "\n");
+  va_list args;
+  va_start(args, fmt);
+  vfprintf(stderr, fmt, args);
+  va_end(args);
+  fprintf(stderr, "\n");
 }
 
 void zc_log_set_level(const zc_log_importance importance)
 {
-    min_importance_to_log = importance;
+  min_importance_to_log = importance;
 }
 
 void zc_log_use_colors(const bool colors)
 {
-    use_colors = colors;
+  use_colors = colors;
 }
 
 void zc_log_inc_verbosity(void)
 {
-    if (min_importance_to_log != ZC_LOG_DEBUG)
-    {
-	min_importance_to_log -= 1;
-	zc_log_debug("Set log level to %s", verbosity_names[min_importance_to_log]);
-    }
+  if (min_importance_to_log != ZC_LOG_DEBUG)
+  {
+    min_importance_to_log -= 1;
+    zc_log_debug("Set log level to %s", verbosity_names[min_importance_to_log]);
+  }
 }
 
 int zc_log_get_level()
 {
-    return min_importance_to_log;
+  return min_importance_to_log;
 }
 
 #endif

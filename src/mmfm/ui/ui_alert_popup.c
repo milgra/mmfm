@@ -13,10 +13,10 @@ void ui_alert_popup_show(char* text);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "config.c"
-#include "text.c"
 #include "tg_text.c"
 #include "ui_popup_switcher.c"
 #include "vh_button.c"
+#include "zc_text.c"
 #include "zc_vector.c"
 
 void ui_alert_popup_accept(void* userdata, void* data);

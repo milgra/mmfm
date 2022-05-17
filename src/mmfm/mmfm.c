@@ -1,3 +1,4 @@
+#include "bm_util.c"
 #include "callbacks.c"
 #include "coder.c"
 #include "config.c"
@@ -21,9 +22,9 @@
 #include "zc_callback.c"
 #include "zc_channel.c"
 #include "zc_cstring.c"
-#include "zc_cstrpath.c"
 #include "zc_log.c"
 #include "zc_map.c"
+#include "zc_path.c"
 #include "zc_string.c"
 #include <SDL.h>
 #include <getopt.h>
@@ -236,20 +237,20 @@ void init(int width, int height, char* path)
     perror("getcwd() error");
   }
 
-  char* top_path = cstr_new_path_normalize(cwd, NULL);
-  char* wrk_path = cstr_new_path_normalize(path, NULL); // REL 0
+  char* top_path = path_new_normalize(cwd, NULL);
+  char* wrk_path = path_new_normalize(path, NULL); // REL 0
 #ifdef __linux__
-  char* res_path = zm.res_par ? cstr_new_path_normalize(zm.res_par, wrk_path) : cstr_new_cstring("/usr/share/zenmedia"); // REL 1
+  char* res_path = zm.res_par ? path_new_normalize(zm.res_par, wrk_path) : cstr_new_cstring("/usr/share/zenmedia"); // REL 1
 #else
-  char* res_path = zm.res_par ? cstr_new_path_normalize(zm.res_par, wrk_path) : cstr_new_cstring("/usr/local/share/zenmedia"); // REL 1
+  char* res_path = zm.res_par ? path_new_normalize(zm.res_par, wrk_path) : cstr_new_cstring("/usr/local/share/zenmedia"); // REL 1
 #endif
-  char* cfgdir_path = zm.cfg_par ? cstr_new_path_normalize(zm.cfg_par, wrk_path) : cstr_new_path_normalize("~/.config/zenmedia", getenv("HOME")); // REL 2
-  char* css_path    = cstr_new_path_append(res_path, "main.css");                                                                                 // REL 3
-  char* html_path   = cstr_new_path_append(res_path, "main.html");                                                                                // REL 4
-  char* font_path   = cstr_new_path_append(res_path, "Baloo.ttf");                                                                                // REL 5
-  char* cfg_path    = cstr_new_path_append(cfgdir_path, "config.kvl");                                                                            // REL 6
-  char* rec_path    = zm.rec_par ? cstr_new_path_normalize(zm.rec_par, wrk_path) : NULL;                                                          // REL 7
-  char* rep_path    = zm.rep_par ? cstr_new_path_normalize(zm.rep_par, wrk_path) : NULL;                                                          // REL 8
+  char* cfgdir_path = zm.cfg_par ? path_new_normalize(zm.cfg_par, wrk_path) : path_new_normalize("~/.config/zenmedia", getenv("HOME")); // REL 2
+  char* css_path    = path_new_append(res_path, "main.css");                                                                            // REL 3
+  char* html_path   = path_new_append(res_path, "main.html");                                                                           // REL 4
+  char* font_path   = path_new_append(res_path, "Baloo.ttf");                                                                           // REL 5
+  char* cfg_path    = path_new_append(cfgdir_path, "config.kvl");                                                                       // REL 6
+  char* rec_path    = zm.rec_par ? path_new_normalize(zm.rec_par, wrk_path) : NULL;                                                     // REL 7
+  char* rep_path    = zm.rep_par ? path_new_normalize(zm.rep_par, wrk_path) : NULL;                                                     // REL 8
 
   // print path info to console
 
@@ -437,9 +438,9 @@ void save_screenshot(uint32_t time)
 
     ui_compositor_render_to_bmp(screen);
 
-    char* name    = cstr_new_format(20, "screenshot%.3i.png", cnt++);   // REL 1
-    char* path    = cstr_new_path_append(config_get("lib_path"), name); // REL 2
-    bm_t* flipped = bm_new_flip_y(screen);                              // REL 3
+    char* name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1
+    char* path    = path_new_append(config_get("lib_path"), name);    // REL 2
+    bm_t* flipped = bm_new_flip_y(screen);                            // REL 3
 
     coder_write_png(path, flipped);
 

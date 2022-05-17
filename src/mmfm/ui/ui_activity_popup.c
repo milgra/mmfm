@@ -1,8 +1,8 @@
 #ifndef ui_activity_popup_h
 #define ui_activity_popup_h
 
-#include "text.c"
 #include "view.c"
+#include "zc_text.c"
 
 void ui_activity_popup_attach(view_t* baseview);
 void ui_activity_popup_detach();

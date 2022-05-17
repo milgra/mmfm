@@ -136,7 +136,7 @@ void ui_inputfield_popup_accept(void* userdata, void* data)
   map_t* request = vec_tail(uip.requests);
   if (request)
   {
-    char* text   = MGET(request, "text");
+    // char* text   = MGET(request, "text");
     cb_t* acc_cb = MGET(request, "acc_cb");
 
     str_t* inputstr = vh_textinput_scroller_get_text(uip.textinput);
@@ -153,7 +153,7 @@ void ui_inputfield_popup_reject(void* userdata, void* data)
   map_t* request = vec_tail(uip.requests);
   if (request)
   {
-    char* text   = MGET(request, "text");
+    // char* text   = MGET(request, "text");
     cb_t* rej_cb = MGET(request, "rej_cb");
 
     if (rej_cb) (*rej_cb->fp)(rej_cb->userdata, NULL);

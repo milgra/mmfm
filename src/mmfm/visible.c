@@ -22,6 +22,7 @@ void visible_set_filter(char* text);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "cstr_util.c"
 #include "utf8.h"
 #include "zc_cstring.c"
 

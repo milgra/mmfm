@@ -48,9 +48,9 @@ void ui_popup_switcher_attach(view_t* baseview)
   {
     char* name = ups.popup_names->data[index];
 
-    view_t* page_view  = view_get_subview(ups.baseview, name);
-    view_t* btn_view   = page_view->views->data[0];
-    view_t* popup_view = btn_view->views->data[0];
+    view_t* page_view = view_get_subview(ups.baseview, name);
+    view_t* btn_view  = page_view->views->data[0];
+    // view_t* popup_view = btn_view->views->data[0];
 
     vh_anim_add(page_view);
     vh_anim_set_event(page_view, page_view, ui_popup_switcher_remove);

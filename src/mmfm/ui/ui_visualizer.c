@@ -18,7 +18,7 @@ void ui_visualizer_show_image(bm_t* bm);
 #include "vh_button.c"
 #include "vh_roll.c"
 #include "zc_callback.c"
-#include "zc_graphics.c"
+#include "zc_draw.c"
 
 struct vizualizer_t
 {

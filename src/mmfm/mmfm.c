@@ -177,10 +177,27 @@ void renderpdf(char* filename)
 
 int main(int argc, char* argv[])
 {
-  printf("Zen Music v%s beta by Milan Toth\n", MMFM_VERSION);
+  printf("MultiMedia File Manager v" MMFM_VERSION " by Milan Toth ( www.milgra.com )\n");
+
+  zc_log_use_colors(isatty(STDERR_FILENO));
+  zc_log_level_info();
+
+  const char* usage =
+      "Usage: sov [options]\n"
+      "\n"
+      "  -h, --help                          Show help message and quit.\n"
+      "  -v                                  Increase verbosity of messages, defaults to errors and warnings only.\n"
+      "  -c --config= [config file] \t use config file for session\n"
+      "  -r --resources= [resources folder] \t use resources dir for session\n"
+      "  -s --record= [recorder file] \t record session to file\n"
+      "  -p --replay= [recorder file] \t replay session from file\n"
+      "  -f --frame= [widthxheight] \t initial window dimension\n"
+      "\n";
 
   const struct option long_options[] =
       {
+          {"help", no_argument, NULL, 'h'},
+          {"verbose", no_argument, NULL, 'v'},
           {"resources", optional_argument, 0, 'r'},
           {"record", optional_argument, 0, 's'},
           {"replay", optional_argument, 0, 'p'},
@@ -192,21 +209,17 @@ int main(int argc, char* argv[])
   int option       = 0;
   int option_index = 0;
 
-  while ((option = getopt_long(argc, argv, "r:s:p:c:f:", long_options, &option_index)) != -1)
+  while ((option = getopt_long(argc, argv, "vhr:s:p:c:f:", long_options, &option_index)) != -1)
   {
-    if (option != '?') printf("parsing option %c value: %s\n", option, optarg);
-    if (option == 'c') zm.cfg_par = cstr_new_cstring(optarg); // REL 0
-    if (option == 'r') zm.res_par = cstr_new_cstring(optarg); // REL 1
-    if (option == 's') zm.rec_par = cstr_new_cstring(optarg); // REL 2
-    if (option == 'p') zm.rep_par = cstr_new_cstring(optarg); // REL 3
-    if (option == 'f') zm.frm_par = cstr_new_cstring(optarg); // REL 4
-    if (option == '?')
+    switch (option)
     {
-      printf("-c --config= [config file] \t use config file for session\n");
-      printf("-r --resources= [resources folder] \t use resources dir for session\n");
-      printf("-s --record= [recorder file] \t record session to file\n");
-      printf("-p --replay= [recorder file] \t replay session from file\n");
-      printf("-f --frame= [widthxheight] \t initial window dimension\n");
+    case '?': printf("parsing option %c value: %s\n", option, optarg); break;
+    case 'c': zm.cfg_par = cstr_new_cstring(optarg); break; // REL 0
+    case 'r': zm.res_par = cstr_new_cstring(optarg); break; // REL 1
+    case 's': zm.rec_par = cstr_new_cstring(optarg); break; // REL 2
+    case 'p': zm.rep_par = cstr_new_cstring(optarg); break; // REL 3
+    case 'f': zm.frm_par = cstr_new_cstring(optarg); break; // REL 4
+    default: fprintf(stderr, "%s", usage); return EXIT_FAILURE;
     }
   }
 

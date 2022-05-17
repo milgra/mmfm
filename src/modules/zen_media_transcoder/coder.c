@@ -416,14 +416,14 @@ int coder_load_metadata_into(const char* path, map_t* map)
     }
     else
     {
-      LOG("coder : skpping %s, no media context present", path);
+      zc_log_info("coder : skpping %s, no media context present", path);
     }
 
     avformat_close_input(&pFormatCtx); // CLOSE 0
   }
   else
   {
-    LOG("coder : skipping %s, probably not a media file", path);
+    zc_log_info("coder : skipping %s, probably not a media file", path);
   }
 
   avformat_free_context(pFormatCtx); // FREE 0
@@ -433,7 +433,7 @@ int coder_load_metadata_into(const char* path, map_t* map)
 
 int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* data, vec_t* drop)
 {
-  LOG("coder_write_metadata for %s cover %s\n", path, cover_path);
+  zc_log_info("coder_write_metadata for %s cover %s\n", path, cover_path);
 
   int success = 0; // indicate that everything went well after closing the avio channel
 

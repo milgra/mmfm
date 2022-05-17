@@ -56,7 +56,7 @@ void lib_read_files(char* lib_path, map_t* files)
 
   MPUT(files, "..", parent); // use relative path as path
 
-  LOG("lib : scanned, files : %i", files->count);
+  zc_log_info("lib : scanned, files : %i", files->count);
 }
 
 static int lib_file_data_step(const char* fpath, const struct stat* sb, int tflag, struct FTW* ftwinfo)
@@ -120,16 +120,16 @@ void lib_delete_file(char* lib_path, map_t* entry)
 
   int error = remove(file_path);
   if (error)
-    LOG("lib : cannot remove file %s : %s", file_path, strerror(errno));
+    zc_log_error("lib : cannot remove file %s : %s", file_path, strerror(errno));
   else
-    LOG("lib : file %s removed.", file_path);
+    zc_log_error("lib : file %s removed.", file_path);
 
   REL(file_path); // REL 0
 }
 
 int lib_rename_file(char* old_path, char* new_path, char* new_dirs)
 {
-  LOG("lib : renaming %s to %s", old_path, new_path);
+  zc_log_info("lib : renaming %s to %s", old_path, new_path);
 
   int error = files_mkpath(new_dirs, 0777);
 
@@ -190,7 +190,7 @@ int analyzer_thread(void* chptr)
 
       char* real = cstr_new_format(PATH_MAX + NAME_MAX, "%s/%s", lib.path, path); // REL 1
 
-      LOG("lib : analyzing %s", real);
+      zc_log_info("lib : analyzing %s", real);
 
       // read and add file and meta data
 
@@ -231,7 +231,7 @@ int analyzer_thread(void* chptr)
     if (ratio != ratio_new)
     {
       ratio = ratio_new;
-      LOG("lib : analyzer progress : %i%%", ratio);
+      zc_log_info("lib : analyzer progress : %i%%", ratio);
     }
   }
 

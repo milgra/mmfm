@@ -46,7 +46,7 @@ void callbacks_call(char* id, void* data)
   if (cb)
     (*cb->fp)(cb->userdata, data);
   else
-    LOG("ERROR callback %s doesn't exist", id);
+    zc_log_error("ERROR callback %s doesn't exist", id);
 }
 
 map_t* callbacks_get_data()

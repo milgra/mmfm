@@ -15,12 +15,6 @@ rt = cc.find_library('rt')
 gl = cc.find_library('GL')
 glew = cc.find_library('GLEW')
 sdl2 = cc.find_library('SDL2')
-avutil = cc.find_library('avutil')
-avcodec = cc.find_library('avcodec')
-avdevice = cc.find_library('avdevice')
-avformat = cc.find_library('avformat')
-avfilter = cc.find_library('avfilter')
-swresample = cc.find_library('swresample')
 swscale = cc.find_library('swscale')
 pthread = cc.find_library('pthread')
 jpeg = cc.find_library('jpeg')
@@ -28,6 +22,12 @@ jbig = cc.find_library('jbig2dec')
 ojpeg = cc.find_library('openjp2')
 hb = cc.find_library('harfbuzz')
 gumbo = cc.find_library('gumbo')
+avutil = cc.find_library('avutil')
+avcodec = cc.find_library('avcodec')
+avdevice = cc.find_library('avdevice')
+avformat = cc.find_library('avformat')
+avfilter = cc.find_library('avfilter')
+swresample = cc.find_library('swresample')
 
 libdir = meson.current_source_dir() + './lib/'
 
@@ -54,7 +54,7 @@ mmfm_inc = include_directories(
 	'src/modules/zen_ui',
 	'src/modules/zen_ui/gl',
 	'src/modules/zen_ui/view',
-	'src/modules/zen_ui/text',
+	'src/modules/zen_text',
 	'src/modules/zen_ui/html',
 	'src/mmfm',
 	'src/mmfm/ui',
@@ -105,6 +105,7 @@ com_sources = ['src/mmfm/ui/column.c',
 	       'src/modules/zen_core/zc_strutil.c',
 	       'src/modules/zen_core/zc_texmap.c',
 	       'src/modules/zen_core/zc_vector.c',
+	       'src/modules/zen_core/zc_wrapper.c',
 
 	       'src/modules/zen_math/zm_math2.c',
 	       'src/modules/zen_math/zm_math3.c',
@@ -131,7 +132,7 @@ com_sources = ['src/mmfm/ui/column.c',
 	       'src/modules/zen_ui/gl/gl_floatbuffer.c',
 	       'src/modules/zen_ui/gl/gl_shader.c',
 	       'src/modules/zen_ui/html/html.c',
-	       'src/modules/zen_ui/text/text.c',
+	       'src/modules/zen_text/text.c',
 	       'src/modules/zen_ui/view/tg_css.c',
 	       'src/modules/zen_ui/view/tg_knob.c',
 	       'src/modules/zen_ui/view/tg_picker.c',

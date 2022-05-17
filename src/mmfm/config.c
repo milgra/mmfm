@@ -80,12 +80,12 @@ void config_write(char* path)
   {
     int res = kvlist_write(path, data);
     if (res < 0)
-      LOG("ERROR config_write cannot write config\n");
+      zc_log_error("ERROR config_write cannot write config\n");
     else
-      LOG("config written");
+      zc_log_info("config written");
   }
   else
-    LOG("ERROR config_write cannot create config path\n");
+    zc_log_error("ERROR config_write cannot create config path\n");
 
   REL(dirpath); // REL 1
   REL(data);    // REL 0

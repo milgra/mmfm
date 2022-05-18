@@ -5,40 +5,28 @@
 #include "evrecorder.c"
 #include "files.c"
 #include "library.c"
+#include "pdf.c"
 #include "player.c"
 #include "tg_css.c"
 #include "ui.c"
 #include "ui_compositor.c"
 #include "ui_filelist.c"
-#include "ui_filter_bar.c"
-#include "ui_lib_init_popup.c"
 #include "ui_manager.c"
 #include "ui_play_controls.c"
-#include "ui_song_infos.c"
 #include "ui_visualizer.c"
 #include "visible.c"
 #include "wm_connector.c"
-#include "wm_event.c"
-#include "zc_callback.c"
-#include "zc_channel.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_map.c"
 #include "zc_path.c"
-#include "zc_string.c"
 #include <SDL.h>
 #include <getopt.h>
 #include <limits.h>
-#include <mupdf/fitz.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-
-void init(int width, int height, char* path);
-void update(ev_t ev);
-void render(uint32_t time);
-void destroy();
 
 void load_directory();
 void update_player();
@@ -51,187 +39,14 @@ struct
 
   char* rec_par; // record parameter
   char* rep_par; // replay parameter
-
   char* frm_par; // frame parameter
 
   view_t* rep_cur; // replay cursor
-
-  bm_rgba_t* pdfbmp;
 } zm = {0};
-
-void renderpdf(char* filename)
-{
-  char*        input;
-  float        zoom, rotate;
-  int          page_number, page_count;
-  fz_context*  ctx;
-  fz_document* doc;
-  fz_pixmap*   pix;
-  fz_matrix    ctm;
-  int          x, y;
-
-  /* if (argc < 3) */
-  /* { */
-  /*   fprintf(stderr, "usage: example input-file page-number [ zoom [ rotate ] ]\n"); */
-  /*   fprintf(stderr, "\tinput-file: path of PDF, XPS, CBZ or EPUB document to open\n"); */
-  /*   fprintf(stderr, "\tPage numbering starts from one.\n"); */
-  /*   fprintf(stderr, "\tZoom level is in percent (100 percent is 72 dpi).\n"); */
-  /*   fprintf(stderr, "\tRotation is in degrees clockwise.\n"); */
-  /*   return EXIT_FAILURE; */
-  /* } */
-
-  input       = filename;
-  page_number = 0;
-  zoom        = 100.0;
-  rotate      = 0.0;
-
-  /* Create a context to hold the exception stack and various caches. */
-  ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
-  if (!ctx)
-  {
-    fprintf(stderr, "cannot create mupdf context\n");
-  }
-
-  /* Register the default file types to handle. */
-  fz_try(ctx)
-      fz_register_document_handlers(ctx);
-  fz_catch(ctx)
-  {
-    fprintf(stderr, "cannot register document handlers: %s\n", fz_caught_message(ctx));
-    fz_drop_context(ctx);
-  }
-
-  /* Open the document. */
-  fz_try(ctx)
-      doc = fz_open_document(ctx, input);
-  fz_catch(ctx)
-  {
-    fprintf(stderr, "cannot open document: %s\n", fz_caught_message(ctx));
-    fz_drop_context(ctx);
-  }
-
-  /* Count the number of pages. */
-  fz_try(ctx)
-      page_count = fz_count_pages(ctx, doc);
-  fz_catch(ctx)
-  {
-    fprintf(stderr, "cannot count number of pages: %s\n", fz_caught_message(ctx));
-    fz_drop_document(ctx, doc);
-    fz_drop_context(ctx);
-  }
-
-  if (page_number < 0 || page_number >= page_count)
-  {
-    fprintf(stderr, "page number out of range: %d (page count %d)\n", page_number + 1, page_count);
-    fz_drop_document(ctx, doc);
-    fz_drop_context(ctx);
-  }
-
-  /* Compute a transformation matrix for the zoom and rotation desired. */
-  /* The default resolution without scaling is 72 dpi. */
-  ctm = fz_scale(zoom / 100, zoom / 100);
-  ctm = fz_pre_rotate(ctm, rotate);
-
-  /* Render page to an RGB pixmap. */
-  fz_try(ctx)
-      pix = fz_new_pixmap_from_page_number(ctx, doc, page_number, ctm, fz_device_rgb(ctx), 0);
-  fz_catch(ctx)
-  {
-    fprintf(stderr, "cannot render page: %s\n", fz_caught_message(ctx));
-    fz_drop_document(ctx, doc);
-    fz_drop_context(ctx);
-  }
-
-  /* Print image data in ascii PPM format. */
-  printf("P3\n");
-  printf("w %d h %d s %td\n", pix->w, pix->h, pix->stride);
-  printf("255\n");
-
-  zm.pdfbmp     = bm_rgba_new(pix->w, pix->h);
-  uint8_t* data = zm.pdfbmp->data;
-
-  for (y = 0; y < pix->h; ++y)
-  {
-    unsigned char* p = &pix->samples[y * pix->stride];
-    for (x = 0; x < pix->w; ++x)
-    {
-      data[0] = p[0];
-      data[1] = p[1];
-      data[2] = p[2];
-      data[3] = 255;
-      data += 4;
-      /* if (x > 0) */
-      /*   printf("  "); */
-      /* if (p[0] < 255) */
-      /*   printf("%3d %3d %3d", p[0], p[1], p[2]); */
-      p += pix->n;
-    }
-    // printf("\n");
-  }
-
-  /* Clean up. */
-  fz_drop_pixmap(ctx, pix);
-  fz_drop_document(ctx, doc);
-  fz_drop_context(ctx);
-}
-
-int main(int argc, char* argv[])
-{
-  printf("MultiMedia File Manager v" MMFM_VERSION " by Milan Toth ( www.milgra.com )\n");
-
-  zc_log_use_colors(isatty(STDERR_FILENO));
-  zc_log_level_info();
-
-  const char* usage =
-      "Usage: sov [options]\n"
-      "\n"
-      "  -h, --help                          Show help message and quit.\n"
-      "  -v                                  Increase verbosity of messages, defaults to errors and warnings only.\n"
-      "  -c --config= [config file] \t use config file for session\n"
-      "  -r --resources= [resources folder] \t use resources dir for session\n"
-      "  -s --record= [recorder file] \t record session to file\n"
-      "  -p --replay= [recorder file] \t replay session from file\n"
-      "  -f --frame= [widthxheight] \t initial window dimension\n"
-      "\n";
-
-  const struct option long_options[] =
-      {
-          {"help", no_argument, NULL, 'h'},
-          {"verbose", no_argument, NULL, 'v'},
-          {"resources", optional_argument, 0, 'r'},
-          {"record", optional_argument, 0, 's'},
-          {"replay", optional_argument, 0, 'p'},
-          {"config", optional_argument, 0, 'c'},
-          {"frame", optional_argument, 0, 'f'},
-          {0, 0, 0, 0},
-      };
-
-  int option       = 0;
-  int option_index = 0;
-
-  while ((option = getopt_long(argc, argv, "vhr:s:p:c:f:", long_options, &option_index)) != -1)
-  {
-    switch (option)
-    {
-    case '?': printf("parsing option %c value: %s\n", option, optarg); break;
-    case 'c': zm.cfg_par = cstr_new_cstring(optarg); break; // REL 0
-    case 'r': zm.res_par = cstr_new_cstring(optarg); break; // REL 1
-    case 's': zm.rec_par = cstr_new_cstring(optarg); break; // REL 2
-    case 'p': zm.rep_par = cstr_new_cstring(optarg); break; // REL 3
-    case 'f': zm.frm_par = cstr_new_cstring(optarg); break; // REL 4
-    default: fprintf(stderr, "%s", usage); return EXIT_FAILURE;
-    }
-  }
-
-  wm_init(init, update, render, destroy, zm.frm_par); // destroy 0
-  return 0;
-}
 
 void init(int width, int height, char* path)
 {
   srand((unsigned int)time(NULL));
-
-  renderpdf("/home/milgra/Projects/mmfm/ajanlat.pdf");
 
   config_init();    // destroy 2
   player_init();    // destroy 3
@@ -339,7 +154,8 @@ void update(ev_t ev)
   if (ev.type == EV_TIME)
   {
     ui_play_update();
-    ui_visualizer_show_image(zm.pdfbmp); // show pdf
+    // if (!zm.pdfbmp) zm.pdfbmp = pdf_render("/home/milgra/Projects/mmfm/ajanlat.pdf");
+    // ui_visualizer_show_image(zm.pdfbmp); // show pdf
 
     if (zm.rep_par)
     {
@@ -464,4 +280,54 @@ void save_screenshot(uint32_t time)
 
     if (zm.rep_par) view_set_frame(zm.rep_cur, frame); // full screen cursor to indicate screenshot
   }
+}
+
+int main(int argc, char* argv[])
+{
+  printf("MultiMedia File Manager v" MMFM_VERSION " by Milan Toth ( www.milgra.com )\n");
+
+  zc_log_use_colors(isatty(STDERR_FILENO));
+  zc_log_level_info();
+
+  const char* usage =
+      "Usage: sov [options]\n"
+      "\n"
+      "  -h, --help                          Show help message and quit.\n"
+      "  -v                                  Increase verbosity of messages, defaults to errors and warnings only.\n"
+      "  -c --config= [config file] \t use config file for session\n"
+      "  -r --resources= [resources folder] \t use resources dir for session\n"
+      "  -s --record= [recorder file] \t record session to file\n"
+      "  -p --replay= [recorder file] \t replay session from file\n"
+      "  -f --frame= [widthxheight] \t initial window dimension\n"
+      "\n";
+
+  const struct option long_options[] =
+      {
+          {"help", no_argument, NULL, 'h'},
+          {"verbose", no_argument, NULL, 'v'},
+          {"resources", optional_argument, 0, 'r'},
+          {"record", optional_argument, 0, 's'},
+          {"replay", optional_argument, 0, 'p'},
+          {"config", optional_argument, 0, 'c'},
+          {"frame", optional_argument, 0, 'f'}};
+
+  int option       = 0;
+  int option_index = 0;
+
+  while ((option = getopt_long(argc, argv, "vhr:s:p:c:f:", long_options, &option_index)) != -1)
+  {
+    switch (option)
+    {
+    case '?': printf("parsing option %c value: %s\n", option, optarg); break;
+    case 'c': zm.cfg_par = cstr_new_cstring(optarg); break; // REL 0
+    case 'r': zm.res_par = cstr_new_cstring(optarg); break; // REL 1
+    case 's': zm.rec_par = cstr_new_cstring(optarg); break; // REL 2
+    case 'p': zm.rep_par = cstr_new_cstring(optarg); break; // REL 3
+    case 'f': zm.frm_par = cstr_new_cstring(optarg); break; // REL 4
+    default: fprintf(stderr, "%s", usage); return EXIT_FAILURE;
+    }
+  }
+
+  wm_init(init, update, render, destroy, zm.frm_par); // destroy 0
+  return 0;
 }

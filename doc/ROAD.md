@@ -1,5 +1,15 @@
 # Zen Media development roadmap
 
+scrollable file list
+show content on file select
+
+
+
+
+
+
+
+
 
 **near future**
 

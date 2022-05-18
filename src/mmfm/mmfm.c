@@ -97,26 +97,23 @@ void save_screenshot(uint32_t time)
 
 void init(int width, int height)
 {
-  player_init();    // destroy 3
-  visible_init();   // destroy 4
-  callbacks_init(); // destroy 5
+  player_init();          // destroy 0
+  visible_init();         // destroy 1
+  callbacks_init();       // destroy 2
+  ui_init(width, height); // destroy 3
 
-  // init recording/playing
+  if (mmfm.record)
+  {
+    evrec_init_recorder(config_get("rec_path")); // destroy 4
+  }
 
-  if (mmfm.record) evrec_init_recorder(config_get("rec_path")); // destroy 6
-  if (mmfm.replay) evrec_init_player(config_get("rep_path"));   // destroy 7
-
-  // load ui from descriptors
-
-  ui_init(width, height); // destroy 8
-
-  // load current directoru
+  if (mmfm.replay)
+  {
+    evrec_init_player(config_get("rep_path")); // destroy 5
+    ui_add_cursor();
+  }
 
   load_directory();
-
-  // init cursor if replay
-
-  if (mmfm.replay) ui_add_cursor();
 }
 
 void update(ev_t ev)
@@ -162,13 +159,13 @@ void render(uint32_t time)
 
 void destroy()
 {
-  if (mmfm.replay) evrec_destroy(); // destroy 7
-  if (mmfm.record) evrec_destroy(); // destroy 6
-  callbacks_destroy();              // destroy 5
-  visible_destroy();                // destroy 4
-  player_destroy();                 // destroy 3
+  if (mmfm.replay) evrec_destroy(); // destroy 5
+  if (mmfm.record) evrec_destroy(); // destroy 4
 
-  ui_destroy(); // destroy 8
+  ui_destroy();        // destroy 3
+  callbacks_destroy(); // destroy 2
+  visible_destroy();   // destroy 1
+  player_destroy();    // destroy 0
 
 #ifdef DEBUG
   mem_stats();
@@ -177,6 +174,9 @@ void destroy()
 
 int main(int argc, char* argv[])
 {
+  zc_log_use_colors(isatty(STDERR_FILENO));
+  zc_log_level_info();
+
   printf("MultiMedia File Manager v" MMFM_VERSION " by Milan Toth ( www.milgra.com )\n");
 
   const char* usage =
@@ -228,9 +228,6 @@ int main(int argc, char* argv[])
   if (rec_par) mmfm.record = 1;
   if (rep_par) mmfm.replay = 1;
 
-  zc_log_use_colors(isatty(STDERR_FILENO));
-  zc_log_level_info();
-
   srand((unsigned int)time(NULL));
 
   char cwd[PATH_MAX] = {"~"};
@@ -249,15 +246,15 @@ int main(int argc, char* argv[])
 
   // print path info to console
 
-  zc_log_debug("top path  : %s\n", top_path);
-  zc_log_debug("working path  : %s\n", wrk_path);
-  zc_log_debug("resource path : %s\n", res_path);
-  zc_log_debug("config path   : %s\n", cfg_path);
-  zc_log_debug("css path      : %s\n", css_path);
-  zc_log_debug("html path     : %s\n", html_path);
-  zc_log_debug("font path     : %s\n", font_path);
-  zc_log_debug("record path   : %s\n", rec_path);
-  zc_log_debug("replay path   : %s\n", rep_path);
+  zc_log_debug("top path      : %s", top_path);
+  zc_log_debug("working path  : %s", wrk_path);
+  zc_log_debug("resource path : %s", res_path);
+  zc_log_debug("config path   : %s", cfg_path);
+  zc_log_debug("css path      : %s", css_path);
+  zc_log_debug("html path     : %s", html_path);
+  zc_log_debug("font path     : %s", font_path);
+  zc_log_debug("record path   : %s", rec_path);
+  zc_log_debug("replay path   : %s", rep_path);
 
   // init config
 

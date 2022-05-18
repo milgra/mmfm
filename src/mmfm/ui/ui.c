@@ -16,6 +16,7 @@ void ui_render_without_cursor(uint32_t time);
 #include "callbacks.c"
 #include "config.c"
 #include "player.c"
+#include "tg_css.c"
 #include "tg_text.c"
 #include "ui_about_popup.c"
 #include "ui_activity_popup.c"

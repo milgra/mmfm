@@ -7,7 +7,6 @@
 #include "library.c"
 #include "pdf.c"
 #include "player.c"
-#include "tg_css.c"
 #include "ui.c"
 #include "ui_compositor.c"
 #include "ui_filelist.c"
@@ -30,14 +29,9 @@
 
 struct
 {
-  char* cfg_par; // config path parameter
-  char* res_par; // resources path parameter
-
-  char* rec_par; // record parameter
-  char* rep_par; // replay parameter
-  char* frm_par; // frame parameter
-
-} zm = {0};
+  char replay;
+  char record;
+} mmfm = {0};
 
 void load_directory()
 {
@@ -63,7 +57,7 @@ void load_directory()
   /* if (files->count > 0) */
   /* { */
   /*   LOG("new files detected : %i", files->count); */
-  /*   lib_analyze_files(zm.lib_ch, files); // start analyzing new entries */
+  /*   lib_analyze_files(mmfm.lib_ch, files); // start analyzing new entries */
   /* } */
 
   // visible_set_sortfield("meta/artist", 0);
@@ -82,7 +76,7 @@ void save_screenshot(uint32_t time)
 
     // remove cursor for screenshot to remain identical
 
-    if (zm.rep_par) ui_render_without_cursor(time);
+    if (mmfm.replay) ui_render_without_cursor(time);
 
     ui_compositor_render_to_bmp(screen);
 
@@ -97,78 +91,20 @@ void save_screenshot(uint32_t time)
     REL(path);    // REL 1
     REL(screen);  // REL 0
 
-    if (zm.rep_par) ui_update_cursor(frame); // full screen cursor to indicate screenshot, next step will reset it
+    if (mmfm.replay) ui_update_cursor(frame); // full screen cursor to indicate screenshot, next step will reset it
   }
 }
 
-void init(int width, int height, char* path)
+void init(int width, int height)
 {
-  srand((unsigned int)time(NULL));
-
-  config_init();    // destroy 2
   player_init();    // destroy 3
   visible_init();   // destroy 4
   callbacks_init(); // destroy 5
 
-  // init paths
-
-  char cwd[PATH_MAX];
-  if (getcwd(cwd, sizeof(cwd)) != NULL)
-  {
-    printf("Current working dir: %s %s\n", cwd, path);
-  }
-  else
-  {
-    perror("getcwd() error");
-  }
-
-  char* top_path = path_new_normalize(cwd, NULL);
-  char* wrk_path = path_new_normalize(path, NULL); // REL 0
-#ifdef __linux__
-  char* res_path = zm.res_par ? path_new_normalize(zm.res_par, wrk_path) : cstr_new_cstring("/usr/share/zenmedia"); // REL 1
-#else
-  char* res_path = zm.res_par ? path_new_normalize(zm.res_par, wrk_path) : cstr_new_cstring("/usr/local/share/zenmedia"); // REL 1
-#endif
-  char* cfgdir_path = zm.cfg_par ? path_new_normalize(zm.cfg_par, wrk_path) : path_new_normalize("~/.config/zenmedia", getenv("HOME")); // REL 2
-  char* css_path    = path_new_append(res_path, "main.css");                                                                            // REL 3
-  char* html_path   = path_new_append(res_path, "main.html");                                                                           // REL 4
-  char* font_path   = path_new_append(res_path, "Baloo.ttf");                                                                           // REL 5
-  char* cfg_path    = path_new_append(cfgdir_path, "config.kvl");                                                                       // REL 6
-  char* rec_path    = zm.rec_par ? path_new_normalize(zm.rec_par, wrk_path) : NULL;                                                     // REL 7
-  char* rep_path    = zm.rep_par ? path_new_normalize(zm.rep_par, wrk_path) : NULL;                                                     // REL 8
-
-  // print path info to console
-
-  printf("top path  : %s\n", top_path);
-  printf("working path  : %s\n", wrk_path);
-  printf("config path   : %s\n", cfg_path);
-  printf("resource path : %s\n", res_path);
-  printf("css path      : %s\n", css_path);
-  printf("html path     : %s\n", html_path);
-  printf("font path     : %s\n", font_path);
-
-  // init config
-
-  config_set("dark_mode", "false");
-  config_set("res_path", res_path);
-
-  // read config, it overwrites defaults if exists
-
-  config_read(cfg_path);
-
-  // init non-configurable defaults
-
-  config_set("top_path", top_path);
-  config_set("wrk_path", wrk_path);
-  config_set("cfg_path", cfg_path);
-  config_set("css_path", css_path);
-  config_set("html_path", html_path);
-  config_set("font_path", font_path);
-
   // init recording/playing
 
-  if (zm.rec_par) evrec_init_recorder(rec_path); // destroy 6
-  if (zm.rep_par) evrec_init_player(rep_path);   // destroy 7
+  if (mmfm.record) evrec_init_recorder(config_get("rec_path")); // destroy 6
+  if (mmfm.replay) evrec_init_player(config_get("rep_path"));   // destroy 7
 
   // load ui from descriptors
 
@@ -180,19 +116,7 @@ void init(int width, int height, char* path)
 
   // init cursor if replay
 
-  if (zm.rep_par) ui_add_cursor();
-
-  // cleanup
-
-  REL(wrk_path);
-  REL(res_path);
-  REL(cfgdir_path);
-  REL(css_path);
-  REL(html_path);
-  REL(font_path);
-  REL(cfg_path);
-  if (rec_path) REL(rec_path);
-  if (rep_path) REL(rep_path);
+  if (mmfm.replay) ui_add_cursor();
 }
 
 void update(ev_t ev)
@@ -200,17 +124,16 @@ void update(ev_t ev)
   if (ev.type == EV_TIME)
   {
     ui_play_update();
-    // if (!zm.pdfbmp) zm.pdfbmp = pdf_render("/home/milgra/Projects/mmfm/ajanlat.pdf");
-    // ui_visualizer_show_image(zm.pdfbmp); // show pdf
+    // if (!mmfm.pdfbmp) mmfm.pdfbmp = pdf_render("/home/milgra/Projects/mmfm/ajanlat.pdf");
+    // ui_visualizer_show_image(mmfm.pdfbmp); // show pdf
 
-    if (zm.rep_par)
+    if (mmfm.replay)
     {
       // get recorded events
       ev_t* recev = NULL;
       while ((recev = evrec_replay(ev.time)) != NULL)
       {
         ui_manager_event(*recev);
-
         ui_update_cursor((r2_t){recev->x, recev->y, 10, 10});
 
         if (recev->type == EV_KDOWN && recev->keycode == SDLK_PRINTSCREEN) save_screenshot(ev.time);
@@ -219,7 +142,7 @@ void update(ev_t ev)
   }
   else
   {
-    if (zm.rec_par)
+    if (mmfm.record)
     {
       evrec_record(ev);
       if (ev.type == EV_KDOWN && ev.keycode == SDLK_PRINTSCREEN) save_screenshot(ev.time);
@@ -227,7 +150,7 @@ void update(ev_t ev)
   }
 
   // in case of replay only send time events
-  if (!zm.rep_par || ev.type == EV_TIME) ui_manager_event(ev);
+  if (!mmfm.replay || ev.type == EV_TIME) ui_manager_event(ev);
 }
 
 // render, called once per frame
@@ -239,22 +162,13 @@ void render(uint32_t time)
 
 void destroy()
 {
-
-  if (zm.rep_par) evrec_destroy(); // destroy 7
-  if (zm.rec_par) evrec_destroy(); // destroy 6
-  callbacks_destroy();             // destroy 5
-  visible_destroy();               // destroy 4
-  player_destroy();                // destroy 3
-  config_destroy();                // destroy 2
-  wm_destroy();                    // destroy 0
+  if (mmfm.replay) evrec_destroy(); // destroy 7
+  if (mmfm.record) evrec_destroy(); // destroy 6
+  callbacks_destroy();              // destroy 5
+  visible_destroy();                // destroy 4
+  player_destroy();                 // destroy 3
 
   ui_destroy(); // destroy 8
-
-  if (zm.cfg_par) REL(zm.cfg_par); // REL 0
-  if (zm.res_par) REL(zm.res_par); // REL 1
-  if (zm.rec_par) REL(zm.rec_par); // REL 2
-  if (zm.rep_par) REL(zm.rep_par); // REL 3
-  if (zm.frm_par) REL(zm.frm_par); // REL 4
 
 #ifdef DEBUG
   mem_stats();
@@ -264,9 +178,6 @@ void destroy()
 int main(int argc, char* argv[])
 {
   printf("MultiMedia File Manager v" MMFM_VERSION " by Milan Toth ( www.milgra.com )\n");
-
-  zc_log_use_colors(isatty(STDERR_FILENO));
-  zc_log_level_info();
 
   const char* usage =
       "Usage: sov [options]\n"
@@ -290,6 +201,12 @@ int main(int argc, char* argv[])
           {"config", optional_argument, 0, 'c'},
           {"frame", optional_argument, 0, 'f'}};
 
+  char* cfg_par = NULL;
+  char* res_par = NULL;
+  char* rec_par = NULL;
+  char* rep_par = NULL;
+  char* frm_par = NULL;
+
   int option       = 0;
   int option_index = 0;
 
@@ -298,15 +215,89 @@ int main(int argc, char* argv[])
     switch (option)
     {
     case '?': printf("parsing option %c value: %s\n", option, optarg); break;
-    case 'c': zm.cfg_par = cstr_new_cstring(optarg); break; // REL 0
-    case 'r': zm.res_par = cstr_new_cstring(optarg); break; // REL 1
-    case 's': zm.rec_par = cstr_new_cstring(optarg); break; // REL 2
-    case 'p': zm.rep_par = cstr_new_cstring(optarg); break; // REL 3
-    case 'f': zm.frm_par = cstr_new_cstring(optarg); break; // REL 4
+    case 'c': cfg_par = cstr_new_cstring(optarg); break; // REL 0
+    case 'r': res_par = cstr_new_cstring(optarg); break; // REL 1
+    case 's': rec_par = cstr_new_cstring(optarg); break; // REL 2
+    case 'p': rep_par = cstr_new_cstring(optarg); break; // REL 3
+    case 'f': frm_par = cstr_new_cstring(optarg); break; // REL 4
+    case 'v': zc_log_inc_verbosity(); break;
     default: fprintf(stderr, "%s", usage); return EXIT_FAILURE;
     }
   }
 
-  wm_init(init, update, render, destroy, zm.frm_par); // destroy 0
+  if (rec_par) mmfm.record = 1;
+  if (rep_par) mmfm.replay = 1;
+
+  zc_log_use_colors(isatty(STDERR_FILENO));
+  zc_log_level_info();
+
+  srand((unsigned int)time(NULL));
+
+  char cwd[PATH_MAX] = {"~"};
+  getcwd(cwd, sizeof(cwd));
+
+  char* top_path    = path_new_normalize(cwd, NULL);
+  char* wrk_path    = path_new_normalize(SDL_GetBasePath(), NULL);                                                            // REL 0
+  char* res_path    = res_par ? path_new_normalize(res_par, wrk_path) : cstr_new_cstring("/usr/share/mmfm");                  // REL 1
+  char* cfgdir_path = cfg_par ? path_new_normalize(cfg_par, wrk_path) : path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 2
+  char* css_path    = path_new_append(res_path, "main.css");                                                                  // REL 3
+  char* html_path   = path_new_append(res_path, "main.html");                                                                 // REL 4
+  char* font_path   = path_new_append(res_path, "Baloo.ttf");                                                                 // REL 5
+  char* cfg_path    = path_new_append(cfgdir_path, "config.kvl");                                                             // REL 6
+  char* rec_path    = rec_par ? path_new_normalize(rec_par, wrk_path) : NULL;                                                 // REL 7
+  char* rep_path    = rep_par ? path_new_normalize(rep_par, wrk_path) : NULL;                                                 // REL 8
+
+  // print path info to console
+
+  zc_log_debug("top path  : %s\n", top_path);
+  zc_log_debug("working path  : %s\n", wrk_path);
+  zc_log_debug("resource path : %s\n", res_path);
+  zc_log_debug("config path   : %s\n", cfg_path);
+  zc_log_debug("css path      : %s\n", css_path);
+  zc_log_debug("html path     : %s\n", html_path);
+  zc_log_debug("font path     : %s\n", font_path);
+  zc_log_debug("record path   : %s\n", rec_path);
+  zc_log_debug("replay path   : %s\n", rep_path);
+
+  // init config
+
+  config_init(); // DESTROY 0
+
+  config_set("dark_mode", "false");
+  config_set("res_path", res_path);
+
+  // read config, it overwrites defaults if exists
+
+  config_read(cfg_path);
+
+  // init non-configurable defaults
+
+  config_set("top_path", top_path);
+  config_set("wrk_path", wrk_path);
+  config_set("cfg_path", cfg_path);
+  config_set("css_path", css_path);
+  config_set("html_path", html_path);
+  config_set("font_path", font_path);
+
+  if (rec_path) config_set("rec_path", rec_path);
+  if (rep_path) config_set("rep_path", rep_path);
+
+  // cleanup
+
+  REL(wrk_path);
+  REL(res_path);
+  REL(cfgdir_path);
+  REL(css_path);
+  REL(html_path);
+  REL(font_path);
+  REL(cfg_path);
+
+  if (rec_path) REL(rec_path);
+  if (rep_path) REL(rep_path);
+
+  wm_loop(init, update, render, destroy, frm_par);
+
+  config_destroy(); // DESTROY 0
+
   return 0;
 }

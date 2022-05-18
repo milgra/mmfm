@@ -5,6 +5,9 @@
 
 void ui_init(float width, float height);
 void ui_destroy();
+void ui_add_cursor();
+void ui_update_cursor(r2_t frame);
+void ui_render_without_cursor(uint32_t time);
 
 #endif
 
@@ -41,6 +44,7 @@ void ui_destroy();
 
 view_t* view_base;
 vec_t*  view_list;
+view_t* rep_cur; // replay cursor
 
 void ui_on_button_down(void* userdata, void* data);
 void ui_on_key_down(void* userdata, void* data);
@@ -138,6 +142,28 @@ void ui_init(float width, float height)
 
   /* REL(key_cb); // REL 1 */
   /* REL(but_cb); // REL 2 */
+}
+
+void ui_add_cursor()
+{
+  rep_cur                          = view_new("rep_cur", ((r2_t){10, 10, 10, 10}));
+  rep_cur->exclude                 = 0;
+  rep_cur->layout.background_color = 0xFF000099;
+  rep_cur->needs_touch             = 0;
+  tg_css_add(rep_cur);
+  ui_manager_add_to_top(rep_cur);
+}
+
+void ui_update_cursor(r2_t frame)
+{
+  view_set_frame(rep_cur, frame);
+}
+
+void ui_render_without_cursor(uint32_t time)
+{
+  ui_manager_remove(rep_cur);
+  ui_manager_render(time);
+  ui_manager_add_to_top(rep_cur);
 }
 
 void ui_destroy()

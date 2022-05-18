@@ -28,10 +28,6 @@
 #include <time.h>
 #include <unistd.h>
 
-void load_directory();
-void update_player();
-void save_screenshot(uint32_t time);
-
 struct
 {
   char* cfg_par; // config path parameter
@@ -41,8 +37,69 @@ struct
   char* rep_par; // replay parameter
   char* frm_par; // frame parameter
 
-  view_t* rep_cur; // replay cursor
 } zm = {0};
+
+void load_directory()
+{
+  assert(config_get("top_path") != NULL);
+
+  //  db_reset();
+  // db_read(config_get("lib_path"));
+
+  map_t* files = MNEW();                         // REL 0
+  lib_read_files(config_get("top_path"), files); // read all files under library path
+
+  /* printf("FILES\n"); */
+  /* mem_describe(files, 0); */
+
+  visible_set_files(files);
+
+  visible_set_sortfield("basename", 0);
+
+  ui_filelist_refresh();
+
+  /* db_update(files);                              // remove deleted files from db, remove existing files from files */
+
+  /* if (files->count > 0) */
+  /* { */
+  /*   LOG("new files detected : %i", files->count); */
+  /*   lib_analyze_files(zm.lib_ch, files); // start analyzing new entries */
+  /* } */
+
+  // visible_set_sortfield("meta/artist", 0);
+
+  REL(files); // REL 0
+}
+
+void save_screenshot(uint32_t time)
+{
+  if (config_get("lib_path"))
+  {
+    static int cnt    = 0;
+    view_t*    root   = ui_manager_get_root();
+    r2_t       frame  = root->frame.local;
+    bm_rgba_t* screen = bm_rgba_new(frame.w, frame.h); // REL 0
+
+    // remove cursor for screenshot to remain identical
+
+    if (zm.rep_par) ui_render_without_cursor(time);
+
+    ui_compositor_render_to_bmp(screen);
+
+    char*      name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1
+    char*      path    = path_new_append(config_get("lib_path"), name);    // REL 2
+    bm_rgba_t* flipped = bm_rgba_new_flip_y(screen);                       // REL 3
+
+    coder_write_png(path, flipped);
+
+    REL(flipped); // REL 3
+    REL(name);    // REL 2
+    REL(path);    // REL 1
+    REL(screen);  // REL 0
+
+    if (zm.rep_par) ui_update_cursor(frame); // full screen cursor to indicate screenshot, next step will reset it
+  }
+}
 
 void init(int width, int height, char* path)
 {
@@ -121,20 +178,9 @@ void init(int width, int height, char* path)
 
   load_directory();
 
-  if (zm.rec_par) printf("***RECORDING SESSION***\n");
-
   // init cursor if replay
 
-  if (zm.rep_par)
-  {
-    printf("***REPLAYING SESSION***\n");
-    zm.rep_cur                          = view_new("rep_cur", ((r2_t){10, 10, 10, 10}));
-    zm.rep_cur->exclude                 = 0;
-    zm.rep_cur->layout.background_color = 0xFF000099;
-    zm.rep_cur->needs_touch             = 0;
-    tg_css_add(zm.rep_cur);
-    ui_manager_add_to_top(zm.rep_cur);
-  }
+  if (zm.rep_par) ui_add_cursor();
 
   // cleanup
 
@@ -165,7 +211,7 @@ void update(ev_t ev)
       {
         ui_manager_event(*recev);
 
-        view_set_frame(zm.rep_cur, (r2_t){recev->x, recev->y, 10, 10});
+        ui_update_cursor((r2_t){recev->x, recev->y, 10, 10});
 
         if (recev->type == EV_KDOWN && recev->keycode == SDLK_PRINTSCREEN) save_screenshot(ev.time);
       }
@@ -213,73 +259,6 @@ void destroy()
 #ifdef DEBUG
   mem_stats();
 #endif
-}
-
-void load_directory()
-{
-  assert(config_get("top_path") != NULL);
-
-  //  db_reset();
-  // db_read(config_get("lib_path"));
-
-  map_t* files = MNEW();                         // REL 0
-  lib_read_files(config_get("top_path"), files); // read all files under library path
-
-  /* printf("FILES\n"); */
-  /* mem_describe(files, 0); */
-
-  visible_set_files(files);
-
-  visible_set_sortfield("basename", 0);
-
-  ui_filelist_refresh();
-
-  /* db_update(files);                              // remove deleted files from db, remove existing files from files */
-
-  /* if (files->count > 0) */
-  /* { */
-  /*   LOG("new files detected : %i", files->count); */
-  /*   lib_analyze_files(zm.lib_ch, files); // start analyzing new entries */
-  /* } */
-
-  // visible_set_sortfield("meta/artist", 0);
-
-  REL(files); // REL 0
-}
-
-void save_screenshot(uint32_t time)
-{
-  if (config_get("lib_path"))
-  {
-    static int cnt    = 0;
-    view_t*    root   = ui_manager_get_root();
-    r2_t       frame  = root->frame.local;
-    bm_rgba_t* screen = bm_rgba_new(frame.w, frame.h); // REL 0
-
-    // remove cursor for screenshot to remain identical
-
-    if (zm.rep_par)
-    {
-      ui_manager_remove(zm.rep_cur);
-      ui_manager_render(time);
-      ui_manager_add_to_top(zm.rep_cur);
-    }
-
-    ui_compositor_render_to_bmp(screen);
-
-    char*      name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1
-    char*      path    = path_new_append(config_get("lib_path"), name);    // REL 2
-    bm_rgba_t* flipped = bm_rgba_new_flip_y(screen);                       // REL 3
-
-    coder_write_png(path, flipped);
-
-    REL(flipped); // REL 3
-    REL(name);    // REL 2
-    REL(path);    // REL 1
-    REL(screen);  // REL 0
-
-    if (zm.rep_par) view_set_frame(zm.rep_cur, frame); // full screen cursor to indicate screenshot
-  }
 }
 
 int main(int argc, char* argv[])

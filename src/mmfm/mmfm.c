@@ -1,4 +1,3 @@
-#include "bm_rgba_util.c"
 #include "callbacks.c"
 #include "coder.c"
 #include "config.c"
@@ -65,36 +64,6 @@ void load_directory()
   REL(files); // REL 0
 }
 
-void save_screenshot(uint32_t time)
-{
-  if (config_get("lib_path"))
-  {
-    static int cnt    = 0;
-    view_t*    root   = ui_manager_get_root();
-    r2_t       frame  = root->frame.local;
-    bm_rgba_t* screen = bm_rgba_new(frame.w, frame.h); // REL 0
-
-    // remove cursor for screenshot to remain identical
-
-    if (mmfm.replay) ui_render_without_cursor(time);
-
-    ui_compositor_render_to_bmp(screen);
-
-    char*      name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1
-    char*      path    = path_new_append(config_get("lib_path"), name);    // REL 2
-    bm_rgba_t* flipped = bm_rgba_new_flip_y(screen);                       // REL 3
-
-    coder_write_png(path, flipped);
-
-    REL(flipped); // REL 3
-    REL(name);    // REL 2
-    REL(path);    // REL 1
-    REL(screen);  // REL 0
-
-    if (mmfm.replay) ui_update_cursor(frame); // full screen cursor to indicate screenshot, next step will reset it
-  }
-}
-
 void init(int width, int height)
 {
   player_init();          // destroy 0
@@ -133,7 +102,7 @@ void update(ev_t ev)
         ui_manager_event(*recev);
         ui_update_cursor((r2_t){recev->x, recev->y, 10, 10});
 
-        if (recev->type == EV_KDOWN && recev->keycode == SDLK_PRINTSCREEN) save_screenshot(ev.time);
+        if (recev->type == EV_KDOWN && recev->keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay);
       }
     }
   }
@@ -142,15 +111,13 @@ void update(ev_t ev)
     if (mmfm.record)
     {
       evrec_record(ev);
-      if (ev.type == EV_KDOWN && ev.keycode == SDLK_PRINTSCREEN) save_screenshot(ev.time);
+      if (ev.type == EV_KDOWN && ev.keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay);
     }
   }
 
   // in case of replay only send time events
   if (!mmfm.replay || ev.type == EV_TIME) ui_manager_event(ev);
 }
-
-// render, called once per frame
 
 void render(uint32_t time)
 {

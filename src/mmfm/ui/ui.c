@@ -8,12 +8,15 @@ void ui_destroy();
 void ui_add_cursor();
 void ui_update_cursor(r2_t frame);
 void ui_render_without_cursor(uint32_t time);
+void ui_save_screenshot(uint32_t time, char hide_cursor);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "bm_rgba_util.c"
 #include "callbacks.c"
+#include "coder.c"
 #include "config.c"
 #include "player.c"
 #include "tg_css.c"
@@ -22,6 +25,7 @@ void ui_render_without_cursor(uint32_t time);
 #include "ui_activity_popup.c"
 #include "ui_alert_popup.c"
 #include "ui_cliplist.c"
+#include "ui_compositor.c"
 #include "ui_decision_popup.c"
 #include "ui_filelist.c"
 #include "ui_filter_bar.c"
@@ -42,6 +46,7 @@ void ui_render_without_cursor(uint32_t time);
 #include "view_layout.c"
 #include "wm_connector.c"
 #include "zc_number.c"
+#include "zc_path.c"
 
 view_t* view_base;
 vec_t*  view_list;
@@ -218,6 +223,36 @@ void ui_on_button_down(void* userdata, void* data)
   if (strcmp(id, "closeeditorbtn") == 0) ui_popup_switcher_toggle("song_editor_popup_page");
   if (strcmp(id, "closesettingsbtn") == 0) ui_popup_switcher_toggle("settings_popup_page");
   if (strcmp(id, "library_popup_close_btn") == 0) ui_popup_switcher_toggle("library_popup_page");
+}
+
+void ui_save_screenshot(uint32_t time, char hide_cursor)
+{
+  if (config_get("lib_path"))
+  {
+    static int cnt    = 0;
+    view_t*    root   = ui_manager_get_root();
+    r2_t       frame  = root->frame.local;
+    bm_rgba_t* screen = bm_rgba_new(frame.w, frame.h); // REL 0
+
+    // remove cursor for screenshot to remain identical
+
+    if (hide_cursor) ui_render_without_cursor(time);
+
+    ui_compositor_render_to_bmp(screen);
+
+    char*      name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1
+    char*      path    = path_new_append(config_get("lib_path"), name);    // REL 2
+    bm_rgba_t* flipped = bm_rgba_new_flip_y(screen);                       // REL 3
+
+    coder_write_png(path, flipped);
+
+    REL(flipped); // REL 3
+    REL(name);    // REL 2
+    REL(path);    // REL 1
+    REL(screen);  // REL 0
+
+    if (hide_cursor) ui_update_cursor(frame); // full screen cursor to indicate screenshot, next step will reset it
+  }
 }
 
 #endif

@@ -236,8 +236,8 @@ void ui_about_popup_attach(view_t* baseview)
 
 void ui_about_popup_detach()
 {
-  REL(donl.fields); // REL 0
-  REL(donl.items);  // REL 1
+  if (donl.fields) REL(donl.fields); // REL 0
+  if (donl.items) REL(donl.items);   // REL 1
 }
 
 #endif

@@ -17,9 +17,8 @@ void  config_set_bool(char* key, int val);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "files.c"
+#include "filemanager.c"
 #include "kvlist.c"
-#include "library.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_path.c"
@@ -74,7 +73,7 @@ void config_write(char* path)
   MPUTR(confmap, "id", cstr_new_cstring("config")); // put id in config db
   MPUT(data, "id", confmap);                        // put config db in final data with same id
 
-  int error = files_mkpath(dirpath, 0777);
+  int error = fm_create(dirpath, 0777);
 
   if (error == 0)
   {

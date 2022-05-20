@@ -12,7 +12,7 @@ void ui_song_menu_popup_detach();
 #if __INCLUDE_LEVEL__ == 0
 
 #include "config.c"
-#include "library.c"
+#include "filemanager.c"
 #include "tg_text.c"
 #include "ui_decision_popup.c"
 #include "ui_filelist.c"
@@ -73,7 +73,7 @@ void ui_song_menu_popup_on_item_delete(void* userdata, void* data)
   for (int index = 0; index < selected->length; index++)
   {
     map_t* entry = selected->data[index];
-    lib_delete_file(config_get("lib_path"), entry);
+    fm_delete(config_get("lib_path"), entry);
     visible_update();
     ui_filelist_update();
   }

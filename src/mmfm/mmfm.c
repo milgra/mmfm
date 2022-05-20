@@ -1,9 +1,7 @@
 #include "callbacks.c"
-#include "coder.c"
 #include "config.c"
 #include "evrecorder.c"
-#include "files.c"
-#include "library.c"
+#include "filemanager.c"
 #include "pdf.c"
 #include "player.c"
 #include "ui.c"
@@ -32,57 +30,34 @@ struct
   char record;
 } mmfm = {0};
 
-void load_directory()
-{
-  assert(config_get("top_path") != NULL);
-
-  //  db_reset();
-  // db_read(config_get("lib_path"));
-
-  map_t* files = MNEW();                         // REL 0
-  lib_read_files(config_get("top_path"), files); // read all files under library path
-
-  /* printf("FILES\n"); */
-  /* mem_describe(files, 0); */
-
-  visible_set_files(files);
-
-  visible_set_sortfield("basename", 0);
-
-  ui_filelist_refresh();
-
-  /* db_update(files);                              // remove deleted files from db, remove existing files from files */
-
-  /* if (files->count > 0) */
-  /* { */
-  /*   LOG("new files detected : %i", files->count); */
-  /*   lib_analyze_files(mmfm.lib_ch, files); // start analyzing new entries */
-  /* } */
-
-  // visible_set_sortfield("meta/artist", 0);
-
-  REL(files); // REL 0
-}
-
 void init(int width, int height)
 {
-  player_init();          // destroy 0
-  visible_init();         // destroy 1
-  callbacks_init();       // destroy 2
-  ui_init(width, height); // destroy 3
+  player_init();          // DESTROY 0
+  visible_init();         // DESTROY 1
+  callbacks_init();       // DESTROY 2
+  ui_init(width, height); // DESTROY 3
 
   if (mmfm.record)
   {
-    evrec_init_recorder(config_get("rec_path")); // destroy 4
+    evrec_init_recorder(config_get("rec_path")); // DESTROY 4
   }
 
   if (mmfm.replay)
   {
-    evrec_init_player(config_get("rep_path")); // destroy 5
+    evrec_init_player(config_get("rep_path")); // DESTROY 5
     ui_add_cursor();
   }
 
-  load_directory();
+  // load current directory
+
+  map_t* files = MNEW(); // REL 0
+  fm_list(config_get("top_path"), files);
+
+  visible_set_files(files);
+  visible_set_sortfield("basename", 0);
+  ui_filelist_refresh();
+
+  REL(files); // REL 0
 }
 
 void update(ev_t ev)
@@ -126,17 +101,13 @@ void render(uint32_t time)
 
 void destroy()
 {
-  if (mmfm.replay) evrec_destroy(); // destroy 5
-  if (mmfm.record) evrec_destroy(); // destroy 4
+  if (mmfm.replay) evrec_destroy(); // DESTROY 5
+  if (mmfm.record) evrec_destroy(); // DESTROY 4
 
-  ui_destroy();        // destroy 3
-  callbacks_destroy(); // destroy 2
-  visible_destroy();   // destroy 1
-  player_destroy();    // destroy 0
-
-#ifdef DEBUG
-  mem_stats();
-#endif
+  ui_destroy();        // DESTROY 3
+  callbacks_destroy(); // DESTROY 2
+  visible_destroy();   // DESTROY 1
+  player_destroy();    // DESTROY 0
 }
 
 int main(int argc, char* argv[])
@@ -200,16 +171,16 @@ int main(int argc, char* argv[])
   char cwd[PATH_MAX] = {"~"};
   getcwd(cwd, sizeof(cwd));
 
-  char* top_path    = path_new_normalize(cwd, NULL);
-  char* wrk_path    = path_new_normalize(SDL_GetBasePath(), NULL);                                                            // REL 0
-  char* res_path    = res_par ? path_new_normalize(res_par, wrk_path) : cstr_new_cstring("/usr/share/mmfm");                  // REL 1
-  char* cfgdir_path = cfg_par ? path_new_normalize(cfg_par, wrk_path) : path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 2
-  char* css_path    = path_new_append(res_path, "main.css");                                                                  // REL 3
-  char* html_path   = path_new_append(res_path, "main.html");                                                                 // REL 4
-  char* font_path   = path_new_append(res_path, "Baloo.ttf");                                                                 // REL 5
-  char* cfg_path    = path_new_append(cfgdir_path, "config.kvl");                                                             // REL 6
-  char* rec_path    = rec_par ? path_new_normalize(rec_par, wrk_path) : NULL;                                                 // REL 7
-  char* rep_path    = rep_par ? path_new_normalize(rep_par, wrk_path) : NULL;                                                 // REL 8
+  char* top_path    = path_new_normalize(cwd, NULL);                                                                          // REL 5
+  char* wrk_path    = path_new_normalize(SDL_GetBasePath(), NULL);                                                            // REL 6
+  char* res_path    = res_par ? path_new_normalize(res_par, wrk_path) : cstr_new_cstring("/usr/share/mmfm");                  // REL 7
+  char* cfgdir_path = cfg_par ? path_new_normalize(cfg_par, wrk_path) : path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 8
+  char* css_path    = path_new_append(res_path, "main.css");                                                                  // REL 9
+  char* html_path   = path_new_append(res_path, "main.html");                                                                 // REL 10
+  char* font_path   = path_new_append(res_path, "Baloo.ttf");                                                                 // REL 11
+  char* cfg_path    = path_new_append(cfgdir_path, "config.kvl");                                                             // REL 12
+  char* rec_path    = rec_par ? path_new_normalize(rec_par, wrk_path) : NULL;                                                 // REL 13
+  char* rep_path    = rep_par ? path_new_normalize(rep_par, wrk_path) : NULL;                                                 // REL 14
 
   // print path info to console
 
@@ -248,20 +219,31 @@ int main(int argc, char* argv[])
 
   // cleanup
 
-  REL(wrk_path);
-  REL(res_path);
-  REL(cfgdir_path);
-  REL(css_path);
-  REL(html_path);
-  REL(font_path);
-  REL(cfg_path);
+  if (cfg_par) REL(cfg_par); // REL 0
+  if (res_par) REL(res_par); // REL 1
+  if (rec_par) REL(rec_par); // REL 2
+  if (rec_par) REL(rep_par); // REL 3
+  if (frm_par) REL(frm_par); // REL 4
 
-  if (rec_path) REL(rec_path);
-  if (rep_path) REL(rep_path);
+  REL(top_path);    // REL 5
+  REL(wrk_path);    // REL 6
+  REL(res_path);    // REL 7
+  REL(cfgdir_path); // REL 8
+  REL(css_path);    // REL 9
+  REL(html_path);   // REL 10
+  REL(font_path);   // REL 11
+  REL(cfg_path);    // REL 12
+
+  if (rec_path) REL(rec_path); // REL 13
+  if (rep_path) REL(rep_path); // REL 14
 
   wm_loop(init, update, render, destroy, frm_par);
 
   config_destroy(); // DESTROY 0
+
+#ifdef DEBUG
+  mem_stats();
+#endif
 
   return 0;
 }

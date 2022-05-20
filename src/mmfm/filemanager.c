@@ -5,11 +5,11 @@
 #define __USE_XOPEN_EXTENDED 1 // needed for linux
 #include <ftw.h>
 
-void fm_list(char* fmpath, map_t* db);
+int  fm_create(char* file_path, mode_t mode);
 void fm_delete(char* fmpath, map_t* en);
 int  fm_rename(char* old, char* new, char* new_dirs);
 int  fm_exists(char* path);
-int  fm_create(char* file_path, mode_t mode);
+void fm_list(char* fmpath, map_t* db);
 
 #endif
 
@@ -36,16 +36,6 @@ struct fm_t
   char*  path;
 } fm = {0};
 
-int fm_exists(char* path)
-{
-  struct stat sb;
-
-  if (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode))
-    return 1;
-  else
-    return 0;
-}
-
 int fm_create(char* file_path, mode_t mode)
 {
   assert(file_path && *file_path);
@@ -65,6 +55,46 @@ int fm_create(char* file_path, mode_t mode)
     *p = '/';
   }
   return 0;
+}
+
+void fm_delete(char* fm_path, map_t* entry)
+{
+  assert(fm_path != NULL);
+
+  char* rel_path  = MGET(entry, "file/path");
+  char* file_path = cstr_new_format(PATH_MAX + NAME_MAX, "%s/%s", fm_path, rel_path); // REL 0
+
+  int error = remove(file_path);
+  if (error)
+    zc_log_error("fm : cannot remove file %s : %s", file_path, strerror(errno));
+  else
+    zc_log_error("fm : file %s removed.", file_path);
+
+  REL(file_path); // REL 0
+}
+
+int fm_rename(char* old_path, char* new_path, char* new_dirs)
+{
+  zc_log_info("fm : renaming %s to %s", old_path, new_path);
+
+  int error = fm_create(new_dirs, 0777);
+
+  if (error == 0)
+  {
+    error = rename(old_path, new_path);
+    return error;
+  }
+  return error;
+}
+
+int fm_exists(char* path)
+{
+  struct stat sb;
+
+  if (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode))
+    return 1;
+  else
+    return 0;
 }
 
 static int fm_file_data_step(const char* fpath, const struct stat* sb, int tflag, struct FTW* ftwinfo)
@@ -136,36 +166,6 @@ void fm_list(char* fm_path, map_t* files)
   MPUT(files, "..", parent); // use relative path as path
 
   zc_log_info("fm : scanned, files : %i", files->count);
-}
-
-void fm_delete(char* fm_path, map_t* entry)
-{
-  assert(fm_path != NULL);
-
-  char* rel_path  = MGET(entry, "file/path");
-  char* file_path = cstr_new_format(PATH_MAX + NAME_MAX, "%s/%s", fm_path, rel_path); // REL 0
-
-  int error = remove(file_path);
-  if (error)
-    zc_log_error("fm : cannot remove file %s : %s", file_path, strerror(errno));
-  else
-    zc_log_error("fm : file %s removed.", file_path);
-
-  REL(file_path); // REL 0
-}
-
-int fm_rename(char* old_path, char* new_path, char* new_dirs)
-{
-  zc_log_info("fm : renaming %s to %s", old_path, new_path);
-
-  int error = fm_create(new_dirs, 0777);
-
-  if (error == 0)
-  {
-    error = rename(old_path, new_path);
-    return error;
-  }
-  return error;
 }
 
 #endif

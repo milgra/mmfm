@@ -94,12 +94,16 @@ void zc_log(const zc_log_importance importance, const char* file, const int line
     ts.tv_nsec = 0;
   }
 
+  struct tm* my_tm = localtime(&ts.tv_sec);
+
   if (use_colors)
   {
     fprintf(
         stderr,
-        "%jd.%06ld %s%-5s%s %s%s:%d:%s ",
-        (intmax_t)ts.tv_sec,
+        "%i:%i:%i:%li %s%-5s%s %s%s:%d:%s ",
+        my_tm->tm_hour,
+        my_tm->tm_min,
+        my_tm->tm_sec,
         ts.tv_nsec / 1000,
         verbosity_colors[importance],
         verbosity_names[importance],

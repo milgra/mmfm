@@ -2,13 +2,7 @@
 
 scrollable file list
 show content on file select
-
-
-
-
-
-
-
+text style from css
 
 
 **near future**

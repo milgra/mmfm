@@ -163,9 +163,9 @@ void fm_list(char* fm_path, map_t* files)
 
   nftw(fm_path, fm_file_data_step, 20, FTW_PHYS);
 
-  MPUT(files, "..", parent); // use relative path as path
+  MPUTR(files, "..", parent); // use relative path as path
 
-  zc_log_info("fm : scanned, files : %i", files->count);
+  zc_log_info("%s scanned, files : %i", fm_path, files->count);
 }
 
 #endif

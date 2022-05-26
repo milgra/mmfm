@@ -15,6 +15,7 @@ vec_t* view_gen_load(char* htmlpath, char* csspath, char* respath, map_t* callba
 #include "tg_css.c"
 #include "vh_button.c"
 #include "zc_callback.c"
+#include "zc_log.c"
 #include <limits.h>
 
 void view_gen_apply_style(view_t* view, map_t* style, char* respath)
@@ -229,15 +230,18 @@ vec_t* view_gen_load(char* htmlpath, char* csspath, char* respath, map_t* callba
   // create style map
   map_t*  styles = MNEW(); // REL 4
   prop_t* props  = view_styles;
+
   while ((*props).class.len > 0)
   {
     prop_t t   = *props;
     char*  cls = CAL(sizeof(char) * t.class.len + 1, NULL, cstr_describe); // REL 5
     char*  key = CAL(sizeof(char) * t.key.len + 1, NULL, cstr_describe);   // REL 6
     char*  val = CAL(sizeof(char) * t.value.len + 1, NULL, cstr_describe); // REL 7
+
     memcpy(cls, css + t.class.pos, t.class.len);
     memcpy(key, css + t.key.pos, t.key.len);
     memcpy(val, css + t.value.pos, t.value.len);
+
     map_t* style = MGET(styles, cls);
     if (style == NULL)
     {

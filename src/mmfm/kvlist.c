@@ -13,6 +13,7 @@ int kvlist_write(char* libpath, map_t* db);
 
 #include "cstr_util.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 #include <limits.h>
 
 int kvlist_read(char* libpath, map_t* db, char* keyfield)
@@ -58,7 +59,7 @@ int kvlist_read(char* libpath, map_t* db, char* keyfield)
     REL(dbstr); // REL 0
   }
   else
-    printf("ERROR kvlist_read cannot read file %s\n", libpath);
+    zc_log_debug("kvlist_read cannot read file %s", libpath);
 
   return retv;
 }
@@ -107,10 +108,10 @@ int kvlist_write(char* libpath, map_t* db)
       if (rename(path, libpath) != 0) retv = -1;
     }
     else
-      printf("ERROR kvlist_write cannot write file\n");
+      zc_log_error("ERROR kvlist_write cannot write file");
   }
   else
-    printf("ERROR kvlist_write cannot open file %s\n", path);
+    zc_log_error("ERROR kvlist_write cannot open file %s", path);
 
   REL(path); // REL 0
 

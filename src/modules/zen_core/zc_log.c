@@ -100,7 +100,7 @@ void zc_log(const zc_log_importance importance, const char* file, const int line
   {
     fprintf(
         stderr,
-        "%i:%i:%i:%li %s%-5s%s %s%s:%d:%s ",
+        "%.2i:%.2i:%.2i:%.6li %s%-5s%s %s%s:%d:%s ",
         my_tm->tm_hour,
         my_tm->tm_min,
         my_tm->tm_sec,

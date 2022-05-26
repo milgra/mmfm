@@ -45,6 +45,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "view_generator.c"
 #include "view_layout.c"
 #include "wm_connector.c"
+#include "zc_log.c"
 #include "zc_number.c"
 #include "zc_path.c"
 
@@ -71,10 +72,14 @@ void ui_init(float width, float height)
   view_list = view_gen_load(config_get("html_path"), config_get("css_path"), config_get("res_path"), callbacks_get_data()); // REL 0
   view_base = vec_head(view_list);
 
+  zc_log_debug("%i views generated", view_list->length);
+
   // initial layout of views
 
   view_set_frame(view_base, (r2_t){0.0, 0.0, (float)width, (float)height});
   view_layout(view_base);
+
+  mem_describe(view_base, 0);
 
   ui_manager_add(view_base);
 
@@ -123,8 +128,6 @@ void ui_init(float width, float height)
   ts.multiline    = 0;
 
   view_t* clipback = view_get_subview(view_base, "cliplistbck");
-
-  printf("CLIPBACK %s\n", clipback->id);
 
   tg_text_add(clipback);
   tg_text_set(clipback, "PASTEBOX", ts);

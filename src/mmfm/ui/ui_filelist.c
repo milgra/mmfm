@@ -71,7 +71,7 @@ void ui_filelist_attach(view_t* base)
 
   sl.textstyle.font        = config_get("font_path");
   sl.textstyle.margin_left = 10;
-  sl.textstyle.size        = 30.0;
+  sl.textstyle.size        = 20.0;
   sl.textstyle.textcolor   = 0x000000FF;
   sl.textstyle.backcolor   = 0xF5F5F5FF;
 

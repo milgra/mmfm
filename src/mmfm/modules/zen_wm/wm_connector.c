@@ -18,6 +18,7 @@ void wm_toggle_fullscreen();
 #if __INCLUDE_LEVEL__ == 0
 
 #include "wm_event.c"
+#include "zc_log.c"
 #include <SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,11 +43,11 @@ void wm_loop(void (*init)(int, int),
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) < 0) // QUIT 0
   {
-    printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+    zc_log_error("SDL could not initialize! SDL_Error: %s", SDL_GetError());
   }
   else
   {
-    printf("SDL Init Success\n");
+    zc_log_debug("SDL Init Success");
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -79,20 +80,20 @@ void wm_loop(void (*init)(int, int),
 
     if (wm_window == NULL)
     {
-      printf("SDL Window could not be created! SDL_Error: %s\n", SDL_GetError());
+      zc_log_error("SDL Window could not be created! SDL_Error: %s", SDL_GetError());
     }
     else
     {
-      printf("SDL Window Init Success\n");
+      zc_log_debug("SDL Window Init Success");
 
       SDL_GLContext* context = SDL_GL_CreateContext(wm_window); // DELETE 0
       if (context == NULL)
       {
-        printf("SDL Context could not be created! SDL_Error: %s\n", SDL_GetError());
+        zc_log_error("SDL Context could not be created! SDL_Error: %s", SDL_GetError());
       }
       else
       {
-        printf("SDL Context Init Success\n");
+        zc_log_debug("SDL Context Init Success");
 
         int nw;
         int nh;
@@ -101,9 +102,9 @@ void wm_loop(void (*init)(int, int),
 
         float scale = nw / width;
 
-        printf("SDL Scaling will be %f\n", scale);
+        zc_log_debug("SDL Scaling will be %f", scale);
 
-        if (SDL_GL_SetSwapInterval(1) < 0) printf("SDL swap interval error %s\n", SDL_GetError());
+        if (SDL_GL_SetSwapInterval(1) < 0) zc_log_error("SDL swap interval error %s", SDL_GetError());
 
         SDL_StartTextInput(); // STOP 0
 
@@ -225,7 +226,7 @@ void wm_loop(void (*init)(int, int),
               (*update)(ev);
             }
             else
-              printf("unknown event, sdl type %i\n", event.type);
+              zc_log_debug("unknown event, sdl type %i", event.type);
           }
 
           if (scroll.active)
@@ -266,13 +267,13 @@ void wm_loop(void (*init)(int, int),
         SDL_StopTextInput();           // STOP 0
         SDL_GL_DeleteContext(context); // DELETE 0
 
-        printf("SDL Context deleted\n");
+        zc_log_debug("SDL Context deleted");
       }
     }
 
     SDL_DestroyWindow(wm_window); // DESTROY 0
     SDL_Quit();                   // QUIT 0
-    printf("SDL Window destroyed\n");
+    zc_log_debug("SDL Window destroyed");
   }
 }
 

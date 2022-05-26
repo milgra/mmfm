@@ -74,8 +74,9 @@ void ui_manager_event(ev_t ev)
       view_set_frame(uim.root, (r2_t){0.0, 0.0, (float)ev.w, (float)ev.h});
       view_layout(uim.root);
       ui_generator_resize(ev.w, ev.h);
-      // printf("\nAFTER RESIZE");
-      // view_desc(uim.root, 0);
+#ifdef DEBUG
+      view_desc(uim.root, 0);
+#endif
       view_evt(uim.root, ev);
     }
   }

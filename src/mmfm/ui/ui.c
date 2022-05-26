@@ -79,8 +79,6 @@ void ui_init(float width, float height)
   view_set_frame(view_base, (r2_t){0.0, 0.0, (float)width, (float)height});
   view_layout(view_base);
 
-  mem_describe(view_base, 0);
-
   ui_manager_add(view_base);
 
   // attach ui components

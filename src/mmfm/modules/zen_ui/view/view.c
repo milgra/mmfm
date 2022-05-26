@@ -461,12 +461,32 @@ void view_gen_texture(view_t* view)
   if (view->tex_gen) (*view->tex_gen)(view);
 }
 
+void view_draw_delimiter(view_t* view)
+{
+  if (view->parent)
+  {
+    view_draw_delimiter(view->parent);
+    uint32_t index = vec_index_of_data(view->parent->views, view);
+    if (index == view->parent->views->length - 1)
+      printf("    ");
+    else
+      printf("│   ");
+  }
+}
+
 void view_desc(void* pointer, int level)
 {
   view_t* view = (view_t*)pointer;
-  printf("%*.2s%s (x:%.1f y:%.1f w:%.1f h:%.1f tx:%i eh:%i tg:%i)",
-         level,
-         "",
+
+  char* arrow = "├── ";
+  if (view->parent)
+  {
+    view_draw_delimiter(view->parent);
+    if (vec_index_of_data(view->parent->views, view) == view->parent->views->length - 1) arrow = "└── ";
+    printf("%s", arrow);
+  }
+
+  printf("%s (x:%.1f y:%.1f w:%.1f h:%.1f tx:%i eh:%i tg:%i)",
          view->id,
          view->frame.local.x,
          view->frame.local.y,

@@ -72,30 +72,91 @@ char* html_new_read(char* path)
 
 uint32_t count_tags(char* html)
 {
-  int   t = 0; // tag index
-  char* c = html;
+  uint32_t t       = 0; // tag index
+  char*    c       = html;
+  int      in_tag  = 0;
+  int      in_comm = 0;
   while (*c)
   {
     if (*c == '<')
-      t++;
+    {
+      if (!in_comm)
+      {
+        in_tag = 1;
+      }
+    }
+    else if (*c == '!')
+    {
+      if (in_tag)
+      {
+        if (*(c - 1) == '<') in_comm += 1;
+      }
+    }
+    else if (*c == '>')
+    {
+      if (in_comm)
+      {
+        if (*(c - 1) == '-') in_comm -= 1;
+
+        if (!in_comm)
+        {
+          in_tag = 0;
+        }
+      }
+      else if (in_tag)
+      {
+        in_tag = 0;
+        t++;
+      }
+    }
     c++;
   }
+
   return t;
 }
 
 void extract_tags(char* html, tag_t* tags)
 {
-  uint32_t t = 0; // tag index
-  uint32_t i = 0; // char index
-  char*    c = html;
+  uint32_t t       = 0; // tag index
+  uint32_t i       = 0; // char index
+  char*    c       = html;
+  int      in_tag  = 0;
+  int      in_comm = 0;
   while (*c)
   {
     if (*c == '<')
-      tags[t].pos = i;
+    {
+      if (!in_comm)
+      {
+        tags[t].pos = i;
+        in_tag      = 1;
+      }
+    }
+    else if (*c == '!')
+    {
+      if (in_tag)
+      {
+        if (*(c - 1) == '<') in_comm += 1;
+      }
+    }
     else if (*c == '>')
     {
-      tags[t].len = i - tags[t].pos + 1;
-      t++;
+      if (in_comm)
+      {
+        if (*(c - 1) == '-') in_comm -= 1;
+
+        if (!in_comm)
+        {
+          in_tag = 0;
+        }
+      }
+      else if (in_tag)
+      {
+        tags[t].len = i - tags[t].pos + 1;
+        in_tag      = 0;
+        printf("storing %i tag %.*s\n", t, tags[t].len, html + tags[t].pos);
+        t++;
+      }
     }
     i++;
     c++;
@@ -166,6 +227,8 @@ void analyze_tags(char* html, tag_t* tags, uint32_t count)
     tags[i].class   = extract_value(tags[i], "class=\"", html);
     tags[i].onclick = extract_value(tags[i], "onclick=\"", html);
 
+    tag_t t = tags[i];
+
     if (html[tags[i].pos + 1] == '/')
       l -= 2; // </div>
     if (html[tags[i].pos + tags[i].len - 2] == '/' || html[tags[i].pos + tags[i].len - 2] == '-')
@@ -188,8 +251,8 @@ tag_t* html_new_parse_html(char* html)
 
   for (int i = 0; i < cnt; i++)
   {
-    // tag_t t = tags[i];
-    // printf("ind %i tag %.*s lvl %i par %i\n", i, t.len, html + t.pos, t.level, t.parent);
+    /* tag_t t = tags[i]; */
+    /* printf("ind %i tag %.*s lvl %i par %i\n", i, t.len, html + t.pos, t.level, t.parent); */
   }
 
   return tags;

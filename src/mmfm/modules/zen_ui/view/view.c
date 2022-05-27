@@ -175,6 +175,7 @@ void view_calc_global(view_t* view);
 
 #include "views.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 #include "zc_memory.c"
 #include <limits.h>
 
@@ -199,7 +200,7 @@ view_t* view_new(char* id, r2_t frame)
 {
   if (MGET(views.names, id))
   {
-    printf("VIEW NAMES MUST BE UNIQUE!!! : %s\n", id);
+    zc_log_error("VIEW NAMES MUST BE UNIQUE!!! : %s\n", id);
     abort();
   }
 
@@ -486,7 +487,7 @@ void view_desc(void* pointer, int level)
     printf("%s", arrow);
   }
 
-  printf("%s (x:%.1f y:%.1f w:%.1f h:%.1f tx:%i eh:%i tg:%i)",
+  printf("%s [x:%.0f y:%.0f w:%.0f h:%.0f tx:%i eh:%i tg:%i]\n",
          view->id,
          view->frame.local.x,
          view->frame.local.y,
@@ -496,11 +497,7 @@ void view_desc(void* pointer, int level)
          view->handler != NULL,
          view->tex_gen != NULL);
 
-  for (int i = 0; i < view->views->length; i++)
-  {
-    printf("\n");
-    view_desc(view->views->data[i], level + 1);
-  }
+  for (int i = 0; i < view->views->length; i++) view_desc(view->views->data[i], level + 1);
 }
 
 void view_desc_layout(vlayout_t l)

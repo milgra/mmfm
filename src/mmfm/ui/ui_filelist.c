@@ -23,6 +23,7 @@ void ui_filelist_select_and_show(int index);
 
 #include "column.c"
 #include "config.c"
+#include "fontconfig.c"
 #include "selection.c"
 #include "tg_css.c"
 #include "tg_text.c"
@@ -66,7 +67,6 @@ void ui_filelist_attach(view_t* base)
 
   if (sl.view)
   {
-
     sl.items   = VNEW(); // REL -1
     sl.cache   = VNEW(); // REL 0
     sl.columns = VNEW(); // REL 1
@@ -74,9 +74,9 @@ void ui_filelist_attach(view_t* base)
 
     sl.color_s = 0x55FF55FF;
 
-    sl.textstyle.font        = config_get("font_path");
+    sl.textstyle.font        = fontconfig_new_path("Terminus (TTF):style=Bold");
     sl.textstyle.margin_left = 10;
-    sl.textstyle.size        = 18.0;
+    sl.textstyle.size        = 16.0;
     sl.textstyle.textcolor   = 0x000000FF;
     sl.textstyle.backcolor   = 0xF5F5F5FF;
 

@@ -19,6 +19,7 @@ void ui_visualizer_show_image(bm_rgba_t* bm);
 #include "vh_roll.c"
 #include "zc_callback.c"
 #include "zc_draw.c"
+#include "zc_log.c"
 
 struct vizualizer_t
 {
@@ -42,32 +43,38 @@ void ui_visualizer_attach(view_t* baseview)
   uiv.visuright = view_get_subview(baseview, "visuright");
   uiv.visuvideo = view_get_subview(baseview, "visuvideo");
 
-  /* uiv.visuleftbtn     = view_get_subview(uiv.visuleft, "visuleft_btn"); */
-  /* uiv.visurightbtn    = view_get_subview(uiv.visuright, "visuright_btn"); */
-  /* uiv.visuleftbtnbck  = view_get_subview(uiv.visuleft, "visuleft_btn_bck"); */
-  /* uiv.visurightbtnbck = view_get_subview(uiv.visuright, "visuright_btn_bck"); */
+  if (uiv.visuleft)
+  {
 
-  /* vh_anim_add(uiv.visuleftbtnbck); */
-  /* vh_anim_add(uiv.visurightbtnbck); */
+    /* uiv.visuleftbtn     = view_get_subview(uiv.visuleft, "visuleft_btn"); */
+    /* uiv.visurightbtn    = view_get_subview(uiv.visuright, "visuright_btn"); */
+    /* uiv.visuleftbtnbck  = view_get_subview(uiv.visuleft, "visuleft_btn_bck"); */
+    /* uiv.visurightbtnbck = view_get_subview(uiv.visuright, "visuright_btn_bck"); */
 
-  // visualise roll over
+    /* vh_anim_add(uiv.visuleftbtnbck); */
+    /* vh_anim_add(uiv.visurightbtnbck); */
 
-  /* cb_t* cb_btn_press     = cb_new(ui_visualizer_on_button_down, NULL); // REL 0 */
-  /* cb_t* cb_roll_in_visu  = cb_new(ui_visualizer_on_roll_in, NULL);     // REL 1 */
-  /* cb_t* cb_roll_out_visu = cb_new(ui_visualizer_on_roll_out, NULL);    // REL 2 */
+    // visualise roll over
 
-  /* vh_button_add(uiv.visuleftbtn, VH_BUTTON_NORMAL, cb_btn_press); */
-  /* vh_button_add(uiv.visurightbtn, VH_BUTTON_NORMAL, cb_btn_press); */
+    /* cb_t* cb_btn_press     = cb_new(ui_visualizer_on_button_down, NULL); // REL 0 */
+    /* cb_t* cb_roll_in_visu  = cb_new(ui_visualizer_on_roll_in, NULL);     // REL 1 */
+    /* cb_t* cb_roll_out_visu = cb_new(ui_visualizer_on_roll_out, NULL);    // REL 2 */
 
-  /* vh_roll_add(uiv.visuleft, cb_roll_in_visu, cb_roll_out_visu); */
-  /* vh_roll_add(uiv.visuright, cb_roll_in_visu, cb_roll_out_visu); */
+    /* vh_button_add(uiv.visuleftbtn, VH_BUTTON_NORMAL, cb_btn_press); */
+    /* vh_button_add(uiv.visurightbtn, VH_BUTTON_NORMAL, cb_btn_press); */
 
-  /* vh_anim_alpha(uiv.visuleftbtnbck, 1.0, 0.0, 10, AT_LINEAR); */
-  /* vh_anim_alpha(uiv.visurightbtnbck, 1.0, 0.0, 10, AT_LINEAR); */
+    /* vh_roll_add(uiv.visuleft, cb_roll_in_visu, cb_roll_out_visu); */
+    /* vh_roll_add(uiv.visuright, cb_roll_in_visu, cb_roll_out_visu); */
 
-  /* REL(cb_btn_press);     // REL 0 */
-  /* REL(cb_roll_in_visu);  // REL 1 */
-  /* REL(cb_roll_out_visu); // REL 2 */
+    /* vh_anim_alpha(uiv.visuleftbtnbck, 1.0, 0.0, 10, AT_LINEAR); */
+    /* vh_anim_alpha(uiv.visurightbtnbck, 1.0, 0.0, 10, AT_LINEAR); */
+
+    /* REL(cb_btn_press);     // REL 0 */
+    /* REL(cb_roll_in_visu);  // REL 1 */
+    /* REL(cb_roll_out_visu); // REL 2 */
+  }
+  else
+    zc_log_debug("visuleft not found");
 }
 
 void ui_visualizer_detach()

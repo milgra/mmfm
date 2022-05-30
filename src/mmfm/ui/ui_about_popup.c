@@ -24,6 +24,7 @@ void ui_about_popup_refresh();
 #include "vh_list_head.c"
 #include "vh_list_item.c"
 #include "visible.c"
+#include "zc_log.c"
 #include <limits.h>
 
 void ui_about_popup_on_header_field_select(view_t* view, char* id, ev_t ev);
@@ -190,48 +191,55 @@ view_t* ui_about_popup_item_for_index(int index, void* userdata, view_t* listvie
 
 void ui_about_popup_attach(view_t* baseview)
 {
-  donl.view   = view_get_subview(baseview, "aboutlist");
-  donl.fields = VNEW(); // REL 0
-  donl.items  = VNEW(); // REL 1
+  donl.view = view_get_subview(baseview, "aboutlist");
 
-  donl.textstyle.font      = config_get("font_path");
-  donl.textstyle.align     = TA_CENTER;
-  donl.textstyle.margin    = 10;
-  donl.textstyle.size      = 30.0;
-  donl.textstyle.textcolor = 0x000000FF;
-  donl.textstyle.backcolor = 0xF5F5F5FF;
-  donl.textstyle.multiline = 1;
+  if (donl.view)
+  {
 
-  // create fields
+    donl.fields = VNEW(); // REL 0
+    donl.items  = VNEW(); // REL 1
 
-  VADD(donl.fields, col_new("field", 470, 0));
+    donl.textstyle.font      = config_get("font_path");
+    donl.textstyle.align     = TA_CENTER;
+    donl.textstyle.margin    = 10;
+    donl.textstyle.size      = 30.0;
+    donl.textstyle.textcolor = 0x000000FF;
+    donl.textstyle.backcolor = 0xF5F5F5FF;
+    donl.textstyle.multiline = 1;
 
-  vec_dec_retcount(donl.fields);
+    // create fields
 
-  // add list handler to view
+    VADD(donl.fields, col_new("field", 470, 0));
 
-  vh_list_add(donl.view, ((vh_list_inset_t){0, 0, 0, 0}), ui_about_popup_item_for_index, NULL, NULL);
+    vec_dec_retcount(donl.fields);
 
-  // create items
+    // add list handler to view
 
-  VADDR(donl.items, donateitem_new(0));
-  VADDR(donl.items, donateitem_new(1));
-  VADDR(donl.items, donateitem_new(2));
-  VADDR(donl.items, donateitem_new(3));
-  VADDR(donl.items, donateitem_new(4));
-  VADDR(donl.items, donateitem_new(5));
+    vh_list_add(donl.view, ((vh_list_inset_t){0, 0, 0, 0}), ui_about_popup_item_for_index, NULL, NULL);
 
-  // char* version = cstr_new_format(200, "Zen Music v%i.%i beta\nby Milan Toth\nFree and Open Source Software.", VERSION, BUILD); // REL 2
+    // create items
 
-  char* version = cstr_new_format(200, "MultiMedia File Manager v%s beta\nby Milan Toth\nFree and Open Source Software.", MMFM_VERSION); // REL 2
+    VADDR(donl.items, donateitem_new(0));
+    VADDR(donl.items, donateitem_new(1));
+    VADDR(donl.items, donateitem_new(2));
+    VADDR(donl.items, donateitem_new(3));
+    VADDR(donl.items, donateitem_new(4));
+    VADDR(donl.items, donateitem_new(5));
 
-  donateitem_update_row(donl.items->data[0], 0, version);
-  donateitem_update_row(donl.items->data[1], 1, "Support on Patreon");
-  donateitem_update_row(donl.items->data[2], 2, "Donate on Paypal");
-  donateitem_update_row(donl.items->data[3], 3, "Report an Issue");
-  donateitem_update_row(donl.items->data[4], 4, "GitHub Page");
+    // char* version = cstr_new_format(200, "Zen Music v%i.%i beta\nby Milan Toth\nFree and Open Source Software.", VERSION, BUILD); // REL 2
 
-  REL(version); // REL 2
+    char* version = cstr_new_format(200, "MultiMedia File Manager v%s beta\nby Milan Toth\nFree and Open Source Software.", MMFM_VERSION); // REL 2
+
+    donateitem_update_row(donl.items->data[0], 0, version);
+    donateitem_update_row(donl.items->data[1], 1, "Support on Patreon");
+    donateitem_update_row(donl.items->data[2], 2, "Donate on Paypal");
+    donateitem_update_row(donl.items->data[3], 3, "Report an Issue");
+    donateitem_update_row(donl.items->data[4], 4, "GitHub Page");
+
+    REL(version); // REL 2
+  }
+  else
+    zc_log_debug("aboutlist not found");
 }
 
 void ui_about_popup_detach()

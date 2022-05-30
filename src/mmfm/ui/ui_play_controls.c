@@ -32,6 +32,7 @@ void ui_play_update();
 #include "vh_knob.c"
 #include "visible.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 #include <limits.h>
 #include <time.h>
 
@@ -56,28 +57,35 @@ void ui_play_on_position_change(view_t* view, float angle);
 void ui_play_controls_attach(view_t* baseview)
 {
   uipc.seekknob = view_get_subview(baseview, "seekknob");
-  uipc.playbtn  = view_get_subview(baseview, "playbtn");
-  /* uipc.volknob  = view_get_subview(baseview, "volknob"); */
-  /* uipc.mutebtn  = view_get_subview(baseview, "mutebtn"); */
 
-  cb_t* cb_btn_press = cb_new(ui_play_on_button_down, NULL); // REL 0
+  if (uipc.seekknob)
+  {
 
-  vh_button_add(view_get_subview(baseview, "nextbtn"), VH_BUTTON_NORMAL, cb_btn_press);
-  vh_button_add(view_get_subview(baseview, "prevbtn"), VH_BUTTON_NORMAL, cb_btn_press);
-  vh_button_add(view_get_subview(baseview, "shufflebtn"), VH_BUTTON_TOGGLE, cb_btn_press);
+    uipc.playbtn = view_get_subview(baseview, "playbtn");
+    /* uipc.volknob  = view_get_subview(baseview, "volknob"); */
+    /* uipc.mutebtn  = view_get_subview(baseview, "mutebtn"); */
 
-  tg_knob_add(uipc.seekknob);
-  vh_knob_add(uipc.seekknob, ui_play_on_position_change, ui_play_on_play_button_down);
+    cb_t* cb_btn_press = cb_new(ui_play_on_button_down, NULL); // REL 0
 
-  /* tg_knob_add(uipc.volknob); */
-  /* vh_knob_add(uipc.volknob, ui_play_on_volume_change, ui_play_on_mute_button_down); */
+    vh_button_add(view_get_subview(baseview, "nextbtn"), VH_BUTTON_NORMAL, cb_btn_press);
+    vh_button_add(view_get_subview(baseview, "prevbtn"), VH_BUTTON_NORMAL, cb_btn_press);
+    vh_button_add(view_get_subview(baseview, "shufflebtn"), VH_BUTTON_TOGGLE, cb_btn_press);
 
-  vh_button_add(uipc.playbtn, VH_BUTTON_TOGGLE, cb_btn_press);
-  /* vh_button_add(uipc.mutebtn, VH_BUTTON_TOGGLE, cb_btn_press); */
+    tg_knob_add(uipc.seekknob);
+    vh_knob_add(uipc.seekknob, ui_play_on_position_change, ui_play_on_play_button_down);
 
-  // ui_play_update_volume(0.9);
+    /* tg_knob_add(uipc.volknob); */
+    /* vh_knob_add(uipc.volknob, ui_play_on_volume_change, ui_play_on_mute_button_down); */
 
-  REL(cb_btn_press); // REL 0
+    vh_button_add(uipc.playbtn, VH_BUTTON_TOGGLE, cb_btn_press);
+    /* vh_button_add(uipc.mutebtn, VH_BUTTON_TOGGLE, cb_btn_press); */
+
+    // ui_play_update_volume(0.9);
+
+    REL(cb_btn_press); // REL 0
+  }
+  else
+    zc_log_debug("seekknob not found");
 }
 
 void ui_play_controls_detach()

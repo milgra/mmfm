@@ -23,6 +23,7 @@ void ui_lib_init_popup_set_library();
 #include "vh_textinput_scroller.c"
 #include "wm_connector.c"
 #include "zc_callback.c"
+#include "zc_log.c"
 #include "zc_text.c"
 
 struct _ui_lib_init_popup_t
@@ -41,41 +42,48 @@ view_t* ui_lib_init_popup_item_for_index(int index, void* userdata, view_t* list
 
 void ui_lib_init_popup_attach(view_t* baseview)
 {
-  ulip.fontpath  = config_get("font_path");
-  ulip.baseview  = baseview;
-  ulip.view      = view_get_subview(baseview, "lib_init_page");
-  ulip.textfield = view_get_subview(baseview, "lib_init_textfield");
+  ulip.view = view_get_subview(baseview, "lib_init_page");
 
-  view_t* textinput_scroller = view_get_subview(baseview, "lib_init_textinput_scroller");
+  if (ulip.view)
+  {
 
-  ulip.textinput = textinput_scroller;
+    ulip.fontpath  = config_get("font_path");
+    ulip.baseview  = baseview;
+    ulip.textfield = view_get_subview(baseview, "lib_init_textfield");
 
-  cb_t* cb_btn_press = cb_new(ui_lib_init_on_button_down, NULL); // REL 0
+    view_t* textinput_scroller = view_get_subview(baseview, "lib_init_textinput_scroller");
 
-  vh_button_add(view_get_subview(baseview, "lib_init_accept_btn"), VH_BUTTON_NORMAL, cb_btn_press);
-  vh_button_add(view_get_subview(baseview, "lib_init_reject_btn"), VH_BUTTON_NORMAL, cb_btn_press);
+    ulip.textinput = textinput_scroller;
 
-  textstyle_t ts  = {0};
-  ts.font         = ulip.fontpath;
-  ts.align        = TA_LEFT;
-  ts.margin_left  = 10;
-  ts.margin_right = 10;
-  ts.size         = 30.0;
-  ts.textcolor    = 0x000000FF;
-  ts.backcolor    = 0;
-  ts.autosize     = AS_AUTO;
+    cb_t* cb_btn_press = cb_new(ui_lib_init_on_button_down, NULL); // REL 0
 
-  tg_text_add(ulip.textfield);
+    vh_button_add(view_get_subview(baseview, "lib_init_accept_btn"), VH_BUTTON_NORMAL, cb_btn_press);
+    vh_button_add(view_get_subview(baseview, "lib_init_reject_btn"), VH_BUTTON_NORMAL, cb_btn_press);
 
-  ts.backcolor = 0xFFFFFFFF;
+    textstyle_t ts  = {0};
+    ts.font         = ulip.fontpath;
+    ts.align        = TA_LEFT;
+    ts.margin_left  = 10;
+    ts.margin_right = 10;
+    ts.size         = 30.0;
+    ts.textcolor    = 0x000000FF;
+    ts.backcolor    = 0;
+    ts.autosize     = AS_AUTO;
 
-  vh_textinput_scroller_add(textinput_scroller, "/home/youruser/Music", "", ts, NULL);
+    tg_text_add(ulip.textfield);
 
-  vh_textinput_set_on_return(vh_textinput_scroller_get_input_view(textinput_scroller), ui_lib_init_popup_set_library);
+    ts.backcolor = 0xFFFFFFFF;
 
-  view_remove_from_parent(ulip.view);
+    vh_textinput_scroller_add(textinput_scroller, "/home/youruser/Music", "", ts, NULL);
 
-  REL(cb_btn_press); // REL 0
+    vh_textinput_set_on_return(vh_textinput_scroller_get_input_view(textinput_scroller), ui_lib_init_popup_set_library);
+
+    view_remove_from_parent(ulip.view);
+
+    REL(cb_btn_press); // REL 0
+  }
+  else
+    zc_log_debug("lib_init_page not found");
 }
 
 void ui_lib_init_popup_detach()

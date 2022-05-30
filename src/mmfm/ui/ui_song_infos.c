@@ -16,6 +16,7 @@ void ui_song_infos_show(int index);
 #include "tg_text.c"
 #include "visible.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 #include "zc_text.c"
 
 struct ui_song_infos_t
@@ -29,28 +30,36 @@ struct ui_song_infos_t
 
 void ui_song_infos_attach(view_t* baseview)
 {
-  textstyle_t ts  = {0};
-  ts.font         = config_get("font_path");
-  ts.align        = TA_CENTER;
-  ts.margin_right = 0;
-  ts.size         = 30.0;
-  ts.textcolor    = 0x000000FF;
-  ts.backcolor    = 0;
-  ts.multiline    = 1;
+  uisi.song_info_view = view_get_subview(baseview, "song_info");
 
-  uisi.song_info_view      = view_get_subview(baseview, "song_info");
-  uisi.song_time_view      = view_get_subview(baseview, "song_info_time");
-  uisi.song_length_view    = view_get_subview(baseview, "song_info_length");
-  uisi.song_remaining_view = view_get_subview(baseview, "song_info_remaining");
-  uisi.textstyle           = ts;
+  if (uisi.song_info_view)
+  {
 
-  tg_text_add(uisi.song_info_view);
-  tg_text_set(uisi.song_info_view, "-", ts);
-  tg_text_add(uisi.song_time_view);
-  tg_text_add(uisi.song_length_view);
-  tg_text_add(uisi.song_remaining_view);
+    textstyle_t ts  = {0};
+    ts.font         = config_get("font_path");
+    ts.align        = TA_CENTER;
+    ts.margin_right = 0;
+    ts.size         = 30.0;
+    ts.textcolor    = 0x000000FF;
+    ts.backcolor    = 0;
+    ts.multiline    = 1;
 
-  ui_song_infos_update_time(0.0, 0.0, 0.0);
+    uisi.song_info_view      = view_get_subview(baseview, "song_info");
+    uisi.song_time_view      = view_get_subview(baseview, "song_info_time");
+    uisi.song_length_view    = view_get_subview(baseview, "song_info_length");
+    uisi.song_remaining_view = view_get_subview(baseview, "song_info_remaining");
+    uisi.textstyle           = ts;
+
+    tg_text_add(uisi.song_info_view);
+    tg_text_set(uisi.song_info_view, "-", ts);
+    tg_text_add(uisi.song_time_view);
+    tg_text_add(uisi.song_length_view);
+    tg_text_add(uisi.song_remaining_view);
+
+    ui_song_infos_update_time(0.0, 0.0, 0.0);
+  }
+  else
+    zc_log_debug("song_info not found");
 }
 
 void ui_song_infos_detach()

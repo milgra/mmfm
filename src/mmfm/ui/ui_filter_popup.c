@@ -20,6 +20,7 @@ void ui_filter_popup_show();
 #include "ui_popup_switcher.c"
 #include "visible.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 
 void ui_filter_popup_on_genre_select(int index);
 void ui_filter_popup_on_artist_select(int index);
@@ -33,18 +34,26 @@ struct _ui_filter_popup_t
 
 void ui_filter_popup_attach(view_t* baseview)
 {
-  textstyle_t ts = {0};
-  ts.font        = config_get("font_path");
-  ts.size        = 30.0;
-  ts.textcolor   = 0x000000FF;
-  ts.backcolor   = 0;
-  ts.align       = TA_RIGHT;
+  view_t* genreview = view_get_subview(baseview, "genrelist");
 
-  ts.margin_right = 20;
-  ufp.genrelist   = textlist_new(view_get_subview(baseview, "genrelist"), ts, ui_filter_popup_on_genre_select); // REL 0
-  ts.margin_left  = 20;
-  ts.align        = TA_LEFT;
-  ufp.artistlist  = textlist_new(view_get_subview(baseview, "artistlist"), ts, ui_filter_popup_on_artist_select); // REL 1
+  if (ufp.genrelist)
+  {
+    textstyle_t ts = {0};
+    ts.font        = config_get("font_path");
+    ts.size        = 30.0;
+    ts.textcolor   = 0x000000FF;
+    ts.backcolor   = 0;
+    ts.align       = TA_RIGHT;
+
+    ts.margin_right = 20;
+    ts.margin_left  = 20;
+    ts.align        = TA_LEFT;
+
+    ufp.genrelist  = textlist_new(genreview, ts, ui_filter_popup_on_genre_select);                                 // REL 0
+    ufp.artistlist = textlist_new(view_get_subview(baseview, "artistlist"), ts, ui_filter_popup_on_artist_select); // REL 1
+  }
+  else
+    zc_log_debug("genrelist not found");
 }
 
 void ui_filter_popup_detach()

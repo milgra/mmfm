@@ -22,6 +22,7 @@ void ui_filter_bar_clear_search(void* userdata, void* data);
 #include "vh_button.c"
 #include "vh_textinput.c"
 #include "visible.c"
+#include "zc_log.c"
 
 void ui_filter_bar_filter(view_t* view, void* userdata);
 
@@ -35,29 +36,34 @@ void ui_filter_bar_attach(view_t* baseview)
 {
   ufb.filelist_filter_bar = view_get_subview(baseview, "filterfield");
 
-  textstyle_t ts  = {0};
-  ts.font         = config_get("font_path");
-  ts.size         = 30.0;
-  ts.margin_right = 20;
-  ts.align        = TA_LEFT;
-  ts.textcolor    = 0x000000FF;
-  ts.backcolor    = 0xFFFF00FF;
+  if (ufb.filelist_filter_bar)
+  {
+    textstyle_t ts  = {0};
+    ts.font         = config_get("font_path");
+    ts.size         = 30.0;
+    ts.margin_right = 20;
+    ts.align        = TA_LEFT;
+    ts.textcolor    = 0x000000FF;
+    ts.backcolor    = 0xFFFF00FF;
 
-  view_t* clearbtn  = view_get_subview(baseview, "clearbtn");
-  view_t* filterbtn = view_get_subview(baseview, "filterbtn");
+    view_t* clearbtn  = view_get_subview(baseview, "clearbtn");
+    view_t* filterbtn = view_get_subview(baseview, "filterbtn");
 
-  cb_t* filter_cb = cb_new(ui_filter_bar_show_filters, NULL); // REL 0
-  cb_t* clear_cb  = cb_new(ui_filter_bar_clear_search, NULL); // REL 1
+    cb_t* filter_cb = cb_new(ui_filter_bar_show_filters, NULL); // REL 0
+    cb_t* clear_cb  = cb_new(ui_filter_bar_clear_search, NULL); // REL 1
 
-  vh_button_add(filterbtn, VH_BUTTON_NORMAL, filter_cb);
-  vh_button_add(clearbtn, VH_BUTTON_NORMAL, clear_cb);
+    vh_button_add(filterbtn, VH_BUTTON_NORMAL, filter_cb);
+    vh_button_add(clearbtn, VH_BUTTON_NORMAL, clear_cb);
 
-  REL(filter_cb); // REL 0
-  REL(clear_cb);  // REL 1
+    REL(filter_cb); // REL 0
+    REL(clear_cb);  // REL 1
 
-  vh_textinput_add(ufb.filelist_filter_bar, "", "Search/Filter", ts, NULL);
-  vh_textinput_set_on_text(ufb.filelist_filter_bar, ui_filter_bar_filter);
-  //vh_textinput_set_on_activate(ufb.filelist_filter_bar, ui_on_filter_activate);
+    vh_textinput_add(ufb.filelist_filter_bar, "", "Search/Filter", ts, NULL);
+    vh_textinput_set_on_text(ufb.filelist_filter_bar, ui_filter_bar_filter);
+    // vh_textinput_set_on_activate(ufb.filelist_filter_bar, ui_on_filter_activate);
+  }
+  else
+    zc_log_debug("filterfield not found");
 }
 
 void ui_filter_bar_detach()

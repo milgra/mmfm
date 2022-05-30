@@ -28,6 +28,7 @@ void ui_settings_popup_show();
 #include "vh_list_head.c"
 #include "vh_list_item.c"
 #include "zc_callback.c"
+#include "zc_log.c"
 
 void ui_settings_popup_on_header_field_select(view_t* view, char* id, ev_t ev);
 void ui_settings_popup_on_header_field_insert(view_t* view, int src, int tgt);
@@ -47,72 +48,78 @@ struct ui_settings_popup_t
 
 void ui_settings_popup_attach(view_t* baseview)
 {
-  uisp.view    = view_get_subview(baseview, "settingslist");
-  uisp.columns = VNEW(); // REL 0
-  uisp.items   = VNEW(); // REL 1
+  uisp.view = view_get_subview(baseview, "settingslist");
 
-  uisp.textstyle.font        = config_get("font_path");
-  uisp.textstyle.align       = 0;
-  uisp.textstyle.margin_left = 10;
-  uisp.textstyle.size        = 30.0;
-  uisp.textstyle.textcolor   = 0x000000FF;
-  uisp.textstyle.backcolor   = 0xF5F5F5FF;
-
-  // create columns
-
-  VADDR(uisp.columns, col_new("key", 200, 0));
-  VADDR(uisp.columns, col_new("value", 800, 1));
-
-  // add header handler
-
-  view_t* header = view_new("settingslist_header", (r2_t){0, 0, 10, 30}); // REL 2
-  /* header->layout.background_color = 0x333333FF; */
-  /* header->layout.shadow_blur      = 3; */
-  /* header->layout.border_radius    = 3; */
-  tg_css_add(header);
-
-  vh_lhead_add(header);
-  vh_lhead_set_on_select(header, ui_settings_popup_on_header_field_select);
-  vh_lhead_set_on_insert(header, ui_settings_popup_on_header_field_insert);
-  vh_lhead_set_on_resize(header, ui_settings_popup_on_header_field_resize);
-
-  for (int i = 0; i < uisp.columns->length; i++)
+  if (uisp.view)
   {
-    col_t*  cell     = uisp.columns->data[i];
-    char*   id       = cstr_new_format(100, "%s%s", header->id, cell->id); // REL 3
-    view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 30});         // REL 4
+    uisp.columns = VNEW(); // REL 0
+    uisp.items   = VNEW(); // REL 1
 
-    tg_text_add(cellview);
-    tg_text_set(cellview, cell->id, uisp.textstyle);
+    uisp.textstyle.font        = config_get("font_path");
+    uisp.textstyle.align       = 0;
+    uisp.textstyle.margin_left = 10;
+    uisp.textstyle.size        = 30.0;
+    uisp.textstyle.textcolor   = 0x000000FF;
+    uisp.textstyle.backcolor   = 0xF5F5F5FF;
 
-    vh_lhead_add_cell(header, cell->id, cell->size, cellview);
+    // create columns
 
-    REL(id);       // REL 3
-    REL(cellview); // REL 4
+    VADDR(uisp.columns, col_new("key", 200, 0));
+    VADDR(uisp.columns, col_new("value", 800, 1));
+
+    // add header handler
+
+    view_t* header = view_new("settingslist_header", (r2_t){0, 0, 10, 30}); // REL 2
+    /* header->layout.background_color = 0x333333FF; */
+    /* header->layout.shadow_blur      = 3; */
+    /* header->layout.border_radius    = 3; */
+    tg_css_add(header);
+
+    vh_lhead_add(header);
+    vh_lhead_set_on_select(header, ui_settings_popup_on_header_field_select);
+    vh_lhead_set_on_insert(header, ui_settings_popup_on_header_field_insert);
+    vh_lhead_set_on_resize(header, ui_settings_popup_on_header_field_resize);
+
+    for (int i = 0; i < uisp.columns->length; i++)
+    {
+      col_t*  cell     = uisp.columns->data[i];
+      char*   id       = cstr_new_format(100, "%s%s", header->id, cell->id); // REL 3
+      view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 30});         // REL 4
+
+      tg_text_add(cellview);
+      tg_text_set(cellview, cell->id, uisp.textstyle);
+
+      vh_lhead_add_cell(header, cell->id, cell->size, cellview);
+
+      REL(id);       // REL 3
+      REL(cellview); // REL 4
+    }
+
+    // add list handler to view
+
+    vh_list_add(uisp.view, ((vh_list_inset_t){30, 0, 0, 0}), ui_settings_popup_item_for_index, NULL, NULL);
+    vh_list_set_header(uisp.view, header);
+
+    // create items
+
+    VADDR(uisp.items, ui_settings_popup_new_item());
+    VADDR(uisp.items, ui_settings_popup_new_item());
+    // VADD(uisp.items, ui_settings_popup_new_item());
+    VADDR(uisp.items, ui_settings_popup_new_item());
+    VADDR(uisp.items, ui_settings_popup_new_item());
+    VADDR(uisp.items, ui_settings_popup_new_item());
+
+    ui_settings_popup_update_item(uisp.items->data[0], 0, "Library Path", "/home/user/milgra/Music");
+    ui_settings_popup_update_item(uisp.items->data[1], 1, "Organize Library", "Disabled");
+    //  ui_settings_popup_update_item(uisp.items->data[2], 2, "Dark Mode", "Disabled");
+    ui_settings_popup_update_item(uisp.items->data[2], 2, "Remote Control", "Disabled");
+    ui_settings_popup_update_item(uisp.items->data[3], 3, "Config Path", "/home/.config/zenmusic/config");
+    ui_settings_popup_update_item(uisp.items->data[4], 4, "Style Path", "/usr/local/share/zenmusic");
+
+    REL(header);
   }
-
-  // add list handler to view
-
-  vh_list_add(uisp.view, ((vh_list_inset_t){30, 0, 0, 0}), ui_settings_popup_item_for_index, NULL, NULL);
-  vh_list_set_header(uisp.view, header);
-
-  // create items
-
-  VADDR(uisp.items, ui_settings_popup_new_item());
-  VADDR(uisp.items, ui_settings_popup_new_item());
-  // VADD(uisp.items, ui_settings_popup_new_item());
-  VADDR(uisp.items, ui_settings_popup_new_item());
-  VADDR(uisp.items, ui_settings_popup_new_item());
-  VADDR(uisp.items, ui_settings_popup_new_item());
-
-  ui_settings_popup_update_item(uisp.items->data[0], 0, "Library Path", "/home/user/milgra/Music");
-  ui_settings_popup_update_item(uisp.items->data[1], 1, "Organize Library", "Disabled");
-  //  ui_settings_popup_update_item(uisp.items->data[2], 2, "Dark Mode", "Disabled");
-  ui_settings_popup_update_item(uisp.items->data[2], 2, "Remote Control", "Disabled");
-  ui_settings_popup_update_item(uisp.items->data[3], 3, "Config Path", "/home/.config/zenmusic/config");
-  ui_settings_popup_update_item(uisp.items->data[4], 4, "Style Path", "/usr/local/share/zenmusic");
-
-  REL(header);
+  else
+    zc_log_debug("settingslist not found");
 }
 
 void ui_settings_popup_detach()

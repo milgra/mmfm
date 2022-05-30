@@ -30,6 +30,7 @@ void ui_meta_view_show_file(map_t* file);
 #include "vh_list_item.c"
 #include "zc_callback.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 
 void ui_meta_view_on_header_field_select(view_t* view, char* id, ev_t ev);
 void ui_meta_view_on_header_field_insert(view_t* view, int src, int tgt);
@@ -49,72 +50,79 @@ struct ui_meta_view_t
 
 void ui_meta_view_attach(view_t* baseview)
 {
-  uimv.view    = view_get_subview(baseview, "metaview");
-  uimv.columns = VNEW(); // REL 0
-  uimv.items   = VNEW(); // REL 1
+  uimv.view = view_get_subview(baseview, "metaview");
 
-  uimv.textstyle.font        = config_get("font_path");
-  uimv.textstyle.align       = 0;
-  uimv.textstyle.margin_left = 10;
-  uimv.textstyle.size        = 30.0;
-  uimv.textstyle.textcolor   = 0x000000FF;
-  uimv.textstyle.backcolor   = 0xF5F5F5FF;
-
-  // create columns
-
-  VADDR(uimv.columns, col_new("key", 200, 0));
-  VADDR(uimv.columns, col_new("value", 800, 1));
-
-  // add header handler
-
-  view_t* header = view_new("settingslist_header", (r2_t){0, 0, 10, 30}); // REL 2
-  /* header->layout.background_color = 0x333333FF; */
-  /* header->layout.shadow_blur      = 3; */
-  /* header->layout.border_radius    = 3; */
-  tg_css_add(header);
-
-  vh_lhead_add(header);
-  vh_lhead_set_on_select(header, ui_meta_view_on_header_field_select);
-  vh_lhead_set_on_insert(header, ui_meta_view_on_header_field_insert);
-  vh_lhead_set_on_resize(header, ui_meta_view_on_header_field_resize);
-
-  for (int i = 0; i < uimv.columns->length; i++)
+  if (uimv.view)
   {
-    col_t*  cell     = uimv.columns->data[i];
-    char*   id       = cstr_new_format(100, "%s%s", header->id, cell->id); // REL 3
-    view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 30});         // REL 4
 
-    tg_text_add(cellview);
-    tg_text_set(cellview, cell->id, uimv.textstyle);
+    uimv.columns = VNEW(); // REL 0
+    uimv.items   = VNEW(); // REL 1
 
-    vh_lhead_add_cell(header, cell->id, cell->size, cellview);
+    uimv.textstyle.font        = config_get("font_path");
+    uimv.textstyle.align       = 0;
+    uimv.textstyle.margin_left = 10;
+    uimv.textstyle.size        = 30.0;
+    uimv.textstyle.textcolor   = 0x000000FF;
+    uimv.textstyle.backcolor   = 0xF5F5F5FF;
 
-    REL(id);       // REL 3
-    REL(cellview); // REL 4
+    // create columns
+
+    VADDR(uimv.columns, col_new("key", 200, 0));
+    VADDR(uimv.columns, col_new("value", 800, 1));
+
+    // add header handler
+
+    view_t* header = view_new("settingslist_header", (r2_t){0, 0, 10, 30}); // REL 2
+    /* header->layout.background_color = 0x333333FF; */
+    /* header->layout.shadow_blur      = 3; */
+    /* header->layout.border_radius    = 3; */
+    tg_css_add(header);
+
+    vh_lhead_add(header);
+    vh_lhead_set_on_select(header, ui_meta_view_on_header_field_select);
+    vh_lhead_set_on_insert(header, ui_meta_view_on_header_field_insert);
+    vh_lhead_set_on_resize(header, ui_meta_view_on_header_field_resize);
+
+    for (int i = 0; i < uimv.columns->length; i++)
+    {
+      col_t*  cell     = uimv.columns->data[i];
+      char*   id       = cstr_new_format(100, "%s%s", header->id, cell->id); // REL 3
+      view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 30});         // REL 4
+
+      tg_text_add(cellview);
+      tg_text_set(cellview, cell->id, uimv.textstyle);
+
+      vh_lhead_add_cell(header, cell->id, cell->size, cellview);
+
+      REL(id);       // REL 3
+      REL(cellview); // REL 4
+    }
+
+    // add list handler to view
+
+    vh_list_add(uimv.view, ((vh_list_inset_t){30, 0, 0, 0}), ui_meta_view_item_for_index, NULL, NULL);
+    vh_list_set_header(uimv.view, header);
+
+    // create items
+
+    VADDR(uimv.items, ui_meta_view_new_item());
+    VADDR(uimv.items, ui_meta_view_new_item());
+    // VADD(uimv.items, ui_meta_view_new_item());
+    VADDR(uimv.items, ui_meta_view_new_item());
+    VADDR(uimv.items, ui_meta_view_new_item());
+    VADDR(uimv.items, ui_meta_view_new_item());
+
+    ui_meta_view_update_item(uimv.items->data[0], 0, "Library Path", "/home/user/milgra/Music");
+    ui_meta_view_update_item(uimv.items->data[1], 1, "Organize Library", "Disabled");
+    //  ui_meta_view_update_item(uimv.items->data[2], 2, "Dark Mode", "Disabled");
+    ui_meta_view_update_item(uimv.items->data[2], 2, "Remote Control", "Disabled");
+    ui_meta_view_update_item(uimv.items->data[3], 3, "Config Path", "/home/.config/zenmusic/config");
+    ui_meta_view_update_item(uimv.items->data[4], 4, "Style Path", "/usr/local/share/zenmusic");
+
+    REL(header);
   }
-
-  // add list handler to view
-
-  vh_list_add(uimv.view, ((vh_list_inset_t){30, 0, 0, 0}), ui_meta_view_item_for_index, NULL, NULL);
-  vh_list_set_header(uimv.view, header);
-
-  // create items
-
-  VADDR(uimv.items, ui_meta_view_new_item());
-  VADDR(uimv.items, ui_meta_view_new_item());
-  // VADD(uimv.items, ui_meta_view_new_item());
-  VADDR(uimv.items, ui_meta_view_new_item());
-  VADDR(uimv.items, ui_meta_view_new_item());
-  VADDR(uimv.items, ui_meta_view_new_item());
-
-  ui_meta_view_update_item(uimv.items->data[0], 0, "Library Path", "/home/user/milgra/Music");
-  ui_meta_view_update_item(uimv.items->data[1], 1, "Organize Library", "Disabled");
-  //  ui_meta_view_update_item(uimv.items->data[2], 2, "Dark Mode", "Disabled");
-  ui_meta_view_update_item(uimv.items->data[2], 2, "Remote Control", "Disabled");
-  ui_meta_view_update_item(uimv.items->data[3], 3, "Config Path", "/home/.config/zenmusic/config");
-  ui_meta_view_update_item(uimv.items->data[4], 4, "Style Path", "/usr/local/share/zenmusic");
-
-  REL(header);
+  else
+    zc_log_debug("metaview not found");
 }
 
 void ui_meta_view_detach()

@@ -1,8 +1,10 @@
 # Zen Media development roadmap
 
+list item is descriptionbol jojjon
+text style from css
+
 scrollable file list
 show content on file select
-text style from css
 
 
 **near future**

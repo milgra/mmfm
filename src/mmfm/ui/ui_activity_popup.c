@@ -59,27 +59,33 @@ void ui_activity_popup_log(char* log)
 
 void ui_activity_popup_attach(view_t* baseview)
 {
-  act.logs = VNEW(); // REL 0
-
   view_t* listview = view_get_subview(baseview, "messages_popup_list");
-  view_t* infoview = view_get_subview(baseview, "song_info");
 
-  textstyle_t ts = {0};
-  ts.font        = config_get("font_path");
-  ts.size        = 30.0;
-  ts.textcolor   = 0x000000FF;
-  ts.backcolor   = 0x0;
-  ts.align       = TA_LEFT;
-  ts.margin      = 10.0;
-  ts.multiline   = 1;
+  if (listview)
+  {
+    act.logs = VNEW(); // REL 0
 
-  act.style = ts;
-  act.list  = textlist_new(listview, ts, ui_activity_popup_select); // REL 1
-  act.info  = infoview;
+    view_t* infoview = view_get_subview(baseview, "song_info");
 
-  act.style.align = TA_CENTER;
+    textstyle_t ts = {0};
+    ts.font        = config_get("font_path");
+    ts.size        = 30.0;
+    ts.textcolor   = 0x000000FF;
+    ts.backcolor   = 0x0;
+    ts.align       = TA_LEFT;
+    ts.margin      = 10.0;
+    ts.multiline   = 1;
 
-  textlist_set_datasource(act.list, act.logs);
+    act.style = ts;
+    act.list  = textlist_new(listview, ts, ui_activity_popup_select); // REL 1
+    act.info  = infoview;
+
+    act.style.align = TA_CENTER;
+
+    textlist_set_datasource(act.list, act.logs);
+  }
+  else
+    zc_log_debug("message_popup_list not found");
 }
 
 void ui_activity_popup_detach()

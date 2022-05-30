@@ -15,6 +15,7 @@ void ui_popup_switcher_toggle(char* id);
 #include "vh_anim.c"
 #include "vh_touch.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 #include "zc_map.c"
 #include "zc_vector.c"
 
@@ -49,19 +50,26 @@ void ui_popup_switcher_attach(view_t* baseview)
     char* name = ups.popup_names->data[index];
 
     view_t* page_view = view_get_subview(ups.baseview, name);
-    view_t* btn_view  = page_view->views->data[0];
-    // view_t* popup_view = btn_view->views->data[0];
 
-    vh_anim_add(page_view);
-    vh_anim_set_event(page_view, page_view, ui_popup_switcher_remove);
+    if (page_view)
+    {
 
-    cb_t* button_down = cb_new(ui_popup_switcher_on_button_down, NULL); // REL 0
-    vh_touch_add(btn_view, button_down);
-    REL(button_down); // REL 0
+      view_t* btn_view = page_view->views->data[0];
+      // view_t* popup_view = btn_view->views->data[0];
 
-    view_remove_from_parent(page_view);
+      vh_anim_add(page_view);
+      vh_anim_set_event(page_view, page_view, ui_popup_switcher_remove);
 
-    MPUT(ups.popup_views, name, page_view);
+      cb_t* button_down = cb_new(ui_popup_switcher_on_button_down, NULL); // REL 0
+      vh_touch_add(btn_view, button_down);
+      REL(button_down); // REL 0
+
+      view_remove_from_parent(page_view);
+
+      MPUT(ups.popup_views, name, page_view);
+    }
+    else
+      zc_log_debug("%s not found", name);
   }
 }
 

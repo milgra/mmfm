@@ -22,6 +22,7 @@ void ui_inputfield_popup_show(char* text, cb_t* acc_cb, cb_t* rej_cb);
 #include "vh_textinput.c"
 #include "vh_textinput_scroller.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 #include "zc_vector.c"
 
 void    ui_inputfield_popup_accept(void* userdata, void* data);
@@ -44,42 +45,49 @@ void ui_inputfield_popup_attach(view_t* baseview)
 {
   if (uip.attached) return;
 
-  textstyle_t ts = {0};
-  ts.font        = config_get("font_path");
-  ts.size        = 30.0;
-  ts.margin      = 5;
-  ts.align       = TA_LEFT;
-  ts.textcolor   = 0x000000FF;
-  ts.backcolor   = 0;
-  ts.multiline   = 0;
-  ts.autosize    = AS_AUTO;
-
-  view_t* acc_btn   = view_get_subview(baseview, "inp_popup_accept_btn");
-  view_t* rej_btn   = view_get_subview(baseview, "inp_popup_reject_btn");
   view_t* textfield = view_get_subview(baseview, "inp_popup_textfield");
-  view_t* textinput = view_get_subview(baseview, "inp_popup_textinput_scroller");
 
-  vh_textinput_scroller_add(textinput, "/home/youruser/Music", "", ts, NULL);
-  vh_textinput_set_on_return(vh_textinput_scroller_get_input_view(textinput), ui_inputfield_popup_enter);
+  if (textfield)
+  {
 
-  tg_text_add(textfield);
+    textstyle_t ts = {0};
+    ts.font        = config_get("font_path");
+    ts.size        = 30.0;
+    ts.margin      = 5;
+    ts.align       = TA_LEFT;
+    ts.textcolor   = 0x000000FF;
+    ts.backcolor   = 0;
+    ts.multiline   = 0;
+    ts.autosize    = AS_AUTO;
 
-  ts.autosize  = AS_FIX;
-  ts.multiline = 1;
-  ts.align     = TA_CENTER;
+    view_t* acc_btn   = view_get_subview(baseview, "inp_popup_accept_btn");
+    view_t* rej_btn   = view_get_subview(baseview, "inp_popup_reject_btn");
+    view_t* textinput = view_get_subview(baseview, "inp_popup_textinput_scroller");
 
-  cb_t* cb_btn_press = cb_new(ui_inputfield_on_button_down, NULL); // REL 0
+    vh_textinput_scroller_add(textinput, "/home/youruser/Music", "", ts, NULL);
+    vh_textinput_set_on_return(vh_textinput_scroller_get_input_view(textinput), ui_inputfield_popup_enter);
 
-  vh_button_add(acc_btn, VH_BUTTON_NORMAL, cb_btn_press);
-  vh_button_add(rej_btn, VH_BUTTON_NORMAL, cb_btn_press);
+    tg_text_add(textfield);
 
-  uip.textstyle = ts;
-  uip.textfield = textfield;
-  uip.textinput = textinput;
-  uip.attached  = 1;
-  uip.requests  = VNEW(); // REL 1
+    ts.autosize  = AS_FIX;
+    ts.multiline = 1;
+    ts.align     = TA_CENTER;
 
-  REL(cb_btn_press); // REL 0
+    cb_t* cb_btn_press = cb_new(ui_inputfield_on_button_down, NULL); // REL 0
+
+    vh_button_add(acc_btn, VH_BUTTON_NORMAL, cb_btn_press);
+    vh_button_add(rej_btn, VH_BUTTON_NORMAL, cb_btn_press);
+
+    uip.textstyle = ts;
+    uip.textfield = textfield;
+    uip.textinput = textinput;
+    uip.attached  = 1;
+    uip.requests  = VNEW(); // REL 1
+
+    REL(cb_btn_press); // REL 0
+  }
+  else
+    zc_log_debug("inp_popup_textfield not found");
 }
 
 void ui_inputfield_popup_detach()

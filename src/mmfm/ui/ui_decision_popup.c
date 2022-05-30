@@ -17,6 +17,7 @@ void ui_decision_popup_show(char* text, cb_t* acc_cb, cb_t* rej_cb);
 #include "ui_popup_switcher.c"
 #include "vh_button.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 #include "zc_vector.c"
 
 void ui_decision_popup_accept(void* userdata, void* data);
@@ -34,34 +35,41 @@ void ui_decision_popup_attach(view_t* baseview)
 {
   if (udp.attached) return;
 
-  textstyle_t ts  = {0};
-  ts.font         = config_get("font_path");
-  ts.size         = 30.0;
-  ts.margin_right = 20;
-  ts.align        = TA_CENTER;
-  ts.textcolor    = 0x000000FF;
-  ts.backcolor    = 0;
-  ts.multiline    = 1;
+  view_t* tf = view_get_subview(baseview, "dec_pop_tf");
 
-  view_t* acc_btn = view_get_subview(baseview, "dec_pop_acc_btn");
-  view_t* rej_btn = view_get_subview(baseview, "dec_pop_rej_btn");
-  view_t* tf      = view_get_subview(baseview, "dec_pop_tf");
+  if (tf)
+  {
 
-  cb_t* acc_cb = cb_new(ui_decision_popup_accept, NULL); // REL 0
-  cb_t* rej_cb = cb_new(ui_decision_popup_reject, NULL); // REl 1
+    textstyle_t ts  = {0};
+    ts.font         = config_get("font_path");
+    ts.size         = 30.0;
+    ts.margin_right = 20;
+    ts.align        = TA_CENTER;
+    ts.textcolor    = 0x000000FF;
+    ts.backcolor    = 0;
+    ts.multiline    = 1;
 
-  tg_text_add(tf);
+    view_t* acc_btn = view_get_subview(baseview, "dec_pop_acc_btn");
+    view_t* rej_btn = view_get_subview(baseview, "dec_pop_rej_btn");
 
-  vh_button_add(acc_btn, VH_BUTTON_NORMAL, acc_cb);
-  vh_button_add(rej_btn, VH_BUTTON_NORMAL, rej_cb);
+    cb_t* acc_cb = cb_new(ui_decision_popup_accept, NULL); // REL 0
+    cb_t* rej_cb = cb_new(ui_decision_popup_reject, NULL); // REl 1
 
-  udp.ts       = ts;
-  udp.tf       = tf;
-  udp.attached = 1;
-  udp.requests = VNEW(); // REL 2
+    tg_text_add(tf);
 
-  REL(acc_cb); // REL 0
-  REL(rej_cb); // REl 1
+    vh_button_add(acc_btn, VH_BUTTON_NORMAL, acc_cb);
+    vh_button_add(rej_btn, VH_BUTTON_NORMAL, rej_cb);
+
+    udp.ts       = ts;
+    udp.tf       = tf;
+    udp.attached = 1;
+    udp.requests = VNEW(); // REL 2
+
+    REL(acc_cb); // REL 0
+    REL(rej_cb); // REl 1
+  }
+  else
+    zc_log_debug("dec_pop_tf not found");
 }
 
 void ui_decision_popup_detach()

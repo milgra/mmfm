@@ -34,6 +34,7 @@ void ui_filelist_select_and_show(int index);
 #include "vh_list_head.c"
 #include "vh_list_item.c"
 #include "visible.c"
+#include "zc_log.c"
 
 void on_header_field_select(view_t* view, char* id, ev_t ev);
 void on_header_field_insert(view_t* view, int src, int tgt);
@@ -61,132 +62,139 @@ void ui_filelist_attach(view_t* base)
 {
   assert(base != NULL);
 
-  sl.view    = view_get_subview(base, "songlist");
-  sl.items   = VNEW(); // REL -1
-  sl.cache   = VNEW(); // REL 0
-  sl.columns = VNEW(); // REL 1
-  sl.fields  = VNEW(); // REL 2
+  sl.view = view_get_subview(base, "songlist");
 
-  sl.color_s = 0x55FF55FF;
-
-  sl.textstyle.font        = config_get("font_path");
-  sl.textstyle.margin_left = 10;
-  sl.textstyle.size        = 20.0;
-  sl.textstyle.textcolor   = 0x000000FF;
-  sl.textstyle.backcolor   = 0xF5F5F5FF;
-
-  // create columns
-
-  /*   MPUTR(file, "type", cstr_new_format(5, "%s", (tflag == FTW_D) ? "d" : (tflag == FTW_DNR) ? "dnr" : (tflag == FTW_DP) ? "dp" : (tflag == FTW_F) ? "f" : (tflag == FTW_NS) ? "ns" : (tflag == FTW_SL) ? "sl" : (tflag == FTW_SLN) ? "sln" : "???")); */
-  /* MPUTR(file, "path", cstr_new_format(PATH_MAX + NAME_MAX, "%s", fpath)); */
-  /* MPUTR(file, "basename", cstr_new_format(NAME_MAX, "%s", fpath + ftwbuf->base)); */
-  /* MPUTR(file, "level", cstr_new_format(20, "%li", ftwbuf->level)); */
-  /* MPUTR(file, "device", cstr_new_format(20, "%li", sb->st_dev)); */
-  /* MPUTR(file, "size", cstr_new_format(20, "%li", sb->st_size)); */
-  /* MPUTR(file, "inode", cstr_new_format(20, "%li", sb->st_ino)); */
-  /* MPUTR(file, "links", cstr_new_format(20, "%li", sb->st_nlink)); */
-  /* MPUTR(file, "userid", cstr_new_format(20, "%li", sb->st_uid)); */
-  /* MPUTR(file, "groupid", cstr_new_format(20, "%li", sb->st_gid)); */
-  /* MPUTR(file, "deviceid", cstr_new_format(20, "%li", sb->st_rdev)); */
-  /* MPUTR(file, "blocksize", cstr_new_format(20, "%li", sb->st_blksize)); */
-  /* MPUTR(file, "blocks", cstr_new_format(20, "%li", sb->st_blocks)); */
-  /* MPUTR(file, "last_access", cstr_new_format(20, "%li", sb->st_atim)); */
-  /* MPUTR(file, "last_modification", cstr_new_format(20, "%li", sb->st_mtim)); */
-  /* MPUTR(file, "last_status", cstr_new_format(20, "%li", sb->st_ctim)); */
-
-  VADDR(sl.columns, col_new("ind", 60, 0));
-  VADDR(sl.columns, col_new("basename", 200, 1));
-  VADDR(sl.columns, col_new("size", 200, 2));
-  VADDR(sl.columns, col_new("type", 200, 2));
-  VADDR(sl.columns, col_new("userid", 350, 3));
-  VADDR(sl.columns, col_new("username", 70, 4));
-  VADDR(sl.columns, col_new("groupid", 150, 5));
-  VADDR(sl.columns, col_new("groupname", 60, 6));
-  VADDR(sl.columns, col_new("last_access", 60, 7));
-  VADDR(sl.columns, col_new("last_modification", 50, 8));
-  VADDR(sl.columns, col_new("last_status", 40, 9));
-  VADDR(sl.columns, col_new("level", 100, 10));
-  VADDR(sl.columns, col_new("device", 80, 11));
-  VADDR(sl.columns, col_new("inode", 55, 12));
-  VADDR(sl.columns, col_new("blocksize", 55, 13));
-  VADDR(sl.columns, col_new("blocks", 150, 14));
-  VADDR(sl.columns, col_new("links", 155, 15));
-
-  VADDR(sl.fields, cstr_new_cstring("index"));
-  VADDR(sl.fields, cstr_new_cstring("basename"));
-  VADDR(sl.fields, cstr_new_cstring("size"));
-  VADDR(sl.fields, cstr_new_cstring("type"));
-  VADDR(sl.fields, cstr_new_cstring("userid"));
-  VADDR(sl.fields, cstr_new_cstring("username"));
-  VADDR(sl.fields, cstr_new_cstring("groupid"));
-  VADDR(sl.fields, cstr_new_cstring("groupname"));
-  VADDR(sl.fields, cstr_new_cstring("last_access"));
-  VADDR(sl.fields, cstr_new_cstring("last_modification"));
-  VADDR(sl.fields, cstr_new_cstring("last_status"));
-  VADDR(sl.fields, cstr_new_cstring("level"));
-  VADDR(sl.fields, cstr_new_cstring("device"));
-  VADDR(sl.fields, cstr_new_cstring("inode"));
-  VADDR(sl.fields, cstr_new_cstring("blocksize"));
-  VADDR(sl.fields, cstr_new_cstring("blocks"));
-  VADDR(sl.fields, cstr_new_cstring("links"));
-
-  // add header handler
-
-  view_t* header                  = view_new("filelist_header", (r2_t){0, 0, 10, 30}); // REL 3
-  header->layout.background_color = 0x33333355;
-  /* header->layout.shadow_blur      = 3; */
-  /* header->layout.border_radius    = 3; */
-  tg_css_add(header);
-
-  vh_lhead_add(header);
-  vh_lhead_set_on_select(header, on_header_field_select);
-  vh_lhead_set_on_insert(header, on_header_field_insert);
-  vh_lhead_set_on_resize(header, on_header_field_resize);
-
-  for (int i = 0; i < sl.columns->length; i++)
+  if (sl.view)
   {
-    col_t*  cell     = sl.columns->data[i];
-    char*   id       = cstr_new_format(100, "%s%s", header->id, cell->id); // REL 4
-    char*   dragid   = cstr_new_format(100, "%sdrag", id);
-    view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 30});          // REL 5
-    view_t* dragview = view_new(dragid, (r2_t){cell->size - 5, 10, 5, 10}); // REL 6
 
-    tg_text_add(cellview);
-    tg_text_set(cellview, cell->id, sl.textstyle);
+    sl.items   = VNEW(); // REL -1
+    sl.cache   = VNEW(); // REL 0
+    sl.columns = VNEW(); // REL 1
+    sl.fields  = VNEW(); // REL 2
 
-    dragview->layout.background_color = 0x00000022;
-    dragview->layout.right            = 5;
-    tg_css_add(dragview);
-    view_add_subview(cellview, dragview);
-    dragview->blocks_touch = 0;
+    sl.color_s = 0x55FF55FF;
 
-    vh_lhead_add_cell(header, cell->id, cell->size, cellview);
+    sl.textstyle.font        = config_get("font_path");
+    sl.textstyle.margin_left = 10;
+    sl.textstyle.size        = 18.0;
+    sl.textstyle.textcolor   = 0x000000FF;
+    sl.textstyle.backcolor   = 0xF5F5F5FF;
 
-    REL(id); // REL 4
-    REL(dragid);
-    REL(cellview); // REL 5
-    REL(dragview); // REL 6
+    // create columns
+
+    /*   MPUTR(file, "type", cstr_new_format(5, "%s", (tflag == FTW_D) ? "d" : (tflag == FTW_DNR) ? "dnr" : (tflag == FTW_DP) ? "dp" : (tflag == FTW_F) ? "f" : (tflag == FTW_NS) ? "ns" : (tflag == FTW_SL) ? "sl" : (tflag == FTW_SLN) ? "sln" : "???")); */
+    /* MPUTR(file, "path", cstr_new_format(PATH_MAX + NAME_MAX, "%s", fpath)); */
+    /* MPUTR(file, "basename", cstr_new_format(NAME_MAX, "%s", fpath + ftwbuf->base)); */
+    /* MPUTR(file, "level", cstr_new_format(20, "%li", ftwbuf->level)); */
+    /* MPUTR(file, "device", cstr_new_format(20, "%li", sb->st_dev)); */
+    /* MPUTR(file, "size", cstr_new_format(20, "%li", sb->st_size)); */
+    /* MPUTR(file, "inode", cstr_new_format(20, "%li", sb->st_ino)); */
+    /* MPUTR(file, "links", cstr_new_format(20, "%li", sb->st_nlink)); */
+    /* MPUTR(file, "userid", cstr_new_format(20, "%li", sb->st_uid)); */
+    /* MPUTR(file, "groupid", cstr_new_format(20, "%li", sb->st_gid)); */
+    /* MPUTR(file, "deviceid", cstr_new_format(20, "%li", sb->st_rdev)); */
+    /* MPUTR(file, "blocksize", cstr_new_format(20, "%li", sb->st_blksize)); */
+    /* MPUTR(file, "blocks", cstr_new_format(20, "%li", sb->st_blocks)); */
+    /* MPUTR(file, "last_access", cstr_new_format(20, "%li", sb->st_atim)); */
+    /* MPUTR(file, "last_modification", cstr_new_format(20, "%li", sb->st_mtim)); */
+    /* MPUTR(file, "last_status", cstr_new_format(20, "%li", sb->st_ctim)); */
+
+    VADDR(sl.columns, col_new("ind", 60, 0));
+    VADDR(sl.columns, col_new("basename", 200, 1));
+    VADDR(sl.columns, col_new("size", 200, 2));
+    VADDR(sl.columns, col_new("type", 200, 2));
+    VADDR(sl.columns, col_new("userid", 350, 3));
+    VADDR(sl.columns, col_new("username", 70, 4));
+    VADDR(sl.columns, col_new("groupid", 150, 5));
+    VADDR(sl.columns, col_new("groupname", 60, 6));
+    VADDR(sl.columns, col_new("last_access", 60, 7));
+    VADDR(sl.columns, col_new("last_modification", 50, 8));
+    VADDR(sl.columns, col_new("last_status", 40, 9));
+    VADDR(sl.columns, col_new("level", 100, 10));
+    VADDR(sl.columns, col_new("device", 80, 11));
+    VADDR(sl.columns, col_new("inode", 55, 12));
+    VADDR(sl.columns, col_new("blocksize", 55, 13));
+    VADDR(sl.columns, col_new("blocks", 150, 14));
+    VADDR(sl.columns, col_new("links", 155, 15));
+
+    VADDR(sl.fields, cstr_new_cstring("index"));
+    VADDR(sl.fields, cstr_new_cstring("basename"));
+    VADDR(sl.fields, cstr_new_cstring("size"));
+    VADDR(sl.fields, cstr_new_cstring("type"));
+    VADDR(sl.fields, cstr_new_cstring("userid"));
+    VADDR(sl.fields, cstr_new_cstring("username"));
+    VADDR(sl.fields, cstr_new_cstring("groupid"));
+    VADDR(sl.fields, cstr_new_cstring("groupname"));
+    VADDR(sl.fields, cstr_new_cstring("last_access"));
+    VADDR(sl.fields, cstr_new_cstring("last_modification"));
+    VADDR(sl.fields, cstr_new_cstring("last_status"));
+    VADDR(sl.fields, cstr_new_cstring("level"));
+    VADDR(sl.fields, cstr_new_cstring("device"));
+    VADDR(sl.fields, cstr_new_cstring("inode"));
+    VADDR(sl.fields, cstr_new_cstring("blocksize"));
+    VADDR(sl.fields, cstr_new_cstring("blocks"));
+    VADDR(sl.fields, cstr_new_cstring("links"));
+
+    // add header handler
+
+    view_t* header                  = view_new("filelist_header", (r2_t){0, 0, 10, 30}); // REL 3
+    header->layout.background_color = 0x33333355;
+    /* header->layout.shadow_blur      = 3; */
+    /* header->layout.border_radius    = 3; */
+    tg_css_add(header);
+
+    vh_lhead_add(header);
+    vh_lhead_set_on_select(header, on_header_field_select);
+    vh_lhead_set_on_insert(header, on_header_field_insert);
+    vh_lhead_set_on_resize(header, on_header_field_resize);
+
+    for (int i = 0; i < sl.columns->length; i++)
+    {
+      col_t*  cell     = sl.columns->data[i];
+      char*   id       = cstr_new_format(100, "%s%s", header->id, cell->id); // REL 4
+      char*   dragid   = cstr_new_format(100, "%sdrag", id);
+      view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 30});          // REL 5
+      view_t* dragview = view_new(dragid, (r2_t){cell->size - 5, 10, 5, 10}); // REL 6
+
+      tg_text_add(cellview);
+      tg_text_set(cellview, cell->id, sl.textstyle);
+
+      dragview->layout.background_color = 0x00000022;
+      dragview->layout.right            = 5;
+      tg_css_add(dragview);
+      view_add_subview(cellview, dragview);
+      dragview->blocks_touch = 0;
+
+      vh_lhead_add_cell(header, cell->id, cell->size, cellview);
+
+      REL(id); // REL 4
+      REL(dragid);
+      REL(cellview); // REL 5
+      REL(dragview); // REL 6
+    }
+
+    // add list handler to view
+
+    vh_list_add(sl.view,
+                ((vh_list_inset_t){30, 200, 0, 10}),
+                ui_filelist_item_for_index,
+                ui_filelist_item_recycle,
+                NULL);
+    vh_list_set_header(sl.view, header);
+
+    // select first song by default
+
+    selection_add(0);
+
+    REL(header); // REL 3
   }
-
-  // add list handler to view
-
-  vh_list_add(sl.view,
-              ((vh_list_inset_t){30, 200, 0, 10}),
-              ui_filelist_item_for_index,
-              ui_filelist_item_recycle,
-              NULL);
-  vh_list_set_header(sl.view, header);
-
-  // select first song by default
-
-  selection_add(0);
-
-  REL(header); // REL 3
+  else
+    zc_log_debug("filelist not found");
 }
 
 void ui_filelist_detach()
 {
-  vh_list_reset(sl.view);
+  if (sl.view) vh_list_reset(sl.view);
 
   REL(sl.items);   // REL -1
   REL(sl.cache);   // REL 0
@@ -197,12 +205,12 @@ void ui_filelist_detach()
 void ui_filelist_update()
 {
   selection_res();
-  vh_list_reset(sl.view);
+  if (sl.view) vh_list_reset(sl.view);
 }
 
 void ui_filelist_refresh()
 {
-  vh_list_refresh(sl.view);
+  if (sl.view) vh_list_refresh(sl.view);
 }
 
 void ui_filelist_toggle_pause(int state)

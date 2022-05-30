@@ -21,6 +21,7 @@ void ui_song_menu_popup_detach();
 #include "vh_list.c"
 #include "vh_list_item.c"
 #include "visible.c"
+#include "zc_log.c"
 #include "zc_text.c"
 
 struct ui_song_menu_popup_t
@@ -35,27 +36,33 @@ view_t* ui_song_menu_popupitem_new(int index, char* text);
 
 void ui_song_menu_popup_attach(view_t* baseview)
 {
-  slp.view  = view_get_subview(baseview, "song_popup_list");
-  slp.items = VNEW(); // REL 0
+  slp.view = view_get_subview(baseview, "song_popup_list");
 
-  slp.textstyle.font      = config_get("font_path");
-  slp.textstyle.align     = TA_CENTER;
-  slp.textstyle.margin    = 10;
-  slp.textstyle.size      = 30.0;
-  slp.textstyle.textcolor = 0x000000FF;
-  slp.textstyle.backcolor = 0xF5F5F5FF;
+  if (slp.view)
+  {
+    slp.items = VNEW(); // REL 0
 
-  // create items
+    slp.textstyle.font      = config_get("font_path");
+    slp.textstyle.align     = TA_CENTER;
+    slp.textstyle.margin    = 10;
+    slp.textstyle.size      = 30.0;
+    slp.textstyle.textcolor = 0x000000FF;
+    slp.textstyle.backcolor = 0xF5F5F5FF;
 
-  VADDR(slp.items, ui_song_menu_popupitem_new(0, "Select song"));
-  VADDR(slp.items, ui_song_menu_popupitem_new(1, "Select range"));
-  VADDR(slp.items, ui_song_menu_popupitem_new(2, "Select all"));
-  VADDR(slp.items, ui_song_menu_popupitem_new(3, "Move item to PasteBox"));
-  VADDR(slp.items, ui_song_menu_popupitem_new(4, "Move selected to PasteBox"));
+    // create items
 
-  // add list handler to view
+    VADDR(slp.items, ui_song_menu_popupitem_new(0, "Select song"));
+    VADDR(slp.items, ui_song_menu_popupitem_new(1, "Select range"));
+    VADDR(slp.items, ui_song_menu_popupitem_new(2, "Select all"));
+    VADDR(slp.items, ui_song_menu_popupitem_new(3, "Move item to PasteBox"));
+    VADDR(slp.items, ui_song_menu_popupitem_new(4, "Move selected to PasteBox"));
 
-  vh_list_add(slp.view, ((vh_list_inset_t){0, 10, 0, 10}), ui_song_menu_popup_item_for_index, NULL, NULL);
+    // add list handler to view
+
+    vh_list_add(slp.view, ((vh_list_inset_t){0, 10, 0, 10}), ui_song_menu_popup_item_for_index, NULL, NULL);
+  }
+  else
+    zc_log_debug("song_popup_list not found");
 }
 
 void ui_song_menu_popup_detach()

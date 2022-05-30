@@ -127,8 +127,13 @@ void ui_init(float width, float height)
 
   view_t* clipback = view_get_subview(view_base, "cliplistbck");
 
-  tg_text_add(clipback);
-  tg_text_set(clipback, "PASTEBOX", ts);
+  if (clipback)
+  {
+    tg_text_add(clipback);
+    tg_text_set(clipback, "PASTEBOX", ts);
+  }
+  else
+    zc_log_debug("cliplistbck not found");
 
   // show texture map for debug
 

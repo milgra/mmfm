@@ -154,7 +154,7 @@ void extract_tags(char* html, tag_t* tags)
       {
         tags[t].len = i - tags[t].pos + 1;
         in_tag      = 0;
-        printf("storing %i tag %.*s\n", t, tags[t].len, html + tags[t].pos);
+        // printf("storing %i tag %.*s\n", t, tags[t].len, html + tags[t].pos);
         t++;
       }
     }
@@ -227,7 +227,7 @@ void analyze_tags(char* html, tag_t* tags, uint32_t count)
     tags[i].class   = extract_value(tags[i], "class=\"", html);
     tags[i].onclick = extract_value(tags[i], "onclick=\"", html);
 
-    tag_t t = tags[i];
+    // tag_t t = tags[i];
 
     if (html[tags[i].pos + 1] == '/')
       l -= 2; // </div>

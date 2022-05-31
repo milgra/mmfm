@@ -50,7 +50,9 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
     }
     else if (strcmp(key, "font-family") == 0)
     {
-      view->layout.font_family = cstr_new_cstring(val);
+      char* url = CAL(sizeof(char) * strlen(val), NULL, cstr_describe); // REL 0
+      memcpy(url, val + 1, strlen(val) - 2);
+      view->layout.font_family = url;
     }
     else if (strcmp(key, "color") == 0)
     {

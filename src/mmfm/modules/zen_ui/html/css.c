@@ -58,7 +58,7 @@ void analyze_classes(char* css, prop_t* props)
     }
     else if (*c == '"') // class name
     {
-      in_str = 1;
+      in_str = 1 - in_str;
     }
     else if (*c == '{') // class name
     {
@@ -80,13 +80,6 @@ void analyze_classes(char* css, prop_t* props)
       props[index].class     = class;
       props[index].value.pos = start + 1;
       props[index].value.len = c - css - start - 1;
-
-      if (in_str)
-      {
-        props[index].value.pos += 1;
-        props[index].value.len -= 2;
-        in_str = 0;
-      }
 
       start = c - css;
       index++;

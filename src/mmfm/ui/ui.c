@@ -135,6 +135,26 @@ void ui_init(float width, float height)
   else
     zc_log_debug("cliplistbck not found");
 
+  view_t* preview = view_get_subview(view_base, "preview");
+
+  if (preview)
+  {
+    tg_text_add(preview);
+    tg_text_set(preview, "PREVIEW", ts);
+  }
+  else
+    zc_log_debug("cliplistbck not found");
+
+  view_t* infoview = view_get_subview(view_base, "infoview");
+
+  if (infoview)
+  {
+    tg_text_add(infoview);
+    tg_text_set(infoview, "INFOVIEW", ts);
+  }
+  else
+    zc_log_debug("cliplistbck not found");
+
   // show texture map for debug
 
   /* view_t* texmap       = view_new("texmap", ((r2_t){0, 0, 150, 150})); */

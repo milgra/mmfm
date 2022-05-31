@@ -48,13 +48,11 @@
 
 #preview {
     height: 100%;
-    background-color: #FEFEFEFF;
     width: 100%;
 }
 
 #infoview {
     height: 100%;
-    background-color: #FEFEFEFF;
     width: 100%;
 }
 
@@ -716,7 +714,7 @@
     width: 290px;
     height: 290px;
     border-radius: 15px;
-    background-color: #000000FF;
+#    background-color: #000000FF;
     box-shadow: 3px;
     margin: auto;
 }

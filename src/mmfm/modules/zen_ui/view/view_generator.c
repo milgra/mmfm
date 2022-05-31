@@ -11,6 +11,8 @@ vec_t* view_gen_load(char* htmlpath, char* csspath, char* respath, map_t* callba
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "css.c"
+#include "cstr_util.c"
 #include "html.c"
 #include "tg_css.c"
 #include "vh_button.c"
@@ -45,6 +47,39 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
         REL(url); // REL 0
         tg_css_add(view);
       }
+    }
+    else if (strcmp(key, "font-family") == 0)
+    {
+      view->layout.font_family = cstr_new_cstring(val);
+    }
+    else if (strcmp(key, "color") == 0)
+    {
+      int color          = (int)strtol(val + 1, NULL, 16);
+      view->layout.color = color;
+    }
+    else if (strcmp(key, "font-size") == 0)
+    {
+      float size             = atof(val);
+      view->layout.font_size = size;
+    }
+    else if (strcmp(key, "line-height") == 0)
+    {
+      float size               = atof(val);
+      view->layout.line_height = size;
+    }
+    else if (strcmp(key, "word-wrap") == 0)
+    {
+      if (strstr(val, "normal") != NULL) view->layout.word_wrap = 0;
+      if (strstr(val, "break-word") != NULL) view->layout.word_wrap = 1;
+      if (strstr(val, "initial") != NULL) view->layout.word_wrap = 2;
+      if (strstr(val, "inherit") != NULL) view->layout.word_wrap = 3;
+    }
+    else if (strcmp(key, "text-align") == 0)
+    {
+      if (strstr(val, "left") != NULL) view->layout.text_align = 0;
+      if (strstr(val, "center") != NULL) view->layout.text_align = 1;
+      if (strstr(val, "right") != NULL) view->layout.text_align = 2;
+      if (strstr(val, "justify") != NULL) view->layout.text_align = 3;
     }
     else if (strcmp(key, "width") == 0)
     {
@@ -116,9 +151,6 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
       }
       else if (strstr(val, "px") != NULL)
       {
-        // char* end = strstr(val, "px");
-        // int   len = end - val;
-        //  end[len - 1]               = '\0';
         int pix                    = atoi(val);
         view->layout.margin        = pix;
         view->layout.margin_top    = pix;
@@ -131,9 +163,6 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
     {
       if (strstr(val, "px") != NULL)
       {
-        // char* end = strstr(val, "px");
-        // int   len = end - val;
-        // end[len - 1]     = '\0';
         int pix          = atoi(val);
         view->layout.top = pix;
       }
@@ -142,9 +171,6 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
     {
       if (strstr(val, "px") != NULL)
       {
-        // char* end = strstr(val, "px");
-        //  int   len = end - val;
-        //   end[len - 1]      = '\0';
         int pix           = atoi(val);
         view->layout.left = pix;
       }
@@ -153,9 +179,6 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
     {
       if (strstr(val, "px") != NULL)
       {
-        // char* end = strstr(val, "px");
-        //  int   len = end - val;
-        //   end[len - 1]       = '\0';
         int pix            = atoi(val);
         view->layout.right = pix;
       }
@@ -164,20 +187,46 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
     {
       if (strstr(val, "px") != NULL)
       {
-        // char* end = strstr(val, "px");
-        //  int   len = end - val;
-        //   end[len - 1]        = '\0';
         int pix             = atoi(val);
         view->layout.bottom = pix;
+      }
+    }
+    else if (strcmp(key, "margin-top") == 0)
+    {
+      if (strstr(val, "px") != NULL)
+      {
+        int pix                 = atoi(val);
+        view->layout.margin_top = pix;
+      }
+    }
+    else if (strcmp(key, "margin-left") == 0)
+    {
+      if (strstr(val, "px") != NULL)
+      {
+        int pix                  = atoi(val);
+        view->layout.margin_left = pix;
+      }
+    }
+    else if (strcmp(key, "margin-right") == 0)
+    {
+      if (strstr(val, "px") != NULL)
+      {
+        int pix                   = atoi(val);
+        view->layout.margin_right = pix;
+      }
+    }
+    else if (strcmp(key, "margin-bottom") == 0)
+    {
+      if (strstr(val, "px") != NULL)
+      {
+        int pix                    = atoi(val);
+        view->layout.margin_bottom = pix;
       }
     }
     else if (strcmp(key, "border-radius") == 0)
     {
       if (strstr(val, "px") != NULL)
       {
-        // char* end = strstr(val, "px");
-        //  int   len = end - val;
-        //   end[len - 1]               = '\0';
         int pix                    = atoi(val);
         view->layout.border_radius = pix;
       }
@@ -221,40 +270,11 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
 
 vec_t* view_gen_load(char* htmlpath, char* csspath, char* respath, map_t* callbacks)
 {
-  char* html = html_new_read(htmlpath); // REL 0
-  char* css  = html_new_read(csspath);  // REL 1
+  char* html = cstr_new_file(htmlpath); // REL 0
 
-  tag_t*  view_structure = html_new_parse_html(html); // REL 2
-  prop_t* view_styles    = html_new_parse_css(css);   // REL 3
+  tag_t* view_structure = html_new(html); // REL 2
 
-  // create style map
-  map_t*  styles = MNEW(); // REL 4
-  prop_t* props  = view_styles;
-
-  while ((*props).class.len > 0)
-  {
-    prop_t t   = *props;
-    char*  cls = CAL(sizeof(char) * t.class.len + 1, NULL, cstr_describe); // REL 5
-    char*  key = CAL(sizeof(char) * t.key.len + 1, NULL, cstr_describe);   // REL 6
-    char*  val = CAL(sizeof(char) * t.value.len + 1, NULL, cstr_describe); // REL 7
-
-    memcpy(cls, css + t.class.pos, t.class.len);
-    memcpy(key, css + t.key.pos, t.key.len);
-    memcpy(val, css + t.value.pos, t.value.len);
-
-    map_t* style = MGET(styles, cls);
-    if (style == NULL)
-    {
-      style = MNEW(); // REL 8
-      MPUT(styles, cls, style);
-      REL(style); // REL 8
-    }
-    MPUT(style, key, val);
-    props += 1;
-    REL(cls); // REL 5
-    REL(key); // REL 6
-    REL(val); // REL 7
-  }
+  map_t* styles = css_new(csspath);
 
   // create view structure
   vec_t* views = VNEW();
@@ -354,11 +374,8 @@ vec_t* view_gen_load(char* htmlpath, char* csspath, char* respath, map_t* callba
   // cleanup
 
   REL(view_structure); // REL 2
-  REL(view_styles);    // REL 3
-  REL(styles);         // REL 4
 
   REL(html); // REL 0
-  REL(css);  // REL 1
 
   return views;
 }

@@ -80,6 +80,8 @@ void text_render(str_t* text, textstyle_t style, bm_rgba_t* bitmap);
 
 void text_measure(str_t* text, textstyle_t style, int w, int h, int* nw, int* nh);
 
+void text_describe_style(textstyle_t style);
+
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
@@ -571,6 +573,41 @@ void text_measure(str_t* text, textstyle_t style, int w, int h, int* nw, int* nh
   text_break_glyphs(glyphs, text->length, style, w, h, nw, nh);
 
   free(glyphs); // REL 1
+}
+
+void text_describe_style(textstyle_t style)
+{
+  printf("font %s\n"
+         "align %i\n"
+         "valign %i\n"
+         "autosize %i\n"
+         "multiline %i\n"
+         "line_height %i\n"
+         "size %f\n"
+         "margin %i\n"
+         "margin_top %i\n"
+         "margin_right %i\n"
+         "margin_bottom %i\n"
+         "margin_left %i\n"
+         "textcolor %x\n"
+         "backcolor %x\n",
+
+         style.font,
+         style.align,
+         style.valign,
+         style.autosize,
+         style.multiline,
+         style.line_height,
+
+         style.size,
+         style.margin,
+         style.margin_top,
+         style.margin_right,
+         style.margin_bottom,
+         style.margin_left,
+
+         style.textcolor,
+         style.backcolor);
 }
 
 #endif

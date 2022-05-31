@@ -41,31 +41,57 @@ typedef enum _cjustify_t // justify content
 typedef struct _vlayout_t vlayout_t; // view layout
 struct _vlayout_t
 {
+  /* css dimension */
+
+  int width;
+  int height;
+
+  float w_per;
+  float h_per;
+
+  /* css position */
+
+  int top;
+  int left;
+  int right;
+  int bottom;
+
+  int margin;
+  int margin_top;
+  int margin_left;
+  int margin_right;
+  int margin_bottom;
+
+  /* css decoration */
+
+  int border_radius;
+
+  int shadow_h;
+  int shadow_w;
+  int shadow_blur;
+  int shadow_color;
+
+  uint32_t background_color;
+  char*    background_image;
+
+  /* css layout */
+
   laypos_t    position;
   laydis_t    display;
   flexdir_t   flexdir;
   itemalign_t itemalign;
   cjustify_t  cjustify;
-  float       w_per;
-  float       h_per;
-  int         width;
-  int         height;
-  int         margin;
-  int         margin_top;
-  int         margin_left;
-  int         margin_right;
-  int         margin_bottom;
-  int         top;
-  int         left;
-  int         right;
-  int         bottom;
-  int         border_radius;
-  uint32_t    background_color;
-  char*       background_image;
-  int         shadow_h;
-  int         shadow_w;
-  int         shadow_blur;
-  int         shadow_color;
+
+  /* css text */
+
+  char*    font_family;
+  float    font_size;
+  uint32_t color;
+  int      text_align;
+  float    line_height;
+  int      word_wrap;
+
+  /* non-css */
 
   char masked; /* view should be used as mask for subviews? OVERFLOW */
 };
@@ -186,6 +212,7 @@ void view_del(void* pointer)
   view_t* view = (view_t*)pointer;
 
   if (view->layout.background_image != NULL) REL(view->layout.background_image);
+  if (view->layout.font_family != NULL) REL(view->layout.font_family);
 
   if (view->handler_data) REL(view->handler_data);
   if (view->tex_gen_data) REL(view->tex_gen_data);
@@ -522,7 +549,13 @@ void view_desc_layout(vlayout_t l)
          "bottom %i\n"
          "border_radius %i\n"
          "background_color %x\n"
-         "background_image %s\n",
+         "background_image %s\n"
+         "font_family %s\n"
+         "font_size %f\n"
+         "color %x\n"
+         "text_align %i\n"
+         "line_height %f\n"
+         "word_wrap %i\n",
          l.position,
          l.display,
          l.flexdir,
@@ -543,7 +576,13 @@ void view_desc_layout(vlayout_t l)
          l.bottom,
          l.border_radius,
          l.background_color,
-         l.background_image == NULL ? "" : l.background_image);
+         l.background_image == NULL ? "" : l.background_image,
+         l.font_family == NULL ? "" : l.font_family,
+         l.font_size,
+         l.color,
+         l.text_align,
+         l.line_height,
+         l.word_wrap);
 }
 
 #endif

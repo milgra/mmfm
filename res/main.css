@@ -26,6 +26,10 @@
     background-color: #FEFEFEFF;
     width: 100%;
     overflow: hidden;
+    font-family: "Terminus (TTF):style=Bold";
+    margin-left: 0px;
+    font-size: 16px;
+    color: #000000FF;
 }
 
 #metaview {
@@ -982,4 +986,3 @@
     width: 380px;
     height: 100%;
 }
-

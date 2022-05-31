@@ -30,6 +30,7 @@ void ui_filelist_select_and_show(int index);
 #include "ui_filter_bar.c"
 #include "ui_play_controls.c"
 #include "ui_popup_switcher.c"
+#include "ui_util.c"
 #include "vh_button.c"
 #include "vh_list.c"
 #include "vh_list_head.c"
@@ -72,13 +73,8 @@ void ui_filelist_attach(view_t* base)
     sl.columns = VNEW(); // REL 1
     sl.fields  = VNEW(); // REL 2
 
-    sl.color_s = 0x55FF55FF;
-
-    sl.textstyle.font        = fontconfig_new_path("Terminus (TTF):style=Bold");
-    sl.textstyle.margin_left = 10;
-    sl.textstyle.size        = 16.0;
-    sl.textstyle.textcolor   = 0x000000FF;
-    sl.textstyle.backcolor   = 0xF5F5F5FF;
+    sl.color_s   = 0x55FF55FF;
+    sl.textstyle = ui_util_gen_textstyle(sl.view);
 
     // create columns
 

@@ -9,19 +9,33 @@
     height: 100%;
 }
 
-#songs {
+#files {
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
 }
 
-#songlisttop {
-    height: 85px;
+#files_top {
+    height: 38px;
     width: 100%;
 }
 
-#songlist {
+#files_container {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+}
+
+#previews_container {
+    display: flex;
+    flex-direction: row;
+    height: 300px;
+    width: 100%;
+}
+
+#filelist {
     height: 100%;
     background-color: #FEFEFEFF;
     width: 100%;
@@ -32,12 +46,24 @@
     color: #000000FF;
 }
 
+#preview {
+    height: 100%;
+    background-color: #FEFEFEFF;
+    width: 100%;
+}
+
+#infoview {
+    height: 100%;
+    background-color: #FEFEFEFF;
+    width: 100%;
+}
+
 #metaview {
     overflow: hidden;
 }
 
 #cliplistbck {
-    height: 300px;
+    height: 100%;
     width: 100%;
     overflow: hidden;
 }
@@ -47,16 +73,21 @@
     width: 100%;
 }
 
-#vertgap30 {
-    height: 10px;
+.vertgap5 {
+    height: 5px;
     width: 100%;
+    background-color: #DEDEDEFF;
+}
+.horgap5 {
+    height: 100%;
+    width: 5px;
     background-color: #DEDEDEFF;
 }
 
 #headerbck {
     background-color: #DEDEDEFF;
     width: 100%;
-    height: 50px;
+    height: 38px;
 }
 
 #header {
@@ -70,13 +101,13 @@
     width: 100%;
     height: 30px;
     margin: auto;
-    top: 10px;
+    top: 4px;
     display: flex;
     flex-direction: row;
 }
 
 #filterbarbck {
-    top: 50px;
+    top: 40px;
     width: 100%;
     height: 35px;
     background-color: #FFFFFFFF;
@@ -111,7 +142,7 @@
     top: 5px;
     width: 25px;
     height: 25px;
-    border-radius: 5px;
+    border-radius: 4px;
     box-shadow: 3px #00000022;
 }
 
@@ -146,7 +177,7 @@
     width: 100%;
     height: 30px;
     background-color: #FFFFFFFF;
-    border-radius: 10px;
+    border-radius: 4px;
     box-shadow: 5px #0000000A;
 }
 
@@ -742,7 +773,7 @@
     background-color: #FFFFFFFF;
     width: 30px;
     height: 30px;
-    border-radius: 14px;
+    border-radius: 4px;
     box-shadow: 5px #0000000A;
 }
 
@@ -753,11 +784,26 @@
     blocks: no;
 }
 
+#app_search_btn {
+    background-color: #FFFFFFFF;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    box-shadow: 5px #0000000A;
+}
+
+#searchicon {
+    width: 30px;
+    height: 30px;
+    background-image: url("shuffle.png");
+    blocks: no;
+}
+
 .closebtn {
     background-color: #FFFFFFFF;
     width: 30px;
     height: 30px;
-    border-radius: 14px;
+    border-radius: 4px;
     box-shadow: 5px #0000000A;
 }
 
@@ -767,7 +813,7 @@
     top: -5px;
     width: 30px;
     height: 30px;
-    border-radius: 14px;
+    border-radius: 4px;
     box-shadow: 10px #00000012;
 }
 
@@ -848,7 +894,7 @@
 #settingsbtn {
     width: 30px;
     height: 30px;
-    border-radius: 10px;
+    border-radius: 4px;
     background-color: #FFFFFFFF;
     box-shadow: 5px #0000000A;
 }
@@ -863,7 +909,7 @@
 #aboutbtn {
     width: 30px;
     height: 30px;
-    border-radius: 10px;
+    border-radius: 4px;
     background-color: #FFFFFFFF;
     box-shadow: 5px #0000000A;
 }
@@ -878,7 +924,7 @@
 #editbtn {
     width: 30px;
     height: 30px;
-    border-radius: 10px;
+    border-radius: 4px;
     background-color: #FFFFFFFF;
     box-shadow: 5px #0000000A;
 }
@@ -949,7 +995,7 @@
     top: 5px;
     width: 25px;
     height: 25px;
-    border-radius: 5px;
+    border-radius: 4px;
     box-shadow: 3px #00000022;
 }
 

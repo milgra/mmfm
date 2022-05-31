@@ -84,7 +84,7 @@ void ui_init(float width, float height)
   // attach ui components
 
   ui_filelist_attach(view_base); // DETACH 0
-  ui_cliplist_attach(view_base); // DETACH 0
+  /* ui_cliplist_attach(view_base); // DETACH 0 */
   ui_meta_view_attach(view_base);
   /* ui_song_infos_attach(view_base);       // DETACH 1 */
   ui_visualizer_attach(view_base); // DETACH 2
@@ -130,7 +130,7 @@ void ui_init(float width, float height)
   if (clipback)
   {
     tg_text_add(clipback);
-    tg_text_set(clipback, "PASTEBOX", ts);
+    tg_text_set(clipback, "PASTEBOARD", ts);
   }
   else
     zc_log_debug("cliplistbck not found");

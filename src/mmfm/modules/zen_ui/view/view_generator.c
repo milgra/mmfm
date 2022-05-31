@@ -87,17 +87,11 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
     {
       if (strstr(val, "%") != NULL)
       {
-        // char* end = strstr(val, "%");
-        // int   len = end - val;
-        // end[len - 1]       = '\0';
         int per            = atoi(val);
         view->layout.w_per = (float)per / 100.0;
       }
       else if (strstr(val, "px") != NULL)
       {
-        // char* end = strstr(val, "px");
-        // int   len = end - val;
-        // end[len - 1]        = '\0';
         int pix             = atoi(val);
         view->layout.width  = pix;
         view->frame.local.w = pix;
@@ -107,17 +101,11 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
     {
       if (strstr(val, "%") != NULL)
       {
-        // char* end = strstr(val, "%");
-        // int   len = end - val;
-        // end[len - 1]       = '\0';
         int per            = atoi(val);
         view->layout.h_per = (float)per / 100.0;
       }
       else if (strstr(val, "px") != NULL)
       {
-        // char* end = strstr(val, "px");
-        // int   len = end - val;
-        // end[len - 1]        = '\0';
         int pix             = atoi(val);
         view->layout.height = pix;
         view->frame.local.h = pix;

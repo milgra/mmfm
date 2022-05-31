@@ -64,7 +64,7 @@ void ui_filelist_attach(view_t* base)
 {
   assert(base != NULL);
 
-  sl.view = view_get_subview(base, "songlist");
+  sl.view = view_get_subview(base, "filelist");
 
   if (sl.view)
   {
@@ -73,8 +73,9 @@ void ui_filelist_attach(view_t* base)
     sl.columns = VNEW(); // REL 1
     sl.fields  = VNEW(); // REL 2
 
-    sl.color_s   = 0x55FF55FF;
-    sl.textstyle = ui_util_gen_textstyle(sl.view);
+    sl.color_s               = 0x55FF55FF;
+    sl.textstyle             = ui_util_gen_textstyle(sl.view);
+    sl.textstyle.margin_left = 10;
 
     // create columns
 
@@ -97,9 +98,9 @@ void ui_filelist_attach(view_t* base)
 
     VADDR(sl.columns, col_new("ind", 60, 0));
     VADDR(sl.columns, col_new("basename", 200, 1));
-    VADDR(sl.columns, col_new("size", 200, 2));
-    VADDR(sl.columns, col_new("type", 200, 2));
-    VADDR(sl.columns, col_new("userid", 350, 3));
+    VADDR(sl.columns, col_new("size", 100, 2));
+    VADDR(sl.columns, col_new("type", 40, 2));
+    VADDR(sl.columns, col_new("userid", 50, 3));
     VADDR(sl.columns, col_new("username", 70, 4));
     VADDR(sl.columns, col_new("groupid", 150, 5));
     VADDR(sl.columns, col_new("groupname", 60, 6));
@@ -133,7 +134,7 @@ void ui_filelist_attach(view_t* base)
 
     // add header handler
 
-    view_t* header                  = view_new("filelist_header", (r2_t){0, 0, 10, 30}); // REL 3
+    view_t* header                  = view_new("filelist_header", (r2_t){0, 0, 10, 20}); // REL 3
     header->layout.background_color = 0x33333355;
     /* header->layout.shadow_blur      = 3; */
     /* header->layout.border_radius    = 3; */
@@ -149,7 +150,7 @@ void ui_filelist_attach(view_t* base)
       col_t*  cell     = sl.columns->data[i];
       char*   id       = cstr_new_format(100, "%s%s", header->id, cell->id); // REL 4
       char*   dragid   = cstr_new_format(100, "%sdrag", id);
-      view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 30});          // REL 5
+      view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 20});          // REL 5
       view_t* dragview = view_new(dragid, (r2_t){cell->size - 5, 10, 5, 10}); // REL 6
 
       tg_text_add(cellview);
@@ -172,7 +173,7 @@ void ui_filelist_attach(view_t* base)
     // add list handler to view
 
     vh_list_add(sl.view,
-                ((vh_list_inset_t){30, 200, 0, 10}),
+                ((vh_list_inset_t){20, 200, 0, 10}),
                 ui_filelist_item_for_index,
                 ui_filelist_item_recycle,
                 NULL);
@@ -389,7 +390,7 @@ view_t* songitem_new()
   char       idbuffer[100] = {0};
   snprintf(idbuffer, 100, "list_item%i", item_cnt++);
 
-  view_t* rowview = view_new(idbuffer, (r2_t){0, 0, 0, 35}); // REL 0
+  view_t* rowview = view_new(idbuffer, (r2_t){0, 0, 0, 20}); // REL 0
 
   vh_litem_add(rowview, NULL);
   vh_litem_set_on_select(rowview, ui_filelist_on_item_select);
@@ -398,7 +399,7 @@ view_t* songitem_new()
   {
     col_t*  cell     = sl.columns->data[i];
     char*   id       = cstr_new_format(100, "%s%s", rowview->id, cell->id); // REL 0
-    view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 35});          // REL 1
+    view_t* cellview = view_new(id, (r2_t){0, 0, cell->size, 20});          // REL 1
     tg_text_add(cellview);
 
     vh_litem_add_cell(rowview, cell->id, cell->size, cellview);
@@ -472,6 +473,8 @@ view_t* ui_filelist_item_for_index(int index, void* userdata, view_t* listview, 
   }
 
   VREM(sl.cache, item);
+
+  printf("item %i\n", index);
 
   if (selection_has(index))
   {

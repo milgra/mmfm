@@ -464,7 +464,7 @@ void text_render_glyph(glyph_t g, textstyle_t style, bm_rgba_t* bitmap)
 
 void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_rgba_t* bitmap)
 {
-  // if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
+  if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
   wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
   wrapper_t* libwrp  = MGET(txt_ft.libs, style.font);

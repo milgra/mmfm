@@ -31,6 +31,7 @@ void ui_filelist_select_and_show(int index);
 #include "ui_play_controls.c"
 #include "ui_popup_switcher.c"
 #include "ui_util.c"
+#include "ui_visualizer.c"
 #include "vh_button.c"
 #include "vh_list.c"
 #include "vh_list_head.c"
@@ -98,7 +99,9 @@ void ui_filelist_attach(view_t* base)
     /* MPUTR(file, "last_status", cstr_new_format(20, "%li", sb->st_ctim)); */
 
     VADDR(sl.columns, col_new("ind", 60, 0));
+
     VADDR(sl.columns, col_new("basename", 200, 1));
+    VADDR(sl.columns, col_new("path", 200, 1));
     VADDR(sl.columns, col_new("size", 100, 2));
     VADDR(sl.columns, col_new("type", 40, 2));
     VADDR(sl.columns, col_new("userid", 50, 3));
@@ -117,6 +120,7 @@ void ui_filelist_attach(view_t* base)
 
     VADDR(sl.fields, cstr_new_cstring("index"));
     VADDR(sl.fields, cstr_new_cstring("basename"));
+    VADDR(sl.fields, cstr_new_cstring("path"));
     VADDR(sl.fields, cstr_new_cstring("size"));
     VADDR(sl.fields, cstr_new_cstring("type"));
     VADDR(sl.fields, cstr_new_cstring("userid"));
@@ -347,6 +351,7 @@ void ui_filelist_select_and_show(int index)
 void ui_filelist_on_item_select(view_t* itemview, int index, vh_lcell_t* cell, ev_t ev)
 {
   zc_log_debug("on item seelct %i\n", index);
+
   sl.index_s = index;
   if (ev.button == 1)
   {
@@ -363,28 +368,30 @@ void ui_filelist_on_item_select(view_t* itemview, int index, vh_lcell_t* cell, e
 
     /* if (ev.dclick) */
     /* { */
-    /*   ui_play_index(index); */
     /* } */
+    vec_t* songs   = visible_get_songs();
+    map_t* songmap = songs->data[index];
+    char*  path    = MGET(songmap, "path");
 
-    /* vec_t* songs   = visible_get_songs(); */
-    /* map_t* songmap = songs->data[index]; */
-    /* char*  path    = MGET(songmap, "path"); */
+    if (path)
+    {
+      zc_log_debug("SELECTED %s", path);
+      ui_visualizer_show_pdf(path);
+    }
 
-    /* ui_filter_bar_show_query(path); */
-
-    /* vh_list_refresh(sl.view); */
+    vh_list_refresh(sl.view);
   }
   else if (ev.button == 3)
   {
 
     ui_popup_switcher_toggle("song_popup_page");
 
-    /* if (selection_cnt() < 2) */
-    /* { */
-    /*   selection_res(); */
-    /*   selection_add(index); */
-    /*   vh_list_refresh(sl.view); */
-    /* } */
+    if (selection_cnt() < 2)
+    {
+      selection_res();
+      selection_add(index);
+      vh_list_refresh(sl.view);
+    }
   }
 }
 

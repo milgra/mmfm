@@ -8,11 +8,13 @@ void ui_visualizer_detach();
 void ui_visualizer_update();
 void ui_visualizer_update_video();
 void ui_visualizer_show_image(bm_rgba_t* bm);
+void ui_visualizer_show_pdf(char* path);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "pdf.c"
 #include "player.c"
 #include "vh_anim.c"
 #include "vh_button.c"
@@ -39,11 +41,11 @@ void ui_visualizer_on_button_down(void* userdata, void* data);
 
 void ui_visualizer_attach(view_t* baseview)
 {
-  uiv.visuleft  = view_get_subview(baseview, "visuleft");
-  uiv.visuright = view_get_subview(baseview, "visuright");
+  /* uiv.visuleft  = view_get_subview(baseview, "visuleft"); */
+  /* uiv.visuright = view_get_subview(baseview, "visuright"); */
   uiv.visuvideo = view_get_subview(baseview, "visuvideo");
 
-  if (uiv.visuleft)
+  if (uiv.visuvideo)
   {
 
     /* uiv.visuleftbtn     = view_get_subview(uiv.visuleft, "visuleft_btn"); */
@@ -108,9 +110,18 @@ void ui_visualizer_show_image(bm_rgba_t* bm)
 {
   if (uiv.visuvideo->texture.bitmap != NULL)
   {
+    zc_log_debug("SHOT IMAGE");
     gfx_insert(uiv.visuvideo->texture.bitmap, bm, 0, 0);
     uiv.visuvideo->texture.changed = 1;
   }
+}
+
+void ui_visualizer_show_pdf(char* path)
+{
+  bm_rgba_t* pdfbmp = pdf_render(path);
+  ui_visualizer_show_image(pdfbmp);
+  zc_log_debug("SHOW PDF");
+  REL(pdfbmp);
 }
 
 /* void ui_visualizer_on_roll_in(void* userdata, void* data) */

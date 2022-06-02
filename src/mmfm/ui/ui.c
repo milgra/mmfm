@@ -121,7 +121,7 @@ void ui_init(float width, float height)
   ts.align        = TA_CENTER;
   ts.margin_right = 0;
   ts.size         = 60.0;
-  ts.textcolor    = 0x55555555;
+  ts.textcolor    = 0xEEEEEEFF;
   ts.backcolor    = 0xFFFFFFFF;
   ts.multiline    = 0;
 

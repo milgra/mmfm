@@ -2,7 +2,6 @@
 #include "config.c"
 #include "evrecorder.c"
 #include "filemanager.c"
-#include "pdf.c"
 #include "player.c"
 #include "ui.c"
 #include "ui_compositor.c"
@@ -65,8 +64,6 @@ void update(ev_t ev)
   if (ev.type == EV_TIME)
   {
     ui_play_update();
-    // if (!mmfm.pdfbmp) mmfm.pdfbmp = pdf_render("/home/milgra/Projects/mmfm/ajanlat.pdf");
-    // ui_visualizer_show_image(mmfm.pdfbmp); // show pdf
 
     if (mmfm.replay)
     {

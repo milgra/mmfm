@@ -46,13 +46,12 @@
 }
 
 #metaview {
-    overflow: hidden;
+
 }
 
 #cliplistbck {
     height: 100%;
     width: 100%;
-    overflow: hidden;
 }
 
 #cliplist {
@@ -68,12 +67,10 @@
 #filelist {
     height: 100%;
     width: 100%;
-    overflow: hidden;
     font-family: "Terminus (TTF):style=Bold";
     margin-left: 0px;
     font-size: 16px;
     color: #000000FF;
-    background-color: #FEFEFEFF;
 }
 
 .vertgap5 {
@@ -719,7 +716,7 @@
     width: 290px;
     height: 290px;
     border-radius: 15px;
-#    background-color: #000000FF;
+    background-color: #000000FF;
     box-shadow: 3px;
     margin: auto;
 }

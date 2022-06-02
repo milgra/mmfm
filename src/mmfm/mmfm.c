@@ -175,8 +175,8 @@ int main(int argc, char* argv[])
   char* wrk_path    = path_new_normalize(SDL_GetBasePath(), NULL);                                                            // REL 6
   char* res_path    = res_par ? path_new_normalize(res_par, wrk_path) : cstr_new_cstring("/usr/share/mmfm");                  // REL 7
   char* cfgdir_path = cfg_par ? path_new_normalize(cfg_par, wrk_path) : path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 8
-  char* css_path    = path_new_append(res_path, "main.css");                                                                  // REL 9
-  char* html_path   = path_new_append(res_path, "main.html");                                                                 // REL 10
+  char* css_path    = path_new_append(res_path, "html/main.css");                                                             // REL 9
+  char* html_path   = path_new_append(res_path, "html/main.html");                                                            // REL 10
   char* font_path   = path_new_append(res_path, "Baloo.ttf");                                                                 // REL 11
   char* cfg_path    = path_new_append(cfgdir_path, "config.kvl");                                                             // REL 12
   char* rec_path    = rec_par ? path_new_normalize(rec_par, wrk_path) : NULL;                                                 // REL 13

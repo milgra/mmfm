@@ -35,17 +35,6 @@
     width: 100%;
 }
 
-#filelist {
-    height: 100%;
-    background-color: #FEFEFEFF;
-    width: 100%;
-    overflow: hidden;
-    font-family: "Terminus (TTF):style=Bold";
-    margin-left: 0px;
-    font-size: 16px;
-    color: #000000FF;
-}
-
 #preview {
     height: 100%;
     width: 100%;
@@ -69,6 +58,22 @@
 #cliplist {
     height: 100%;
     width: 100%;
+}
+
+#filelistbck {
+    height: 100%;
+    width: 100%;
+}
+
+#filelist {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: "Terminus (TTF):style=Bold";
+    margin-left: 0px;
+    font-size: 16px;
+    color: #000000FF;
+    background-color: #FEFEFEFF;
 }
 
 .vertgap5 {

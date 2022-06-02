@@ -144,7 +144,7 @@ view_t* donateitem_new(int index)
     {
       view_t* imgview                  = view_new("bsdlogo", ((r2_t){137, 10, 200, 200})); // REL 3
       char*   respath                  = config_get("res_path");
-      char*   imagepath                = cstr_new_format(100, "%s/freebsd.png", respath); // REL 4
+      char*   imagepath                = cstr_new_format(100, "%s/img/freebsd.png", respath); // REL 4
       imgview->layout.background_image = imagepath;
       tg_css_add(imgview);
       view_add_subview(cellview, imgview);

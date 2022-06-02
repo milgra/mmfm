@@ -76,6 +76,7 @@ void ui_filelist_attach(view_t* base)
     sl.color_s               = 0x55FF55FF;
     sl.textstyle             = ui_util_gen_textstyle(sl.view);
     sl.textstyle.margin_left = 10;
+    sl.textstyle.backcolor   = 0xFEFEFEFF;
 
     // create columns
 
@@ -304,6 +305,8 @@ void on_header_field_resize(view_t* view, char* id, int size)
 
 void ui_filelist_select(int index)
 {
+  zc_log_debug("FILELIST SELECT %i", index);
+
   // selection_res();
   selection_add(sl.index_s);
   vh_list_refresh(sl.view);
@@ -343,6 +346,7 @@ void ui_filelist_select_and_show(int index)
 
 void ui_filelist_on_item_select(view_t* itemview, int index, vh_lcell_t* cell, ev_t ev)
 {
+  zc_log_debug("on item seelct %i\n", index);
   sl.index_s = index;
   if (ev.button == 1)
   {
@@ -357,18 +361,18 @@ void ui_filelist_on_item_select(view_t* itemview, int index, vh_lcell_t* cell, e
       selection_add(index);
     }
 
-    if (ev.dclick)
-    {
-      ui_play_index(index);
-    }
+    /* if (ev.dclick) */
+    /* { */
+    /*   ui_play_index(index); */
+    /* } */
 
-    vec_t* songs   = visible_get_songs();
-    map_t* songmap = songs->data[index];
-    char*  path    = MGET(songmap, "path");
+    /* vec_t* songs   = visible_get_songs(); */
+    /* map_t* songmap = songs->data[index]; */
+    /* char*  path    = MGET(songmap, "path"); */
 
-    ui_filter_bar_show_query(path);
+    /* ui_filter_bar_show_query(path); */
 
-    vh_list_refresh(sl.view);
+    /* vh_list_refresh(sl.view); */
   }
   else if (ev.button == 3)
   {

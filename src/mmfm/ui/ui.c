@@ -135,6 +135,16 @@ void ui_init(float width, float height)
   else
     zc_log_debug("cliplistbck not found");
 
+  view_t* fileback = view_get_subview(view_base, "filelistbck");
+
+  if (fileback)
+  {
+    tg_text_add(fileback);
+    tg_text_set(fileback, "FILES", ts);
+  }
+  else
+    zc_log_debug("cliplistbck not found");
+
   view_t* preview = view_get_subview(view_base, "preview");
 
   if (preview)
@@ -150,7 +160,7 @@ void ui_init(float width, float height)
   if (infoview)
   {
     tg_text_add(infoview);
-    tg_text_set(infoview, "INFOVIEW", ts);
+    tg_text_set(infoview, "FILE INFO", ts);
   }
   else
     zc_log_debug("cliplistbck not found");

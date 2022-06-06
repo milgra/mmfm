@@ -130,7 +130,7 @@ void ui_init(float width, float height)
   if (clipback)
   {
     tg_text_add(clipback);
-    tg_text_set(clipback, "PASTEBOARD", ts);
+    tg_text_set(clipback, "CLIPBOARD", ts);
   }
   else
     zc_log_debug("cliplistbck not found");

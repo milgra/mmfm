@@ -94,7 +94,7 @@ void ui_play_controls_detach()
 
 void ui_play_update_position(float ratio)
 {
-  tg_knob_set_angle(uipc.seekknob, ratio * 6.28 - 3.14 / 2.0);
+  /* tg_knob_set_angle(uipc.seekknob, ratio * 6.28 - 3.14 / 2.0); */
 }
 
 /* void ui_play_update_volume(float ratio) */
@@ -120,9 +120,9 @@ void ui_play_index(int index)
     player_play(uipc.current_path);
     player_set_volume(0.9);
 
-    ui_meta_view_show_file(songmap);
+    /* ui_meta_view_show_file(songmap); */
 
-    vh_button_set_state(uipc.playbtn, VH_BUTTON_DOWN);
+    /* vh_button_set_state(uipc.playbtn, VH_BUTTON_DOWN); */
   }
 }
 
@@ -232,7 +232,8 @@ void ui_play_update()
       /*     double volratio = player_volume(); */
 
       /*     ui_song_infos_update_time(uipc.last_step, player_duration() - uipc.last_step, player_duration()); */
-      ui_play_update_position(posratio);
+
+      /* ui_play_update_position(posratio); */
       /*     // ui_play_update_volume(volratio); */
     }
 

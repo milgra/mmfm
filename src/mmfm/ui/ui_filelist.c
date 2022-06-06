@@ -99,7 +99,6 @@ void ui_filelist_attach(view_t* base)
     /* MPUTR(file, "last_status", cstr_new_format(20, "%li", sb->st_ctim)); */
 
     VADDR(sl.columns, col_new("ind", 60, 0));
-
     VADDR(sl.columns, col_new("basename", 200, 1));
     VADDR(sl.columns, col_new("path", 200, 1));
     VADDR(sl.columns, col_new("size", 100, 2));
@@ -376,7 +375,13 @@ void ui_filelist_on_item_select(view_t* itemview, int index, vh_lcell_t* cell, e
     if (path)
     {
       zc_log_debug("SELECTED %s", path);
-      ui_visualizer_show_pdf(path);
+
+      if (strstr(path, ".pdf") != NULL)
+      {
+        ui_visualizer_show_pdf(path);
+      }
+      else
+        ui_play_index(index);
     }
 
     vh_list_refresh(sl.view);
@@ -484,8 +489,6 @@ view_t* ui_filelist_item_for_index(int index, void* userdata, view_t* listview, 
   }
 
   VREM(sl.cache, item);
-
-  printf("item %i\n", index);
 
   if (selection_has(index))
   {

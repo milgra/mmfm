@@ -4,10 +4,12 @@ MultiMedia File Manager is a file manager for multimedia and other content. It c
 
 ## Features ##
 
-- retro-minimalistic UI
-- beautiful and smooth UX experience
-- frequency and scope analyzer visualizers
-- activity window and human-readable database for transparent operation
+- Instant preview for more than 6000 media formats
+- Super Pasteboard, drop files and folders there for later reuse or create folders for collecting files
+- In-place renaming
+- Beautiful and smooth UX experience
+- Frequency and scope analyzer visualizers for audio conent
+- Activity window and human-readable database for transparent operation
 
 Read the user guide for further information : [Open User Guide](doc/USER.md)
 

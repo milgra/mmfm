@@ -85,32 +85,31 @@ void ui_visualizer_detach()
 
 void ui_visualizer_update()
 {
-  if (uiv.visu)
-  {
-    player_draw_rdft(0, uiv.visuleft->texture.bitmap, 3);
-    player_draw_rdft(1, uiv.visuright->texture.bitmap, 3);
-  }
-  else
-  {
-    player_draw_waves(0, uiv.visuleft->texture.bitmap, 3);
-    player_draw_waves(1, uiv.visuright->texture.bitmap, 3);
-  }
+  /* if (uiv.visu) */
+  /* { */
+  /*   player_draw_rdft(0, uiv.visuleft->texture.bitmap, 3); */
+  /*   player_draw_rdft(1, uiv.visuright->texture.bitmap, 3); */
+  /* } */
+  /* else */
+  /* { */
+  /*   player_draw_waves(0, uiv.visuleft->texture.bitmap, 3); */
+  /*   player_draw_waves(1, uiv.visuright->texture.bitmap, 3); */
+  /* } */
 
-  uiv.visuleft->texture.changed  = 1;
-  uiv.visuright->texture.changed = 1;
+  /* uiv.visuleft->texture.changed  = 1; */
+  /* uiv.visuright->texture.changed = 1; */
 }
 
 void ui_visualizer_update_video()
 {
-  /* player_draw_video(uiv.visuvideo->texture.bitmap, 3); */
-  /* uiv.visuvideo->texture.changed = 1; */
+  player_draw_video(uiv.visuvideo->texture.bitmap, 3);
+  uiv.visuvideo->texture.changed = 1;
 }
 
 void ui_visualizer_show_image(bm_rgba_t* bm)
 {
   if (uiv.visuvideo->texture.bitmap != NULL)
   {
-    zc_log_debug("SHOT IMAGE");
     gfx_insert(uiv.visuvideo->texture.bitmap, bm, 0, 0);
     uiv.visuvideo->texture.changed = 1;
   }

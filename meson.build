@@ -164,6 +164,7 @@ com_sources = ['src/mmfm/ui/column.c',
 	       'src/mmfm/modules/zen_ui/view/vh_textinput_scroller.c',
 	       'src/mmfm/modules/zen_ui/view/vh_touch.c',
 	       'src/mmfm/modules/zen_ui/view/vh_tbody.c',
+	       'src/mmfm/modules/zen_ui/view/vh_tevnt.c',
 	       'src/mmfm/modules/zen_ui/view/view.c',
 	       'src/mmfm/modules/zen_ui/view/view_generator.c',
 	       'src/mmfm/modules/zen_ui/view/view_layout.c',
@@ -171,7 +172,8 @@ com_sources = ['src/mmfm/ui/column.c',
 	       'src/mmfm/modules/zen_ui/ui_compositor.c',
 	       'src/mmfm/modules/zen_ui/ui_generator.c',
 	       'src/mmfm/modules/zen_ui/ui_manager.c',
-	       'src/mmfm/modules/zen_ui/ui_texmap.c'
+	       'src/mmfm/modules/zen_ui/ui_texmap.c',
+	       'src/mmfm/modules/zen_ui/ui_table.c'
 	       ]
 
 mmfm_dependencies = [rt, freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,gumbo,mupdf,mupdfthird]

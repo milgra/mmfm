@@ -10,8 +10,9 @@ typedef struct _vh_tbody_t
     void*  userdata;
     vec_t* items;
 
-    float item_wth; // items width
-    float head_pos; // vertical position of head ( for refresh )
+    float item_wth;  // items width
+    float head_xpos; // horizontal position of head
+    float head_ypos; // vertical position of head
 
     int full;       // list is full, no more elements needed
     int head_index; // index of top element
@@ -94,6 +95,26 @@ void vh_tbody_move(
 {
     vh_tbody_t* vh = view->handler_data;
 
+    // repos items
+
+    vh->head_xpos += dx;
+    vh->head_ypos += dy;
+
+    for (int index = 0;
+	 index < vh->items->length;
+	 index++)
+    {
+	view_t* iview = vh->items->data[index];
+	r2_t    frame = iview->frame.local;
+
+	frame.x = vh->head_xpos;
+	frame.y += dy;
+
+	view_set_frame(iview, frame);
+    }
+
+    // refill items
+
     while (vh->full == 0)
     {
 	if (vh->items->length == 0)
@@ -107,7 +128,7 @@ void vh_tbody_move(
 	    {
 		vh->item_wth = item->frame.global.w;
 		vh_tbody_insert_item(vh, view, item);
-		view_set_frame(item, (r2_t){0, vh->head_pos, item->frame.local.w, item->frame.local.h});
+		view_set_frame(item, (r2_t){0, vh->head_ypos, item->frame.local.w, item->frame.local.h});
 	    }
 	    else
 	    {

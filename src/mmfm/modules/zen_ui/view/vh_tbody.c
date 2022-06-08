@@ -95,6 +95,8 @@ void vh_tbody_move(
 {
     vh_tbody_t* vh = view->handler_data;
 
+    vh->full = 0;
+
     // repos items
 
     vh->head_xpos += dx;
@@ -208,7 +210,7 @@ void vh_tbody_move(
 		    VREM(vh->items, head);
 		    vh->head_index += 1;
 		    view_remove_from_parent(head);
-		    if (vh->item_recycle) (*vh->item_recycle)(head, vh->userdata, view);
+		    if (vh->item_recycle) (*vh->item_recycle)(view, head, vh->userdata);
 		}
 
 		// remove tail if needed
@@ -218,7 +220,7 @@ void vh_tbody_move(
 		    VREM(vh->items, tail);
 		    vh->tail_index -= 1;
 		    view_remove_from_parent(tail);
-		    if (vh->item_recycle) (*vh->item_recycle)(tail, vh->userdata, view);
+		    if (vh->item_recycle) (*vh->item_recycle)(view, tail, vh->userdata);
 		}
 	    }
 	}

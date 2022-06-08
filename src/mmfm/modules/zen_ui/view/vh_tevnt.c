@@ -8,9 +8,10 @@ typedef struct _vh_tevnt_t
 {
     view_t* tbody_view;
     void*   userdata;
-    int     is_absorbing;
+    int     is_scrolling;
     float   sx;
     float   sy;
+    void (*on_select)(view_t* view, int index, ev_t ev, void* userdata);
 } vh_tevnt_t;
 
 void vh_tevnt_attach(
@@ -38,6 +39,8 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
 	{
 	    if (vh->sy > 0.001 || vh->sy < -0.001 || vh->sx > 0.001 || vh->sx < -0.001)
 	    {
+		vh->is_scrolling = 1;
+
 		view_t* head = vec_head(bvh->items);
 		view_t* tail = vec_tail(bvh->items);
 
@@ -57,6 +60,10 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
 		if (lft > 0.01) vh_tbody_move(vh->tbody_view, -lft / 5.0, 0.0);
 		if (rgt < view->frame.local.w - 0.01) vh_tbody_move(vh->tbody_view, (view->frame.local.w - rgt) / 5.0, 0.0);
 	    }
+	    else
+	    {
+		if (vh->is_scrolling) vh->is_scrolling = 0;
+	    }
 	}
     }
     else if (ev.type == EV_SCROLL)
@@ -67,6 +74,23 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
     else if (ev.type == EV_RESIZE)
     {
 	vh_tbody_move(vh->tbody_view, 0, 0);
+    }
+    else if (ev.type == EV_MUP)
+    {
+	vh_tbody_t* bvh = vh->tbody_view->handler_data;
+
+	for (int index = 0; index < bvh->items->length; index++)
+	{
+	    view_t* item = bvh->items->data[index];
+	    if (ev.x > item->frame.global.x &&
+		ev.x < item->frame.global.x + item->frame.global.w &&
+		ev.y > item->frame.global.y &&
+		ev.y < item->frame.global.y + item->frame.global.h)
+	    {
+		zc_log_debug("UI TABLE ITEM SELECT %i", bvh->head_index + index);
+		break;
+	    }
+	}
     }
 }
 

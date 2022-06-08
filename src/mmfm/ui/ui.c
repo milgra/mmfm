@@ -143,7 +143,7 @@ void ui_init(float width, float height)
     ui_table_t* cliptable = ui_table_create("cliptable", clipback, cliplist, NULL);
 
     map_t* files = MNEW(); // REL 0
-    fm_list(config_get("top_path"), files);
+    fm_list("/home/milgra/Projects/brawl/resources", files);
     vec_t* vals = VNEW();
     map_values(files, vals);
 

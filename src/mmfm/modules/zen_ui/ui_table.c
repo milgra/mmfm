@@ -71,10 +71,16 @@ view_t* ui_table_item_create(
 	    char idbuffer[100] = {0};
 	    snprintf(idbuffer, 100, "%s%i", uit->id, uit->cnt++);
 
-	    rowview = view_new(idbuffer, (r2_t){0, 0, 200, 20}); // REL 0
+	    rowview = view_new(idbuffer, (r2_t){0, 0, table_v->frame.local.w, 20}); // REL 0
 
-	    rowview->layout.background_color = 0xFF0000FF;
-
+	    if (index % 2 == 0)
+	    {
+		rowview->layout.background_color = 0xFF0000FF;
+	    }
+	    else
+	    {
+		rowview->layout.background_color = 0x440000FF;
+	    }
 	    tg_css_add(rowview);
 
 	    zc_log_debug("ui table item create %s", idbuffer);

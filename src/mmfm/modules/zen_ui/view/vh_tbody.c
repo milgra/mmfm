@@ -129,7 +129,9 @@ void vh_tbody_move(
 	    if (item)
 	    {
 		vh->item_wth = item->frame.global.w;
-		vh_tbody_insert_item(vh, view, item);
+
+		VADD(vh->items, item);
+		view_add_subview(view, item);
 		view_set_frame(item, (r2_t){0, vh->head_ypos, item->frame.local.w, item->frame.local.h});
 	    }
 	    else
@@ -152,9 +154,22 @@ void vh_tbody_move(
 
 		if (item)
 		{
+		    zc_log_debug("ADDING ITEM TO HEAD %s", item->id);
+
 		    vh->full     = 0; // there is probably more to come
 		    vh->item_wth = item->frame.global.w;
 		    vh->head_index -= 1;
+
+		    uint32_t index = vec_index_of_data(vh->items, item);
+		    if (index == UINT32_MAX)
+		    {
+			vec_ins(vh->items, item, 0);
+			view_insert_subview(view, item, 0);
+		    }
+		    else
+		    {
+			zc_log_debug("duplicate item in table : %s %i", item->id, index);
+		    }
 
 		    vh_tbody_insert_item(vh, view, item);
 		    view_set_frame(item, (r2_t){0, head->frame.local.y - item->frame.local.h, item->frame.local.w, item->frame.local.h});
@@ -182,11 +197,23 @@ void vh_tbody_move(
 
 		if (item)
 		{
+		    zc_log_debug("ADDING ITEM TO TAIL %s", item->id);
+
 		    vh->full     = 0; // there is probably more to come
 		    vh->item_wth = item->frame.global.w;
 		    vh->tail_index += 1;
 
-		    vh_tbody_insert_item(vh, view, item);
+		    uint32_t index = vec_index_of_data(vh->items, item);
+		    if (index == UINT32_MAX)
+		    {
+			VADD(vh->items, item);
+			view_add_subview(view, item);
+		    }
+		    else
+		    {
+			zc_log_debug("duplicate item in table : %s %i", item->id, index);
+		    }
+
 		    view_set_frame(item, (r2_t){0, tail->frame.local.y + tail->frame.local.h, item->frame.local.w, item->frame.local.h});
 		}
 		else
@@ -207,6 +234,8 @@ void vh_tbody_move(
 
 		if (head->frame.local.y + head->frame.local.h < 0.0 - TBODY_PRELOAD_DISTANCE && vh->items->length > 1)
 		{
+		    zc_log_debug("REMOVING ITEM %s", head->id);
+
 		    VREM(vh->items, head);
 		    vh->head_index += 1;
 		    view_remove_from_parent(head);
@@ -217,6 +246,8 @@ void vh_tbody_move(
 
 		if (tail->frame.local.y > view->frame.local.h + TBODY_PRELOAD_DISTANCE && vh->items->length > 1)
 		{
+		    zc_log_debug("REMOVING ITEM %s", tail->id);
+
 		    VREM(vh->items, tail);
 		    vh->tail_index -= 1;
 		    view_remove_from_parent(tail);

@@ -52,6 +52,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "zc_log.c"
 #include "zc_number.c"
 #include "zc_path.c"
+#include "zc_vector.c"
 
 view_t* view_base;
 vec_t*  view_list;
@@ -140,7 +141,17 @@ void ui_init(float width, float height)
     else
 	zc_log_debug("cliplistbck not found");
 
-    ui_table_t* cliptable = ui_table_create("cliptable", clipback, cliplist, NULL);
+    vec_t* fields = VNEW();
+    VADDR(fields, cstr_new_cstring("basename"));
+    VADDR(fields, cstr_new_cstring("path"));
+    VADDR(fields, cstr_new_cstring("size"));
+    VADDR(fields, cstr_new_cstring("last_access"));
+    VADDR(fields, cstr_new_cstring("last_modification"));
+    VADDR(fields, cstr_new_cstring("last_status"));
+
+    ui_table_t* cliptable = ui_table_create("cliptable", clipback, cliplist, NULL, fields);
+
+    REL(fields);
 
     map_t* files = MNEW(); // REL 0
     fm_list("/home/milgra/Projects/brawl/resources", files);

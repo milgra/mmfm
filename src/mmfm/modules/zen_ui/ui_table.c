@@ -11,6 +11,7 @@ typedef struct _ui_table_t
     uint32_t cnt;   // item count for item generation
     vec_t*   items; // data items
     vec_t*   cache; // item cache
+    vec_t*   fields;
     view_t*  body_v;
     view_t*  evnt_v;
     view_t*  scrl_v;
@@ -20,7 +21,8 @@ ui_table_t* ui_table_create(
     char*   id,
     view_t* body,
     view_t* evnt,
-    view_t* scrl);
+    view_t* scrl,
+    vec_t*  fields);
 
 void ui_table_set_data(
     ui_table_t* uit,
@@ -46,6 +48,7 @@ void ui_table_del(
     ui_table_t* uit = p;
     REL(uit->id);
     REL(uit->cache);
+    REL(uit->fields);
     if (uit->body_v) REL(uit->body_v);
     if (uit->evnt_v) REL(uit->evnt_v);
     if (uit->scrl_v) REL(uit->scrl_v);
@@ -71,9 +74,7 @@ view_t* ui_table_item_create(
     {
 	if (index > -1 && index < uit->items->length)
 	{
-	    map_t* data   = uit->items->data[index];
-	    vec_t* fields = VNEW(); // REL 1
-	    map_keys(data, fields);
+	    map_t* data = uit->items->data[index];
 
 	    textstyle_t ts = {0};
 	    ts.font        = config_get("font_path");
@@ -81,13 +82,15 @@ view_t* ui_table_item_create(
 	    ts.margin      = 5;
 	    ts.align       = TA_LEFT;
 	    ts.textcolor   = 0x000000FF;
-	    ts.backcolor   = 0;
+	    ts.backcolor   = 0xFEFEFEFF;
 	    ts.multiline   = 0;
+
+	    if (index % 2 != 0) ts.backcolor = 0xEFEFEFFF;
 
 	    if (uit->cache->length > 0)
 	    {
 		rowview = uit->cache->data[0];
-		VREM(uit->cache, 0);
+		vec_rem_at_index(uit->cache, 0);
 	    }
 	    else
 	    {
@@ -97,9 +100,9 @@ view_t* ui_table_item_create(
 
 		tg_css_add(rowview);
 
-		for (int i = 0; i < fields->length; i++)
+		for (int i = 0; i < uit->fields->length; i++)
 		{
-		    char*   field    = fields->data[i];
+		    char*   field    = uit->fields->data[i];
 		    char*   value    = MGET(data, field);
 		    char*   cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field); // REL 2
 		    view_t* cellview = view_new(cellid, (r2_t){100 * i, 0, 100, 20});          // REL 3
@@ -113,29 +116,20 @@ view_t* ui_table_item_create(
 		}
 	    }
 
-	    if (index % 2 == 0)
+	    for (int i = 0; i < uit->fields->length; i++)
 	    {
-		rowview->layout.background_color = 0xFF0000FF;
-	    }
-	    else
-	    {
-		rowview->layout.background_color = 0x440000FF;
-	    }
-
-	    for (int i = 0; i < fields->length; i++)
-	    {
-		char*   field    = fields->data[i];
+		char*   field    = uit->fields->data[i];
 		char*   value    = MGET(data, field);
 		view_t* cellview = rowview->views->data[i];
 
 		tg_text_set(cellview, value, ts);
 	    }
 
-	    view_set_frame(rowview, (r2_t){0, 0, fields->length * 100, 20});
-
-	    REL(fields); // REL 1
+	    view_set_frame(rowview, (r2_t){0, 0, uit->fields->length * 100, 20});
 	}
     }
+
+    if (rowview) zc_log_debug("ITEM CREATE %s", rowview->id);
 
     return rowview;
 }
@@ -146,7 +140,7 @@ void ui_table_item_recycle(
     void*   userdata)
 {
     ui_table_t* uit = (ui_table_t*) userdata;
-    zc_log_debug("RECYCLE");
+    zc_log_debug("RECYCLE %s", item_v->id);
     VADD(uit->cache, item_v);
 }
 
@@ -156,13 +150,15 @@ ui_table_t* ui_table_create(
     char*   id,
     view_t* body,
     view_t* evnt,
-    view_t* scrl)
+    view_t* scrl,
+    vec_t*  fields)
 {
     assert(id != NULL);
 
     ui_table_t* uit = CAL(sizeof(ui_table_t), ui_table_del, ui_table_desc);
     uit->id         = cstr_new_cstring(id);
     uit->cache      = VNEW();
+    uit->fields     = RET(fields);
     if (body) uit->body_v = RET(body);
     if (evnt) uit->evnt_v = RET(evnt);
     if (scrl) uit->scrl_v = RET(scrl);

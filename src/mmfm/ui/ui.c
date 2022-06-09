@@ -130,13 +130,13 @@ void ui_init(float width, float height)
     ts.backcolor    = 0xFFFFFFFF;
     ts.multiline    = 0;
 
-    view_t* clipback = view_get_subview(view_base, "cliplistbck");
-    view_t* cliplist = view_get_subview(view_base, "cliplist");
+    view_t* cliplist    = view_get_subview(view_base, "cliplist");
+    view_t* cliplistevt = view_get_subview(view_base, "cliplistevt");
 
-    if (clipback)
+    if (cliplist)
     {
-	tg_text_add(clipback);
-	tg_text_set(clipback, "CLIPBOARD", ts);
+	tg_text_add(cliplist);
+	tg_text_set(cliplist, "CLIPBOARD", ts);
     }
     else
 	zc_log_debug("cliplistbck not found");
@@ -149,7 +149,7 @@ void ui_init(float width, float height)
     VADDR(fields, cstr_new_cstring("last_modification"));
     VADDR(fields, cstr_new_cstring("last_status"));
 
-    ui_table_t* cliptable = ui_table_create("cliptable", clipback, cliplist, NULL, fields);
+    ui_table_t* cliptable = ui_table_create("cliptable", cliplist, cliplistevt, NULL, fields);
 
     REL(fields);
 

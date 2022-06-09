@@ -2,19 +2,21 @@
 #define ui_table_h
 
 #include "view.c"
+#include "zc_text.c"
 #include "zc_vector.c"
 #include <stdint.h>
 
 typedef struct _ui_table_t
 {
-    char*    id;    // unique id for item generation
-    uint32_t cnt;   // item count for item generation
-    vec_t*   items; // data items
-    vec_t*   cache; // item cache
-    vec_t*   fields;
-    view_t*  body_v;
-    view_t*  evnt_v;
-    view_t*  scrl_v;
+    char*       id;    // unique id for item generation
+    uint32_t    cnt;   // item count for item generation
+    vec_t*      items; // data items
+    vec_t*      cache; // item cache
+    vec_t*      fields;
+    view_t*     body_v;
+    view_t*     evnt_v;
+    view_t*     scrl_v;
+    textstyle_t textstyle;
 } ui_table_t;
 
 ui_table_t* ui_table_create(
@@ -35,12 +37,12 @@ void ui_table_set_data(
 #include "config.c"
 #include "tg_css.c"
 #include "tg_text.c"
+#include "ui_util.c"
 #include "vh_tbody.c"
 #include "vh_tevnt.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_memory.c"
-#include "zc_text.c"
 
 void ui_table_del(
     void* p)
@@ -76,16 +78,8 @@ view_t* ui_table_item_create(
 	{
 	    map_t* data = uit->items->data[index];
 
-	    textstyle_t ts = {0};
-	    ts.font        = config_get("font_path");
-	    ts.size        = 16.0;
-	    ts.margin      = 5;
-	    ts.align       = TA_LEFT;
-	    ts.textcolor   = 0x000000FF;
-	    ts.backcolor   = 0xFEFEFEFF;
-	    ts.multiline   = 0;
-
-	    if (index % 2 != 0) ts.backcolor = 0xEFEFEFFF;
+	    textstyle_t ts = uit->textstyle;
+	    if (index % 2 != 0) ts.backcolor |= 0xEDEDEDCC;
 
 	    if (uit->cache->length > 0)
 	    {
@@ -129,8 +123,6 @@ view_t* ui_table_item_create(
 	}
     }
 
-    if (rowview) zc_log_debug("ITEM CREATE %s", rowview->id);
-
     return rowview;
 }
 
@@ -140,7 +132,6 @@ void ui_table_item_recycle(
     void*   userdata)
 {
     ui_table_t* uit = (ui_table_t*) userdata;
-    zc_log_debug("RECYCLE %s", item_v->id);
     VADD(uit->cache, item_v);
 }
 
@@ -162,6 +153,8 @@ ui_table_t* ui_table_create(
     if (body) uit->body_v = RET(body);
     if (evnt) uit->evnt_v = RET(evnt);
     if (scrl) uit->scrl_v = RET(scrl);
+
+    uit->textstyle = ui_util_gen_textstyle(body);
 
     vh_tbody_attach(
 	body,

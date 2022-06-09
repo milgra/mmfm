@@ -49,13 +49,16 @@
 
 }
 
-#cliplistbck {
+#cliplist {
     height: 100%;
     width: 100%;
     overflow: hidden;
+    font-family: "Terminus (TTF):style=Bold";
+    font-size: 16px;
+    color: #000000FF;
 }
 
-#cliplist {
+#cliplistevt {
     height: 100%;
     width: 100%;
 }

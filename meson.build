@@ -66,7 +66,6 @@ mmfm_inc = include_directories(
 com_sources = ['src/mmfm/ui/column.c',
 	       'src/mmfm/ui/textlist.c',
 	       'src/mmfm/ui/ui.c',
-	       'src/mmfm/ui/ui_util.c',
 	       'src/mmfm/ui/ui_about_popup.c',
 	       'src/mmfm/ui/ui_activity_popup.c',
 	       'src/mmfm/ui/ui_alert_popup.c',
@@ -173,8 +172,8 @@ com_sources = ['src/mmfm/ui/column.c',
 	       'src/mmfm/modules/zen_ui/ui_generator.c',
 	       'src/mmfm/modules/zen_ui/ui_manager.c',
 	       'src/mmfm/modules/zen_ui/ui_texmap.c',
-	       'src/mmfm/modules/zen_ui/ui_table.c'
-	       ]
+	       'src/mmfm/modules/zen_ui/ui_table.c',
+	       'src/mmfm/modules/zen_ui/ui_util.c']
 
 mmfm_dependencies = [rt, freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,gumbo,mupdf,mupdfthird]
 

@@ -49,15 +49,6 @@
 
 }
 
-#cliplist {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    font-family: "Terminus (TTF):style=Bold";
-    font-size: 16px;
-    color: #000000FF;
-}
-
 #cliplistscroll {
     height: 100%;
     width: 100%;
@@ -71,6 +62,27 @@
 #cliplistbck {
     height: 100%;
     width: 100%;
+}
+
+#cliplistbox {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#cliplisthead {
+    height: 30px;
+    width: 100%;
+}
+
+#cliplist {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: "Terminus (TTF):style=Bold";
+    font-size: 16px;
+    color: #000000FF;
 }
 
 #filelistbck {

@@ -58,7 +58,17 @@
     color: #000000FF;
 }
 
+#cliplistscroll {
+    height: 100%;
+    width: 100%;
+}
+
 #cliplistevt {
+    height: 100%;
+    width: 100%;
+}
+
+#cliplistbck {
     height: 100%;
     width: 100%;
 }
@@ -75,6 +85,20 @@
     margin-left: 0px;
     font-size: 16px;
     color: #000000FF;
+}
+
+.vertscroll {
+    width: 10px;
+    height: 100px;
+    right: 0px;
+    background-color: #00000066;
+}
+
+.horiscroll {
+    width: 100px;
+    height: 10px;
+    bottom: 0px;
+    background-color: #00000066;
 }
 
 .vertgap5 {

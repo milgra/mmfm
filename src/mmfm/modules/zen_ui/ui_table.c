@@ -22,13 +22,12 @@ typedef struct _ui_table_t
 ui_table_t* ui_table_create(
     char*   id,
     view_t* body,
-    view_t* evnt,
     view_t* scrl,
+    view_t* evnt,
     vec_t*  fields);
 
 void ui_table_set_data(
-    ui_table_t* uit,
-    vec_t*      data);
+    ui_table_t* uit, vec_t* data);
 
 #endif
 
@@ -40,6 +39,7 @@ void ui_table_set_data(
 #include "ui_util.c"
 #include "vh_tbody.c"
 #include "vh_tevnt.c"
+#include "vh_tscrl.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_memory.c"
@@ -140,8 +140,8 @@ void ui_table_item_recycle(
 ui_table_t* ui_table_create(
     char*   id,
     view_t* body,
-    view_t* evnt,
     view_t* scrl,
+    view_t* evnt,
     vec_t*  fields)
 {
     assert(id != NULL);
@@ -150,6 +150,7 @@ ui_table_t* ui_table_create(
     uit->id         = cstr_new_cstring(id);
     uit->cache      = VNEW();
     uit->fields     = RET(fields);
+
     if (body) uit->body_v = RET(body);
     if (evnt) uit->evnt_v = RET(evnt);
     if (scrl) uit->scrl_v = RET(scrl);
@@ -162,9 +163,15 @@ ui_table_t* ui_table_create(
 	ui_table_item_recycle,
 	uit);
 
+    vh_tscrl_attach(
+	scrl,
+	body,
+	uit);
+
     vh_tevnt_attach(
 	evnt,
 	body,
+	scrl,
 	uit);
 
     zc_log_debug("ui table create %s", id);
@@ -183,6 +190,8 @@ void ui_table_set_data(
     zc_log_debug("ui table set data %i", data->length);
 
     vh_tbody_move(uit->body_v, 0, 0);
+
+    if (uit->scrl_v) vh_tscrl_set_item_count(uit->scrl_v, data->length);
 }
 
 #endif

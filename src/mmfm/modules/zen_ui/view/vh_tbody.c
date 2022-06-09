@@ -10,13 +10,15 @@ typedef struct _vh_tbody_t
     void*  userdata;
     vec_t* items;
 
-    float item_wth;  // items width
     float head_xpos; // horizontal position of head
     float head_ypos; // vertical position of head
 
     int full;       // list is full, no more elements needed
-    int head_index; // index of top element
-    int tail_index; // index of bottom element
+    int head_index; // index of upper element
+    int tail_index; // index of lower element
+
+    int top_index; // index of visible top element
+    int bot_index; // index of visible bottom element
 
     view_t* (*item_create)(view_t* tview, int index, void* userdata);
     void (*item_recycle)(view_t* tview, view_t* item, void* userdata);
@@ -96,6 +98,9 @@ void vh_tbody_move(
 	frame.y += dy;
 
 	view_set_frame(iview, frame);
+
+	if (frame.y < 0) vh->top_index = vh->head_index + index;
+	if (frame.y < view->frame.local.h) vh->bot_index = vh->head_index + index;
     }
 
     // refill items
@@ -111,8 +116,6 @@ void vh_tbody_move(
 
 	    if (item)
 	    {
-		vh->item_wth = item->frame.global.w;
-
 		VADD(vh->items, item);
 		view_add_subview(view, item);
 		view_set_frame(item, (r2_t){0, vh->head_ypos, item->frame.local.w, item->frame.local.h});
@@ -137,8 +140,7 @@ void vh_tbody_move(
 
 		if (item)
 		{
-		    vh->full     = 0; // there is probably more to come
-		    vh->item_wth = item->frame.global.w;
+		    vh->full = 0; // there is probably more to come
 		    vh->head_index -= 1;
 
 		    vec_ins(vh->items, item, 0);
@@ -169,8 +171,7 @@ void vh_tbody_move(
 
 		if (item)
 		{
-		    vh->full     = 0; // there is probably more to come
-		    vh->item_wth = item->frame.global.w;
+		    vh->full = 0; // there is probably more to come
 		    vh->tail_index += 1;
 
 		    VADD(vh->items, item);

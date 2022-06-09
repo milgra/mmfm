@@ -2,11 +2,13 @@
 #define vh_tevnt_h
 
 #include "vh_tbody.c"
+#include "vh_tscrl.c"
 #include "view.c"
 
 typedef struct _vh_tevnt_t
 {
     view_t* tbody_view;
+    view_t* tscrl_view;
     void*   userdata;
     int     is_scrolling;
     float   sx;
@@ -17,6 +19,7 @@ typedef struct _vh_tevnt_t
 void vh_tevnt_attach(
     view_t* view,
     view_t* tbody_view,
+    view_t* tscrl_view,
     void*   userdata);
 
 #endif
@@ -59,6 +62,11 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
 		if (hth > view->frame.local.h && bot < view->frame.local.h - 0.001) vh_tbody_move(vh->tbody_view, 0, (view->frame.local.h - bot) / 5.0);
 		if (lft > 0.01) vh_tbody_move(vh->tbody_view, -lft / 5.0, 0.0);
 		if (rgt < view->frame.local.w - 0.01) vh_tbody_move(vh->tbody_view, (view->frame.local.w - rgt) / 5.0, 0.0);
+
+		if (vh->tscrl_view)
+		{
+		    vh_tscrl_update(vh->tscrl_view);
+		}
 	    }
 	    else
 	    {
@@ -74,6 +82,14 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
     else if (ev.type == EV_RESIZE)
     {
 	vh_tbody_move(vh->tbody_view, 0, 0);
+    }
+    else if (ev.type == EV_MMOVE)
+    {
+	// show scroll
+    }
+    else if (ev.type == EV_MMOVE_OUT)
+    {
+	// hide scroll
     }
     else if (ev.type == EV_MUP)
     {
@@ -106,6 +122,7 @@ void vh_tevnt_desc(void* p, int level)
 void vh_tevnt_attach(
     view_t* view,
     view_t* tbody_view,
+    view_t* tscrl_view,
     void*   userdata)
 {
     assert(view->handler == NULL && view->handler_data == NULL);
@@ -113,6 +130,7 @@ void vh_tevnt_attach(
     vh_tevnt_t* vh = CAL(sizeof(vh_tevnt_t), vh_tevnt_del, vh_tevnt_desc);
     vh->userdata   = userdata;
     vh->tbody_view = tbody_view;
+    vh->tscrl_view = tscrl_view;
 
     view->handler_data = vh;
     view->handler      = vh_tevnt_evt;

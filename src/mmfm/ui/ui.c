@@ -130,8 +130,9 @@ void ui_init(float width, float height)
     ts.backcolor    = 0xFFFFFFFF;
     ts.multiline    = 0;
 
-    view_t* cliplist    = view_get_subview(view_base, "cliplist");
-    view_t* cliplistevt = view_get_subview(view_base, "cliplistevt");
+    view_t* cliplist       = view_get_subview(view_base, "cliplist");
+    view_t* cliplistscroll = view_get_subview(view_base, "cliplistscroll");
+    view_t* cliplistevt    = view_get_subview(view_base, "cliplistevt");
 
     if (cliplist)
     {
@@ -149,7 +150,7 @@ void ui_init(float width, float height)
     VADDR(fields, cstr_new_cstring("last_modification"));
     VADDR(fields, cstr_new_cstring("last_status"));
 
-    ui_table_t* cliptable = ui_table_create("cliptable", cliplist, cliplistevt, NULL, fields);
+    ui_table_t* cliptable = ui_table_create("cliptable", cliplist, cliplistscroll, cliplistevt, fields);
 
     REL(fields);
 

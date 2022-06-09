@@ -19,6 +19,8 @@ void vh_tscrl_attach(
     void*   userdata);
 
 void vh_tscrl_update(view_t* view);
+void vh_tscrl_show(view_t* view);
+void vh_tscrl_hide(view_t* view);
 void vh_tscrl_set_item_count(view_t* view, uint32_t count);
 
 #endif
@@ -29,6 +31,9 @@ void vh_tscrl_set_item_count(view_t* view, uint32_t count);
 
 void vh_tscrl_del(void* p)
 {
+    vh_tscrl_t* vh = p;
+    REL(vh->vert_v);
+    REL(vh->hori_v);
 }
 
 void vh_tscrl_desc(void* p, int level)
@@ -47,8 +52,8 @@ void vh_tscrl_attach(
 
     assert(view->views->length > 1);
 
-    vh->vert_v = view->views->data[0];
-    vh->hori_v = view->views->data[1];
+    vh->vert_v = RET(view->views->data[0]);
+    vh->hori_v = RET(view->views->data[1]);
 
     view->handler_data = vh;
 }
@@ -95,6 +100,20 @@ void vh_tscrl_update(view_t* view)
 
 	view_set_frame(vh->hori_v, frame);
     }
+}
+
+void vh_tscrl_show(view_t* view)
+{
+    vh_tscrl_t* vh = view->handler_data;
+    if (vh->vert_v->parent == NULL) view_add_subview(view, vh->vert_v);
+    if (vh->hori_v->parent == NULL) view_add_subview(view, vh->hori_v);
+}
+
+void vh_tscrl_hide(view_t* view)
+{
+    vh_tscrl_t* vh = view->handler_data;
+    view_remove_subview(view, vh->vert_v);
+    view_remove_subview(view, vh->hori_v);
 }
 
 #endif

@@ -10,7 +10,7 @@ typedef struct _vh_tevnt_t
     view_t* tbody_view;
     view_t* tscrl_view;
     void*   userdata;
-    int     is_scrolling;
+    int     active;
     float   sx;
     float   sy;
     void (*on_select)(view_t* view, int index, ev_t ev, void* userdata);
@@ -42,8 +42,6 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
 	{
 	    if (vh->sy > 0.001 || vh->sy < -0.001 || vh->sx > 0.001 || vh->sx < -0.001)
 	    {
-		vh->is_scrolling = 1;
-
 		view_t* head = vec_head(bvh->items);
 		view_t* tail = vec_tail(bvh->items);
 
@@ -63,14 +61,10 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
 		if (lft > 0.01) vh_tbody_move(vh->tbody_view, -lft / 5.0, 0.0);
 		if (rgt < view->frame.local.w - 0.01) vh_tbody_move(vh->tbody_view, (view->frame.local.w - rgt) / 5.0, 0.0);
 
-		if (vh->tscrl_view)
+		if (vh->tscrl_view && vh->active)
 		{
 		    vh_tscrl_update(vh->tscrl_view);
 		}
-	    }
-	    else
-	    {
-		if (vh->is_scrolling) vh->is_scrolling = 0;
 	    }
 	}
     }
@@ -86,10 +80,20 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
     else if (ev.type == EV_MMOVE)
     {
 	// show scroll
+	if (!vh->active)
+	{
+	    vh->active = 1;
+	    vh_tscrl_show(vh->tscrl_view);
+	}
     }
     else if (ev.type == EV_MMOVE_OUT)
     {
 	// hide scroll
+	if (vh->active)
+	{
+	    vh->active = 0;
+	    vh_tscrl_hide(vh->tscrl_view);
+	}
     }
     else if (ev.type == EV_MUP)
     {

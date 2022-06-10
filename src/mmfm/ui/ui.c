@@ -44,8 +44,6 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "ui_visualizer.c"
 #include "vh_button.c"
 #include "vh_key.c"
-#include "vh_tbody.c"
-#include "vh_tevnt.c"
 #include "view_generator.c"
 #include "view_layout.c"
 #include "wm_connector.c"
@@ -133,6 +131,7 @@ void ui_init(float width, float height)
     view_t* cliplist       = view_get_subview(view_base, "cliplist");
     view_t* cliplistscroll = view_get_subview(view_base, "cliplistscroll");
     view_t* cliplistevt    = view_get_subview(view_base, "cliplistevt");
+    view_t* cliplisthead   = view_get_subview(view_base, "cliplisthead");
 
     if (cliplist)
     {
@@ -144,13 +143,19 @@ void ui_init(float width, float height)
 
     vec_t* fields = VNEW();
     VADDR(fields, cstr_new_cstring("basename"));
+    VADDR(fields, num_new_int(100));
     VADDR(fields, cstr_new_cstring("path"));
+    VADDR(fields, num_new_int(200));
     VADDR(fields, cstr_new_cstring("size"));
+    VADDR(fields, num_new_int(100));
     VADDR(fields, cstr_new_cstring("last_access"));
+    VADDR(fields, num_new_int(100));
     VADDR(fields, cstr_new_cstring("last_modification"));
+    VADDR(fields, num_new_int(100));
     VADDR(fields, cstr_new_cstring("last_status"));
+    VADDR(fields, num_new_int(100));
 
-    ui_table_t* cliptable = ui_table_create("cliptable", cliplist, cliplistscroll, cliplistevt, fields);
+    ui_table_t* cliptable = ui_table_create("cliptable", cliplist, cliplistscroll, cliplistevt, cliplisthead, fields);
 
     REL(fields);
 

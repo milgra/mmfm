@@ -1,11 +1,11 @@
 /* table body view handler */
 
-#ifndef vh_knob_h
-#define vh_knob_h
+#ifndef vh_tbl_body_h
+#define vh_tbl_body_h
 
 #include "view.c"
 
-typedef struct _vh_tbody_t
+typedef struct _vh_tbl_body_t
 {
     void*  userdata;
     vec_t* items;
@@ -23,15 +23,15 @@ typedef struct _vh_tbody_t
     view_t* (*item_create)(view_t* tview, int index, void* userdata);
     void (*item_recycle)(view_t* tview, view_t* item, void* userdata);
 
-} vh_tbody_t;
+} vh_tbl_body_t;
 
-void vh_tbody_attach(
+void vh_tbl_body_attach(
     view_t* view,
     view_t* (*item_create)(view_t* tview, int index, void* userdata),
     void (*item_recycle)(view_t* tview, view_t* item, void* userdata),
     void* userdata);
 
-void vh_tbody_move(
+void vh_tbl_body_move(
     view_t* view,
     float   dx,
     float   dy);
@@ -42,21 +42,21 @@ void vh_tbody_move(
 
 #include "zc_log.c"
 
-#define TBODY_PRELOAD_DISTANCE 100.0
+#define TBL_BODY_PRELOAD_DISTANCE 100.0
 
-void vh_tbody_del(void* p)
+void vh_tbl_body_del(void* p)
 {
-    vh_tbody_t* vh = p;
+    vh_tbl_body_t* vh = p;
     REL(vh->items);
     if (vh->userdata) REL(vh->userdata);
 }
 
-void vh_tbody_desc(void* p, int level)
+void vh_tbl_body_desc(void* p, int level)
 {
-    printf("vh_tbody");
+    printf("vh_tbl_body");
 }
 
-void vh_tbody_attach(
+void vh_tbl_body_attach(
     view_t* view,
     view_t* (*item_create)(view_t* tview, int index, void* userdata),
     void (*item_recycle)(view_t* tview, view_t* item, void* userdata),
@@ -64,7 +64,7 @@ void vh_tbody_attach(
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 
-    vh_tbody_t* vh = CAL(sizeof(vh_tbody_t), vh_tbody_del, vh_tbody_desc);
+    vh_tbl_body_t* vh = CAL(sizeof(vh_tbl_body_t), vh_tbl_body_del, vh_tbl_body_desc);
     if (userdata) vh->userdata = RET(userdata);
     vh->items        = VNEW(); // REL 0
     vh->item_create  = item_create;
@@ -73,12 +73,12 @@ void vh_tbody_attach(
     view->handler_data = vh;
 }
 
-void vh_tbody_move(
+void vh_tbl_body_move(
     view_t* view,
     float   dx,
     float   dy)
 {
-    vh_tbody_t* vh = view->handler_data;
+    vh_tbl_body_t* vh = view->handler_data;
 
     vh->full = 0;
 
@@ -131,7 +131,7 @@ void vh_tbody_move(
 
 	    view_t* head = vec_head(vh->items);
 
-	    if (head->frame.local.y > 0.0 - TBODY_PRELOAD_DISTANCE)
+	    if (head->frame.local.y > 0.0 - TBL_BODY_PRELOAD_DISTANCE)
 	    {
 		view_t* item = (*vh->item_create)(
 		    view,
@@ -162,7 +162,7 @@ void vh_tbody_move(
 
 	    view_t* tail = vec_tail(vh->items);
 
-	    if (tail->frame.local.y + tail->frame.local.h < view->frame.local.h + TBODY_PRELOAD_DISTANCE)
+	    if (tail->frame.local.y + tail->frame.local.h < view->frame.local.h + TBL_BODY_PRELOAD_DISTANCE)
 	    {
 		view_t* item = (*vh->item_create)(
 		    view,
@@ -191,11 +191,11 @@ void vh_tbody_move(
 
 	    // remove items if needed
 
-	    if (tail->frame.local.y - (head->frame.local.y + head->frame.local.h) > view->frame.local.h) // don't remove if list is not full
+	    if (tail->frame.local.y - (head->frame.local.y + head->frame.local.h) > view->frame.local.h + 2 * TBL_BODY_PRELOAD_DISTANCE) // don't remove if list is not full
 	    {
 		// remove head if needed
 
-		if (head->frame.local.y + head->frame.local.h < 0.0 - TBODY_PRELOAD_DISTANCE && vh->items->length > 1)
+		if (head->frame.local.y + head->frame.local.h < 0.0 - TBL_BODY_PRELOAD_DISTANCE && vh->items->length > 1)
 		{
 		    VREM(vh->items, head);
 		    vh->head_index += 1;
@@ -205,7 +205,7 @@ void vh_tbody_move(
 
 		// remove tail if needed
 
-		if (tail->frame.local.y > view->frame.local.h + TBODY_PRELOAD_DISTANCE && vh->items->length > 1)
+		if (tail->frame.local.y > view->frame.local.h + TBL_BODY_PRELOAD_DISTANCE && vh->items->length > 1)
 		{
 		    VREM(vh->items, tail);
 		    vh->tail_index -= 1;

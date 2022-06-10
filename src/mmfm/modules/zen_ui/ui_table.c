@@ -24,6 +24,7 @@ ui_table_t* ui_table_create(
     view_t* body,
     view_t* scrl,
     view_t* evnt,
+    view_t* head,
     vec_t*  fields);
 
 void ui_table_set_data(
@@ -37,12 +38,14 @@ void ui_table_set_data(
 #include "tg_css.c"
 #include "tg_text.c"
 #include "ui_util.c"
-#include "vh_tbody.c"
-#include "vh_tevnt.c"
-#include "vh_tscrl.c"
+#include "vh_tbl_body.c"
+#include "vh_tbl_evnt.c"
+#include "vh_tbl_head.c"
+#include "vh_tbl_scrl.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_memory.c"
+#include "zc_number.c"
 
 void ui_table_del(
     void* p)
@@ -60,7 +63,7 @@ void ui_table_desc(
     void* p,
     int   level)
 {
-    printf("vh_tbody");
+    printf("ui_table");
 }
 
 view_t* ui_table_item_create(
@@ -94,12 +97,17 @@ view_t* ui_table_item_create(
 
 		tg_css_add(rowview);
 
-		for (int i = 0; i < uit->fields->length; i++)
+		int x = 0;
+
+		for (int i = 0; i < uit->fields->length; i += 2)
 		{
 		    char*   field    = uit->fields->data[i];
+		    num_t*  size     = uit->fields->data[i + 1];
 		    char*   value    = MGET(data, field);
 		    char*   cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field); // REL 2
-		    view_t* cellview = view_new(cellid, (r2_t){100 * i, 0, 100, 20});          // REL 3
+		    view_t* cellview = view_new(cellid, (r2_t){x, 0, size->intv, 20});         // REL 3
+
+		    x += size->intv;
 
 		    tg_text_add(cellview);
 
@@ -110,16 +118,16 @@ view_t* ui_table_item_create(
 		}
 	    }
 
-	    for (int i = 0; i < uit->fields->length; i++)
+	    for (int i = 0; i < uit->fields->length; i += 2)
 	    {
 		char*   field    = uit->fields->data[i];
 		char*   value    = MGET(data, field);
-		view_t* cellview = rowview->views->data[i];
+		view_t* cellview = rowview->views->data[i / 2];
 
 		tg_text_set(cellview, value, ts);
 	    }
 
-	    view_set_frame(rowview, (r2_t){0, 0, uit->fields->length * 100, 20});
+	    view_set_frame(rowview, (r2_t){0, 0, uit->fields->length / 2 * 100, 20});
 	}
     }
 
@@ -142,39 +150,55 @@ ui_table_t* ui_table_create(
     view_t* body,
     view_t* scrl,
     view_t* evnt,
+    view_t* head,
     vec_t*  fields)
 {
     assert(id != NULL);
+    assert(body != NULL);
 
     ui_table_t* uit = CAL(sizeof(ui_table_t), ui_table_del, ui_table_desc);
     uit->id         = cstr_new_cstring(id);
     uit->cache      = VNEW();
     uit->fields     = RET(fields);
 
-    if (body) uit->body_v = RET(body);
-    if (evnt) uit->evnt_v = RET(evnt);
-    if (scrl) uit->scrl_v = RET(scrl);
+    uit->body_v = RET(body);
 
-    uit->textstyle = ui_util_gen_textstyle(body);
-
-    vh_tbody_attach(
+    vh_tbl_body_attach(
 	body,
 	ui_table_item_create,
 	ui_table_item_recycle,
 	uit);
 
-    vh_tscrl_attach(
-	scrl,
-	body,
-	uit);
+    uit->textstyle = ui_util_gen_textstyle(body);
 
-    vh_tevnt_attach(
-	evnt,
-	body,
-	scrl,
-	uit);
+    if (evnt)
+    {
+	uit->evnt_v = RET(evnt);
+	vh_tbl_evnt_attach(
+	    evnt,
+	    body,
+	    scrl,
+	    uit);
+    }
 
-    zc_log_debug("ui table create %s", id);
+    if (scrl)
+    {
+	uit->scrl_v = RET(scrl);
+
+	vh_tbl_scrl_attach(
+	    scrl,
+	    body,
+	    uit);
+    }
+
+    if (head)
+    {
+	/* vh_tbl_head_attach( */
+	/*     head, */
+	/*     ui_table_head_create, */
+	/*     fields, */
+	/*     uit); */
+    }
 
     return uit;
 }
@@ -189,9 +213,9 @@ void ui_table_set_data(
 
     zc_log_debug("ui table set data %i", data->length);
 
-    vh_tbody_move(uit->body_v, 0, 0);
+    vh_tbl_body_move(uit->body_v, 0, 0);
 
-    if (uit->scrl_v) vh_tscrl_set_item_count(uit->scrl_v, data->length);
+    if (uit->scrl_v) vh_tbl_scrl_set_item_count(uit->scrl_v, data->length);
 }
 
 #endif

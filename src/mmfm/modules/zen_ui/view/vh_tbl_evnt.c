@@ -1,11 +1,11 @@
-#ifndef vh_tevnt_h
-#define vh_tevnt_h
+#ifndef vh_tbl_evnt_h
+#define vh_tbl_evnt_h
 
-#include "vh_tbody.c"
-#include "vh_tscrl.c"
+#include "vh_tbl_body.c"
+#include "vh_tbl_scrl.c"
 #include "view.c"
 
-typedef struct _vh_tevnt_t
+typedef struct _vh_tbl_evnt_t
 {
     view_t* tbody_view;
     view_t* tscrl_view;
@@ -14,9 +14,9 @@ typedef struct _vh_tevnt_t
     float   sx;
     float   sy;
     void (*on_select)(view_t* view, int index, ev_t ev, void* userdata);
-} vh_tevnt_t;
+} vh_tbl_evnt_t;
 
-void vh_tevnt_attach(
+void vh_tbl_evnt_attach(
     view_t* view,
     view_t* tbody_view,
     view_t* tscrl_view,
@@ -30,13 +30,13 @@ void vh_tevnt_attach(
 
 #define SWAY 50.0
 
-void vh_tevnt_evt(view_t* view, ev_t ev)
+void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 {
-    vh_tevnt_t* vh = view->handler_data;
+    vh_tbl_evnt_t* vh = view->handler_data;
 
     if (ev.type == EV_TIME)
     {
-	vh_tbody_t* bvh = vh->tbody_view->handler_data;
+	vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
 
 	if (bvh->items && bvh->items->length > 0)
 	{
@@ -54,16 +54,16 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
 		vh->sx *= 0.8;
 		vh->sy *= 0.8;
 
-		vh_tbody_move(vh->tbody_view, vh->sx, vh->sy);
+		vh_tbl_body_move(vh->tbody_view, vh->sx, vh->sy);
 
-		if (hth > view->frame.local.h && top > 0.001) vh_tbody_move(vh->tbody_view, 0, -top / 5.0);
-		if (hth > view->frame.local.h && bot < view->frame.local.h - 0.001) vh_tbody_move(vh->tbody_view, 0, (view->frame.local.h - bot) / 5.0);
-		if (lft > 0.01) vh_tbody_move(vh->tbody_view, -lft / 5.0, 0.0);
-		if (rgt < view->frame.local.w - 0.01) vh_tbody_move(vh->tbody_view, (view->frame.local.w - rgt) / 5.0, 0.0);
+		if (hth > view->frame.local.h && top > 0.001) vh_tbl_body_move(vh->tbody_view, 0, -top / 5.0);
+		if (hth > view->frame.local.h && bot < view->frame.local.h - 0.001) vh_tbl_body_move(vh->tbody_view, 0, (view->frame.local.h - bot) / 5.0);
+		if (lft > 0.01) vh_tbl_body_move(vh->tbody_view, -lft / 5.0, 0.0);
+		if (rgt < view->frame.local.w - 0.01) vh_tbl_body_move(vh->tbody_view, (view->frame.local.w - rgt) / 5.0, 0.0);
 
 		if (vh->tscrl_view && vh->active)
 		{
-		    vh_tscrl_update(vh->tscrl_view);
+		    vh_tbl_scrl_update(vh->tscrl_view);
 		}
 	    }
 	}
@@ -75,7 +75,7 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
     }
     else if (ev.type == EV_RESIZE)
     {
-	vh_tbody_move(vh->tbody_view, 0, 0);
+	vh_tbl_body_move(vh->tbody_view, 0, 0);
     }
     else if (ev.type == EV_MMOVE)
     {
@@ -83,7 +83,7 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
 	if (!vh->active)
 	{
 	    vh->active = 1;
-	    vh_tscrl_show(vh->tscrl_view);
+	    vh_tbl_scrl_show(vh->tscrl_view);
 	}
     }
     else if (ev.type == EV_MMOVE_OUT)
@@ -92,12 +92,12 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
 	if (vh->active)
 	{
 	    vh->active = 0;
-	    vh_tscrl_hide(vh->tscrl_view);
+	    vh_tbl_scrl_hide(vh->tscrl_view);
 	}
     }
     else if (ev.type == EV_MUP)
     {
-	vh_tbody_t* bvh = vh->tbody_view->handler_data;
+	vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
 
 	for (int index = 0; index < bvh->items->length; index++)
 	{
@@ -114,16 +114,16 @@ void vh_tevnt_evt(view_t* view, ev_t ev)
     }
 }
 
-void vh_tevnt_del(void* p)
+void vh_tbl_evnt_del(void* p)
 {
 }
 
-void vh_tevnt_desc(void* p, int level)
+void vh_tbl_evnt_desc(void* p, int level)
 {
-    printf("vh_tevnt");
+    printf("vh_tbl_evnt");
 }
 
-void vh_tevnt_attach(
+void vh_tbl_evnt_attach(
     view_t* view,
     view_t* tbody_view,
     view_t* tscrl_view,
@@ -131,13 +131,13 @@ void vh_tevnt_attach(
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 
-    vh_tevnt_t* vh = CAL(sizeof(vh_tevnt_t), vh_tevnt_del, vh_tevnt_desc);
-    vh->userdata   = userdata;
-    vh->tbody_view = tbody_view;
-    vh->tscrl_view = tscrl_view;
+    vh_tbl_evnt_t* vh = CAL(sizeof(vh_tbl_evnt_t), vh_tbl_evnt_del, vh_tbl_evnt_desc);
+    vh->userdata      = userdata;
+    vh->tbody_view    = tbody_view;
+    vh->tscrl_view    = tscrl_view;
 
     view->handler_data = vh;
-    view->handler      = vh_tevnt_evt;
+    view->handler      = vh_tbl_evnt_evt;
 }
 
 #endif

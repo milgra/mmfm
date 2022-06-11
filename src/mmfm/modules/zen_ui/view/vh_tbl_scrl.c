@@ -7,6 +7,7 @@
 typedef struct _vh_tbl_scrl_t
 {
     view_t*  tbody_view;
+    view_t*  thead_view;
     view_t*  vert_v;
     view_t*  hori_v;
     uint32_t item_cnt;
@@ -16,6 +17,7 @@ typedef struct _vh_tbl_scrl_t
 void vh_tbl_scrl_attach(
     view_t* view,
     view_t* tbody_view,
+    view_t* thead_view,
     void*   userdata);
 
 void vh_tbl_scrl_update(view_t* view);
@@ -44,11 +46,13 @@ void vh_tbl_scrl_desc(void* p, int level)
 void vh_tbl_scrl_attach(
     view_t* view,
     view_t* tbody_view,
+    view_t* thead_view,
     void*   userdata)
 {
     vh_tbl_scrl_t* vh = CAL(sizeof(vh_tbl_scrl_t), vh_tbl_scrl_del, vh_tbl_scrl_desc);
     vh->userdata      = userdata;
     vh->tbody_view    = tbody_view;
+    vh->thead_view    = thead_view;
 
     assert(view->views->length > 1);
 
@@ -72,33 +76,39 @@ void vh_tbl_scrl_update(view_t* view)
 
     if (bvh->items->length > 0 && vh->item_cnt > 0)
     {
+	view_t* head = bvh->items->data[0];
+
 	int vert_pos = bvh->top_index;
 	int vert_vis = bvh->bot_index - bvh->top_index;
 	int vert_max = vh->item_cnt;
 
-	float pratio = (float) vert_pos / (float) vert_max;
-	float sratio = (float) vert_vis / (float) vert_max;
+	if (vert_max > 1.0)
+	{
+	    float pratio = (float) vert_pos / (float) vert_max;
+	    float sratio = (float) vert_vis / (float) vert_max;
 
-	r2_t frame = vh->vert_v->frame.local;
-	frame.h += (view->frame.local.h * sratio - frame.h) / 5.0;
-	frame.y += (view->frame.local.h * pratio - frame.y) / 5.0;
+	    r2_t frame = vh->vert_v->frame.local;
+	    frame.h += (view->frame.local.h * sratio - frame.h) / 5.0;
+	    frame.y += (view->frame.local.h * pratio - frame.y) / 5.0;
 
-	view_set_frame(vh->vert_v, frame);
-
-	view_t* head = bvh->items->data[0];
+	    view_set_frame(vh->vert_v, frame);
+	}
 
 	float hori_pos = -head->frame.local.x;
 	float hori_vis = view->frame.local.w;
 	float hori_max = head->frame.local.w;
 
-	pratio = (float) hori_pos / (float) hori_max;
-	sratio = (float) hori_vis / (float) hori_max;
+	if (hori_max > 1.0)
+	{
+	    float pratio = (float) hori_pos / (float) hori_max;
+	    float sratio = (float) hori_vis / (float) hori_max;
 
-	frame = vh->hori_v->frame.local;
-	frame.w += (view->frame.local.w * sratio - frame.w) / 5.0;
-	frame.x += (view->frame.local.w * pratio - frame.x) / 5.0;
+	    r2_t frame = vh->hori_v->frame.local;
+	    frame.w += (view->frame.local.w * sratio - frame.w) / 5.0;
+	    frame.x += (view->frame.local.w * pratio - frame.x) / 5.0;
 
-	view_set_frame(vh->hori_v, frame);
+	    view_set_frame(vh->hori_v, frame);
+	}
     }
 }
 

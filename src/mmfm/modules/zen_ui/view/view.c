@@ -172,7 +172,7 @@ struct _view_t
 
 view_t* view_new(char* id, r2_t frame);
 void    view_add_subview(view_t* view, view_t* subview);
-void    view_remove_subiew(view_t* view, view_t* subview);
+void    view_remove_subview(view_t* view, view_t* subview);
 void    view_insert_subview(view_t* view, view_t* subview, uint32_t index);
 void    view_remove_from_parent(view_t* view);
 void    view_set_parent(view_t* view, view_t* parent);
@@ -523,7 +523,7 @@ void view_describe(void* pointer, int level)
 
     printf("%s [x:%.0f y:%.0f w:%.0f h:%.0f tx:%i eh:%i tg:%i]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->texture.page, view->handler != NULL, view->tex_gen != NULL);
 
-    for (int i = 0; i < view->views->length; i++) view_desc(view->views->data[i], level + 1);
+    for (int i = 0; i < view->views->length; i++) view_describe(view->views->data[i], level + 1);
 }
 
 void view_desc_layout(vlayout_t l)

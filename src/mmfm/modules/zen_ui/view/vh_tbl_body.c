@@ -118,7 +118,7 @@ void vh_tbl_body_move(
 	    {
 		VADD(vh->items, item);
 		view_add_subview(view, item);
-		view_set_frame(item, (r2_t){0, vh->head_ypos, item->frame.local.w, item->frame.local.h});
+		view_set_frame(item, (r2_t){vh->head_xpos, vh->head_ypos, item->frame.local.w, item->frame.local.h});
 	    }
 	    else
 	    {
@@ -146,7 +146,7 @@ void vh_tbl_body_move(
 		    vec_ins(vh->items, item, 0);
 		    view_insert_subview(view, item, 0);
 
-		    view_set_frame(item, (r2_t){0, head->frame.local.y - item->frame.local.h, item->frame.local.w, item->frame.local.h});
+		    view_set_frame(item, (r2_t){vh->head_xpos, head->frame.local.y - item->frame.local.h, item->frame.local.w, item->frame.local.h});
 		}
 		else
 		{
@@ -177,7 +177,7 @@ void vh_tbl_body_move(
 		    VADD(vh->items, item);
 		    view_add_subview(view, item);
 
-		    view_set_frame(item, (r2_t){0, tail->frame.local.y + tail->frame.local.h, item->frame.local.w, item->frame.local.h});
+		    view_set_frame(item, (r2_t){vh->head_xpos, tail->frame.local.y + tail->frame.local.h, item->frame.local.w, item->frame.local.h});
 		}
 		else
 		{

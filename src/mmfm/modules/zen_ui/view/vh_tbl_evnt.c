@@ -2,6 +2,7 @@
 #define vh_tbl_evnt_h
 
 #include "vh_tbl_body.c"
+#include "vh_tbl_head.c"
 #include "vh_tbl_scrl.c"
 #include "view.c"
 
@@ -9,6 +10,7 @@ typedef struct _vh_tbl_evnt_t
 {
     view_t* tbody_view;
     view_t* tscrl_view;
+    view_t* thead_view;
     void*   userdata;
     int     active;
     float   sx;
@@ -20,6 +22,7 @@ void vh_tbl_evnt_attach(
     view_t* view,
     view_t* tbody_view,
     view_t* tscrl_view,
+    view_t* thead_view,
     void*   userdata);
 
 #endif
@@ -54,17 +57,18 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 		vh->sx *= 0.8;
 		vh->sy *= 0.8;
 
-		vh_tbl_body_move(vh->tbody_view, vh->sx, vh->sy);
+		float dx = vh->sx;
+		float dy = vh->sy;
 
-		if (hth > view->frame.local.h && top > 0.001) vh_tbl_body_move(vh->tbody_view, 0, -top / 5.0);
-		if (hth > view->frame.local.h && bot < view->frame.local.h - 0.001) vh_tbl_body_move(vh->tbody_view, 0, (view->frame.local.h - bot) / 5.0);
-		if (lft > 0.01) vh_tbl_body_move(vh->tbody_view, -lft / 5.0, 0.0);
-		if (rgt < view->frame.local.w - 0.01) vh_tbl_body_move(vh->tbody_view, (view->frame.local.w - rgt) / 5.0, 0.0);
+		if (hth > view->frame.local.h && top > 0.001) dy -= top / 5.0;
+		if (hth > view->frame.local.h && bot < view->frame.local.h - 0.001) dy += (view->frame.local.h - bot) / 5.0;
+		if (lft > 0.01) dx -= lft / 5.0;
+		if (rgt < view->frame.local.w - 0.01) dx += (view->frame.local.w - rgt) / 5.0;
 
-		if (vh->tscrl_view && vh->active)
-		{
-		    vh_tbl_scrl_update(vh->tscrl_view);
-		}
+		vh_tbl_body_move(vh->tbody_view, dx, dy);
+		if (vh->thead_view) vh_tbl_head_move(vh->thead_view, dx);
+
+		if (vh->tscrl_view && vh->active) vh_tbl_scrl_update(vh->tscrl_view);
 	    }
 	}
     }
@@ -127,6 +131,7 @@ void vh_tbl_evnt_attach(
     view_t* view,
     view_t* tbody_view,
     view_t* tscrl_view,
+    view_t* thead_view,
     void*   userdata)
 {
     assert(view->handler == NULL && view->handler_data == NULL);
@@ -135,6 +140,7 @@ void vh_tbl_evnt_attach(
     vh->userdata      = userdata;
     vh->tbody_view    = tbody_view;
     vh->tscrl_view    = tscrl_view;
+    vh->thead_view    = thead_view;
 
     view->handler_data = vh;
     view->handler      = vh_tbl_evnt_evt;

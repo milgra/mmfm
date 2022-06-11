@@ -88,7 +88,7 @@ void ui_init(float width, float height)
 
     ui_filelist_attach(view_base); // DETACH 0
     /* ui_cliplist_attach(view_base); // DETACH 0 */
-    ui_meta_view_attach(view_base);
+    // ui_meta_view_attach(view_base);
     /* ui_song_infos_attach(view_base);       // DETACH 1 */
     ui_visualizer_attach(view_base); // DETACH 2
     ui_filter_bar_attach(view_base); // DETACH 3
@@ -243,18 +243,18 @@ void ui_render_without_cursor(uint32_t time)
 
 void ui_destroy()
 {
-    ui_filelist_detach();         // DETACH 0
-    ui_song_infos_detach();       // DETACH 1
-    ui_visualizer_detach();       // DETACH 2
-    ui_filter_bar_detach();       // DETACH 3
-    ui_about_popup_detach();      // DETACH 4
-    ui_alert_popup_detach();      // DETACH 5
-    ui_filter_popup_detach();     // DETACH 6
-    ui_play_controls_detach();    // DETACH 8
-    ui_decision_popup_detach();   // DETACH 9
-    ui_lib_init_popup_detach();   // DETACH 10
-    ui_activity_popup_detach();   // DETACH 11
-    ui_settings_popup_detach();   // DETACH 12
+    ui_filelist_detach();       // DETACH 0
+    ui_song_infos_detach();     // DETACH 1
+    ui_visualizer_detach();     // DETACH 2
+    ui_filter_bar_detach();     // DETACH 3
+    ui_about_popup_detach();    // DETACH 4
+    ui_alert_popup_detach();    // DETACH 5
+    ui_filter_popup_detach();   // DETACH 6
+    ui_play_controls_detach();  // DETACH 8
+    ui_decision_popup_detach(); // DETACH 9
+    ui_lib_init_popup_detach(); // DETACH 10
+    ui_activity_popup_detach(); // DETACH 11
+    // ui_settings_popup_detach();   // DETACH 12
     ui_song_menu_popup_detach();  // DETACH 13
     ui_inputfield_popup_detach(); // DETACH 14
     ui_popup_switcher_detach();   // DETACH 15
@@ -287,7 +287,7 @@ void ui_on_button_down(void* userdata, void* data)
 
     if (strcmp(id, "aboutbtn") == 0) ui_popup_switcher_toggle("about_popup_page");
     if (strcmp(id, "song_info") == 0) ui_popup_switcher_toggle("messages_popup_page");
-    if (strcmp(id, "settingsbtn") == 0) ui_settings_popup_show();
+    // if (strcmp(id, "settingsbtn") == 0) ui_settings_popup_show();
     if (strcmp(id, "closefilterbtn") == 0) ui_popup_switcher_toggle("filters_popup_page");
     if (strcmp(id, "closeeditorbtn") == 0) ui_popup_switcher_toggle("song_editor_popup_page");
     if (strcmp(id, "closesettingsbtn") == 0) ui_popup_switcher_toggle("settings_popup_page");

@@ -66,6 +66,44 @@ void ui_table_desc(
     printf("ui_table");
 }
 
+view_t* ui_table_head_create(
+    view_t* head_v,
+    void*   userdata)
+{
+    ui_table_t* uit = (ui_table_t*) userdata;
+
+    char*   headid   = cstr_new_format(100, "%s_header", uit->id); // REL 0
+    view_t* headview = view_new(headid, (r2_t){0, 0, 100, 20});
+    REL(headid); // REL 0
+
+    int         wth = 0;
+    textstyle_t ts  = uit->textstyle;
+
+    for (int i = 0; i < uit->fields->length; i += 2)
+    {
+	char*   field    = uit->fields->data[i];
+	num_t*  size     = uit->fields->data[i + 1];
+	char*   cellid   = cstr_new_format(100, "%s_cell_%s", headview->id, field); // REL 2
+	view_t* cellview = view_new(cellid, (r2_t){wth, 0, size->intv, 20});        // REL 3
+
+	wth += size->intv;
+
+	tg_text_add(cellview);
+	tg_text_set(cellview, field, ts);
+
+	REL(cellid);   // REL 2
+	REL(cellview); // REL 3
+
+	view_add_subview(headview, cellview);
+    }
+
+    view_set_frame(headview, (r2_t){0, 0, wth, 20});
+
+    zc_log_debug("CREATE");
+
+    return headview;
+}
+
 view_t* ui_table_item_create(
     view_t* table_v,
     int     index,
@@ -95,9 +133,7 @@ view_t* ui_table_item_create(
 		rowview     = view_new(rowid, (r2_t){0, 0, table_v->frame.local.w, 20});
 		REL(rowid); // REL 0
 
-		tg_css_add(rowview);
-
-		int x = 0;
+		int wth = 0;
 
 		for (int i = 0; i < uit->fields->length; i += 2)
 		{
@@ -105,9 +141,9 @@ view_t* ui_table_item_create(
 		    num_t*  size     = uit->fields->data[i + 1];
 		    char*   value    = MGET(data, field);
 		    char*   cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field); // REL 2
-		    view_t* cellview = view_new(cellid, (r2_t){x, 0, size->intv, 20});         // REL 3
+		    view_t* cellview = view_new(cellid, (r2_t){wth, 0, size->intv, 20});       // REL 3
 
-		    x += size->intv;
+		    wth += size->intv;
 
 		    tg_text_add(cellview);
 
@@ -118,16 +154,21 @@ view_t* ui_table_item_create(
 		}
 	    }
 
+	    int wth = 0;
+
 	    for (int i = 0; i < uit->fields->length; i += 2)
 	    {
 		char*   field    = uit->fields->data[i];
+		num_t*  size     = uit->fields->data[i + 1];
 		char*   value    = MGET(data, field);
 		view_t* cellview = rowview->views->data[i / 2];
+
+		wth += size->intv;
 
 		tg_text_set(cellview, value, ts);
 	    }
 
-	    view_set_frame(rowview, (r2_t){0, 0, uit->fields->length / 2 * 100, 20});
+	    view_set_frame(rowview, (r2_t){0, 0, wth, 20});
 	}
     }
 
@@ -171,13 +212,11 @@ ui_table_t* ui_table_create(
 
     uit->textstyle = ui_util_gen_textstyle(body);
 
-    if (evnt)
+    if (head)
     {
-	uit->evnt_v = RET(evnt);
-	vh_tbl_evnt_attach(
-	    evnt,
-	    body,
-	    scrl,
+	vh_tbl_head_attach(
+	    head,
+	    ui_table_head_create,
 	    uit);
     }
 
@@ -188,16 +227,19 @@ ui_table_t* ui_table_create(
 	vh_tbl_scrl_attach(
 	    scrl,
 	    body,
+	    head,
 	    uit);
     }
 
-    if (head)
+    if (evnt)
     {
-	/* vh_tbl_head_attach( */
-	/*     head, */
-	/*     ui_table_head_create, */
-	/*     fields, */
-	/*     uit); */
+	uit->evnt_v = RET(evnt);
+	vh_tbl_evnt_attach(
+	    evnt,
+	    body,
+	    scrl,
+	    head,
+	    uit);
     }
 
     return uit;

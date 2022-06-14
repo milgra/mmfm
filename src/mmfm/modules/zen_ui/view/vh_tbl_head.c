@@ -32,6 +32,20 @@ void vh_tbl_head_move(view_t* hview, float dx);
 
 #define EDGE_DRAG_SIZE 10
 
+void vh_tbl_head_align(view_t* view)
+{
+    vh_tbl_head_t* vh  = view->handler_data;
+    int            pos = 0;
+    for (int index = 0; index < vh->head->views->length; index++)
+    {
+	view_t* sv   = vh->head->views->data[index];
+	r2_t    svfl = sv->frame.local;
+	svfl.x       = pos;
+	pos += svfl.w + 1;
+	view_set_frame(sv, svfl);
+    }
+}
+
 void vh_tbl_head_evt(view_t* view, ev_t ev)
 {
     vh_tbl_head_t* vh = view->handler_data;
@@ -73,6 +87,33 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 	}
 	else if (ev.type == EV_MUP || ev.type == EV_MUP_OUT)
 	{
+
+	    if (vh->active > -1)
+	    {
+		if (vh->resize == 0)
+		{
+		    // look for
+		    for (int index = 0; index < vh->head->views->length; index++)
+		    {
+			if (index != vh->active)
+			{
+			    view_t* sv  = vh->head->views->data[index];
+			    r2_t    svf = sv->frame.global;
+			    // inside
+			    if (ev.x > svf.x && ev.x < svf.x + svf.w)
+			    {
+				zc_log_debug("dropped %i on %i", vh->active, index);
+				view_t* mv = vh->head->views->data[vh->active];
+				view_remove_subview(vh->head, mv);
+				view_insert_subview(vh->head, mv, index);
+				vh_tbl_head_align(view);
+				break;
+			    }
+			}
+		    }
+		}
+	    }
+
 	    vh->active = -1;
 	    vh->resize = 0;
 	}
@@ -89,17 +130,7 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 		    {
 			svfl.w = ev.x - svfg.x;
 			view_set_frame(sv, svfl);
-
-			// resize cells
-			int pos = 0;
-			for (int index = 0; index < vh->head->views->length; index++)
-			{
-			    view_t* sv = vh->head->views->data[index];
-			    svfl       = sv->frame.local;
-			    svfl.x     = pos;
-			    pos += svfl.w;
-			    view_set_frame(sv, svfl);
-			}
+			vh_tbl_head_align(view);
 		    }
 		    else
 		    {

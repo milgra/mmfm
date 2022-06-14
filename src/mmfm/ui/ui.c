@@ -155,7 +155,7 @@ void ui_init(float width, float height)
     VADDR(fields, cstr_new_cstring("last_status"));
     VADDR(fields, num_new_int(100));
 
-    ui_table_t* cliptable = ui_table_create("cliptable", cliplist, cliplistscroll, cliplistevt, cliplisthead, fields);
+    ui_table_t* cliptable = ui_table_create("cliptable", cliplist, cliplistscroll, cliplistevt, cliplisthead, fields, NULL);
 
     REL(fields);
 

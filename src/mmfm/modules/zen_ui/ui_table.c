@@ -17,6 +17,7 @@ typedef struct _ui_table_t
     view_t*     evnt_v;
     view_t*     scrl_v;
     textstyle_t textstyle;
+    void (*fields_update)(char* id, vec_t* fields);
 } ui_table_t;
 
 ui_table_t* ui_table_create(
@@ -25,7 +26,8 @@ ui_table_t* ui_table_create(
     view_t* scrl,
     view_t* evnt,
     view_t* head,
-    vec_t*  fields);
+    vec_t*  fields,
+    void (*fields_update)(char* id, vec_t* fields));
 
 void ui_table_set_data(
     ui_table_t* uit, vec_t* data);
@@ -66,6 +68,15 @@ void ui_table_desc(
     printf("ui_table");
 }
 
+void ui_table_head_resize(view_t* hview, int index, int size)
+{
+    zc_log_debug("head resize %i %i", index, size);
+}
+void ui_table_head_reorder(view_t* hview, int ind1, int ind2)
+{
+    zc_log_debug("head reorder %i %i", ind1, ind2);
+}
+
 view_t* ui_table_head_create(
     view_t* head_v,
     void*   userdata)
@@ -78,13 +89,14 @@ view_t* ui_table_head_create(
 
     int         wth = 0;
     textstyle_t ts  = uit->textstyle;
+    ts.backcolor    = 0xFF4455FF;
 
     for (int i = 0; i < uit->fields->length; i += 2)
     {
 	char*   field    = uit->fields->data[i];
 	num_t*  size     = uit->fields->data[i + 1];
-	char*   cellid   = cstr_new_format(100, "%s_cell_%s", headview->id, field); // REL 2
-	view_t* cellview = view_new(cellid, (r2_t){wth, 0, size->intv, 20});        // REL 3
+	char*   cellid   = cstr_new_format(100, "%s_cell_%s", headview->id, field);  // REL 2
+	view_t* cellview = view_new(cellid, (r2_t){wth + 1, 0, size->intv - 2, 20}); // REL 3
 
 	wth += size->intv;
 
@@ -140,8 +152,8 @@ view_t* ui_table_item_create(
 		    char*   field    = uit->fields->data[i];
 		    num_t*  size     = uit->fields->data[i + 1];
 		    char*   value    = MGET(data, field);
-		    char*   cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field); // REL 2
-		    view_t* cellview = view_new(cellid, (r2_t){wth, 0, size->intv, 20});       // REL 3
+		    char*   cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field);   // REL 2
+		    view_t* cellview = view_new(cellid, (r2_t){wth + 1, 0, size->intv - 2, 20}); // REL 3
 
 		    wth += size->intv;
 
@@ -192,15 +204,17 @@ ui_table_t* ui_table_create(
     view_t* scrl,
     view_t* evnt,
     view_t* head,
-    vec_t*  fields)
+    vec_t*  fields,
+    void (*fields_update)(char* id, vec_t* fields))
 {
     assert(id != NULL);
     assert(body != NULL);
 
-    ui_table_t* uit = CAL(sizeof(ui_table_t), ui_table_del, ui_table_desc);
-    uit->id         = cstr_new_cstring(id);
-    uit->cache      = VNEW();
-    uit->fields     = RET(fields);
+    ui_table_t* uit    = CAL(sizeof(ui_table_t), ui_table_del, ui_table_desc);
+    uit->id            = cstr_new_cstring(id);
+    uit->cache         = VNEW();
+    uit->fields        = RET(fields);
+    uit->fields_update = fields_update;
 
     uit->body_v = RET(body);
 
@@ -210,13 +224,16 @@ ui_table_t* ui_table_create(
 	ui_table_item_recycle,
 	uit);
 
-    uit->textstyle = ui_util_gen_textstyle(body);
+    uit->textstyle             = ui_util_gen_textstyle(body);
+    uit->textstyle.margin_left = 5;
 
     if (head)
     {
 	vh_tbl_head_attach(
 	    head,
 	    ui_table_head_create,
+	    ui_table_head_resize,
+	    ui_table_head_reorder,
 	    uit);
     }
 

@@ -242,8 +242,8 @@ view_t* view_new(char* id, r2_t frame)
     view->texture.alpha     = 1.0;
     view->texture.resizable = 1;
     view->needs_touch       = 1;
-    view->blocks_touch      = 1;
-    view->exclude           = 1;
+    // view->blocks_touch      = 1;
+    view->exclude = 1;
 
     // reset margins
 

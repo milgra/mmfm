@@ -8,8 +8,9 @@
 typedef struct _vh_tbl_head_t
 {
     view_t* (*head_create)(view_t* view, void* userdata);
-    void (*head_resize)(view_t* hview, int index, int size);
-    void (*head_reorder)(view_t* hview, int ind1, int ind2);
+    void (*head_move)(view_t* hview, int index, int pos, void* userdata);
+    void (*head_resize)(view_t* hview, int index, int size, void* userdata);
+    void (*head_reorder)(view_t* hview, int ind1, int ind2, void* userdata);
     void*   userdata;
     view_t* head;
     int     active;
@@ -20,8 +21,9 @@ typedef struct _vh_tbl_head_t
 void vh_tbl_head_attach(
     view_t* view,
     view_t* (*head_create)(view_t* hview, void* userdata),
-    void (*head_resize)(view_t* hview, int index, int size),
-    void (*head_reorder)(view_t* hview, int ind1, int ind2),
+    void (*head_move)(view_t* hview, int index, int pos, void* userdata),
+    void (*head_resize)(view_t* hview, int index, int size, void* userdata),
+    void (*head_reorder)(view_t* hview, int ind1, int ind2, void* userdata),
     void* userdata);
 
 void vh_tbl_head_move(view_t* hview, float dx);
@@ -87,7 +89,6 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 	}
 	else if (ev.type == EV_MUP || ev.type == EV_MUP_OUT)
 	{
-
 	    if (vh->active > -1)
 	    {
 		if (vh->resize == 0)
@@ -102,15 +103,28 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 			    // inside
 			    if (ev.x > svf.x && ev.x < svf.x + svf.w)
 			    {
-				zc_log_debug("dropped %i on %i", vh->active, index);
-				view_t* mv = vh->head->views->data[vh->active];
-				view_remove_subview(vh->head, mv);
-				view_insert_subview(vh->head, mv, index);
+				view_t* cell1 = RET(vh->head->views->data[vh->active]);
+				view_t* cell2 = RET(vh->head->views->data[index]);
+
+				view_remove_subview(vh->head, cell1);
+				view_insert_subview(vh->head, cell1, index);
+				view_remove_subview(vh->head, cell2);
+				view_insert_subview(vh->head, cell2, vh->active);
+
+				REL(cell1);
+				REL(cell2);
+
 				vh_tbl_head_align(view);
+
+				if (vh->head_reorder) (*vh->head_reorder)(view, vh->active, index, vh->userdata);
 				break;
 			    }
 			}
 		    }
+
+		    if (vh->head_move) (*vh->head_move)(view, -1, 0, vh->userdata);
+
+		    vh_tbl_head_align(view);
 		}
 	    }
 
@@ -126,16 +140,19 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 		    view_t* sv   = vh->head->views->data[vh->active];
 		    r2_t    svfg = sv->frame.global;
 		    r2_t    svfl = sv->frame.local;
+
 		    if (vh->resize)
 		    {
 			svfl.w = ev.x - svfg.x;
 			view_set_frame(sv, svfl);
 			vh_tbl_head_align(view);
+			if (vh->head_resize) (*vh->head_resize)(view, vh->active, svfl.w, vh->userdata);
 		    }
 		    else
 		    {
-			svfl.x = ev.x - view->frame.global.x - vh->touchx;
+			svfl.x = ev.x - vh->head->frame.global.x - vh->touchx;
 			view_set_frame(sv, svfl);
+			if (vh->head_move) (*vh->head_move)(view, vh->active, svfl.x, vh->userdata);
 		    }
 		}
 	    }
@@ -168,8 +185,9 @@ void vh_tbl_head_desc(void* p, int level)
 void vh_tbl_head_attach(
     view_t* view,
     view_t* (*head_create)(view_t* hview, void* userdata),
-    void (*head_resize)(view_t* hview, int index, int size),
-    void (*head_reorder)(view_t* hview, int ind1, int ind2),
+    void (*head_move)(view_t* hview, int index, int pos, void* userdata),
+    void (*head_resize)(view_t* hview, int index, int size, void* userdata),
+    void (*head_reorder)(view_t* hview, int ind1, int ind2, void* userdata),
     void* userdata)
 {
     assert(view->handler == NULL && view->handler_data == NULL);
@@ -177,6 +195,9 @@ void vh_tbl_head_attach(
     vh_tbl_head_t* vh = CAL(sizeof(vh_tbl_head_t), vh_tbl_head_del, vh_tbl_head_desc);
     vh->userdata      = userdata;
     vh->head_create   = head_create;
+    vh->head_move     = head_move;
+    vh->head_resize   = head_resize;
+    vh->head_reorder  = head_reorder;
     vh->head          = (*head_create)(view, userdata);
     vh->active        = -1;
 

@@ -68,13 +68,148 @@ void ui_table_desc(
     printf("ui_table");
 }
 
-void ui_table_head_resize(view_t* hview, int index, int size)
+void ui_table_head_move(view_t* hview, int index, int pos, void* userdata)
 {
-    zc_log_debug("head resize %i %i", index, size);
+    zc_log_debug("head move %i %i", index, pos);
+
+    ui_table_t* uit = (ui_table_t*) userdata;
+
+    for (int ri = 0; ri < uit->body_v->views->length; ri++)
+    {
+	view_t* rowview = uit->body_v->views->data[ri];
+
+	float wth = 0;
+
+	for (int i = 0; i < rowview->views->length; i++)
+	{
+	    num_t* sizep = uit->fields->data[i * 2 + 1];
+	    int    sizei = sizep->intv;
+
+	    view_t* cellview = rowview->views->data[i];
+
+	    r2_t frame = cellview->frame.local;
+
+	    float posi = wth;
+
+	    if (i == index)
+	    {
+		posi = pos;
+	    }
+
+	    frame.x = posi;
+
+	    view_set_frame(cellview, frame);
+
+	    wth += (float) sizei;
+	}
+    }
 }
-void ui_table_head_reorder(view_t* hview, int ind1, int ind2)
+
+void ui_table_head_resize(view_t* hview, int index, int size, void* userdata)
+{
+    ui_table_t* uit = (ui_table_t*) userdata;
+
+    // resize cells in visible items
+
+    for (int ri = 0; ri < uit->body_v->views->length; ri++)
+    {
+	view_t* rowview = uit->body_v->views->data[ri];
+
+	int wth = 0;
+
+	for (int i = 0; i < rowview->views->length; i++)
+	{
+	    num_t* sizep = uit->fields->data[i * 2 + 1];
+	    int    sizei = sizep->intv;
+
+	    if (i == index)
+	    {
+		sizei       = size;
+		sizep->intv = size;
+	    }
+
+	    view_t* cellview = rowview->views->data[i];
+
+	    r2_t frame = cellview->frame.local;
+
+	    frame.x = wth;
+	    frame.w = sizei;
+
+	    view_set_frame(cellview, frame);
+
+	    wth += sizei;
+	}
+
+	r2_t frame = rowview->frame.local;
+	frame.w    = wth;
+	view_set_frame(rowview, frame);
+    }
+
+    // save state
+
+    if (uit->fields_update) (*uit->fields_update)(uit->id, uit->fields);
+}
+
+void ui_table_head_reorder(view_t* hview, int ind1, int ind2, void* userdata)
 {
     zc_log_debug("head reorder %i %i", ind1, ind2);
+
+    // reorder cells in visible items
+
+    ui_table_t* uit = (ui_table_t*) userdata;
+
+    char*  field1 = RET(uit->fields->data[ind1 * 2]);
+    num_t* size1  = RET(uit->fields->data[ind1 * 2 + 1]);
+
+    char*  field2 = RET(uit->fields->data[ind2 * 2]);
+    num_t* size2  = RET(uit->fields->data[ind2 * 2 + 1]);
+
+    uit->fields->data[ind1 * 2]     = field2;
+    uit->fields->data[ind1 * 2 + 1] = size2;
+
+    uit->fields->data[ind2 * 2]     = field1;
+    uit->fields->data[ind2 * 2 + 1] = size1;
+
+    REL(field1);
+    REL(size1);
+    REL(field2);
+    REL(size2);
+
+    mem_describe(uit->fields, 0);
+
+    // update items
+
+    for (int ri = 0; ri < uit->body_v->views->length; ri++)
+    {
+	view_t* rowview = uit->body_v->views->data[ri];
+
+	view_t* cell1 = RET(rowview->views->data[ind1]);
+	view_t* cell2 = RET(rowview->views->data[ind2]);
+
+	view_remove_subview(rowview, cell1);
+	view_insert_subview(rowview, cell1, ind2);
+	view_remove_subview(rowview, cell2);
+	view_insert_subview(rowview, cell2, ind1);
+
+	REL(cell1);
+	REL(cell2);
+
+	float wth = 0;
+
+	for (int ci = 0; ci < rowview->views->length; ci++)
+	{
+	    view_t* cellview = rowview->views->data[ci];
+	    r2_t    frame    = cellview->frame.local;
+
+	    frame.x = wth;
+	    view_set_frame(cellview, frame);
+	    wth += frame.w;
+	}
+    }
+
+    // save state
+
+    if (uit->fields_update) (*uit->fields_update)(uit->id, uit->fields);
 }
 
 view_t* ui_table_head_create(
@@ -110,8 +245,6 @@ view_t* ui_table_head_create(
     }
 
     view_set_frame(headview, (r2_t){0, 0, wth, 20});
-
-    zc_log_debug("CREATE");
 
     return headview;
 }
@@ -174,6 +307,11 @@ view_t* ui_table_item_create(
 		num_t*  size     = uit->fields->data[i + 1];
 		char*   value    = MGET(data, field);
 		view_t* cellview = rowview->views->data[i / 2];
+		r2_t    frame    = cellview->frame.local;
+
+		frame.x = wth;
+		frame.w = size->intv;
+		view_set_frame(cellview, frame);
 
 		wth += size->intv;
 
@@ -232,6 +370,7 @@ ui_table_t* ui_table_create(
 	vh_tbl_head_attach(
 	    head,
 	    ui_table_head_create,
+	    ui_table_head_move,
 	    ui_table_head_resize,
 	    ui_table_head_reorder,
 	    uit);

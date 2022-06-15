@@ -24,6 +24,8 @@ void vh_tbl_scrl_update(view_t* view);
 void vh_tbl_scrl_show(view_t* view);
 void vh_tbl_scrl_hide(view_t* view);
 void vh_tbl_scrl_set_item_count(view_t* view, uint32_t count);
+void vh_tbl_scrl_scroll_v(view_t* view, int y);
+void vh_tbl_scrl_scroll_h(view_t* view, int x);
 
 #endif
 
@@ -126,8 +128,66 @@ void vh_tbl_scrl_hide(view_t* view)
     view_remove_subview(view, vh->hori_v);
 }
 
-void vh_tbl_scrl_scroll(view_t* view)
+void vh_tbl_scrl_scroll_v(view_t* view, int y)
 {
+    vh_tbl_scrl_t* vh  = view->handler_data;
+    vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
+
+    if (bvh->items->length > 0 && vh->item_cnt > 0)
+    {
+	int vert_pos = bvh->top_index;
+	int vert_vis = bvh->bot_index - bvh->top_index;
+	int vert_max = vh->item_cnt;
+
+	if (vert_max > 1.0)
+	{
+	    float sratio = (float) vert_vis / (float) vert_max;
+	    float height = view->frame.local.h * sratio;
+	    float pratio = y / height;
+
+	    int topindex = pratio * vert_max;
+
+	    vh_tbl_body_vjump(vh->tbody_view, topindex);
+
+	    r2_t frame = vh->vert_v->frame.local;
+	    frame.h    = view->frame.local.h * sratio;
+	    frame.y    = y;
+
+	    view_set_frame(vh->vert_v, frame);
+	}
+    }
+}
+
+void vh_tbl_scrl_scroll_h(view_t* view, int x)
+{
+    vh_tbl_scrl_t* vh  = view->handler_data;
+    vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
+
+    if (bvh->items->length > 0 && vh->item_cnt > 0)
+    {
+	view_t* head = bvh->items->data[0];
+
+	float hori_pos = -head->frame.local.x;
+	float hori_vis = view->frame.local.w;
+	float hori_max = head->frame.local.w;
+
+	if (hori_max > 1.0)
+	{
+	    float sratio = (float) hori_vis / (float) hori_max;
+	    float width  = view->frame.local.w * sratio;
+	    float pratio = (float) x / width;
+
+	    float dx = -pratio * width;
+
+	    vh_tbl_body_hjump(vh->tbody_view, dx);
+
+	    r2_t frame = vh->hori_v->frame.local;
+	    frame.w    = view->frame.local.w * sratio;
+	    frame.x    = x;
+
+	    view_set_frame(vh->hori_v, frame);
+	}
+    }
 }
 
 #endif

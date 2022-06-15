@@ -36,6 +36,14 @@ void vh_tbl_body_move(
     float   dx,
     float   dy);
 
+void vh_tbl_body_hjump(
+    view_t* view,
+    float   dx);
+
+void vh_tbl_body_vjump(
+    view_t* view,
+    int     topindex);
+
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
@@ -215,6 +223,50 @@ void vh_tbl_body_move(
 	    }
 	}
     }
+}
+
+void vh_tbl_body_hjump(
+    view_t* view,
+    float   x)
+{
+    vh_tbl_body_t* vh = view->handler_data;
+
+    vh->head_xpos = x;
+
+    for (int index = 0;
+	 index < vh->items->length;
+	 index++)
+    {
+	view_t* iview = vh->items->data[index];
+	r2_t    frame = iview->frame.local;
+
+	frame.x = vh->head_xpos;
+
+	view_set_frame(iview, frame);
+    }
+}
+
+void vh_tbl_body_vjump(
+    view_t* view,
+    int     topindex)
+{
+    vh_tbl_body_t* vh = view->handler_data;
+    // recycle all items
+
+    for (int index = 0;
+	 index < vh->items->length;
+	 index++)
+    {
+	view_t* iview = vh->items->data[index];
+
+	if (vh->item_recycle) (*vh->item_recycle)(view, iview, vh->userdata);
+    }
+
+    vec_reset(vh->items);
+
+    vh->head_index = topindex;
+
+    vh_tbl_body_move(view, 0, 0);
 }
 
 #endif

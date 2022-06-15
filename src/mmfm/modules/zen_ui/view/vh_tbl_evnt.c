@@ -99,6 +99,17 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 	    vh_tbl_scrl_hide(vh->tscrl_view);
 	}
     }
+    else if (ev.type == EV_MDOWN)
+    {
+	if (ev.x > view->frame.global.x + view->frame.global.w - 20.0)
+	{
+	    vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - view->frame.global.y);
+	}
+	if (ev.y > view->frame.global.y + view->frame.global.h - 20.0)
+	{
+	    vh_tbl_scrl_scroll_h(vh->tscrl_view, ev.x - view->frame.global.x);
+	}
+    }
     else if (ev.type == EV_MUP)
     {
 	vh_tbl_body_t* bvh = vh->tbody_view->handler_data;

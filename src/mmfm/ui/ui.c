@@ -59,6 +59,16 @@ view_t* rep_cur; // replay cursor
 void ui_on_button_down(void* userdata, void* data);
 void ui_on_key_down(void* userdata, void* data);
 
+void on_clipboard_fields_update(ui_table_t* table, vec_t* fields)
+{
+    zc_log_debug("fields update %s", table->id);
+}
+
+void on_clipboard_select(ui_table_t* table, vec_t* selected)
+{
+    zc_log_debug("select %s", table->id);
+}
+
 void ui_init(float width, float height)
 {
     text_init();                    // DESTROY 0
@@ -155,7 +165,15 @@ void ui_init(float width, float height)
     VADDR(fields, cstr_new_cstring("last_status"));
     VADDR(fields, num_new_int(100));
 
-    ui_table_t* cliptable = ui_table_create("cliptable", cliplist, cliplistscroll, cliplistevt, cliplisthead, fields, NULL);
+    ui_table_t* cliptable = ui_table_create(
+	"cliptable",
+	cliplist,
+	cliplistscroll,
+	cliplistevt,
+	cliplisthead,
+	fields,
+	on_clipboard_fields_update,
+	on_clipboard_select);
 
     REL(fields);
 

@@ -6,7 +6,8 @@
 #include "zc_vector.c"
 #include <stdint.h>
 
-typedef struct _ui_table_t
+typedef struct _ui_table_t ui_table_t;
+struct _ui_table_t
 {
     char*       id;       // unique id for item generation
     uint32_t    cnt;      // item count for item generation
@@ -18,8 +19,9 @@ typedef struct _ui_table_t
     view_t*     evnt_v;
     view_t*     scrl_v;
     textstyle_t textstyle;
-    void (*fields_update)(char* id, vec_t* fields);
-} ui_table_t;
+    void (*fields_update)(ui_table_t* table, vec_t* fields);
+    void (*on_select)(ui_table_t* table, vec_t* selected);
+};
 
 ui_table_t* ui_table_create(
     char*   id,
@@ -28,7 +30,8 @@ ui_table_t* ui_table_create(
     view_t* evnt,
     view_t* head,
     vec_t*  fields,
-    void (*fields_update)(char* id, vec_t* fields));
+    void (*fields_update)(ui_table_t* table, vec_t* fields),
+    void (*on_select)(ui_table_t* table, vec_t* selected));
 
 void ui_table_set_data(
     ui_table_t* uit, vec_t* data);
@@ -100,12 +103,17 @@ void ui_table_head_resize(view_t* hview, int index, int size, void* userdata)
 {
     ui_table_t* uit = (ui_table_t*) userdata;
 
-    num_t* sizep = uit->fields->data[index * 2 + 1];
-    sizep->intv  = size;
+    if (index > -1)
+    {
+	num_t* sizep = uit->fields->data[index * 2 + 1];
+	sizep->intv  = size;
 
-    ui_table_head_align(uit, -1, 0);
-
-    if (uit->fields_update) (*uit->fields_update)(uit->id, uit->fields);
+	ui_table_head_align(uit, -1, 0);
+    }
+    else
+    {
+	if (uit->fields_update) (*uit->fields_update)(uit, uit->fields);
+    }
 }
 
 void ui_table_head_reorder(view_t* hview, int ind1, int ind2, void* userdata)
@@ -141,7 +149,7 @@ void ui_table_head_reorder(view_t* hview, int ind1, int ind2, void* userdata)
 
     ui_table_head_align(uit, -1, 0);
 
-    if (uit->fields_update) (*uit->fields_update)(uit->id, uit->fields);
+    if (uit->fields_update) (*uit->fields_update)(uit, uit->fields);
 }
 
 view_t* ui_table_head_create(
@@ -197,7 +205,6 @@ view_t* ui_table_item_create(
 	    map_t* data = uit->items->data[index];
 
 	    textstyle_t ts = uit->textstyle;
-	    if (index % 2 != 0) ts.backcolor |= 0xEDEDEDCC;
 
 	    if (uit->cache->length > 0)
 	    {
@@ -209,6 +216,8 @@ view_t* ui_table_item_create(
 		char* rowid = cstr_new_format(100, "%s_rowitem_%i", uit->id, uit->cnt++); // REL 0
 		rowview     = view_new(rowid, (r2_t){0, 0, table_v->frame.local.w, 20});
 		REL(rowid); // REL 0
+
+		tg_css_add(rowview);
 
 		int wth = 0;
 
@@ -230,6 +239,19 @@ view_t* ui_table_item_create(
 		    view_add_subview(rowview, cellview);
 		}
 	    }
+
+	    rowview->layout.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+
+	    if (uit->selected->length > 0)
+	    {
+		uint32_t pos = vec_index_of_data(uit->selected, data);
+		if (pos < UINT32_MAX)
+		{
+		    rowview->layout.background_color = 0x00FF00FF;
+		}
+	    }
+
+	    view_invalidate_texture(rowview);
 
 	    int wth = 0;
 
@@ -266,6 +288,53 @@ void ui_table_item_recycle(
     VADD(uit->cache, item_v);
 }
 
+void ui_table_item_select(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata)
+{
+    ui_table_t* uit = (ui_table_t*) userdata;
+
+    map_t* data = uit->items->data[index];
+
+    uint32_t pos = vec_index_of_data(uit->selected, data);
+
+    if (pos == UINT32_MAX)
+    {
+	// reset selected if control is not down
+	if (!ev.ctrl_down)
+	{
+	    vec_reset(uit->selected);
+	    vh_tbl_body_t* bvh = uit->body_v->handler_data;
+
+	    for (int index = 0; index < bvh->items->length; index++)
+	    {
+		view_t* item = bvh->items->data[index];
+		if (item->layout.background_color == 0x00FF00FF)
+		{
+		    item->layout.background_color = (bvh->head_index + index) % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+		    view_invalidate_texture(item);
+		}
+	    }
+	}
+
+	VADD(uit->selected, data);
+	rowview->layout.background_color = 0x00FF00FF;
+	view_invalidate_texture(rowview);
+    }
+    else
+    {
+	VREM(uit->selected, data);
+	rowview->layout.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+	view_invalidate_texture(rowview);
+    }
+
+    if (uit->on_select) (*uit->on_select)(uit, uit->selected);
+
+    // if (ev.button == 1)
+    // if (ev.shift_down) {}
+    // if (ev.dclick) {}
+    // if (ev.ctrl_down) {}
+    // if (ev.button == 3)
+}
+
 ui_table_t* ui_table_create(
     char*   id, // id has to be unique
     view_t* body,
@@ -273,7 +342,8 @@ ui_table_t* ui_table_create(
     view_t* evnt,
     view_t* head,
     vec_t*  fields,
-    void (*fields_update)(char* id, vec_t* fields))
+    void (*fields_update)(ui_table_t* table, vec_t* fields),
+    void (*on_select)(ui_table_t* table, vec_t* selected))
 {
     assert(id != NULL);
     assert(body != NULL);
@@ -283,6 +353,7 @@ ui_table_t* ui_table_create(
     uit->cache         = VNEW();
     uit->fields        = RET(fields);
     uit->selected      = VNEW();
+    uit->on_select     = on_select;
     uit->fields_update = fields_update;
 
     uit->body_v = RET(body);
@@ -326,6 +397,7 @@ ui_table_t* ui_table_create(
 	    body,
 	    scrl,
 	    head,
+	    ui_table_item_select,
 	    uit);
     }
 

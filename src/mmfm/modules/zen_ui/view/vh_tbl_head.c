@@ -80,7 +80,7 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 		}
 		// block end
 		if ((ev.x > svf.x + svf.w - EDGE_DRAG_SIZE) &&
-		    ev.x < svf.x + svf.w)
+		    ev.x <= svf.x + svf.w)
 		{
 		    vh->resize = 1;
 		    vh->active = index;
@@ -126,6 +126,10 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 		    if (vh->head_move) (*vh->head_move)(view, -1, 0, vh->userdata);
 
 		    vh_tbl_head_align(view);
+		}
+		else
+		{
+		    if (vh->head_move) (*vh->head_resize)(view, -1, 0, vh->userdata);
 		}
 	    }
 

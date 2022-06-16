@@ -16,7 +16,7 @@ typedef struct _vh_tbl_evnt_t
     int     scroll_drag;
     float   sx;
     float   sy;
-    void (*on_select)(view_t* view, int index, ev_t ev, void* userdata);
+    void (*on_select)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata);
 } vh_tbl_evnt_t;
 
 void vh_tbl_evnt_attach(
@@ -24,7 +24,8 @@ void vh_tbl_evnt_attach(
     view_t* tbody_view,
     view_t* tscrl_view,
     view_t* thead_view,
-    void*   userdata);
+    void (*on_select)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
+    void* userdata);
 
 #endif
 
@@ -92,7 +93,6 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 	}
 	if (vh->scroll_drag)
 	{
-
 	    if (ev.x > view->frame.global.x + view->frame.global.w - SCROLLBAR)
 	    {
 		vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - view->frame.global.y);
@@ -142,7 +142,7 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 		    ev.y > item->frame.global.y &&
 		    ev.y < item->frame.global.y + item->frame.global.h)
 		{
-		    zc_log_debug("UI TABLE ITEM SELECT %i", bvh->head_index + index);
+		    if (vh->on_select) (*vh->on_select)(view, item, bvh->head_index + index, ev, vh->userdata);
 		    break;
 		}
 	    }
@@ -164,11 +164,13 @@ void vh_tbl_evnt_attach(
     view_t* tbody_view,
     view_t* tscrl_view,
     view_t* thead_view,
-    void*   userdata)
+    void (*on_select)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
+    void* userdata)
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 
     vh_tbl_evnt_t* vh = CAL(sizeof(vh_tbl_evnt_t), vh_tbl_evnt_del, vh_tbl_evnt_desc);
+    vh->on_select     = on_select;
     vh->userdata      = userdata;
     vh->tbody_view    = tbody_view;
     vh->tscrl_view    = tscrl_view;

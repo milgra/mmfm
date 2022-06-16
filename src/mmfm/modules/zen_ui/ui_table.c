@@ -8,11 +8,12 @@
 
 typedef struct _ui_table_t
 {
-    char*       id;    // unique id for item generation
-    uint32_t    cnt;   // item count for item generation
-    vec_t*      items; // data items
-    vec_t*      cache; // item cache
-    vec_t*      fields;
+    char*       id;       // unique id for item generation
+    uint32_t    cnt;      // item count for item generation
+    vec_t*      items;    // data items
+    vec_t*      cache;    // item cache
+    vec_t*      fields;   // field name field size interleaved vector
+    vec_t*      selected; // selected items
     view_t*     body_v;
     view_t*     evnt_v;
     view_t*     scrl_v;
@@ -281,6 +282,7 @@ ui_table_t* ui_table_create(
     uit->id            = cstr_new_cstring(id);
     uit->cache         = VNEW();
     uit->fields        = RET(fields);
+    uit->selected      = VNEW();
     uit->fields_update = fields_update;
 
     uit->body_v = RET(body);

@@ -11,7 +11,6 @@ typedef struct _vh_tbl_body_t
     vec_t* items;
 
     float head_xpos; // horizontal position of head
-    float head_ypos; // vertical position of head
 
     int full;       // list is full, no more elements needed
     int head_index; // index of upper element
@@ -93,7 +92,6 @@ void vh_tbl_body_move(
     // repos items
 
     vh->head_xpos += dx;
-    vh->head_ypos += dy;
 
     for (int index = 0;
 	 index < vh->items->length;
@@ -106,9 +104,6 @@ void vh_tbl_body_move(
 	frame.y += dy;
 
 	view_set_frame(iview, frame);
-
-	if (frame.y < 0) vh->top_index = vh->head_index + index;
-	if (frame.y < view->frame.local.h) vh->bot_index = vh->head_index + index;
     }
 
     // refill items
@@ -126,7 +121,7 @@ void vh_tbl_body_move(
 	    {
 		VADD(vh->items, item);
 		view_add_subview(view, item);
-		view_set_frame(item, (r2_t){vh->head_xpos, vh->head_ypos, item->frame.local.w, item->frame.local.h});
+		view_set_frame(item, (r2_t){vh->head_xpos, 0, item->frame.local.w, item->frame.local.h});
 	    }
 	    else
 	    {
@@ -223,6 +218,19 @@ void vh_tbl_body_move(
 	    }
 	}
     }
+
+    // get top and bot indexes
+
+    for (int index = 0;
+	 index < vh->items->length;
+	 index++)
+    {
+	view_t* iview = vh->items->data[index];
+	r2_t    frame = iview->frame.local;
+
+	if (frame.y < 0) vh->top_index = vh->head_index + index;
+	if (frame.y < view->frame.local.h) vh->bot_index = vh->head_index + index;
+    }
 }
 
 void vh_tbl_body_hjump(
@@ -239,9 +247,7 @@ void vh_tbl_body_hjump(
     {
 	view_t* iview = vh->items->data[index];
 	r2_t    frame = iview->frame.local;
-
-	frame.x = vh->head_xpos;
-
+	frame.x       = vh->head_xpos;
 	view_set_frame(iview, frame);
     }
 }
@@ -251,20 +257,22 @@ void vh_tbl_body_vjump(
     int     topindex)
 {
     vh_tbl_body_t* vh = view->handler_data;
-    // recycle all items
 
     for (int index = 0;
 	 index < vh->items->length;
 	 index++)
     {
 	view_t* iview = vh->items->data[index];
-
 	if (vh->item_recycle) (*vh->item_recycle)(view, iview, vh->userdata);
+	view_remove_from_parent(iview);
     }
 
     vec_reset(vh->items);
 
     vh->head_index = topindex;
+    vh->tail_index = topindex;
+    vh->top_index  = topindex;
+    vh->bot_index  = topindex;
 
     vh_tbl_body_move(view, 0, 0);
 }

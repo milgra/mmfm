@@ -2,6 +2,7 @@
 #define vh_tbl_scrl_h
 
 #include "vh_tbl_body.c"
+#include "vh_tbl_head.c"
 #include "view.c"
 
 typedef struct _vh_tbl_scrl_t
@@ -139,13 +140,15 @@ void vh_tbl_scrl_scroll_v(view_t* view, int y)
 	int vert_vis = bvh->bot_index - bvh->top_index;
 	int vert_max = vh->item_cnt;
 
-	if (vert_max > 1.0)
+	if (vert_max > 1)
 	{
 	    float sratio = (float) vert_vis / (float) vert_max;
-	    float height = view->frame.local.h * sratio;
-	    float pratio = y / height;
+	    float height = (view->frame.local.h - view->frame.local.h * sratio);
+	    float pratio = (float) y / height;
 
-	    int topindex = pratio * vert_max;
+	    if (pratio < 0.0) pratio = 0.0;
+	    if (pratio > 1.0) pratio = 1.0;
+	    int topindex = pratio * (vert_max - vert_vis);
 
 	    vh_tbl_body_vjump(vh->tbody_view, topindex);
 
@@ -174,12 +177,15 @@ void vh_tbl_scrl_scroll_h(view_t* view, int x)
 	if (hori_max > 1.0)
 	{
 	    float sratio = (float) hori_vis / (float) hori_max;
-	    float width  = view->frame.local.w * sratio;
+	    float width  = (view->frame.local.w - view->frame.local.w * sratio);
 	    float pratio = (float) x / width;
 
-	    float dx = -pratio * width;
+	    if (pratio < 0.0) pratio = 0.0;
+	    if (pratio > 1.0) pratio = 1.0;
+	    float dx = pratio * (hori_max - hori_vis);
 
-	    vh_tbl_body_hjump(vh->tbody_view, dx);
+	    vh_tbl_body_hjump(vh->tbody_view, -dx);
+	    vh_tbl_head_jump(vh->thead_view, -dx);
 
 	    r2_t frame = vh->hori_v->frame.local;
 	    frame.w    = view->frame.local.w * sratio;

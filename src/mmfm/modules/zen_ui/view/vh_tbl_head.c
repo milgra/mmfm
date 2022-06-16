@@ -27,6 +27,7 @@ void vh_tbl_head_attach(
     void* userdata);
 
 void vh_tbl_head_move(view_t* hview, float dx);
+void vh_tbl_head_jump(view_t* hview, float x);
 
 #endif
 
@@ -169,6 +170,19 @@ void vh_tbl_head_move(
     r2_t frame = vh->head->frame.local;
 
     frame.x += dx;
+
+    view_set_frame(vh->head, frame);
+}
+
+void vh_tbl_head_jump(
+    view_t* view,
+    float   x)
+{
+    vh_tbl_head_t* vh = view->handler_data;
+
+    r2_t frame = vh->head->frame.local;
+
+    frame.x = x;
 
     view_set_frame(vh->head, frame);
 }

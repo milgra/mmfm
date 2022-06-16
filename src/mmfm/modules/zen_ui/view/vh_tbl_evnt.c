@@ -13,6 +13,7 @@ typedef struct _vh_tbl_evnt_t
     view_t* thead_view;
     void*   userdata;
     int     active;
+    int     scroll_drag;
     float   sx;
     float   sy;
     void (*on_select)(view_t* view, int index, ev_t ev, void* userdata);
@@ -31,7 +32,7 @@ void vh_tbl_evnt_attach(
 
 #include "zc_log.c"
 
-#define SWAY 50.0
+#define SCROLLBAR 20.0
 
 void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 {
@@ -89,6 +90,18 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 	    vh->active = 1;
 	    vh_tbl_scrl_show(vh->tscrl_view);
 	}
+	if (vh->scroll_drag)
+	{
+
+	    if (ev.x > view->frame.global.x + view->frame.global.w - SCROLLBAR)
+	    {
+		vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - view->frame.global.y);
+	    }
+	    if (ev.y > view->frame.global.y + view->frame.global.h - SCROLLBAR)
+	    {
+		vh_tbl_scrl_scroll_h(vh->tscrl_view, ev.x - view->frame.global.x);
+	    }
+	}
     }
     else if (ev.type == EV_MMOVE_OUT)
     {
@@ -101,12 +114,14 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
     }
     else if (ev.type == EV_MDOWN)
     {
-	if (ev.x > view->frame.global.x + view->frame.global.w - 20.0)
+	if (ev.x > view->frame.global.x + view->frame.global.w - SCROLLBAR)
 	{
+	    vh->scroll_drag = 1;
 	    vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - view->frame.global.y);
 	}
-	if (ev.y > view->frame.global.y + view->frame.global.h - 20.0)
+	if (ev.y > view->frame.global.y + view->frame.global.h - SCROLLBAR)
 	{
+	    vh->scroll_drag = 1;
 	    vh_tbl_scrl_scroll_h(vh->tscrl_view, ev.x - view->frame.global.x);
 	}
     }
@@ -114,16 +129,22 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
     {
 	vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
 
-	for (int index = 0; index < bvh->items->length; index++)
+	vh->scroll_drag = 0;
+
+	if (ev.x < view->frame.global.x + view->frame.global.w - SCROLLBAR &&
+	    ev.y < view->frame.global.y + view->frame.global.h - SCROLLBAR)
 	{
-	    view_t* item = bvh->items->data[index];
-	    if (ev.x > item->frame.global.x &&
-		ev.x < item->frame.global.x + item->frame.global.w &&
-		ev.y > item->frame.global.y &&
-		ev.y < item->frame.global.y + item->frame.global.h)
+	    for (int index = 0; index < bvh->items->length; index++)
 	    {
-		zc_log_debug("UI TABLE ITEM SELECT %i", bvh->head_index + index);
-		break;
+		view_t* item = bvh->items->data[index];
+		if (ev.x > item->frame.global.x &&
+		    ev.x < item->frame.global.x + item->frame.global.w &&
+		    ev.y > item->frame.global.y &&
+		    ev.y < item->frame.global.y + item->frame.global.h)
+		{
+		    zc_log_debug("UI TABLE ITEM SELECT %i", bvh->head_index + index);
+		    break;
+		}
 	    }
 	}
     }

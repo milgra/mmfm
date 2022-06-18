@@ -25,10 +25,8 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "ui_about_popup.c"
 #include "ui_activity_popup.c"
 #include "ui_alert_popup.c"
-#include "ui_cliplist.c"
 #include "ui_compositor.c"
 #include "ui_decision_popup.c"
-#include "ui_filelist.c"
 #include "ui_filter_bar.c"
 #include "ui_filter_popup.c"
 #include "ui_inputfield_popup.c"
@@ -89,6 +87,22 @@ void on_clipboard_select(ui_table_t* table, vec_t* selected)
     }
 
     ui_table_set_data(fileinfotable, items);
+
+    // REL!!!
+
+    char* path = MGET(info, "path");
+
+    if (path)
+    {
+	zc_log_debug("SELECTED %s", path);
+
+	if (strstr(path, ".pdf") != NULL)
+	{
+	    ui_visualizer_show_pdf(path);
+	}
+    }
+
+    // ui_popup_switcher_toggle("song_popup_page");
 }
 
 void ui_init(float width, float height)
@@ -118,7 +132,6 @@ void ui_init(float width, float height)
 
     // attach ui components
 
-    ui_filelist_attach(view_base); // DETACH 0
     /* ui_cliplist_attach(view_base); // DETACH 0 */
     // ui_meta_view_attach(view_base);
     /* ui_song_infos_attach(view_base);       // DETACH 1 */
@@ -254,7 +267,7 @@ void ui_init(float width, float height)
     REL(fields);
 
     map_t* files = MNEW(); // REL 0
-    fm_list("/home/milgra/Projects/brawl/resources", files);
+    fm_list("/home/milgra/Projects/mmfm", files);
     vec_t* vals = VNEW();
     map_values(files, vals);
 
@@ -320,7 +333,6 @@ void ui_render_without_cursor(uint32_t time)
 
 void ui_destroy()
 {
-    /* ui_filelist_detach(); // DETACH 0 */
     /* ui_song_infos_detach();     // DETACH 1 */
     /* ui_visualizer_detach(); // DETACH 2 */
     /* ui_filter_bar_detach(); // DETACH 3 */

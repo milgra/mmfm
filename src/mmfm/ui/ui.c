@@ -56,6 +56,7 @@ view_t* view_base;
 vec_t*  view_list;
 view_t* rep_cur; // replay cursor
 
+ui_table_t* filelisttable;
 ui_table_t* fileinfotable;
 ui_table_t* cliptable;
 
@@ -190,19 +191,6 @@ void ui_init(float width, float height)
 
     REL(ffields);
 
-    view_t* cliplist       = view_get_subview(view_base, "cliplist");
-    view_t* cliplistscroll = view_get_subview(view_base, "cliplistscroll");
-    view_t* cliplistevt    = view_get_subview(view_base, "cliplistevt");
-    view_t* cliplisthead   = view_get_subview(view_base, "cliplisthead");
-
-    if (cliplist)
-    {
-	tg_text_add(cliplist);
-	tg_text_set(cliplist, "CLIPBOARD", ts);
-    }
-    else
-	zc_log_debug("cliplistbck not found");
-
     vec_t* fields = VNEW();
     VADDR(fields, cstr_new_cstring("basename"));
     VADDR(fields, num_new_int(100));
@@ -216,6 +204,42 @@ void ui_init(float width, float height)
     VADDR(fields, num_new_int(100));
     VADDR(fields, cstr_new_cstring("last_status"));
     VADDR(fields, num_new_int(100));
+
+    view_t* filelist       = view_get_subview(view_base, "filelisttable");
+    view_t* filelistscroll = view_get_subview(view_base, "filelistscroll");
+    view_t* filelistevt    = view_get_subview(view_base, "filelistevt");
+    view_t* filelisthead   = view_get_subview(view_base, "filelisthead");
+
+    if (filelist)
+    {
+	tg_text_add(filelist);
+	tg_text_set(filelist, "FILES", ts);
+    }
+    else
+	zc_log_debug("filelistbck not found");
+
+    filelisttable = ui_table_create(
+	"filelisttable",
+	filelist,
+	filelistscroll,
+	filelistevt,
+	filelisthead,
+	fields,
+	on_clipboard_fields_update,
+	on_clipboard_select);
+
+    view_t* cliplist       = view_get_subview(view_base, "cliplist");
+    view_t* cliplistscroll = view_get_subview(view_base, "cliplistscroll");
+    view_t* cliplistevt    = view_get_subview(view_base, "cliplistevt");
+    view_t* cliplisthead   = view_get_subview(view_base, "cliplisthead");
+
+    if (cliplist)
+    {
+	tg_text_add(cliplist);
+	tg_text_set(cliplist, "CLIPBOARD", ts);
+    }
+    else
+	zc_log_debug("cliplistbck not found");
 
     cliptable = ui_table_create(
 	"cliptable",
@@ -235,18 +259,11 @@ void ui_init(float width, float height)
     map_values(files, vals);
 
     ui_table_set_data(cliptable, vals);
+
+    ui_table_set_data(filelisttable, vals);
+
     REL(files);
     REL(vals);
-
-    view_t* fileback = view_get_subview(view_base, "filelistbck");
-
-    if (fileback)
-    {
-	tg_text_add(fileback);
-	tg_text_set(fileback, "FILES", ts);
-    }
-    else
-	zc_log_debug("cliplistbck not found");
 
     view_t* preview = view_get_subview(view_base, "preview");
 

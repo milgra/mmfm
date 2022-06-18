@@ -11,12 +11,12 @@
     height: 100%;
 }
 
-#files_top {
+#main_top {
     height: 38px;
     width: 100%;
 }
 
-#files_container {
+#top_container {
     display: flex;
     flex-direction: row;
     height: 100%;

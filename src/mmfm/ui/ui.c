@@ -56,6 +56,9 @@ view_t* view_base;
 vec_t*  view_list;
 view_t* rep_cur; // replay cursor
 
+ui_table_t* fileinfotable;
+ui_table_t* cliptable;
+
 void ui_on_button_down(void* userdata, void* data);
 void ui_on_key_down(void* userdata, void* data);
 
@@ -67,6 +70,24 @@ void on_clipboard_fields_update(ui_table_t* table, vec_t* fields)
 void on_clipboard_select(ui_table_t* table, vec_t* selected)
 {
     zc_log_debug("select %s", table->id);
+    mem_describe(selected, 0);
+
+    map_t* info = selected->data[0];
+
+    vec_t* keys = VNEW();
+    map_keys(info, keys);
+
+    vec_t* items = VNEW();
+    for (int index = 0; index < keys->length; index++)
+    {
+	char*  key = keys->data[index];
+	map_t* map = MNEW();
+	MPUT(map, "key", key);
+	MPUT(map, "value", MGET(info, key));
+	VADD(items, map);
+    }
+
+    ui_table_set_data(fileinfotable, items);
 }
 
 void ui_init(float width, float height)
@@ -138,6 +159,37 @@ void ui_init(float width, float height)
     ts.backcolor    = 0xFFFFFFFF;
     ts.multiline    = 0;
 
+    vec_t* ffields = VNEW();
+    VADDR(ffields, cstr_new_cstring("key"));
+    VADDR(ffields, num_new_int(150));
+    VADDR(ffields, cstr_new_cstring("value"));
+    VADDR(ffields, num_new_int(400));
+
+    view_t* fileinfo       = view_get_subview(view_base, "fileinfotable");
+    view_t* fileinfoscroll = view_get_subview(view_base, "fileinfoscroll");
+    view_t* fileinfoevt    = view_get_subview(view_base, "fileinfoevt");
+    view_t* fileinfohead   = view_get_subview(view_base, "fileinfohead");
+
+    if (fileinfo)
+    {
+	tg_text_add(fileinfo);
+	tg_text_set(fileinfo, "FILE INFO", ts);
+    }
+    else
+	zc_log_debug("fileinfobck not found");
+
+    fileinfotable = ui_table_create(
+	"fileinfotable",
+	fileinfo,
+	fileinfoscroll,
+	fileinfoevt,
+	fileinfohead,
+	ffields,
+	on_clipboard_fields_update,
+	on_clipboard_select);
+
+    REL(ffields);
+
     view_t* cliplist       = view_get_subview(view_base, "cliplist");
     view_t* cliplistscroll = view_get_subview(view_base, "cliplistscroll");
     view_t* cliplistevt    = view_get_subview(view_base, "cliplistevt");
@@ -165,7 +217,7 @@ void ui_init(float width, float height)
     VADDR(fields, cstr_new_cstring("last_status"));
     VADDR(fields, num_new_int(100));
 
-    ui_table_t* cliptable = ui_table_create(
+    cliptable = ui_table_create(
 	"cliptable",
 	cliplist,
 	cliplistscroll,
@@ -202,16 +254,6 @@ void ui_init(float width, float height)
     {
 	tg_text_add(preview);
 	tg_text_set(preview, "PREVIEW", ts);
-    }
-    else
-	zc_log_debug("cliplistbck not found");
-
-    view_t* infoview = view_get_subview(view_base, "infoview");
-
-    if (infoview)
-    {
-	tg_text_add(infoview);
-	tg_text_set(infoview, "FILE INFO", ts);
     }
     else
 	zc_log_debug("cliplistbck not found");
@@ -261,21 +303,21 @@ void ui_render_without_cursor(uint32_t time)
 
 void ui_destroy()
 {
-    ui_filelist_detach();       // DETACH 0
-    ui_song_infos_detach();     // DETACH 1
-    ui_visualizer_detach();     // DETACH 2
-    ui_filter_bar_detach();     // DETACH 3
-    ui_about_popup_detach();    // DETACH 4
-    ui_alert_popup_detach();    // DETACH 5
-    ui_filter_popup_detach();   // DETACH 6
-    ui_play_controls_detach();  // DETACH 8
-    ui_decision_popup_detach(); // DETACH 9
-    ui_lib_init_popup_detach(); // DETACH 10
-    ui_activity_popup_detach(); // DETACH 11
+    /* ui_filelist_detach(); // DETACH 0 */
+    /* ui_song_infos_detach();     // DETACH 1 */
+    /* ui_visualizer_detach(); // DETACH 2 */
+    /* ui_filter_bar_detach(); // DETACH 3 */
+    /* ui_about_popup_detach();    // DETACH 4 */
+    /* ui_alert_popup_detach();    // DETACH 5 */
+    /* ui_filter_popup_detach();   // DETACH 6 */
+    /* ui_play_controls_detach(); // DETACH 8 */
+    /* ui_decision_popup_detach(); // DETACH 9 */
+    /* ui_lib_init_popup_detach(); // DETACH 10 */
+    /* ui_activity_popup_detach(); // DETACH 11 */
     // ui_settings_popup_detach();   // DETACH 12
-    ui_song_menu_popup_detach();  // DETACH 13
-    ui_inputfield_popup_detach(); // DETACH 14
-    ui_popup_switcher_detach();   // DETACH 15
+    /* ui_song_menu_popup_detach(); // DETACH 13 */
+    /* ui_inputfield_popup_detach(); // DETACH 14 */
+    /* ui_popup_switcher_detach();   // DETACH 15 */
 
     REL(view_list);
 

@@ -1,6 +1,9 @@
 # Zen Media development roadmap
 
-selectable items
+show metadata on clip select
+context menu
+drag and drop
+
 show content on file select
 view_gen_apply_style refactor, read_int, read_string, read_float-ra
 

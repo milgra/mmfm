@@ -1,8 +1,8 @@
-<div id="base">
+<div id="base" class="fullscaleview">
 
   <!-- SONG LIST -->
   
-  <div id="files">
+  <div id="main">
     <div id="files_top"/>
     <div id="files_container">
       <div id="filelistbck">
@@ -14,28 +14,36 @@
       </div>
     </div>
     <div id="gap1" class="vertgap5"/>
-    <div id="previews_container">
-      <div id="cliplistbox">
-	<div id="cliplisthead"/>
-	<div id="cliplistbck">
-	  <div id="cliplist"/>
-	  <div id="cliplistscroll">
+    <div id="bottom_container">
+      <div id="cliplistbox" class="tablebox">
+	<div id="cliplisthead" class="tablehead"/>
+	<div id="cliplistbck" class="fullscaleview">
+	  <div id="cliplist" class="tablebody"/>
+	  <div id="cliplistscroll" class="fullscaleview">
 	    <div id="cliplistvertscroll" class="vertscroll"/>
 	    <div id="cliplisthoriscroll" class="horiscroll"/>
 	  </div>
-	  <div id="cliplistevt"/>
+	  <div id="cliplistevt" class="fullscaleview"/>
 	</div>
       </div>
       <div id="gap2" class="horgap5"/>
-      <div id="infoview">
-	<div id="metaview" class="visuvideo"/>
+      <div id="fileinfobox" class="tablebox">
+	<div id="fileinfohead" class="tablehead"/>
+	<div id="fileinfobck" class="fullscaleview">
+	  <div id="fileinfotable" class="tablebody"/>
+	  <div id="fileinfoscroll" class="fullscaleview">
+	    <div id="fileinfovertscroll" class="vertscroll"/>
+	    <div id="fileinfohoriscroll" class="horiscroll"/>
+	  </div>
+	  <div id="fileinfoevt" class="fullscaleview"/>
+	</div>
       </div>
     </div>
   </div>
 
   <!-- MAIN DIV -->
   
-  <div id="main">
+  <div id="overlays">
 
     <!-- SEARCH/FILTER BAR -->
 

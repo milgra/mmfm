@@ -131,8 +131,8 @@ void wm_loop(void (*init)(int, int), void (*update)(ev_t), void (*render)(uint32
 			    {
 				ev.type   = EV_MUP;
 				ev.button = event.button.button;
-				ev.drag   = 0;
 				(*update)(ev);
+				ev.drag = 0;
 			    }
 			    else if (event.type == SDL_MOUSEMOTION)
 			    {

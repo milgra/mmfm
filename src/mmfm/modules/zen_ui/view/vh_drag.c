@@ -32,6 +32,17 @@ void vh_drag_evt(view_t* view, ev_t ev)
 	    view_set_frame(vh->dragged_view, frame);
 	}
     }
+    if (ev.type == EV_MUP && ev.drag)
+    {
+	vh_drag_t* vh = view->handler_data;
+
+	if (vh->dragged_view)
+	{
+	    view_remove_from_parent(vh->dragged_view);
+	    REL(vh->dragged_view);
+	    vh->dragged_view = NULL;
+	}
+    }
 }
 
 void vh_drag_del(void* p)
@@ -63,6 +74,7 @@ void vh_drag_drag(view_t* view, view_t* item)
     {
 	view_remove_from_parent(vh->dragged_view);
 	REL(vh->dragged_view);
+	vh->dragged_view = NULL;
     }
     if (item)
     {

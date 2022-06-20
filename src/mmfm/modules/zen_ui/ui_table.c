@@ -22,6 +22,7 @@ struct _ui_table_t
     void (*fields_update)(ui_table_t* table, vec_t* fields);
     void (*on_select)(ui_table_t* table, vec_t* selected);
     void (*on_drag)(ui_table_t* table, vec_t* selected);
+    void (*on_drop)(ui_table_t* table, vec_t* selected);
 };
 
 ui_table_t* ui_table_create(
@@ -33,7 +34,8 @@ ui_table_t* ui_table_create(
     vec_t*  fields,
     void (*fields_update)(ui_table_t* table, vec_t* fields),
     void (*on_select)(ui_table_t* table, vec_t* selected),
-    void (*on_drag)(ui_table_t* table, vec_t* selected));
+    void (*on_drag)(ui_table_t* table, vec_t* selected),
+    void (*on_drop)(ui_table_t* table, vec_t* selected));
 
 void ui_table_set_data(
     ui_table_t* uit, vec_t* data);
@@ -344,6 +346,13 @@ void ui_table_drag(view_t* view, void* userdata)
     if (uit->on_drag) (*uit->on_drag)(uit, uit->selected);
 }
 
+void ui_table_drop(view_t* view, void* userdata)
+{
+    ui_table_t* uit = (ui_table_t*) userdata;
+
+    if (uit->on_drop) (*uit->on_drop)(uit, uit->selected);
+}
+
 ui_table_t* ui_table_create(
     char*   id, // id has to be unique
     view_t* body,
@@ -353,7 +362,8 @@ ui_table_t* ui_table_create(
     vec_t*  fields,
     void (*fields_update)(ui_table_t* table, vec_t* fields),
     void (*on_select)(ui_table_t* table, vec_t* selected),
-    void (*on_drag)(ui_table_t* table, vec_t* selected))
+    void (*on_drag)(ui_table_t* table, vec_t* selected),
+    void (*on_drop)(ui_table_t* table, vec_t* selected))
 {
     assert(id != NULL);
     assert(body != NULL);
@@ -363,6 +373,7 @@ ui_table_t* ui_table_create(
     uit->cache         = VNEW();
     uit->fields        = RET(fields);
     uit->selected      = VNEW();
+    uit->on_drop       = on_drop;
     uit->on_drag       = on_drag;
     uit->on_select     = on_select;
     uit->fields_update = fields_update;
@@ -410,6 +421,7 @@ ui_table_t* ui_table_create(
 	    head,
 	    ui_table_item_select,
 	    ui_table_drag,
+	    ui_table_drop,
 	    uit);
     }
 

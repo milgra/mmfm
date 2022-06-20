@@ -41,6 +41,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "ui_table.c"
 #include "ui_visualizer.c"
 #include "vh_button.c"
+#include "vh_drag.c"
 #include "vh_key.c"
 #include "view_generator.c"
 #include "view_layout.c"
@@ -52,6 +53,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 
 view_t* view_base;
 vec_t*  view_list;
+view_t* view_drag;
 view_t* rep_cur; // replay cursor
 
 ui_table_t* filelisttable;
@@ -103,6 +105,16 @@ void on_clipboard_select(ui_table_t* table, vec_t* selected)
     }
 
     // ui_popup_switcher_toggle("song_popup_page");
+}
+
+void on_clipboard_drag(ui_table_t* table, vec_t* selected)
+{
+    view_t* docview                  = view_new("dragged_view", ((r2_t){.x = 0, .y = 0, .w = 50, .h = 50}));
+    char*   imagepath                = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
+    docview->layout.background_image = imagepath;
+    tg_css_add(docview);
+
+    vh_drag_drag(view_drag, docview);
 }
 
 void ui_init(float width, float height)
@@ -160,6 +172,9 @@ void ui_init(float width, float height)
     /* vh_key_add(view_base, key_cb);                      // listen on view_base for shortcuts */
     /* vh_button_add(song_info, VH_BUTTON_NORMAL, but_cb); // show messages on song info click */
 
+    view_drag = view_get_subview(view_base, "draglayer");
+    vh_drag_attach(view_drag);
+
     // finally attach and remove popups, it removes views so it has to be the last command
 
     ui_popup_switcher_attach(view_base); // DETACH 15
@@ -200,7 +215,8 @@ void ui_init(float width, float height)
 	fileinfohead,
 	ffields,
 	on_clipboard_fields_update,
-	on_clipboard_select);
+	on_clipboard_select,
+	NULL);
 
     REL(ffields);
 
@@ -239,7 +255,8 @@ void ui_init(float width, float height)
 	filelisthead,
 	fields,
 	on_clipboard_fields_update,
-	on_clipboard_select);
+	on_clipboard_select,
+	on_clipboard_drag);
 
     view_t* cliplist       = view_get_subview(view_base, "cliplist");
     view_t* cliplistscroll = view_get_subview(view_base, "cliplistscroll");
@@ -262,7 +279,8 @@ void ui_init(float width, float height)
 	cliplisthead,
 	fields,
 	on_clipboard_fields_update,
-	on_clipboard_select);
+	on_clipboard_select,
+	on_clipboard_drag);
 
     REL(fields);
 

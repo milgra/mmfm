@@ -64,7 +64,6 @@ mmfm_inc = include_directories(
 
 
 com_sources = ['src/mmfm/ui/ui.c',
-	       'src/mmfm/ui/ui_popup_switcher.c',
 	       'src/mmfm/ui/ui_visualizer.c',
 	       'src/mmfm/config.c',
 	       'src/mmfm/evrecorder.c',

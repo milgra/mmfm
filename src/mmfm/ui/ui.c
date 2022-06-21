@@ -23,7 +23,6 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "tg_text.c"
 #include "ui_compositor.c"
 #include "ui_manager.c"
-#include "ui_popup_switcher.c"
 #include "ui_table.c"
 #include "ui_visualizer.c"
 #include "vh_button.c"
@@ -93,8 +92,6 @@ void on_clipboard_select(ui_table_t* table, vec_t* selected)
 	    ui_visualizer_show_pdf(path);
 	}
     }
-
-    // ui_popup_switcher_toggle("song_popup_page");
 }
 
 void on_clipboard_drag(ui_table_t* table, vec_t* selected)
@@ -156,10 +153,6 @@ void ui_init(float width, float height)
 
     view_drag = view_get_subview(view_base, "draglayer");
     vh_drag_attach(view_drag);
-
-    // finally attach and remove popups, it removes views so it has to be the last command
-
-    ui_popup_switcher_attach(view_base); // DETACH 15
 
     textstyle_t ts  = {0};
     ts.font         = config_get("font_path");
@@ -350,25 +343,6 @@ void ui_on_key_down(void* userdata, void* data)
 {
     ev_t* ev = (ev_t*) data;
     //    if (ev->keycode == SDLK_SPACE) ui_play_pause();
-}
-
-// button down event from descriptor html
-
-void ui_on_button_down(void* userdata, void* data)
-{
-    char* id = ((view_t*) data)->id;
-
-    if (strcmp(id, "app_close_btn") == 0) wm_close();
-    if (strcmp(id, "app_maximize_btn") == 0) wm_toggle_fullscreen();
-
-    // todo sanitize button names
-
-    if (strcmp(id, "song_info") == 0) ui_popup_switcher_toggle("messages_popup_page");
-    // if (strcmp(id, "settingsbtn") == 0) ui_settings_popup_show();
-    if (strcmp(id, "closefilterbtn") == 0) ui_popup_switcher_toggle("filters_popup_page");
-    if (strcmp(id, "closeeditorbtn") == 0) ui_popup_switcher_toggle("song_editor_popup_page");
-    if (strcmp(id, "closesettingsbtn") == 0) ui_popup_switcher_toggle("settings_popup_page");
-    if (strcmp(id, "library_popup_close_btn") == 0) ui_popup_switcher_toggle("library_popup_page");
 }
 
 void ui_save_screenshot(uint32_t time, char hide_cursor)

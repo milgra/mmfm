@@ -6,7 +6,6 @@
 #include "ui.c"
 #include "ui_compositor.c"
 #include "ui_manager.c"
-#include "ui_play_controls.c"
 #include "ui_visualizer.c"
 #include "visible.c"
 #include "wm_connector.c"
@@ -61,7 +60,6 @@ void update(ev_t ev)
 {
     if (ev.type == EV_TIME)
     {
-	ui_play_update();
 
 	if (mmfm.replay)
 	{

@@ -22,22 +22,9 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "player.c"
 #include "tg_css.c"
 #include "tg_text.c"
-#include "ui_about_popup.c"
-#include "ui_activity_popup.c"
-#include "ui_alert_popup.c"
 #include "ui_compositor.c"
-#include "ui_decision_popup.c"
-#include "ui_filter_bar.c"
-#include "ui_filter_popup.c"
-#include "ui_inputfield_popup.c"
-#include "ui_lib_init_popup.c"
 #include "ui_manager.c"
-#include "ui_meta_view.c"
-#include "ui_play_controls.c"
 #include "ui_popup_switcher.c"
-#include "ui_settings_popup.c"
-#include "ui_song_infos.c"
-#include "ui_song_menu_popup.c"
 #include "ui_table.c"
 #include "ui_visualizer.c"
 #include "vh_button.c"
@@ -162,21 +149,7 @@ void ui_init(float width, float height)
 
     // attach ui components
 
-    /* ui_cliplist_attach(view_base); // DETACH 0 */
-    // ui_meta_view_attach(view_base);
-    /* ui_song_infos_attach(view_base);       // DETACH 1 */
-    ui_visualizer_attach(view_base); // DETACH 2
-    ui_filter_bar_attach(view_base); // DETACH 3
-    /* ui_about_popup_attach(view_base);      // DETACH 4 */
-    /* ui_alert_popup_attach(view_base);      // DETACH 5 */
-    /* ui_filter_popup_attach(view_base);     // DETACH 6 */
-    ui_play_controls_attach(view_base); // DETACH 8
-    /* ui_decision_popup_attach(view_base);   // DETACH 9 */
-    /* ui_lib_init_popup_attach(view_base);   // DETACH 10 */
-    /* ui_activity_popup_attach(view_base);   // DETACH 11 */
-    /* ui_settings_popup_attach(view_base);   // DETACH 12 */
-    ui_song_menu_popup_attach(view_base); // DETACH 13
-    /* ui_inputfield_popup_attach(view_base); // DETACH 14 */
+    ui_visualizer_attach(view_base); // DETACH 8
 
     // setup views
 
@@ -373,21 +346,6 @@ void ui_render_without_cursor(uint32_t time)
 
 void ui_destroy()
 {
-    /* ui_song_infos_detach();     // DETACH 1 */
-    /* ui_visualizer_detach(); // DETACH 2 */
-    /* ui_filter_bar_detach(); // DETACH 3 */
-    /* ui_about_popup_detach();    // DETACH 4 */
-    /* ui_alert_popup_detach();    // DETACH 5 */
-    /* ui_filter_popup_detach();   // DETACH 6 */
-    /* ui_play_controls_detach(); // DETACH 8 */
-    /* ui_decision_popup_detach(); // DETACH 9 */
-    /* ui_lib_init_popup_detach(); // DETACH 10 */
-    /* ui_activity_popup_detach(); // DETACH 11 */
-    // ui_settings_popup_detach();   // DETACH 12
-    /* ui_song_menu_popup_detach(); // DETACH 13 */
-    /* ui_inputfield_popup_detach(); // DETACH 14 */
-    /* ui_popup_switcher_detach();   // DETACH 15 */
-
     REL(view_list);
 
     ui_manager_destroy(); // DESTROY 1
@@ -400,7 +358,7 @@ void ui_destroy()
 void ui_on_key_down(void* userdata, void* data)
 {
     ev_t* ev = (ev_t*) data;
-    if (ev->keycode == SDLK_SPACE) ui_play_pause();
+    //    if (ev->keycode == SDLK_SPACE) ui_play_pause();
 }
 
 // button down event from descriptor html
@@ -414,7 +372,6 @@ void ui_on_button_down(void* userdata, void* data)
 
     // todo sanitize button names
 
-    if (strcmp(id, "aboutbtn") == 0) ui_popup_switcher_toggle("about_popup_page");
     if (strcmp(id, "song_info") == 0) ui_popup_switcher_toggle("messages_popup_page");
     // if (strcmp(id, "settingsbtn") == 0) ui_settings_popup_show();
     if (strcmp(id, "closefilterbtn") == 0) ui_popup_switcher_toggle("filters_popup_page");

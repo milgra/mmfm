@@ -1,6 +1,6 @@
 # Zen Media development roadmap
 
-drag and drop
+remove callbacks
 media info
 context menu
 w-h 100 100 legyen default

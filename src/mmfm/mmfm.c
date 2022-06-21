@@ -1,4 +1,3 @@
-#include "callbacks.c"
 #include "config.c"
 #include "evrecorder.c"
 #include "filemanager.c"
@@ -7,7 +6,6 @@
 #include "ui_compositor.c"
 #include "ui_manager.c"
 #include "ui_visualizer.c"
-#include "visible.c"
 #include "wm_connector.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
@@ -30,8 +28,6 @@ struct
 void init(int width, int height)
 {
     player_init();          // DESTROY 0
-    visible_init();         // DESTROY 1
-    callbacks_init();       // DESTROY 2
     ui_init(width, height); // DESTROY 3
 
     if (mmfm.record)
@@ -44,16 +40,6 @@ void init(int width, int height)
 	evrec_init_player(config_get("rep_path")); // DESTROY 5
 	ui_add_cursor();
     }
-
-    // load current directory
-
-    map_t* files = MNEW(); // REL 0
-    fm_list(config_get("top_path"), files);
-
-    visible_set_files(files);
-    visible_set_sortfield("basename", 0);
-
-    REL(files); // REL 0
 }
 
 void update(ev_t ev)
@@ -97,10 +83,8 @@ void destroy()
     if (mmfm.replay) evrec_destroy(); // DESTROY 5
     if (mmfm.record) evrec_destroy(); // DESTROY 4
 
-    ui_destroy();        // DESTROY 3
-    callbacks_destroy(); // DESTROY 2
-    visible_destroy();   // DESTROY 1
-    player_destroy();    // DESTROY 0
+    ui_destroy();     // DESTROY 3
+    player_destroy(); // DESTROY 0
 }
 
 int main(int argc, char* argv[])

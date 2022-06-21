@@ -15,7 +15,6 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "bm_rgba_util.c"
-#include "callbacks.c"
 #include "coder.c"
 #include "config.c"
 #include "filemanager.c"
@@ -127,15 +126,7 @@ void ui_init(float width, float height)
     text_init();                    // DESTROY 0
     ui_manager_init(width, height); // DESTROY 1
 
-    // callbacks setup for simple buttons
-
-    cb_t* button_down = cb_new(ui_on_button_down, NULL); // REL 0
-    callbacks_set("on_button_press", button_down);
-    REL(button_down); // REL 0
-
-    // view setup with existing callbacks
-
-    view_list = view_gen_load(config_get("html_path"), config_get("css_path"), config_get("res_path"), callbacks_get_data()); // REL 0
+    view_list = view_gen_load(config_get("html_path"), config_get("css_path"), config_get("res_path")); // REL 0
     view_base = vec_head(view_list);
 
     zc_log_debug("%i views generated", view_list->length);

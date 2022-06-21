@@ -1,5 +1,6 @@
 # Zen Media development roadmap
 
+on_select, on_drag, on_drop => on_event
 multiple classes in html
 media info
 context menu

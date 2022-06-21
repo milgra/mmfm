@@ -30,11 +30,10 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "vh_key.c"
 #include "view_generator.c"
 #include "view_layout.c"
-#include "wm_connector.c"
+#include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_number.c"
 #include "zc_path.c"
-#include "zc_vector.c"
 
 view_t* view_base;
 vec_t*  view_list;
@@ -48,9 +47,6 @@ vec_t* drag_data;
 ui_table_t* filelisttable;
 ui_table_t* fileinfotable;
 ui_table_t* cliptable;
-
-void ui_on_button_down(void* userdata, void* data);
-void ui_on_key_down(void* userdata, void* data);
 
 void on_clipboard_fields_update(ui_table_t* table, vec_t* fields)
 {
@@ -143,9 +139,6 @@ void ui_init(float width, float height)
 
     view_t* main_view = view_get_subview(view_base, "main");
     /* view_t* song_info = view_get_subview(main_view, "song_info"); */
-
-    /* cb_t* key_cb = cb_new(ui_on_key_down, view_base); // REL 1 */
-    /* cb_t* but_cb = cb_new(ui_on_button_down, NULL);   // REL 2 */
 
     main_view->needs_touch = 0; // don't cover events from filelist
     /* vh_key_add(view_base, key_cb);                      // listen on view_base for shortcuts */

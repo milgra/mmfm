@@ -38,8 +38,8 @@ typedef enum _cjustify_t // justify content
     JC_CENTER,
 } cjustify_t;
 
-typedef struct _vlayout_t vlayout_t; // view layout
-struct _vlayout_t
+typedef struct _vstyle_t vstyle_t; // view style
+struct _vstyle_t
 {
     /* css dimension */
 
@@ -161,7 +161,7 @@ struct _view_t
     uint32_t index;  /* depth */
 
     frame_t   frame;
-    vlayout_t layout;
+    vstyle_t  style;
     texture_t texture;
 
     void (*handler)(view_t*, ev_t); /* view handler for view */
@@ -184,7 +184,7 @@ void    view_gen_texture(view_t* view);
 
 void view_set_frame(view_t* view, r2_t frame);
 void view_set_region(view_t* view, r2_t frame);
-void view_set_layout(view_t* view, vlayout_t layout);
+void view_set_style(view_t* view, vstyle_t style);
 void view_set_block_touch(view_t* view, char block, char recursive);
 void view_set_texture_bmp(view_t* view, bm_rgba_t* tex);
 void view_set_texture_page(view_t* view, uint32_t page);
@@ -194,7 +194,7 @@ void view_invalidate_texture(view_t* view);
 
 void view_describe(void* pointer, int level);
 void view_desc(void* pointer, int level);
-void view_desc_layout(vlayout_t l);
+void view_desc_style(vstyle_t l);
 void view_calc_global(view_t* view);
 
 #endif
@@ -215,8 +215,8 @@ void view_del(void* pointer)
 
     MDEL(views.names, view->id);
 
-    if (view->layout.background_image != NULL) REL(view->layout.background_image);
-    if (view->layout.font_family != NULL) REL(view->layout.font_family);
+    if (view->style.background_image != NULL) REL(view->style.background_image);
+    if (view->style.font_family != NULL) REL(view->style.font_family);
 
     if (view->handler_data) REL(view->handler_data);
     if (view->tex_gen_data) REL(view->tex_gen_data);
@@ -250,15 +250,15 @@ view_t* view_new(char* id, r2_t frame)
 
     // reset margins
 
-    view->layout.margin_top    = INT_MAX;
-    view->layout.margin_left   = INT_MAX;
-    view->layout.margin_right  = INT_MAX;
-    view->layout.margin_bottom = INT_MAX;
-    view->layout.top           = INT_MAX;
-    view->layout.left          = INT_MAX;
-    view->layout.right         = INT_MAX;
-    view->layout.bottom        = INT_MAX;
-    view->layout.shadow_color  = 0x00000033;
+    view->style.margin_top    = INT_MAX;
+    view->style.margin_left   = INT_MAX;
+    view->style.margin_right  = INT_MAX;
+    view->style.margin_bottom = INT_MAX;
+    view->style.top           = INT_MAX;
+    view->style.left          = INT_MAX;
+    view->style.right         = INT_MAX;
+    view->style.bottom        = INT_MAX;
+    view->style.shadow_color  = 0x00000033;
 
     // store and release
 
@@ -269,7 +269,7 @@ view_t* view_new(char* id, r2_t frame)
 
 void view_set_masked(view_t* view, char masked)
 {
-    view->layout.masked = 1;
+    view->style.masked = 1;
     for (int i = 0; i < view->views->length; i++)
     {
 	view_t* sview = view->views->data[i];
@@ -295,7 +295,7 @@ void view_add_subview(view_t* view, view_t* subview)
 
     VADD(view->views, subview);
 
-    if (view->layout.masked) view_set_masked(subview, 1);
+    if (view->style.masked) view_set_masked(subview, 1);
 
     view_calc_global(view);
 }
@@ -318,7 +318,7 @@ void view_insert_subview(view_t* view, view_t* subview, uint32_t index)
 
     view_set_parent(subview, view);
 
-    if (view->layout.masked) view_set_masked(subview, 1);
+    if (view->style.masked) view_set_masked(subview, 1);
 
     view_calc_global(view);
 }
@@ -487,9 +487,9 @@ void view_invalidate_texture(view_t* view)
     view->texture.state = TS_BLANK;
 }
 
-void view_set_layout(view_t* view, vlayout_t layout)
+void view_set_style(view_t* view, vstyle_t style)
 {
-    view->layout = layout;
+    view->style = style;
 }
 
 void view_gen_texture(view_t* view)
@@ -533,7 +533,7 @@ void view_describe(void* pointer, int level)
     for (int i = 0; i < view->views->length; i++) view_describe(view->views->data[i], level + 1);
 }
 
-void view_desc_layout(vlayout_t l)
+void view_desc_style(vstyle_t l)
 {
     printf(
 	"position %i\n"

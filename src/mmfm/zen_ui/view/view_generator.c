@@ -32,8 +32,8 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
 
 	if (strcmp(key, "background-color") == 0)
 	{
-	    int color                     = (int) strtol(val + 1, NULL, 16);
-	    view->layout.background_color = color;
+	    int color                    = (int) strtol(val + 1, NULL, 16);
+	    view->style.background_color = color;
 	    tg_css_add(view);
 	}
 	else if (strcmp(key, "background-image") == 0)
@@ -42,8 +42,8 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
 	    {
 		char* url = CAL(sizeof(char) * strlen(val), NULL, cstr_describe); // REL 0
 		memcpy(url, val + 5, strlen(val) - 7);
-		char* imagepath               = cstr_new_format(100, "%s/img/%s", respath, url);
-		view->layout.background_image = imagepath;
+		char* imagepath              = cstr_new_format(100, "%s/img/%s", respath, url);
+		view->style.background_image = imagepath;
 		REL(url); // REL 0
 		tg_css_add(view);
 	    }
@@ -52,48 +52,48 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
 	{
 	    char* url = CAL(sizeof(char) * strlen(val), NULL, cstr_describe); // REL 0
 	    memcpy(url, val + 1, strlen(val) - 2);
-	    view->layout.font_family = url;
+	    view->style.font_family = url;
 	}
 	else if (strcmp(key, "color") == 0)
 	{
-	    int color          = (int) strtol(val + 1, NULL, 16);
-	    view->layout.color = color;
+	    int color         = (int) strtol(val + 1, NULL, 16);
+	    view->style.color = color;
 	}
 	else if (strcmp(key, "font-size") == 0)
 	{
-	    float size             = atof(val);
-	    view->layout.font_size = size;
+	    float size            = atof(val);
+	    view->style.font_size = size;
 	}
 	else if (strcmp(key, "line-height") == 0)
 	{
-	    float size               = atof(val);
-	    view->layout.line_height = size;
+	    float size              = atof(val);
+	    view->style.line_height = size;
 	}
 	else if (strcmp(key, "word-wrap") == 0)
 	{
-	    if (strstr(val, "normal") != NULL) view->layout.word_wrap = 0;
-	    if (strstr(val, "break-word") != NULL) view->layout.word_wrap = 1;
-	    if (strstr(val, "initial") != NULL) view->layout.word_wrap = 2;
-	    if (strstr(val, "inherit") != NULL) view->layout.word_wrap = 3;
+	    if (strstr(val, "normal") != NULL) view->style.word_wrap = 0;
+	    if (strstr(val, "break-word") != NULL) view->style.word_wrap = 1;
+	    if (strstr(val, "initial") != NULL) view->style.word_wrap = 2;
+	    if (strstr(val, "inherit") != NULL) view->style.word_wrap = 3;
 	}
 	else if (strcmp(key, "text-align") == 0)
 	{
-	    if (strstr(val, "left") != NULL) view->layout.text_align = 0;
-	    if (strstr(val, "center") != NULL) view->layout.text_align = 1;
-	    if (strstr(val, "right") != NULL) view->layout.text_align = 2;
-	    if (strstr(val, "justify") != NULL) view->layout.text_align = 3;
+	    if (strstr(val, "left") != NULL) view->style.text_align = 0;
+	    if (strstr(val, "center") != NULL) view->style.text_align = 1;
+	    if (strstr(val, "right") != NULL) view->style.text_align = 2;
+	    if (strstr(val, "justify") != NULL) view->style.text_align = 3;
 	}
 	else if (strcmp(key, "width") == 0)
 	{
 	    if (strstr(val, "%") != NULL)
 	    {
-		int per            = atoi(val);
-		view->layout.w_per = (float) per / 100.0;
+		int per           = atoi(val);
+		view->style.w_per = (float) per / 100.0;
 	    }
 	    else if (strstr(val, "px") != NULL)
 	    {
 		int pix             = atoi(val);
-		view->layout.width  = pix;
+		view->style.width   = pix;
 		view->frame.local.w = pix;
 	    }
 	}
@@ -101,13 +101,13 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
 	{
 	    if (strstr(val, "%") != NULL)
 	    {
-		int per            = atoi(val);
-		view->layout.h_per = (float) per / 100.0;
+		int per           = atoi(val);
+		view->style.h_per = (float) per / 100.0;
 	    }
 	    else if (strstr(val, "px") != NULL)
 	    {
 		int pix             = atoi(val);
-		view->layout.height = pix;
+		view->style.height  = pix;
 		view->frame.local.h = pix;
 	    }
 	}
@@ -115,8 +115,8 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
 	{
 	    if (strcmp(val, "flex") == 0)
 	    {
-		view->layout.display = LD_FLEX;
-		view->exclude        = 1;
+		view->style.display = LD_FLEX;
+		view->exclude       = 1;
 	    }
 	    if (strcmp(val, "none") == 0)
 		view->exclude = 1;
@@ -124,122 +124,122 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
 	else if (strcmp(key, "overflow") == 0)
 	{
 	    if (strcmp(val, "hidden") == 0)
-		view->layout.masked = 1;
+		view->style.masked = 1;
 	}
 	else if (strcmp(key, "flex-direction") == 0)
 	{
 	    if (strcmp(val, "column") == 0)
-		view->layout.flexdir = FD_COL;
+		view->style.flexdir = FD_COL;
 	    else
-		view->layout.flexdir = FD_ROW;
+		view->style.flexdir = FD_ROW;
 	}
 	else if (strcmp(key, "margin") == 0)
 	{
 	    if (strcmp(val, "auto") == 0)
 	    {
-		view->layout.margin = INT_MAX;
+		view->style.margin = INT_MAX;
 	    }
 	    else if (strstr(val, "px") != NULL)
 	    {
-		int pix                    = atoi(val);
-		view->layout.margin        = pix;
-		view->layout.margin_top    = pix;
-		view->layout.margin_left   = pix;
-		view->layout.margin_right  = pix;
-		view->layout.margin_bottom = pix;
+		int pix                   = atoi(val);
+		view->style.margin        = pix;
+		view->style.margin_top    = pix;
+		view->style.margin_left   = pix;
+		view->style.margin_right  = pix;
+		view->style.margin_bottom = pix;
 	    }
 	}
 	else if (strcmp(key, "top") == 0)
 	{
 	    if (strstr(val, "px") != NULL)
 	    {
-		int pix          = atoi(val);
-		view->layout.top = pix;
+		int pix         = atoi(val);
+		view->style.top = pix;
 	    }
 	}
 	else if (strcmp(key, "left") == 0)
 	{
 	    if (strstr(val, "px") != NULL)
 	    {
-		int pix           = atoi(val);
-		view->layout.left = pix;
+		int pix          = atoi(val);
+		view->style.left = pix;
 	    }
 	}
 	else if (strcmp(key, "right") == 0)
 	{
 	    if (strstr(val, "px") != NULL)
 	    {
-		int pix            = atoi(val);
-		view->layout.right = pix;
+		int pix           = atoi(val);
+		view->style.right = pix;
 	    }
 	}
 	else if (strcmp(key, "bottom") == 0)
 	{
 	    if (strstr(val, "px") != NULL)
 	    {
-		int pix             = atoi(val);
-		view->layout.bottom = pix;
+		int pix            = atoi(val);
+		view->style.bottom = pix;
 	    }
 	}
 	else if (strcmp(key, "margin-top") == 0)
 	{
 	    if (strstr(val, "px") != NULL)
 	    {
-		int pix                 = atoi(val);
-		view->layout.margin_top = pix;
+		int pix                = atoi(val);
+		view->style.margin_top = pix;
 	    }
 	}
 	else if (strcmp(key, "margin-left") == 0)
 	{
 	    if (strstr(val, "px") != NULL)
 	    {
-		int pix                  = atoi(val);
-		view->layout.margin_left = pix;
+		int pix                 = atoi(val);
+		view->style.margin_left = pix;
 	    }
 	}
 	else if (strcmp(key, "margin-right") == 0)
 	{
 	    if (strstr(val, "px") != NULL)
 	    {
-		int pix                   = atoi(val);
-		view->layout.margin_right = pix;
+		int pix                  = atoi(val);
+		view->style.margin_right = pix;
 	    }
 	}
 	else if (strcmp(key, "margin-bottom") == 0)
 	{
 	    if (strstr(val, "px") != NULL)
 	    {
-		int pix                    = atoi(val);
-		view->layout.margin_bottom = pix;
+		int pix                   = atoi(val);
+		view->style.margin_bottom = pix;
 	    }
 	}
 	else if (strcmp(key, "border-radius") == 0)
 	{
 	    if (strstr(val, "px") != NULL)
 	    {
-		int pix                    = atoi(val);
-		view->layout.border_radius = pix;
+		int pix                   = atoi(val);
+		view->style.border_radius = pix;
 	    }
 	}
 	else if (strcmp(key, "box-shadow") == 0)
 	{
-	    view->layout.shadow_blur = atoi(val);
-	    char* color              = strstr(val + 1, " ");
+	    view->style.shadow_blur = atoi(val);
+	    char* color             = strstr(val + 1, " ");
 
-	    if (color) view->layout.shadow_color = (int) strtol(color + 2, NULL, 16);
+	    if (color) view->style.shadow_color = (int) strtol(color + 2, NULL, 16);
 	}
 	else if (strcmp(key, "align-items") == 0)
 	{
 	    if (strcmp(val, "center") == 0)
 	    {
-		view->layout.itemalign = IA_CENTER;
+		view->style.itemalign = IA_CENTER;
 	    }
 	}
 	else if (strcmp(key, "justify-content") == 0)
 	{
 	    if (strcmp(val, "center") == 0)
 	    {
-		view->layout.cjustify = JC_CENTER;
+		view->style.cjustify = JC_CENTER;
 	    }
 	}
 	// TODO remove non standard CSS
@@ -251,8 +251,8 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
 	    }
 	}
     }
-    /* printf("layout for %s: ", view->id); */
-    /* view_desc_layout(view->layout); */
+    /* printf("style for %s: ", view->id); */
+    /* view_desc_style(view->style); */
     /* printf("\n"); */
 
     REL(keys);

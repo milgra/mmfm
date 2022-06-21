@@ -18,23 +18,23 @@ textstyle_t ui_util_gen_textstyle(view_t* view)
 {
     textstyle_t style = {0};
 
-    style.font = fontconfig_new_path(view->layout.font_family);
-    style.size = view->layout.font_size > 0 ? view->layout.font_size : 15;
+    style.font = fontconfig_new_path(view->style.font_family);
+    style.size = view->style.font_size > 0 ? view->style.font_size : 15;
 
-    style.align = view->layout.text_align;
+    style.align = view->style.text_align;
     /* style.valign = */
     /* style.autosize = */
-    style.multiline   = view->layout.word_wrap == 1;
-    style.line_height = view->layout.line_height;
+    style.multiline   = view->style.word_wrap == 1;
+    style.line_height = view->style.line_height;
 
-    style.margin = view->layout.margin;
-    if (view->layout.margin_left < INT_MAX) style.margin_left = view->layout.margin_left;
-    if (view->layout.margin_right < INT_MAX) style.margin_right = view->layout.margin_right;
-    if (view->layout.margin_top < INT_MAX) style.margin_top = view->layout.margin_top;
-    if (view->layout.margin_bottom < INT_MAX) style.margin_bottom = view->layout.margin_bottom;
+    style.margin = view->style.margin;
+    if (view->style.margin_left < INT_MAX) style.margin_left = view->style.margin_left;
+    if (view->style.margin_right < INT_MAX) style.margin_right = view->style.margin_right;
+    if (view->style.margin_top < INT_MAX) style.margin_top = view->style.margin_top;
+    if (view->style.margin_bottom < INT_MAX) style.margin_bottom = view->style.margin_bottom;
 
-    style.textcolor = view->layout.color;
-    style.backcolor = view->layout.background_color;
+    style.textcolor = view->style.color;
+    style.backcolor = view->style.background_color;
 
     return style;
 }

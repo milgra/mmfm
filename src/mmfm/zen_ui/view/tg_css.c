@@ -1,6 +1,6 @@
 /*
   CSS texture generator
-  Generates texture based on css layout
+  Generates texture based on css style
  */
 
 #ifndef texgen_css_h
@@ -34,7 +34,7 @@ void tg_css_gen(view_t* view)
     if (view->frame.local.w >= 1.0 &&
 	view->frame.local.h >= 1.0)
     {
-	if (view->layout.background_image)
+	if (view->style.background_image)
 	{
 	    bm_rgba_t* bm = view->texture.bitmap;
 
@@ -47,20 +47,20 @@ void tg_css_gen(view_t* view)
 		REL(bm);
 	    }
 
-	    coder_load_image_into(view->layout.background_image, view->texture.bitmap);
+	    coder_load_image_into(view->style.background_image, view->texture.bitmap);
 	    view->texture.changed = 0;
 	    view->texture.state   = TS_READY;
 
-	    /* bm_rgba_t* bmap = coder_get_image(view->layout.background_image); */
+	    /* bm_rgba_t* bmap = coder_get_image(view->style.background_image); */
 	    /* view_set_texture_bmp(view, bmap); */
 	    /* REL(bmap); */
 	}
-	else if (view->layout.background_color)
+	else if (view->style.background_color)
 	{
-	    uint32_t color = view->layout.background_color;
+	    uint32_t color = view->style.background_color;
 
-	    float w = view->frame.local.w + 2 * view->layout.shadow_blur;
-	    float h = view->frame.local.h + 2 * view->layout.shadow_blur;
+	    float w = view->frame.local.w + 2 * view->style.shadow_blur;
+	    float h = view->frame.local.h + 2 * view->style.shadow_blur;
 
 	    bm_rgba_t* bm = view->texture.bitmap;
 
@@ -75,7 +75,7 @@ void tg_css_gen(view_t* view)
 
 	    bm_rgba_reset(bm);
 
-	    gfx_rounded_rect(bm, 0, 0, w, h, view->layout.border_radius, view->layout.shadow_blur, color, view->layout.shadow_color);
+	    gfx_rounded_rect(bm, 0, 0, w, h, view->style.border_radius, view->style.shadow_blur, color, view->style.shadow_color);
 
 	    view->texture.changed = 1;
 	    view->texture.state   = TS_READY;

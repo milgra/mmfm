@@ -99,9 +99,9 @@ void on_clipboard_select(ui_table_t* table, vec_t* selected)
 
 void on_clipboard_drag(ui_table_t* table, vec_t* selected)
 {
-    view_t* docview                  = view_new("dragged_view", ((r2_t){.x = 0, .y = 0, .w = 50, .h = 50}));
-    char*   imagepath                = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
-    docview->layout.background_image = imagepath;
+    view_t* docview                 = view_new("dragged_view", ((r2_t){.x = 0, .y = 0, .w = 50, .h = 50}));
+    char*   imagepath               = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
+    docview->style.background_image = imagepath;
     tg_css_add(docview);
 
     vh_drag_drag(view_drag, docview);
@@ -298,8 +298,8 @@ void ui_init(float width, float height)
     /* texmap->needs_touch  = 0; */
     /* texmap->exclude      = 0; */
     /* texmap->texture.full = 1; */
-    /* texmap->layout.right = 0; */
-    /* texmap->layout.top   = 0; */
+    /* texmap->style.right = 0; */
+    /* texmap->style.top   = 0; */
 
     /* ui_manager_add(texmap); */
 
@@ -315,10 +315,10 @@ void ui_init(float width, float height)
 
 void ui_add_cursor()
 {
-    rep_cur                          = view_new("rep_cur", ((r2_t){10, 10, 10, 10}));
-    rep_cur->exclude                 = 0;
-    rep_cur->layout.background_color = 0xFF000099;
-    rep_cur->needs_touch             = 0;
+    rep_cur                         = view_new("rep_cur", ((r2_t){10, 10, 10, 10}));
+    rep_cur->exclude                = 0;
+    rep_cur->style.background_color = 0xFF000099;
+    rep_cur->needs_touch            = 0;
     tg_css_add(rep_cur);
     ui_manager_add_to_top(rep_cur);
 }

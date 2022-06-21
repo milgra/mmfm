@@ -119,9 +119,9 @@ void ui_generator_resend_views()
 	    }
 	}
 
-	ui_compositor_add(view->id, view->layout.masked,
-			  view->frame.global,       // frame
-			  view->layout.shadow_blur, // view border
+	ui_compositor_add(view->id, view->style.masked,
+			  view->frame.global,      // frame
+			  view->style.shadow_blur, // view border
 			  view->texture.alpha,
 			  view->texture.page,     // texture page
 			  view->texture.full,     // needs full texture
@@ -137,7 +137,7 @@ void ui_generator_resend_views()
 
 	if (view->texture.state == TS_READY)
 	{
-	    resize_texmap |= ui_compositor_upd_bmp(index, view->frame.global, view->layout.shadow_blur, view->texture.bitmap);
+	    resize_texmap |= ui_compositor_upd_bmp(index, view->frame.global, view->style.shadow_blur, view->texture.bitmap);
 	}
     }
 
@@ -204,7 +204,7 @@ void ui_generator_render(uint32_t time)
 	{
 	    /* if (view->texture.rentype == RT_BACKGROUND) */
 	    /* { */
-	    /*   // printf("SENDING TEXTURE %s %f %f\n", view->layout.background_image, view->frame.local.w, view->frame.local.h); */
+	    /*   // printf("SENDING TEXTURE %s %f %f\n", view->style.background_image, view->frame.local.w, view->frame.local.h); */
 	    /*   if (ch_send(uig.channel, view)) view->texture.state = TS_PENDING; */
 	    /* } */
 	    /* else */
@@ -215,7 +215,7 @@ void ui_generator_render(uint32_t time)
 
 	if (view->texture.changed)
 	{
-	    reset_texmap |= ui_compositor_upd_bmp(i, view->frame.global, view->layout.shadow_blur, view->texture.bitmap);
+	    reset_texmap |= ui_compositor_upd_bmp(i, view->frame.global, view->style.shadow_blur, view->texture.bitmap);
 
 	    view->frame.dim_changed = 0;
 	    view->texture.changed   = 0;
@@ -223,7 +223,7 @@ void ui_generator_render(uint32_t time)
 
 	if (view->frame.pos_changed)
 	{
-	    ui_compositor_upd_pos(i, view->frame.global, view->layout.shadow_blur);
+	    ui_compositor_upd_pos(i, view->frame.global, view->style.shadow_blur);
 
 	    view->frame.pos_changed = 0;
 	}

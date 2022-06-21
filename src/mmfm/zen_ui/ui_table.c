@@ -244,14 +244,14 @@ view_t* ui_table_item_create(
 		}
 	    }
 
-	    rowview->layout.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+	    rowview->style.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
 
 	    if (uit->selected->length > 0)
 	    {
 		uint32_t pos = vec_index_of_data(uit->selected, data);
 		if (pos < UINT32_MAX)
 		{
-		    rowview->layout.background_color = 0x00FF00FF;
+		    rowview->style.background_color = 0x00FF00FF;
 		}
 	    }
 
@@ -311,22 +311,22 @@ void ui_table_item_select(view_t* view, view_t* rowview, int index, ev_t ev, voi
 	    for (int index = 0; index < bvh->items->length; index++)
 	    {
 		view_t* item = bvh->items->data[index];
-		if (item->layout.background_color == 0x00FF00FF)
+		if (item->style.background_color == 0x00FF00FF)
 		{
-		    item->layout.background_color = (bvh->head_index + index) % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+		    item->style.background_color = (bvh->head_index + index) % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
 		    view_invalidate_texture(item);
 		}
 	    }
 	}
 
 	VADD(uit->selected, data);
-	rowview->layout.background_color = 0x00FF00FF;
+	rowview->style.background_color = 0x00FF00FF;
 	view_invalidate_texture(rowview);
     }
     else
     {
 	VREM(uit->selected, data);
-	rowview->layout.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+	rowview->style.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
 	view_invalidate_texture(rowview);
     }
 

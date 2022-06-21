@@ -2,10 +2,10 @@
 
   <!-- SONG LIST -->
   
-  <div id="main">
+  <div id="main" class="colflex">
     <div id="main_top"/>
-    <div id="top_container">
-      <div id="filelistbox" class="tablebox">
+    <div id="top_container" class="rowflex">
+      <div id="filelistbox" class="colflex">
 	<div id="filelisthead" class="tablehead"/>
 	<div id="filelistbck" class="fullscaleview">
 	  <div id="filelisttable" class="tablebody"/>
@@ -17,13 +17,13 @@
 	</div>
       </div>
       <div id="gap0" class="horgap5"/>
-      <div id="preview">
+      <div id="preview" class="fullscaleview">
 	<div id="visuvideo" class="visuvideo"/>
       </div>
     </div>
     <div id="gap1" class="vertgap5"/>
     <div id="bottom_container">
-      <div id="cliplistbox" class="tablebox">
+      <div id="cliplistbox" class="colflex">
 	<div id="cliplisthead" class="tablehead"/>
 	<div id="cliplistbck" class="fullscaleview">
 	  <div id="cliplist" class="tablebody"/>
@@ -35,7 +35,7 @@
 	</div>
       </div>
       <div id="gap2" class="horgap5"/>
-      <div id="fileinfobox" class="tablebox">
+      <div id="fileinfobox" class="colflex">
 	<div id="fileinfohead" class="tablehead"/>
 	<div id="fileinfobck" class="fullscaleview">
 	  <div id="fileinfotable" class="tablebody"/>
@@ -51,20 +51,20 @@
 
   <!-- MAIN DIV -->
   
-  <div id="overlays">
+  <div id="overlays" class="fullscaleview">
 
     <div id="headerbck">
       <div id="toolbar">
 	<div id="gap3" class="gap"/>
-	<div id="app_close_btn" class="closebtn" type="button" onclick="on_button_press">
+	<div id="app_close_btn" class="closebtn" type="button">
 	  <div id="app_close_icon" class="closeicon"/>
 	</div>
 	<div id="gap4" class="gap"/>
-	<div id="app_maximize_btn" type="button" onclick="on_button_press">
+	<div id="app_maximize_btn" type="button">
 	  <div id="maxicon"/>
 	</div>
 	<div id="gap5" class="gap"/>
-	<div id="app_search_btn" type="button" onclick="on_button_press">
+	<div id="app_search_btn" type="button">
 	  <div id="searchicon"/>
 	</div>
 	<div id="gap6" class="gap"/>
@@ -72,15 +72,15 @@
 	  <div id="song_info_time" class="timetf"/>
 	</div>
 	<div id="gap7" class="gap"/>
-	<div id="settingsbtn" type="button" onclick="on_button_press">
+	<div id="settingsbtn" type="button">
 	  <div id="settingsicon"/>
 	</div>
 	<div id="gap8" class="gap"/>
-	<div id="aboutbtn" type="button" onclick="on_button_press">
+	<div id="aboutbtn" type="button">
 	  <div id="abouticon"/>
 	</div>
 	<div id="gap9" class="gap"/>
-	<div id="editbtn" type="button" onclick="on_button_press">
+	<div id="editbtn" type="button">
 	  <div id="editicon"/>
 	</div>
 	<div id="gap11" class="gap"/>

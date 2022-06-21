@@ -90,8 +90,17 @@ void ui_manager_event(ev_t ev)
 	    view_t* v = uim.implqueue->data[i];
 	    if (v->needs_touch)
 	    {
-		if (v->handler) (*v->handler)(v, outev);
-		if (v->blocks_touch) break;
+		if (ev.x > v->frame.global.x &&
+		    ev.x < v->frame.global.x + v->frame.global.w &&
+		    ev.y > v->frame.global.y &&
+		    ev.y < v->frame.global.y + v->frame.global.h)
+		{
+		}
+		else
+		{
+		    if (v->handler) (*v->handler)(v, outev);
+		    if (v->blocks_touch) break;
+		}
 	    }
 	}
 

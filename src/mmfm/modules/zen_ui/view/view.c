@@ -213,6 +213,8 @@ void view_del(void* pointer)
 {
     view_t* view = (view_t*) pointer;
 
+    MDEL(views.names, view->id);
+
     if (view->layout.background_image != NULL) REL(view->layout.background_image);
     if (view->layout.font_family != NULL) REL(view->layout.font_family);
 
@@ -260,8 +262,7 @@ view_t* view_new(char* id, r2_t frame)
 
     // store and release
 
-    VADD(views.list, view);
-    MPUT(views.names, id, view);
+    MPUT(views.names, id, view->id);
 
     return view;
 }

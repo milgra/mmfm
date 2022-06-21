@@ -56,6 +56,10 @@ vec_t*  view_list;
 view_t* view_drag;
 view_t* rep_cur; // replay cursor
 
+vec_t* file_list_data;
+vec_t* clip_list_data;
+vec_t* drag_data;
+
 ui_table_t* filelisttable;
 ui_table_t* fileinfotable;
 ui_table_t* cliptable;
@@ -115,6 +119,20 @@ void on_clipboard_drag(ui_table_t* table, vec_t* selected)
     tg_css_add(docview);
 
     vh_drag_drag(view_drag, docview);
+    REL(docview);
+
+    drag_data = selected;
+}
+
+void on_clipboard_drop(ui_table_t* table, int index)
+{
+    if (drag_data)
+    {
+	zc_log_debug("DROP %i %i", index, drag_data->length);
+	vec_add_in_vector(clip_list_data, drag_data);
+	drag_data = NULL;
+	ui_table_set_data(cliptable, clip_list_data);
+    }
 }
 
 void ui_init(float width, float height)
@@ -216,6 +234,7 @@ void ui_init(float width, float height)
 	ffields,
 	on_clipboard_fields_update,
 	on_clipboard_select,
+	NULL,
 	NULL);
 
     REL(ffields);
@@ -256,7 +275,8 @@ void ui_init(float width, float height)
 	fields,
 	on_clipboard_fields_update,
 	on_clipboard_select,
-	on_clipboard_drag);
+	on_clipboard_drag,
+	NULL);
 
     view_t* cliplist       = view_get_subview(view_base, "cliplist");
     view_t* cliplistscroll = view_get_subview(view_base, "cliplistscroll");
@@ -280,21 +300,23 @@ void ui_init(float width, float height)
 	fields,
 	on_clipboard_fields_update,
 	on_clipboard_select,
-	on_clipboard_drag);
+	on_clipboard_drag,
+	on_clipboard_drop);
 
     REL(fields);
 
     map_t* files = MNEW(); // REL 0
     fm_list("/home/milgra/Projects/mmfm", files);
-    vec_t* vals = VNEW();
-    map_values(files, vals);
 
-    ui_table_set_data(cliptable, vals);
+    file_list_data = VNEW();
+    clip_list_data = VNEW();
 
-    ui_table_set_data(filelisttable, vals);
+    map_values(files, file_list_data);
+
+    ui_table_set_data(filelisttable, file_list_data);
+    ui_table_set_data(cliptable, clip_list_data);
 
     REL(files);
-    REL(vals);
 
     view_t* preview = view_get_subview(view_base, "preview");
 

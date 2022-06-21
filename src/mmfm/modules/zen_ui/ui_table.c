@@ -22,7 +22,7 @@ struct _ui_table_t
     void (*fields_update)(ui_table_t* table, vec_t* fields);
     void (*on_select)(ui_table_t* table, vec_t* selected);
     void (*on_drag)(ui_table_t* table, vec_t* selected);
-    void (*on_drop)(ui_table_t* table, vec_t* selected);
+    void (*on_drop)(ui_table_t* table, int index);
 };
 
 ui_table_t* ui_table_create(
@@ -35,7 +35,7 @@ ui_table_t* ui_table_create(
     void (*fields_update)(ui_table_t* table, vec_t* fields),
     void (*on_select)(ui_table_t* table, vec_t* selected),
     void (*on_drag)(ui_table_t* table, vec_t* selected),
-    void (*on_drop)(ui_table_t* table, vec_t* selected));
+    void (*on_drop)(ui_table_t* table, int index));
 
 void ui_table_set_data(
     ui_table_t* uit, vec_t* data);
@@ -182,10 +182,10 @@ view_t* ui_table_head_create(
 	tg_text_add(cellview);
 	tg_text_set(cellview, field, ts);
 
+	view_add_subview(headview, cellview);
+
 	REL(cellid);   // REL 2
 	REL(cellview); // REL 3
-
-	view_add_subview(headview, cellview);
     }
 
     view_set_frame(headview, (r2_t){0, 0, wth, 20});
@@ -237,10 +237,10 @@ view_t* ui_table_item_create(
 
 		    tg_text_add(cellview);
 
+		    view_add_subview(rowview, cellview);
+
 		    REL(cellid);   // REL 2
 		    REL(cellview); // REL 3
-
-		    view_add_subview(rowview, cellview);
 		}
 	    }
 
@@ -346,11 +346,11 @@ void ui_table_drag(view_t* view, void* userdata)
     if (uit->on_drag) (*uit->on_drag)(uit, uit->selected);
 }
 
-void ui_table_drop(view_t* view, void* userdata)
+void ui_table_drop(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata)
 {
     ui_table_t* uit = (ui_table_t*) userdata;
 
-    if (uit->on_drop) (*uit->on_drop)(uit, uit->selected);
+    if (uit->on_drop) (*uit->on_drop)(uit, index);
 }
 
 ui_table_t* ui_table_create(
@@ -363,7 +363,7 @@ ui_table_t* ui_table_create(
     void (*fields_update)(ui_table_t* table, vec_t* fields),
     void (*on_select)(ui_table_t* table, vec_t* selected),
     void (*on_drag)(ui_table_t* table, vec_t* selected),
-    void (*on_drop)(ui_table_t* table, vec_t* selected))
+    void (*on_drop)(ui_table_t* table, int index))
 {
     assert(id != NULL);
     assert(body != NULL);
@@ -434,6 +434,7 @@ void ui_table_set_data(
     ui_table_t* uit,
     vec_t*      data)
 {
+    if (uit->items) REL(uit->items);
     uit->items = RET(data);
 
     zc_log_debug("ui table set data %i", data->length);

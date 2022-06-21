@@ -21,7 +21,7 @@ typedef struct _vh_tbl_evnt_t
     float   sy;
     void (*on_select)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata);
     void (*on_drag)(view_t* view, void* userdata);
-    void (*on_drop)(view_t* view, void* userdata);
+    void (*on_drop)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata);
 } vh_tbl_evnt_t;
 
 void vh_tbl_evnt_attach(
@@ -31,7 +31,7 @@ void vh_tbl_evnt_attach(
     view_t* thead_view,
     void (*on_select)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
     void (*on_drag)(view_t* view, void* userdata),
-    void (*on_drop)(view_t* view, void* userdata),
+    void (*on_drop)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
     void* userdata);
 
 #endif
@@ -115,10 +115,6 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 
 	    vh->selected_item = NULL;
 	}
-	if (ev.drag)
-	{
-	    zc_log_debug("DRAGGED IN %s", view->id);
-	}
     }
     else if (ev.type == EV_MMOVE_OUT)
     {
@@ -167,8 +163,26 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
     {
 	if (ev.drag)
 	{
-	    zc_log_debug("DROPPED IN %s", view->id);
-	    if (!vh->selected_item && vh->on_drop) (*vh->on_drop)(view, vh->userdata);
+	    if (!vh->selected_item && vh->on_drop)
+	    {
+		vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
+
+		int     index = 0;
+		view_t* item  = NULL;
+		for (index = 0; index < bvh->items->length; index++)
+		{
+		    view_t* item = bvh->items->data[index];
+		    if (ev.x > item->frame.global.x &&
+			ev.x < item->frame.global.x + item->frame.global.w &&
+			ev.y > item->frame.global.y &&
+			ev.y < item->frame.global.y + item->frame.global.h)
+		    {
+			break;
+		    }
+		}
+		zc_log_debug("DROPPED IN %s", view->id);
+		(*vh->on_drop)(view, item, bvh->head_index + index, ev, vh->userdata);
+	    }
 	}
 	vh->scroll_drag = 0;
     }
@@ -190,7 +204,7 @@ void vh_tbl_evnt_attach(
     view_t* thead_view,
     void (*on_select)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
     void (*on_drag)(view_t* view, void* userdata),
-    void (*on_drop)(view_t* view, void* userdata),
+    void (*on_drop)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
     void* userdata)
 {
     assert(view->handler == NULL && view->handler_data == NULL);

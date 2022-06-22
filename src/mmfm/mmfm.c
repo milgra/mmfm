@@ -156,8 +156,9 @@ int main(int argc, char* argv[])
     char* html_path   = path_new_append(res_path, "html/main.html");                                                            // REL 10
     char* font_path   = path_new_append(res_path, "Baloo.ttf");                                                                 // REL 11
     char* cfg_path    = path_new_append(cfgdir_path, "config.kvl");                                                             // REL 12
-    char* rec_path    = rec_par ? path_new_normalize(rec_par, wrk_path) : NULL;                                                 // REL 13
-    char* rep_path    = rep_par ? path_new_normalize(rep_par, wrk_path) : NULL;                                                 // REL 14
+    char* per_path    = path_new_append(cfgdir_path, "state.kvl");                                                              // REL 13
+    char* rec_path    = rec_par ? path_new_normalize(rec_par, wrk_path) : NULL;                                                 // REL 14
+    char* rep_path    = rep_par ? path_new_normalize(rep_par, wrk_path) : NULL;                                                 // REL 15
 
     // print path info to console
 
@@ -165,6 +166,7 @@ int main(int argc, char* argv[])
     zc_log_debug("working path  : %s", wrk_path);
     zc_log_debug("resource path : %s", res_path);
     zc_log_debug("config path   : %s", cfg_path);
+    zc_log_debug("state path   : %s", per_path);
     zc_log_debug("css path      : %s", css_path);
     zc_log_debug("html path     : %s", html_path);
     zc_log_debug("font path     : %s", font_path);
@@ -187,6 +189,7 @@ int main(int argc, char* argv[])
     config_set("top_path", top_path);
     config_set("wrk_path", wrk_path);
     config_set("cfg_path", cfg_path);
+    config_set("per_path", per_path);
     config_set("css_path", css_path);
     config_set("html_path", html_path);
     config_set("font_path", font_path);
@@ -210,9 +213,10 @@ int main(int argc, char* argv[])
     REL(html_path);   // REL 10
     REL(font_path);   // REL 11
     REL(cfg_path);    // REL 12
+    REL(per_path);    // REL 13
 
-    if (rec_path) REL(rec_path); // REL 13
-    if (rep_path) REL(rep_path); // REL 14
+    if (rec_path) REL(rec_path); // REL 14
+    if (rep_path) REL(rep_path); // REL 15
 
     wm_loop(init, update, render, destroy, frm_par);
 

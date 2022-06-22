@@ -18,14 +18,12 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "coder.c"
 #include "config.c"
 #include "filemanager.c"
-#include "player.c"
 #include "tg_css.c"
 #include "tg_text.c"
 #include "ui_compositor.c"
 #include "ui_manager.c"
 #include "ui_table.c"
 #include "ui_visualizer.c"
-#include "vh_button.c"
 #include "vh_drag.c"
 #include "vh_key.c"
 #include "view_layout.c"
@@ -185,6 +183,11 @@ void on_fileinfo_event(ui_table_t* table, ui_table_event event, void* userdata)
 {
 }
 
+void ui_on_key_down(void* userdata, void* data)
+{
+    // ev_t* ev = (ev_t*) data;
+}
+
 void ui_add_cursor()
 {
     ui.cursor                         = view_new("ui.cursor", ((r2_t){10, 10, 10, 10}));
@@ -205,11 +208,6 @@ void ui_render_without_cursor(uint32_t time)
     ui_manager_remove(ui.cursor);
     ui_manager_render(time);
     ui_manager_add_to_top(ui.cursor);
-}
-
-void ui_on_key_down(void* userdata, void* data)
-{
-    // ev_t* ev = (ev_t*) data;
 }
 
 void ui_save_screenshot(uint32_t time, char hide_cursor)
@@ -242,19 +240,14 @@ void ui_save_screenshot(uint32_t time, char hide_cursor)
     }
 }
 
-void ui_init(float width, float height)
+void ui_create_views(float width, float height)
 {
-    text_init();                    // DESTROY 0
-    ui_manager_init(width, height); // DESTROY 1
-
     // generate views from descriptors
 
     vec_t* view_list = viewgen_html_create(config_get("html_path"));
     viewgen_css_apply(view_list, config_get("css_path"), config_get("res_path"));
     viewgen_type_apply(view_list);
-
     ui.view_base = RET(vec_head(view_list));
-
     REL(view_list);
 
     // initial layout of views
@@ -262,21 +255,28 @@ void ui_init(float width, float height)
     view_set_frame(ui.view_base, (r2_t){0.0, 0.0, (float) width, (float) height});
     view_layout(ui.view_base);
     ui_manager_add(ui.view_base);
+}
 
-    // attach ui components
+void ui_init(float width, float height)
+{
+    text_init();                    // DESTROY 0
+    ui_manager_init(width, height); // DESTROY 1
+    ui_create_views(width, height);
 
-    ui_visualizer_attach(ui.view_base); // DETACH 8
-
-    // setup views
+    // setup key events
 
     cb_t* key_cb = cb_new(ui_on_key_down, NULL);
     vh_key_add(ui.view_base, key_cb); // listen on ui.view_base for shortcuts
     REL(key_cb);
 
-    // drag layer
+    // setup drag layer
 
     ui.view_drag = view_get_subview(ui.view_base, "draglayer");
     vh_drag_attach(ui.view_drag);
+
+    // setup visualizer
+
+    ui_visualizer_attach(ui.view_base); // DETACH 8
 
     // tables
 
@@ -288,6 +288,18 @@ void ui_init(float width, float height)
     ts.textcolor    = 0xEEEEEEFF;
     ts.backcolor    = 0xFFFFFFFF;
     ts.multiline    = 0;
+
+    // preview block
+
+    view_t* preview = view_get_subview(ui.view_base, "preview");
+
+    if (preview)
+    {
+	tg_text_add(preview);
+	tg_text_set(preview, "PREVIEW", ts);
+    }
+    else
+	zc_log_debug("cliplistbck not found");
 
     // file info table
 
@@ -399,18 +411,6 @@ void ui_init(float width, float height)
     map_values(files, ui.file_list_data);
     ui_table_set_data(ui.filelisttable, ui.file_list_data);
     REL(files);
-
-    // preview block
-
-    view_t* preview = view_get_subview(ui.view_base, "preview");
-
-    if (preview)
-    {
-	tg_text_add(preview);
-	tg_text_set(preview, "PREVIEW", ts);
-    }
-    else
-	zc_log_debug("cliplistbck not found");
 
     /* // show texture map for debug */
 

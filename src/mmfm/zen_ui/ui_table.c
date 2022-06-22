@@ -6,6 +6,14 @@
 #include "zc_vector.c"
 #include <stdint.h>
 
+typedef enum _ui_table_event
+{
+    UI_TABLE_EVENT_SELECT,
+    UI_TABLE_EVENT_DRAG,
+    UI_TABLE_EVENT_DROP,
+    UI_TABLE_EVENT_FIELDS_UPDATE
+} ui_table_event;
+
 typedef struct _ui_table_t ui_table_t;
 struct _ui_table_t
 {
@@ -19,10 +27,7 @@ struct _ui_table_t
     view_t*     evnt_v;
     view_t*     scrl_v;
     textstyle_t textstyle;
-    void (*fields_update)(ui_table_t* table, vec_t* fields);
-    void (*on_select)(ui_table_t* table, vec_t* selected);
-    void (*on_drag)(ui_table_t* table, vec_t* selected);
-    void (*on_drop)(ui_table_t* table, int index);
+    void (*on_event)(ui_table_t* table, ui_table_event event, void* userdata);
 };
 
 ui_table_t* ui_table_create(
@@ -32,10 +37,7 @@ ui_table_t* ui_table_create(
     view_t* evnt,
     view_t* head,
     vec_t*  fields,
-    void (*fields_update)(ui_table_t* table, vec_t* fields),
-    void (*on_select)(ui_table_t* table, vec_t* selected),
-    void (*on_drag)(ui_table_t* table, vec_t* selected),
-    void (*on_drop)(ui_table_t* table, int index));
+    void (*on_event)(ui_table_t* table, ui_table_event event, void* userdata));
 
 void ui_table_set_data(
     ui_table_t* uit, vec_t* data);
@@ -116,7 +118,7 @@ void ui_table_head_resize(view_t* hview, int index, int size, void* userdata)
     }
     else
     {
-	if (uit->fields_update) (*uit->fields_update)(uit, uit->fields);
+	(*uit->on_event)(uit, UI_TABLE_EVENT_FIELDS_UPDATE, uit->fields);
     }
 }
 
@@ -153,7 +155,7 @@ void ui_table_head_reorder(view_t* hview, int ind1, int ind2, void* userdata)
 
     ui_table_head_align(uit, -1, 0);
 
-    if (uit->fields_update) (*uit->fields_update)(uit, uit->fields);
+    (*uit->on_event)(uit, UI_TABLE_EVENT_FIELDS_UPDATE, uit->fields);
 }
 
 view_t* ui_table_head_create(
@@ -330,7 +332,7 @@ void ui_table_item_select(view_t* view, view_t* rowview, int index, ev_t ev, voi
 	view_invalidate_texture(rowview);
     }
 
-    if (uit->on_select) (*uit->on_select)(uit, uit->selected);
+    (*uit->on_event)(uit, UI_TABLE_EVENT_SELECT, uit->selected);
 
     // if (ev.button == 1)
     // if (ev.shift_down) {}
@@ -343,14 +345,14 @@ void ui_table_drag(view_t* view, void* userdata)
 {
     ui_table_t* uit = (ui_table_t*) userdata;
 
-    if (uit->on_drag) (*uit->on_drag)(uit, uit->selected);
+    (*uit->on_event)(uit, UI_TABLE_EVENT_DRAG, uit->selected);
 }
 
 void ui_table_drop(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata)
 {
     ui_table_t* uit = (ui_table_t*) userdata;
 
-    if (uit->on_drop) (*uit->on_drop)(uit, index);
+    (*uit->on_event)(uit, UI_TABLE_EVENT_DROP, (void*) ((size_t) index));
 }
 
 ui_table_t* ui_table_create(
@@ -360,23 +362,17 @@ ui_table_t* ui_table_create(
     view_t* evnt,
     view_t* head,
     vec_t*  fields,
-    void (*fields_update)(ui_table_t* table, vec_t* fields),
-    void (*on_select)(ui_table_t* table, vec_t* selected),
-    void (*on_drag)(ui_table_t* table, vec_t* selected),
-    void (*on_drop)(ui_table_t* table, int index))
+    void (*on_event)(ui_table_t* table, ui_table_event event, void* userdata))
 {
     assert(id != NULL);
     assert(body != NULL);
 
-    ui_table_t* uit    = CAL(sizeof(ui_table_t), ui_table_del, ui_table_desc);
-    uit->id            = cstr_new_cstring(id);
-    uit->cache         = VNEW();
-    uit->fields        = RET(fields);
-    uit->selected      = VNEW();
-    uit->on_drop       = on_drop;
-    uit->on_drag       = on_drag;
-    uit->on_select     = on_select;
-    uit->fields_update = fields_update;
+    ui_table_t* uit = CAL(sizeof(ui_table_t), ui_table_del, ui_table_desc);
+    uit->id         = cstr_new_cstring(id);
+    uit->cache      = VNEW();
+    uit->fields     = RET(fields);
+    uit->selected   = VNEW();
+    uit->on_event   = on_event;
 
     uit->body_v = RET(body);
 

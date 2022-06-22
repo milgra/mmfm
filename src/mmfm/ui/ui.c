@@ -48,70 +48,137 @@ ui_table_t* filelisttable;
 ui_table_t* fileinfotable;
 ui_table_t* cliptable;
 
-void on_clipboard_fields_update(ui_table_t* table, vec_t* fields)
+void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 {
-    zc_log_debug("fields update %s", table->id);
-}
-
-void on_clipboard_select(ui_table_t* table, vec_t* selected)
-{
-    zc_log_debug("select %s", table->id);
-    mem_describe(selected, 0);
-
-    map_t* info = selected->data[0];
-
-    vec_t* keys = VNEW();
-    map_keys(info, keys);
-
-    vec_t* items = VNEW();
-    for (int index = 0; index < keys->length; index++)
+    zc_log_debug("on_files_event %i", event);
+    switch (event)
     {
-	char*  key = keys->data[index];
-	map_t* map = MNEW();
-	MPUT(map, "key", key);
-	MPUT(map, "value", MGET(info, key));
-	VADD(items, map);
-    }
-
-    ui_table_set_data(fileinfotable, items);
-
-    // REL!!!
-
-    char* path = MGET(info, "path");
-
-    if (path)
-    {
-	zc_log_debug("SELECTED %s", path);
-
-	if (strstr(path, ".pdf") != NULL)
+	case UI_TABLE_EVENT_FIELDS_UPDATE:
 	{
-	    ui_visualizer_show_pdf(path);
+	    zc_log_debug("fields update %s", table->id);
+	    break;
+	}
+	case UI_TABLE_EVENT_SELECT:
+	{
+	    zc_log_debug("select %s", table->id);
+
+	    vec_t* selected = userdata;
+	    map_t* info     = selected->data[0];
+
+	    vec_t* keys = VNEW();
+	    map_keys(info, keys);
+
+	    vec_t* items = VNEW();
+	    for (int index = 0; index < keys->length; index++)
+	    {
+		char*  key = keys->data[index];
+		map_t* map = MNEW();
+		MPUT(map, "key", key);
+		MPUT(map, "value", MGET(info, key));
+		VADD(items, map);
+	    }
+
+	    ui_table_set_data(fileinfotable, items);
+
+	    // REL!!!
+
+	    char* path = MGET(info, "path");
+
+	    if (path)
+	    {
+		zc_log_debug("SELECTED %s", path);
+
+		if (strstr(path, ".pdf") != NULL)
+		{
+		    ui_visualizer_show_pdf(path);
+		}
+	    }
+	    break;
+	}
+	case UI_TABLE_EVENT_DRAG:
+	{
+	    vec_t*  selected                = userdata;
+	    view_t* docview                 = view_new("dragged_view", ((r2_t){.x = 0, .y = 0, .w = 50, .h = 50}));
+	    char*   imagepath               = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
+	    docview->style.background_image = imagepath;
+	    tg_css_add(docview);
+
+	    vh_drag_drag(view_drag, docview);
+	    REL(docview);
+
+	    drag_data = selected;
+	    break;
+	}
+	case UI_TABLE_EVENT_DROP:
+	{
+	    break;
 	}
     }
 }
 
-void on_clipboard_drag(ui_table_t* table, vec_t* selected)
+void on_clipboard_event(ui_table_t* table, ui_table_event event, void* userdata)
 {
-    view_t* docview                 = view_new("dragged_view", ((r2_t){.x = 0, .y = 0, .w = 50, .h = 50}));
-    char*   imagepath               = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
-    docview->style.background_image = imagepath;
-    tg_css_add(docview);
+    switch (event)
+    {
+	case UI_TABLE_EVENT_FIELDS_UPDATE:
+	{
+	    zc_log_debug("fields update %s", table->id);
+	    break;
+	}
+	case UI_TABLE_EVENT_SELECT:
+	{
+	    zc_log_debug("select %s", table->id);
 
-    vh_drag_drag(view_drag, docview);
-    REL(docview);
+	    vec_t* selected = userdata;
+	    map_t* info     = selected->data[0];
 
-    drag_data = selected;
+	    vec_t* keys = VNEW();
+	    map_keys(info, keys);
+
+	    vec_t* items = VNEW();
+	    for (int index = 0; index < keys->length; index++)
+	    {
+		char*  key = keys->data[index];
+		map_t* map = MNEW();
+		MPUT(map, "key", key);
+		MPUT(map, "value", MGET(info, key));
+		VADD(items, map);
+	    }
+
+	    ui_table_set_data(fileinfotable, items);
+
+	    // REL!!!
+
+	    char* path = MGET(info, "path");
+
+	    if (path)
+	    {
+		zc_log_debug("SELECTED %s", path);
+
+		if (strstr(path, ".pdf") != NULL)
+		{
+		    ui_visualizer_show_pdf(path);
+		}
+	    }
+	    break;
+	}
+	case UI_TABLE_EVENT_DROP:
+	{
+	    if (drag_data)
+	    {
+		int index = (int) userdata;
+		zc_log_debug("DROP %i %i", index, drag_data->length);
+		vec_add_in_vector(clip_list_data, drag_data);
+		drag_data = NULL;
+		ui_table_set_data(cliptable, clip_list_data);
+	    }
+	    break;
+	}
+    }
 }
 
-void on_clipboard_drop(ui_table_t* table, int index)
+void on_fileinfo_event(ui_table_t* table, ui_table_event event, void* userdata)
 {
-    if (drag_data)
-    {
-	zc_log_debug("DROP %i %i", index, drag_data->length);
-	vec_add_in_vector(clip_list_data, drag_data);
-	drag_data = NULL;
-	ui_table_set_data(cliptable, clip_list_data);
-    }
 }
 
 void ui_init(float width, float height)
@@ -182,10 +249,7 @@ void ui_init(float width, float height)
 	fileinfoevt,
 	fileinfohead,
 	ffields,
-	on_clipboard_fields_update,
-	on_clipboard_select,
-	NULL,
-	NULL);
+	on_fileinfo_event);
 
     REL(ffields);
 
@@ -223,10 +287,7 @@ void ui_init(float width, float height)
 	filelistevt,
 	filelisthead,
 	fields,
-	on_clipboard_fields_update,
-	on_clipboard_select,
-	on_clipboard_drag,
-	NULL);
+	on_files_event);
 
     view_t* cliplist       = view_get_subview(view_base, "cliplist");
     view_t* cliplistscroll = view_get_subview(view_base, "cliplistscroll");
@@ -248,10 +309,7 @@ void ui_init(float width, float height)
 	cliplistevt,
 	cliplisthead,
 	fields,
-	on_clipboard_fields_update,
-	on_clipboard_select,
-	on_clipboard_drag,
-	on_clipboard_drop);
+	on_clipboard_event);
 
     REL(fields);
 

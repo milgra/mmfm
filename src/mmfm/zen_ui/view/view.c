@@ -154,7 +154,9 @@ struct _view_t
     char blocks_touch;  /* blocks touch events */
     char blocks_scroll; /* blocks scroll events */
 
-    char*    id;     /* identifier for handling view */
+    char* id;        /* identifier for handling view */
+    char* class;     /* css class(es) */
+    char*    type;   /* html type (button,checkbox) */
     uint32_t nth;    /* allocation counter for debugging */
     vec_t*   views;  /* subviews */
     view_t*  parent; /* parent view */
@@ -171,6 +173,8 @@ struct _view_t
 };
 
 view_t* view_new(char* id, r2_t frame);
+void    view_set_type(view_t* view, char* type);
+void    view_set_class(view_t* view, char* class);
 void    view_add_subview(view_t* view, view_t* subview);
 void    view_remove_subview(view_t* view, view_t* subview);
 void    view_insert_subview(view_t* view, view_t* subview, uint32_t index);
@@ -265,6 +269,18 @@ view_t* view_new(char* id, r2_t frame)
     MPUT(views.names, id, view->id);
 
     return view;
+}
+
+void view_set_type(view_t* view, char* type)
+{
+    if (view->type) REL(view->type);
+    if (type) view->type = RET(type);
+}
+
+void view_set_class(view_t* view, char* class)
+{
+    if (view->class) REL(view->class);
+    if (class) view->class = RET(class);
 }
 
 void view_set_masked(view_t* view, char masked)

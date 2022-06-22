@@ -1,26 +1,21 @@
-#ifndef view_gen_h
-#define view_gen_h
+#ifndef viewgen_css_h
+#define viewgen_css_h
 
 #include "view.c"
-#include "zc_map.c"
 #include "zc_vector.c"
 
-vec_t* view_gen_load(char* htmlpath, char* csspath, char* respath);
+void viewgen_css_apply(vec_t* views, char* csspath, char* respath);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
 #include "css.c"
-#include "cstr_util.c"
-#include "html.c"
 #include "tg_css.c"
-#include "vh_button.c"
-#include "zc_callback.c"
 #include "zc_log.c"
 #include <limits.h>
 
-void view_gen_apply_style(view_t* view, map_t* style, char* respath)
+void viewgen_css_apply_style(view_t* view, map_t* style, char* respath)
 {
     vec_t* keys = VNEW(); // REL 0
     map_keys(style, keys);
@@ -258,108 +253,35 @@ void view_gen_apply_style(view_t* view, map_t* style, char* respath)
     REL(keys);
 }
 
-vec_t* view_gen_load(char* htmlpath, char* csspath, char* respath)
+void viewgen_css_apply(vec_t* views, char* csspath, char* respath)
 {
-    char* html = cstr_new_file(htmlpath); // REL 0
-
-    tag_t* view_structure = html_new(html); // REL 2
-
     map_t* styles = css_new(csspath);
+    map_t* style;
 
-    // create view structure
-    vec_t* views = VNEW();
-    tag_t* tags  = view_structure;
-    while ((*tags).len > 0)
+    for (int index = 0; index < views->length; index++)
     {
-	tag_t t = *tags;
-	if (t.id.len > 0)
+	view_t* view = views->data[index];
+
+	// apply id selector
+	char cssid[100] = {0};
+	snprintf(cssid, 100, "#%s", view->id);
+
+	style = MGET(styles, cssid);
+	if (style)
 	{
-	    char* id = CAL(sizeof(char) * t.id.len + 1, NULL, cstr_describe); // REL 0
-
-	    memcpy(id, html + t.id.pos + 1, t.id.len);
-
-	    view_t* view = view_new(id, (r2_t){0}); // REL 1
-
-	    VADD(views, view);
-
-	    if (t.level > 0) // add view to paernt
-	    {
-		view_t* parent = views->data[t.parent];
-		// printf("parent %i %i\n", t.parent, views->length);
-		view_add_subview(parent, view);
-	    }
-
-	    char cssid[100] = {0};
-	    snprintf(cssid, 100, "#%s", id);
-
-	    map_t* style = MGET(styles, cssid);
-	    if (style)
-	    {
-		view_gen_apply_style(view, style, respath);
-	    }
-
-	    if (t.class.len > 0)
-	    {
-		char* class = CAL(sizeof(char) * t.class.len + 1, NULL, cstr_describe); // REL 0
-		memcpy(class, html + t.class.pos + 1, t.class.len);
-
-		char csscls[100] = {0};
-		snprintf(csscls, 100, ".%s", class);
-
-		style = MGET(styles, csscls);
-		if (style)
-		{
-		    view_gen_apply_style(view, style, respath);
-		}
-		REL(class);
-	    }
-
-	    if (t.type.len > 0)
-	    {
-		char* type = CAL(sizeof(char) * t.type.len + 1, NULL, cstr_describe); // REL 2
-		memcpy(type, html + t.type.pos + 1, t.type.len);
-
-		// TODO remove non-standard types
-		if (strcmp(type, "button") == 0 && t.onclick.len > 0)
-		{
-		    // vh_button_add(view, VH_BUTTON_NORMAL, NULL);
-		}
-		else if (strcmp(type, "checkbox") == 0 && t.onclick.len > 0)
-		{
-		    char* onclick = CAL(sizeof(char) * t.onclick.len + 1, NULL, cstr_describe); // REL 5
-		    memcpy(onclick, html + t.onclick.pos + 1, t.onclick.len);
-
-		    /* cb_t* callback = MGET(callbacks, onclick); */
-		    /* if (callback) vh_button_add(view, VH_BUTTON_TOGGLE, callback); */
-
-		    REL(onclick); // REL 5
-		}
-		REL(type); // REL 2
-	    }
-
-	    REL(id);   // REL 0
-	    REL(view); // REL 1
+	    viewgen_css_apply_style(view, style, respath);
 	}
-	else
+
+	// apply class selector
+	char csscls[100] = {0};
+	snprintf(csscls, 100, ".%s", view->class);
+
+	style = MGET(styles, csscls);
+	if (style)
 	{
-	    static int divcnt = 0;
-	    char*      divid  = cstr_new_format(10, "div%i", divcnt++);
-	    // idless view, probably </div>
-	    view_t* view = view_new(divid, (r2_t){0});
-	    VADD(views, view);
-	    REL(view);
-	    REL(divid);
+	    viewgen_css_apply_style(view, style, respath);
 	}
-	tags += 1;
     }
-
-    // cleanup
-
-    REL(view_structure); // REL 2
-
-    REL(html); // REL 0
-
-    return views;
 }
 
 #endif

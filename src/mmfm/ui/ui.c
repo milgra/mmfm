@@ -28,25 +28,29 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "vh_button.c"
 #include "vh_drag.c"
 #include "vh_key.c"
-#include "view_generator.c"
 #include "view_layout.c"
+#include "viewgen_css.c"
+#include "viewgen_html.c"
+#include "viewgen_type.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_number.c"
 #include "zc_path.c"
 
-view_t* view_base;
-vec_t*  view_list;
-view_t* view_drag;
-view_t* rep_cur; // replay cursor
+struct _ui_t
+{
+    view_t* view_base;
+    view_t* view_drag; // drag overlay
+    view_t* cursor;    // replay cursor
 
-vec_t* file_list_data;
-vec_t* clip_list_data;
-vec_t* drag_data;
+    vec_t* file_list_data;
+    vec_t* clip_list_data;
+    vec_t* drag_data;
 
-ui_table_t* filelisttable;
-ui_table_t* fileinfotable;
-ui_table_t* cliptable;
+    ui_table_t* cliptable;
+    ui_table_t* filelisttable;
+    ui_table_t* fileinfotable;
+} ui;
 
 void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 {
@@ -56,8 +60,8 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	case UI_TABLE_EVENT_FIELDS_UPDATE:
 	{
 	    zc_log_debug("fields update %s", table->id);
-	    break;
 	}
+	break;
 	case UI_TABLE_EVENT_SELECT:
 	{
 	    zc_log_debug("select %s", table->id);
@@ -78,7 +82,7 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 		VADD(items, map);
 	    }
 
-	    ui_table_set_data(fileinfotable, items);
+	    ui_table_set_data(ui.fileinfotable, items);
 
 	    // REL!!!
 
@@ -93,8 +97,8 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 		    ui_visualizer_show_pdf(path);
 		}
 	    }
-	    break;
 	}
+	break;
 	case UI_TABLE_EVENT_DRAG:
 	{
 	    vec_t*  selected                = userdata;
@@ -103,16 +107,14 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    docview->style.background_image = imagepath;
 	    tg_css_add(docview);
 
-	    vh_drag_drag(view_drag, docview);
+	    vh_drag_drag(ui.view_drag, docview);
 	    REL(docview);
 
-	    drag_data = selected;
-	    break;
+	    ui.drag_data = selected;
 	}
+	break;
 	case UI_TABLE_EVENT_DROP:
-	{
 	    break;
-	}
     }
 }
 
@@ -123,8 +125,8 @@ void on_clipboard_event(ui_table_t* table, ui_table_event event, void* userdata)
 	case UI_TABLE_EVENT_FIELDS_UPDATE:
 	{
 	    zc_log_debug("fields update %s", table->id);
-	    break;
 	}
+	break;
 	case UI_TABLE_EVENT_SELECT:
 	{
 	    zc_log_debug("select %s", table->id);
@@ -145,7 +147,7 @@ void on_clipboard_event(ui_table_t* table, ui_table_event event, void* userdata)
 		VADD(items, map);
 	    }
 
-	    ui_table_set_data(fileinfotable, items);
+	    ui_table_set_data(ui.fileinfotable, items);
 
 	    // REL!!!
 
@@ -160,20 +162,22 @@ void on_clipboard_event(ui_table_t* table, ui_table_event event, void* userdata)
 		    ui_visualizer_show_pdf(path);
 		}
 	    }
-	    break;
 	}
+	break;
+	case UI_TABLE_EVENT_DRAG:
+	    break;
 	case UI_TABLE_EVENT_DROP:
 	{
-	    if (drag_data)
+	    if (ui.drag_data)
 	    {
 		int index = (int) userdata;
-		zc_log_debug("DROP %i %i", index, drag_data->length);
-		vec_add_in_vector(clip_list_data, drag_data);
-		drag_data = NULL;
-		ui_table_set_data(cliptable, clip_list_data);
+		zc_log_debug("DROP %i %i", index, ui.drag_data->length);
+		vec_add_in_vector(ui.clip_list_data, ui.drag_data);
+		ui.drag_data = NULL;
+		ui_table_set_data(ui.cliptable, ui.clip_list_data);
 	    }
-	    break;
 	}
+	break;
     }
 }
 
@@ -181,219 +185,31 @@ void on_fileinfo_event(ui_table_t* table, ui_table_event event, void* userdata)
 {
 }
 
-void ui_init(float width, float height)
-{
-    text_init();                    // DESTROY 0
-    ui_manager_init(width, height); // DESTROY 1
-
-    view_list = view_gen_load(config_get("html_path"), config_get("css_path"), config_get("res_path")); // REL 0
-    view_base = vec_head(view_list);
-
-    zc_log_debug("%i views generated", view_list->length);
-
-    // initial layout of views
-
-    view_set_frame(view_base, (r2_t){0.0, 0.0, (float) width, (float) height});
-    view_layout(view_base);
-
-    ui_manager_add(view_base);
-
-    // attach ui components
-
-    ui_visualizer_attach(view_base); // DETACH 8
-
-    // setup views
-
-    view_t* main_view = view_get_subview(view_base, "main");
-    /* view_t* song_info = view_get_subview(main_view, "song_info"); */
-
-    main_view->needs_touch = 0; // don't cover events from filelist
-    /* vh_key_add(view_base, key_cb);                      // listen on view_base for shortcuts */
-    /* vh_button_add(song_info, VH_BUTTON_NORMAL, but_cb); // show messages on song info click */
-
-    view_drag = view_get_subview(view_base, "draglayer");
-    vh_drag_attach(view_drag);
-
-    textstyle_t ts  = {0};
-    ts.font         = config_get("font_path");
-    ts.align        = TA_CENTER;
-    ts.margin_right = 0;
-    ts.size         = 60.0;
-    ts.textcolor    = 0xEEEEEEFF;
-    ts.backcolor    = 0xFFFFFFFF;
-    ts.multiline    = 0;
-
-    vec_t* ffields = VNEW();
-    VADDR(ffields, cstr_new_cstring("key"));
-    VADDR(ffields, num_new_int(150));
-    VADDR(ffields, cstr_new_cstring("value"));
-    VADDR(ffields, num_new_int(400));
-
-    view_t* fileinfo       = view_get_subview(view_base, "fileinfotable");
-    view_t* fileinfoscroll = view_get_subview(view_base, "fileinfoscroll");
-    view_t* fileinfoevt    = view_get_subview(view_base, "fileinfoevt");
-    view_t* fileinfohead   = view_get_subview(view_base, "fileinfohead");
-
-    if (fileinfo)
-    {
-	tg_text_add(fileinfo);
-	tg_text_set(fileinfo, "FILE INFO", ts);
-    }
-    else
-	zc_log_debug("fileinfobck not found");
-
-    fileinfotable = ui_table_create(
-	"fileinfotable",
-	fileinfo,
-	fileinfoscroll,
-	fileinfoevt,
-	fileinfohead,
-	ffields,
-	on_fileinfo_event);
-
-    REL(ffields);
-
-    vec_t* fields = VNEW();
-    VADDR(fields, cstr_new_cstring("basename"));
-    VADDR(fields, num_new_int(100));
-    VADDR(fields, cstr_new_cstring("path"));
-    VADDR(fields, num_new_int(200));
-    VADDR(fields, cstr_new_cstring("size"));
-    VADDR(fields, num_new_int(100));
-    VADDR(fields, cstr_new_cstring("last_access"));
-    VADDR(fields, num_new_int(100));
-    VADDR(fields, cstr_new_cstring("last_modification"));
-    VADDR(fields, num_new_int(100));
-    VADDR(fields, cstr_new_cstring("last_status"));
-    VADDR(fields, num_new_int(100));
-
-    view_t* filelist       = view_get_subview(view_base, "filelisttable");
-    view_t* filelistscroll = view_get_subview(view_base, "filelistscroll");
-    view_t* filelistevt    = view_get_subview(view_base, "filelistevt");
-    view_t* filelisthead   = view_get_subview(view_base, "filelisthead");
-
-    if (filelist)
-    {
-	tg_text_add(filelist);
-	tg_text_set(filelist, "FILES", ts);
-    }
-    else
-	zc_log_debug("filelistbck not found");
-
-    filelisttable = ui_table_create(
-	"filelisttable",
-	filelist,
-	filelistscroll,
-	filelistevt,
-	filelisthead,
-	fields,
-	on_files_event);
-
-    view_t* cliplist       = view_get_subview(view_base, "cliplist");
-    view_t* cliplistscroll = view_get_subview(view_base, "cliplistscroll");
-    view_t* cliplistevt    = view_get_subview(view_base, "cliplistevt");
-    view_t* cliplisthead   = view_get_subview(view_base, "cliplisthead");
-
-    if (cliplist)
-    {
-	tg_text_add(cliplist);
-	tg_text_set(cliplist, "CLIPBOARD", ts);
-    }
-    else
-	zc_log_debug("cliplistbck not found");
-
-    cliptable = ui_table_create(
-	"cliptable",
-	cliplist,
-	cliplistscroll,
-	cliplistevt,
-	cliplisthead,
-	fields,
-	on_clipboard_event);
-
-    REL(fields);
-
-    map_t* files = MNEW(); // REL 0
-    fm_list("/home/milgra/Projects/mmfm", files);
-
-    file_list_data = VNEW();
-    clip_list_data = VNEW();
-
-    map_values(files, file_list_data);
-
-    ui_table_set_data(filelisttable, file_list_data);
-    ui_table_set_data(cliptable, clip_list_data);
-
-    REL(files);
-
-    view_t* preview = view_get_subview(view_base, "preview");
-
-    if (preview)
-    {
-	tg_text_add(preview);
-	tg_text_set(preview, "PREVIEW", ts);
-    }
-    else
-	zc_log_debug("cliplistbck not found");
-
-    // show texture map for debug
-
-    /* view_t* texmap       = view_new("texmap", ((r2_t){0, 0, 150, 150})); */
-    /* texmap->needs_touch  = 0; */
-    /* texmap->exclude      = 0; */
-    /* texmap->texture.full = 1; */
-    /* texmap->style.right = 0; */
-    /* texmap->style.top   = 0; */
-
-    /* ui_manager_add(texmap); */
-
-    // set glossy effect on header
-
-    /* view_t* header = view_get_subview(view_base, "header"); */
-    /* header->texture.blur = 1; */
-    /* header->texture.shadow = 1; */
-
-    /* REL(key_cb); // REL 1 */
-    /* REL(but_cb); // REL 2 */
-}
-
 void ui_add_cursor()
 {
-    rep_cur                         = view_new("rep_cur", ((r2_t){10, 10, 10, 10}));
-    rep_cur->exclude                = 0;
-    rep_cur->style.background_color = 0xFF000099;
-    rep_cur->needs_touch            = 0;
-    tg_css_add(rep_cur);
-    ui_manager_add_to_top(rep_cur);
+    ui.cursor                         = view_new("ui.cursor", ((r2_t){10, 10, 10, 10}));
+    ui.cursor->exclude                = 0;
+    ui.cursor->style.background_color = 0xFF000099;
+    ui.cursor->needs_touch            = 0;
+    tg_css_add(ui.cursor);
+    ui_manager_add_to_top(ui.cursor);
 }
 
 void ui_update_cursor(r2_t frame)
 {
-    view_set_frame(rep_cur, frame);
+    view_set_frame(ui.cursor, frame);
 }
 
 void ui_render_without_cursor(uint32_t time)
 {
-    ui_manager_remove(rep_cur);
+    ui_manager_remove(ui.cursor);
     ui_manager_render(time);
-    ui_manager_add_to_top(rep_cur);
+    ui_manager_add_to_top(ui.cursor);
 }
-
-void ui_destroy()
-{
-    REL(view_list);
-
-    ui_manager_destroy(); // DESTROY 1
-
-    text_destroy(); // DESTROY 0
-}
-
-// key event from base view
 
 void ui_on_key_down(void* userdata, void* data)
 {
-    ev_t* ev = (ev_t*) data;
-    //    if (ev->keycode == SDLK_SPACE) ui_play_pause();
+    // ev_t* ev = (ev_t*) data;
 }
 
 void ui_save_screenshot(uint32_t time, char hide_cursor)
@@ -424,6 +240,194 @@ void ui_save_screenshot(uint32_t time, char hide_cursor)
 
 	if (hide_cursor) ui_update_cursor(frame); // full screen cursor to indicate screenshot, next step will reset it
     }
+}
+
+void ui_init(float width, float height)
+{
+    text_init();                    // DESTROY 0
+    ui_manager_init(width, height); // DESTROY 1
+
+    // generate views from descriptors
+
+    vec_t* view_list = viewgen_html_create(config_get("html_path"));
+    viewgen_css_apply(view_list, config_get("css_path"), config_get("res_path"));
+    viewgen_type_apply(view_list);
+
+    ui.view_base = RET(vec_head(view_list));
+
+    REL(view_list);
+
+    // initial layout of views
+
+    view_set_frame(ui.view_base, (r2_t){0.0, 0.0, (float) width, (float) height});
+    view_layout(ui.view_base);
+    ui_manager_add(ui.view_base);
+
+    // attach ui components
+
+    ui_visualizer_attach(ui.view_base); // DETACH 8
+
+    // setup views
+
+    cb_t* key_cb = cb_new(ui_on_key_down, NULL);
+    vh_key_add(ui.view_base, key_cb); // listen on ui.view_base for shortcuts
+    REL(key_cb);
+
+    // drag layer
+
+    ui.view_drag = view_get_subview(ui.view_base, "draglayer");
+    vh_drag_attach(ui.view_drag);
+
+    // tables
+
+    textstyle_t ts  = {0};
+    ts.font         = config_get("font_path");
+    ts.align        = TA_CENTER;
+    ts.margin_right = 0;
+    ts.size         = 60.0;
+    ts.textcolor    = 0xEEEEEEFF;
+    ts.backcolor    = 0xFFFFFFFF;
+    ts.multiline    = 0;
+
+    // file info table
+
+    vec_t* fields = VNEW();
+    VADDR(fields, cstr_new_cstring("key"));
+    VADDR(fields, num_new_int(150));
+    VADDR(fields, cstr_new_cstring("value"));
+    VADDR(fields, num_new_int(400));
+
+    view_t* fileinfo       = view_get_subview(ui.view_base, "fileinfotable");
+    view_t* fileinfoscroll = view_get_subview(ui.view_base, "fileinfoscroll");
+    view_t* fileinfoevt    = view_get_subview(ui.view_base, "fileinfoevt");
+    view_t* fileinfohead   = view_get_subview(ui.view_base, "fileinfohead");
+
+    if (fileinfo)
+    {
+	tg_text_add(fileinfo);
+	tg_text_set(fileinfo, "FILE INFO", ts);
+    }
+    else
+	zc_log_debug("fileinfobck not found");
+
+    ui.fileinfotable = ui_table_create(
+	"fileinfotable",
+	fileinfo,
+	fileinfoscroll,
+	fileinfoevt,
+	fileinfohead,
+	fields,
+	on_fileinfo_event);
+
+    REL(fields);
+
+    // files table
+
+    fields = VNEW();
+
+    VADDR(fields, cstr_new_cstring("basename"));
+    VADDR(fields, num_new_int(100));
+    VADDR(fields, cstr_new_cstring("path"));
+    VADDR(fields, num_new_int(200));
+    VADDR(fields, cstr_new_cstring("size"));
+    VADDR(fields, num_new_int(100));
+    VADDR(fields, cstr_new_cstring("last_access"));
+    VADDR(fields, num_new_int(100));
+    VADDR(fields, cstr_new_cstring("last_modification"));
+    VADDR(fields, num_new_int(100));
+    VADDR(fields, cstr_new_cstring("last_status"));
+    VADDR(fields, num_new_int(100));
+
+    view_t* filelist       = view_get_subview(ui.view_base, "filelisttable");
+    view_t* filelistscroll = view_get_subview(ui.view_base, "filelistscroll");
+    view_t* filelistevt    = view_get_subview(ui.view_base, "filelistevt");
+    view_t* filelisthead   = view_get_subview(ui.view_base, "filelisthead");
+
+    if (filelist)
+    {
+	tg_text_add(filelist);
+	tg_text_set(filelist, "FILES", ts);
+    }
+    else
+	zc_log_debug("filelistbck not found");
+
+    ui.filelisttable = ui_table_create(
+	"filelisttable",
+	filelist,
+	filelistscroll,
+	filelistevt,
+	filelisthead,
+	fields,
+	on_files_event);
+
+    ui.file_list_data = VNEW();
+    ui_table_set_data(ui.filelisttable, ui.file_list_data);
+
+    // clipboard table
+
+    view_t* cliplist       = view_get_subview(ui.view_base, "cliplist");
+    view_t* cliplistscroll = view_get_subview(ui.view_base, "cliplistscroll");
+    view_t* cliplistevt    = view_get_subview(ui.view_base, "cliplistevt");
+    view_t* cliplisthead   = view_get_subview(ui.view_base, "cliplisthead");
+
+    if (cliplist)
+    {
+	tg_text_add(cliplist);
+	tg_text_set(cliplist, "CLIPBOARD", ts);
+    }
+    else
+	zc_log_debug("cliplistbck not found");
+
+    ui.cliptable = ui_table_create(
+	"cliptable",
+	cliplist,
+	cliplistscroll,
+	cliplistevt,
+	cliplisthead,
+	fields,
+	on_clipboard_event);
+
+    REL(fields);
+
+    ui.clip_list_data = VNEW();
+    ui_table_set_data(ui.cliptable, ui.clip_list_data);
+
+    // fill up files table
+
+    map_t* files = MNEW(); // REL 0
+    fm_list("/home/milgra/Projects/mmfm", files);
+    map_values(files, ui.file_list_data);
+    ui_table_set_data(ui.filelisttable, ui.file_list_data);
+    REL(files);
+
+    // preview block
+
+    view_t* preview = view_get_subview(ui.view_base, "preview");
+
+    if (preview)
+    {
+	tg_text_add(preview);
+	tg_text_set(preview, "PREVIEW", ts);
+    }
+    else
+	zc_log_debug("cliplistbck not found");
+
+    /* // show texture map for debug */
+
+    /* view_t* texmap       = view_new("texmap", ((r2_t){0, 0, 150, 150})); */
+    /* texmap->needs_touch  = 0; */
+    /* texmap->exclude      = 0; */
+    /* texmap->texture.full = 1; */
+    /* texmap->style.right  = 0; */
+    /* texmap->style.top    = 0; */
+
+    /* ui_manager_add(texmap); */
+}
+
+void ui_destroy()
+{
+    ui_manager_destroy(); // DESTROY 1
+    text_destroy();       // DESTROY 0
 }
 
 #endif

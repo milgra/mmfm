@@ -257,6 +257,37 @@ void ui_create_views(float width, float height)
     ui_manager_add(ui.view_base);
 }
 
+int ui_comp_entry(void* left, void* right)
+{
+    map_t* l = left;
+    map_t* r = right;
+
+    char* la = MGET(l, "basename");
+    char* ra = MGET(r, "basename");
+
+    if (la && ra)
+    {
+	return strcmp(la, ra);
+    }
+    else
+    {
+	if (la)
+	    return -1;
+	else if (ra)
+	    return 1;
+	else
+	    return 0;
+    }
+}
+
+int ui_comp_text(void* left, void* right)
+{
+    char* la = left;
+    char* ra = right;
+
+    return strcmp(la, ra);
+}
+
 void ui_init(float width, float height)
 {
     text_init();                    // DESTROY 0
@@ -409,6 +440,9 @@ void ui_init(float width, float height)
     map_t* files = MNEW(); // REL 0
     fm_list(config_get("top_path"), files);
     map_values(files, ui.file_list_data);
+
+    vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);
+
     ui_table_set_data(ui.filelisttable, ui.file_list_data);
     REL(files);
 

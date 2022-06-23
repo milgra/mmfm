@@ -294,65 +294,62 @@ void ui_table_item_recycle(
     VADD(uit->cache, item_v);
 }
 
-void ui_table_item_select(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata)
+void ui_table_evnt_event(view_t* view, view_t* rowview, vh_tbl_evnt_event_t type, int index, void* userdata, ev_t ev)
 {
     ui_table_t* uit = (ui_table_t*) userdata;
 
-    map_t* data = uit->items->data[index];
-
-    uint32_t pos = vec_index_of_data(uit->selected, data);
-
-    if (pos == UINT32_MAX)
+    if (type == VH_TBL_EVENT_SELECT)
     {
-	// reset selected if control is not down
-	if (!ev.ctrl_down)
-	{
-	    vec_reset(uit->selected);
-	    vh_tbl_body_t* bvh = uit->body_v->handler_data;
+	map_t* data = uit->items->data[index];
 
-	    for (int index = 0; index < bvh->items->length; index++)
+	uint32_t pos = vec_index_of_data(uit->selected, data);
+
+	if (pos == UINT32_MAX)
+	{
+	    // reset selected if control is not down
+	    if (!ev.ctrl_down)
 	    {
-		view_t* item = bvh->items->data[index];
-		if (item->style.background_color == 0x00FF00FF)
+		vec_reset(uit->selected);
+		vh_tbl_body_t* bvh = uit->body_v->handler_data;
+
+		for (int index = 0; index < bvh->items->length; index++)
 		{
-		    item->style.background_color = (bvh->head_index + index) % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
-		    view_invalidate_texture(item);
+		    view_t* item = bvh->items->data[index];
+		    if (item->style.background_color == 0x00FF00FF)
+		    {
+			item->style.background_color = (bvh->head_index + index) % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+			view_invalidate_texture(item);
+		    }
 		}
 	    }
+
+	    VADD(uit->selected, data);
+	    rowview->style.background_color = 0x00FF00FF;
+	    view_invalidate_texture(rowview);
+	}
+	else
+	{
+	    VREM(uit->selected, data);
+	    rowview->style.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+	    view_invalidate_texture(rowview);
 	}
 
-	VADD(uit->selected, data);
-	rowview->style.background_color = 0x00FF00FF;
-	view_invalidate_texture(rowview);
+	(*uit->on_event)(uit, UI_TABLE_EVENT_SELECT, uit->selected);
+
+	// if (ev.button == 1)
+	// if (ev.shift_down) {}
+	// if (ev.dclick) {}
+	// if (ev.ctrl_down) {}
+	// if (ev.button == 3)
     }
-    else
+    if (type == VH_TBL_EVENT_DRAG)
     {
-	VREM(uit->selected, data);
-	rowview->style.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
-	view_invalidate_texture(rowview);
+	(*uit->on_event)(uit, UI_TABLE_EVENT_DRAG, uit->selected);
     }
-
-    (*uit->on_event)(uit, UI_TABLE_EVENT_SELECT, uit->selected);
-
-    // if (ev.button == 1)
-    // if (ev.shift_down) {}
-    // if (ev.dclick) {}
-    // if (ev.ctrl_down) {}
-    // if (ev.button == 3)
-}
-
-void ui_table_drag(view_t* view, void* userdata)
-{
-    ui_table_t* uit = (ui_table_t*) userdata;
-
-    (*uit->on_event)(uit, UI_TABLE_EVENT_DRAG, uit->selected);
-}
-
-void ui_table_drop(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata)
-{
-    ui_table_t* uit = (ui_table_t*) userdata;
-
-    (*uit->on_event)(uit, UI_TABLE_EVENT_DROP, (void*) ((size_t) index));
+    if (type == VH_TBL_EVENT_DROP)
+    {
+	(*uit->on_event)(uit, UI_TABLE_EVENT_DROP, (void*) ((size_t) index));
+    }
 }
 
 ui_table_t* ui_table_create(
@@ -415,9 +412,7 @@ ui_table_t* ui_table_create(
 	    body,
 	    scrl,
 	    head,
-	    ui_table_item_select,
-	    ui_table_drag,
-	    ui_table_drop,
+	    ui_table_evnt_event,
 	    uit);
     }
 

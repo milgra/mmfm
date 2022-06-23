@@ -7,6 +7,14 @@
 #include "view.c"
 #include <limits.h>
 
+typedef enum _vh_tbl_evnt_event_t
+{
+    VH_TBL_EVENT_SELECT,
+    VH_TBL_EVENT_OPEN,
+    VH_TBL_EVENT_DRAG,
+    VH_TBL_EVENT_DROP
+} vh_tbl_evnt_event_t;
+
 typedef struct _vh_tbl_evnt_t
 {
     view_t* tbody_view;
@@ -19,9 +27,7 @@ typedef struct _vh_tbl_evnt_t
     int     selected_index;
     float   sx;
     float   sy;
-    void (*on_select)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata);
-    void (*on_drag)(view_t* view, void* userdata);
-    void (*on_drop)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata);
+    void (*on_event)(view_t* view, view_t* rowview, vh_tbl_evnt_event_t event, int index, void* userdata, ev_t ev);
 } vh_tbl_evnt_t;
 
 void vh_tbl_evnt_attach(
@@ -29,9 +35,7 @@ void vh_tbl_evnt_attach(
     view_t* tbody_view,
     view_t* tscrl_view,
     view_t* thead_view,
-    void (*on_select)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
-    void (*on_drag)(view_t* view, void* userdata),
-    void (*on_drop)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
+    void (*on_event)(view_t* view, view_t* rowview, vh_tbl_evnt_event_t event, int index, void* userdata, ev_t ev),
     void* userdata);
 
 #endif
@@ -115,7 +119,7 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 	}
 	if (vh->selected_item && ev.drag)
 	{
-	    if (vh->on_drag) (*vh->on_drag)(view, vh->userdata);
+	    (*vh->on_event)(view, vh->selected_item, VH_TBL_EVENT_DRAG, 0, vh->userdata, ev);
 
 	    vh->selected_item = NULL;
 	}
@@ -157,7 +161,14 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 		    vh->selected_item  = item;
 		    vh->selected_index = bvh->head_index + index;
 
-		    if (vh->on_select) (*vh->on_select)(view, item, bvh->head_index + index, ev, vh->userdata);
+		    if (!ev.dclick)
+		    {
+			(*vh->on_event)(view, vh->selected_item, VH_TBL_EVENT_SELECT, bvh->head_index + index, vh->userdata, ev);
+		    }
+		    else
+		    {
+			(*vh->on_event)(view, vh->selected_item, VH_TBL_EVENT_OPEN, bvh->head_index + index, vh->userdata, ev);
+		    }
 		    break;
 		}
 	    }
@@ -167,7 +178,7 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
     {
 	if (ev.drag)
 	{
-	    if (!vh->selected_item && vh->on_drop)
+	    if (!vh->selected_item)
 	    {
 		vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
 
@@ -184,8 +195,8 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 			break;
 		    }
 		}
-		zc_log_debug("DROPPED IN %s", view->id);
-		(*vh->on_drop)(view, item, bvh->head_index + index, ev, vh->userdata);
+
+		(*vh->on_event)(view, vh->selected_item, VH_TBL_EVENT_DROP, bvh->head_index + index, vh->userdata, ev);
 	    }
 	}
 	vh->scroll_drag = 0;
@@ -206,17 +217,13 @@ void vh_tbl_evnt_attach(
     view_t* tbody_view,
     view_t* tscrl_view,
     view_t* thead_view,
-    void (*on_select)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
-    void (*on_drag)(view_t* view, void* userdata),
-    void (*on_drop)(view_t* view, view_t* rowview, int index, ev_t ev, void* userdata),
+    void (*on_event)(view_t* view, view_t* rowview, vh_tbl_evnt_event_t event, int index, void* userdata, ev_t ev),
     void* userdata)
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 
     vh_tbl_evnt_t* vh = CAL(sizeof(vh_tbl_evnt_t), vh_tbl_evnt_del, vh_tbl_evnt_desc);
-    vh->on_select     = on_select;
-    vh->on_drag       = on_drag;
-    vh->on_drop       = on_drop;
+    vh->on_event      = on_event;
     vh->userdata      = userdata;
     vh->tbody_view    = tbody_view;
     vh->tscrl_view    = tscrl_view;

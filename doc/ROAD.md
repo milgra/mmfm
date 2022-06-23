@@ -1,6 +1,7 @@
 # Zen Media development roadmap
 
 multiple classes in html
+linelist component, text fileoknak es hexa viewnak
 store table states
 media info
 context menu

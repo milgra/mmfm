@@ -191,7 +191,10 @@ void fm_list(char* fm_path, map_t* files)
 
 		MPUTR(file, "groupname", cstr_new_format(100, "%s", grp->gr_name));
 
-		MPUT(files, path, file); // use relative path as path
+		if (strcmp(dp->d_name, ".") != 0)
+		    MPUT(files, path, file); // use relative path as path
+
+		REL(file);
 	    }
 	    else
 		zc_log_error("CANNOT STAT %s, status %i errno %i", path, status, errno);

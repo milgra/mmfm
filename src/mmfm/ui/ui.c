@@ -119,13 +119,10 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    char* type = MGET(info, "type");
 	    char* path = MGET(info, "path");
 
-	    char dirpath[PATH_MAX + 1];
-	    snprintf(dirpath, PATH_MAX, "%s/", path);
-
 	    if (strcmp(type, "directory") == 0)
 	    {
 		map_t* files = MNEW(); // REL 0
-		fm_list(dirpath, files);
+		fm_list(path, files);
 		vec_reset(ui.file_list_data);
 		map_values(files, ui.file_list_data);
 		vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);

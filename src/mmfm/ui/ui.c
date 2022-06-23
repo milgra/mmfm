@@ -83,13 +83,19 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    ui_table_set_data(ui.fileinfotable, items);
 
 	    // REL!!!
+	}
+	break;
+	case UI_TABLE_EVENT_OPEN:
+	{
+	    zc_log_debug("open %s", table->id);
+
+	    vec_t* selected = userdata;
+	    map_t* info     = selected->data[0];
 
 	    char* path = MGET(info, "path");
 
 	    if (path)
 	    {
-		zc_log_debug("SELECTED %s", path);
-
 		if (strstr(path, ".pdf") != NULL)
 		{
 		    ui_visualizer_show_pdf(path);

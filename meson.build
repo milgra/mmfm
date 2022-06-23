@@ -29,10 +29,8 @@ avformat = cc.find_library('avformat')
 avfilter = cc.find_library('avfilter')
 swresample = cc.find_library('swresample')
 
-libdir = meson.current_source_dir() + './lib/'
-
-mupdf = cc.find_library('mupdf', dirs : libdir)
-mupdfthird = cc.find_library('mupdf-third', dirs : libdir)
+mupdf = cc.find_library('mupdf')
+mupdfthird = cc.find_library('mupdf-third')
 
 mmfm_version = '"@0@"'.format(meson.project_version())
 add_project_arguments('-DMMFM_VERSION=@0@'.format(mmfm_version), language: 'c')
@@ -46,6 +44,7 @@ mmfm_inc = include_directories(
 	'/usr/include',
 	'/usr/include/GL',
 	'/usr/include/SDL2',
+	'/usr/include/mupdf',
 	'src/modules',
 	'src/modules/zen_math',
 	'src/modules/zen_gfx',
@@ -59,8 +58,7 @@ mmfm_inc = include_directories(
 	'src/mmfm/zen_ui/html',
 	'src/mmfm',
 	'src/mmfm/ui',
-	'src/mmfm/utils',
-	'inc')
+	'src/mmfm/utils')
 
 
 com_sources = ['src/mmfm/ui/ui.c',

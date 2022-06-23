@@ -9,6 +9,7 @@
 typedef enum _ui_table_event
 {
     UI_TABLE_EVENT_SELECT,
+    UI_TABLE_EVENT_OPEN,
     UI_TABLE_EVENT_DRAG,
     UI_TABLE_EVENT_DROP,
     UI_TABLE_EVENT_FIELDS_UPDATE
@@ -335,12 +336,13 @@ void ui_table_evnt_event(view_t* view, view_t* rowview, vh_tbl_evnt_event_t type
 	}
 
 	(*uit->on_event)(uit, UI_TABLE_EVENT_SELECT, uit->selected);
+    }
+    if (type == VH_TBL_EVENT_OPEN)
+    {
+	map_t*   data = uit->items->data[index];
+	uint32_t pos  = vec_index_of_data(uit->selected, data);
 
-	// if (ev.button == 1)
-	// if (ev.shift_down) {}
-	// if (ev.dclick) {}
-	// if (ev.ctrl_down) {}
-	// if (ev.button == 3)
+	(*uit->on_event)(uit, UI_TABLE_EVENT_OPEN, uit->selected);
     }
     if (type == VH_TBL_EVENT_DRAG)
     {

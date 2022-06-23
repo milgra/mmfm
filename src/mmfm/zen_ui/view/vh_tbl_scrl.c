@@ -11,6 +11,8 @@ typedef struct _vh_tbl_scrl_t
     view_t*  thead_view;
     view_t*  vert_v;
     view_t*  hori_v;
+    int      state; // 0 scroll 1 open 2 close
+    int      steps;
     uint32_t item_cnt;
     void*    userdata;
 } vh_tbl_scrl_t;
@@ -90,9 +92,18 @@ void vh_tbl_scrl_update(view_t* view)
 	    float pratio = (float) vert_pos / (float) vert_max;
 	    float sratio = (float) vert_vis / (float) vert_max;
 
+	    float pos = view->frame.local.h * pratio;
+	    float hth = view->frame.local.h * sratio;
+
+	    if (vh->state == 2)
+	    {
+		pos += hth / 2.0;
+		hth = 0.1;
+	    }
+
 	    r2_t frame = vh->vert_v->frame.local;
-	    frame.h += (view->frame.local.h * sratio - frame.h) / 5.0;
-	    frame.y += (view->frame.local.h * pratio - frame.y) / 5.0;
+	    frame.h += (hth - frame.h) / 1.5;
+	    frame.y += (pos - frame.y) / 1.5;
 
 	    view_set_frame(vh->vert_v, frame);
 	}
@@ -106,11 +117,34 @@ void vh_tbl_scrl_update(view_t* view)
 	    float pratio = (float) hori_pos / (float) hori_max;
 	    float sratio = (float) hori_vis / (float) hori_max;
 
+	    float pos = view->frame.local.w * pratio;
+	    float wth = view->frame.local.w * sratio;
+
+	    if (vh->state == 2)
+	    {
+		pos += wth / 2.0;
+		wth = 0.1;
+	    }
+
 	    r2_t frame = vh->hori_v->frame.local;
-	    frame.w += (view->frame.local.w * sratio - frame.w) / 5.0;
-	    frame.x += (view->frame.local.w * pratio - frame.x) / 5.0;
+	    frame.w += (wth - frame.w) / 1.5;
+	    frame.x += (pos - frame.x) / 1.5;
 
 	    view_set_frame(vh->hori_v, frame);
+	}
+
+	if (vh->state > 0)
+	{
+	    vh->steps += 1;
+	    if (vh->steps == 4)
+	    {
+		if (vh->state == 2)
+		{
+		    if (vh->vert_v->parent) view_remove_subview(view, vh->vert_v);
+		    if (vh->hori_v->parent) view_remove_subview(view, vh->hori_v);
+		}
+		vh->state = 0;
+	    }
 	}
     }
 }
@@ -118,6 +152,8 @@ void vh_tbl_scrl_update(view_t* view)
 void vh_tbl_scrl_show(view_t* view)
 {
     vh_tbl_scrl_t* vh = view->handler_data;
+    vh->state         = 1;
+    vh->steps         = 0;
     if (vh->vert_v->parent == NULL) view_add_subview(view, vh->vert_v);
     if (vh->hori_v->parent == NULL) view_add_subview(view, vh->hori_v);
 }
@@ -125,8 +161,8 @@ void vh_tbl_scrl_show(view_t* view)
 void vh_tbl_scrl_hide(view_t* view)
 {
     vh_tbl_scrl_t* vh = view->handler_data;
-    view_remove_subview(view, vh->vert_v);
-    view_remove_subview(view, vh->hori_v);
+    vh->state         = 2;
+    vh->steps         = 0;
 }
 
 void vh_tbl_scrl_scroll_v(view_t* view, int y)

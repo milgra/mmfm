@@ -407,7 +407,7 @@ void ui_init(float width, float height)
     // fill up files table
 
     map_t* files = MNEW(); // REL 0
-    fm_list("/home/milgra/Projects/mmfm", files);
+    fm_list(config_get("top_path"), files);
     map_values(files, ui.file_list_data);
     ui_table_set_data(ui.filelisttable, ui.file_list_data);
     REL(files);

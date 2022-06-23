@@ -79,6 +79,10 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 
 		if (vh->tscrl_view && vh->scroll_visible) vh_tbl_scrl_update(vh->tscrl_view);
 	    }
+
+	    vh_tbl_scrl_t* svh = vh->tscrl_view->handler_data;
+
+	    if (svh->state > 0) vh_tbl_scrl_update(vh->tscrl_view);
 	}
     }
     else if (ev.type == EV_SCROLL)

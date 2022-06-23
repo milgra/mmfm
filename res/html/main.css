@@ -41,7 +41,6 @@
     height: 100px;
     right: 0px;
     background-color: #00000066;
-    border-radius: 3px;
 }
 
 .horiscroll {
@@ -49,7 +48,6 @@
     height: 10px;
     bottom: 0px;
     background-color: #00000066;
-    border-radius: 3px;
 }
 
 .vertgap5 {

@@ -34,6 +34,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "zc_log.c"
 #include "zc_number.c"
 #include "zc_path.c"
+#include <limits.h>
 
 struct _ui_t
 {
@@ -49,6 +50,29 @@ struct _ui_t
     ui_table_t* filelisttable;
     ui_table_t* fileinfotable;
 } ui;
+
+int ui_comp_entry(void* left, void* right)
+{
+    map_t* l = left;
+    map_t* r = right;
+
+    char* la = MGET(l, "basename");
+    char* ra = MGET(r, "basename");
+
+    if (la && ra)
+    {
+	return strcmp(la, ra);
+    }
+    else
+    {
+	if (la)
+	    return -1;
+	else if (ra)
+	    return 1;
+	else
+	    return 0;
+    }
+}
 
 void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 {
@@ -92,9 +116,23 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    vec_t* selected = userdata;
 	    map_t* info     = selected->data[0];
 
+	    char* type = MGET(info, "type");
 	    char* path = MGET(info, "path");
 
-	    if (path)
+	    char dirpath[PATH_MAX + 1];
+	    snprintf(dirpath, PATH_MAX, "%s/", path);
+
+	    if (strcmp(type, "directory") == 0)
+	    {
+		map_t* files = MNEW(); // REL 0
+		fm_list(dirpath, files);
+		vec_reset(ui.file_list_data);
+		map_values(files, ui.file_list_data);
+		vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);
+		ui_table_set_data(ui.filelisttable, ui.file_list_data);
+		REL(files);
+	    }
+	    else
 	    {
 		if (strstr(path, ".pdf") != NULL)
 		{
@@ -261,29 +299,6 @@ void ui_create_views(float width, float height)
     view_set_frame(ui.view_base, (r2_t){0.0, 0.0, (float) width, (float) height});
     view_layout(ui.view_base);
     ui_manager_add(ui.view_base);
-}
-
-int ui_comp_entry(void* left, void* right)
-{
-    map_t* l = left;
-    map_t* r = right;
-
-    char* la = MGET(l, "basename");
-    char* ra = MGET(r, "basename");
-
-    if (la && ra)
-    {
-	return strcmp(la, ra);
-    }
-    else
-    {
-	if (la)
-	    return -1;
-	else if (ra)
-	    return 1;
-	else
-	    return 0;
-    }
 }
 
 int ui_comp_text(void* left, void* right)

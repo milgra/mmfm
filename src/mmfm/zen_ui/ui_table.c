@@ -432,6 +432,7 @@ void ui_table_set_data(
 
     zc_log_debug("ui table set data %i", data->length);
 
+    vh_tbl_body_reset(uit->body_v);
     vh_tbl_body_move(uit->body_v, 0, 0);
 
     if (uit->scrl_v) vh_tbl_scrl_set_item_count(uit->scrl_v, data->length);

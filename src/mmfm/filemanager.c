@@ -116,13 +116,14 @@ void fm_list(char* fm_path, map_t* files)
 	while (dp != NULL)
 	{
 	    char path[PATH_MAX + 1];
-	    realpath(dp->d_name, path);
+	    snprintf(path, PATH_MAX, "%s/%s", fm_path, dp->d_name);
 
 	    struct stat sb;
-	    if (stat(path, &sb) == 0)
-	    {
-		/* printf("%s %s %li\n", dp->d_name, path, sb.st_size); */
 
+	    int status = stat(path, &sb);
+
+	    if (status == 0)
+	    {
 		/* printf("ID of containing device:  [%jx,%jx]\n", (uintmax_t) major(sb.st_dev), (uintmax_t) minor(sb.st_dev)); */
 		/* printf("File type:                "); */
 
@@ -192,6 +193,8 @@ void fm_list(char* fm_path, map_t* files)
 
 		MPUT(files, path, file); // use relative path as path
 	    }
+	    else
+		zc_log_error("CANNOT STAT %s, status %i errno %i", path, status, errno);
 
 	    dp = readdir(dirp);
 	}

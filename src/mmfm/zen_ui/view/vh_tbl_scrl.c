@@ -102,8 +102,8 @@ void vh_tbl_scrl_update(view_t* view)
 	    }
 
 	    r2_t frame = vh->vert_v->frame.local;
-	    frame.h += (hth - frame.h) / 1.5;
-	    frame.y += (pos - frame.y) / 1.5;
+	    frame.h += (hth - frame.h) / 1.4;
+	    frame.y += (pos - frame.y) / 1.4;
 
 	    view_set_frame(vh->vert_v, frame);
 	}
@@ -127,8 +127,8 @@ void vh_tbl_scrl_update(view_t* view)
 	    }
 
 	    r2_t frame = vh->hori_v->frame.local;
-	    frame.w += (wth - frame.w) / 1.5;
-	    frame.x += (pos - frame.x) / 1.5;
+	    frame.w += (wth - frame.w) / 1.4;
+	    frame.x += (pos - frame.x) / 1.4;
 
 	    view_set_frame(vh->hori_v, frame);
 	}

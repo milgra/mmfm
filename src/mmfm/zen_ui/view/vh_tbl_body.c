@@ -35,6 +35,9 @@ void vh_tbl_body_move(
     float   dx,
     float   dy);
 
+void vh_tbl_body_reset(
+    view_t* view);
+
 void vh_tbl_body_hjump(
     view_t* view,
     float   dx);
@@ -231,6 +234,28 @@ void vh_tbl_body_move(
 	if (frame.y < 0) vh->top_index = vh->head_index + index;
 	if (frame.y < view->frame.local.h) vh->bot_index = vh->head_index + index;
     }
+}
+
+void vh_tbl_body_reset(
+    view_t* view)
+{
+    vh_tbl_body_t* vh = view->handler_data;
+
+    for (int index = 0;
+	 index < vh->items->length;
+	 index++)
+    {
+	view_t* iview = vh->items->data[index];
+	if (vh->item_recycle) (*vh->item_recycle)(view, iview, vh->userdata);
+	view_remove_from_parent(iview);
+    }
+
+    vec_reset(vh->items);
+
+    vh->head_index = 0;
+    vh->tail_index = 0;
+    vh->top_index  = 0;
+    vh->bot_index  = 0;
 }
 
 void vh_tbl_body_hjump(

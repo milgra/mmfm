@@ -98,7 +98,7 @@ void vh_tbl_scrl_update(view_t* view)
 	    if (vh->state == 2)
 	    {
 		pos += hth / 2.0;
-		hth = 0.1;
+		hth = 10.0;
 	    }
 
 	    r2_t frame = vh->vert_v->frame.local;
@@ -123,7 +123,7 @@ void vh_tbl_scrl_update(view_t* view)
 	    if (vh->state == 2)
 	    {
 		pos += wth / 2.0;
-		wth = 0.1;
+		wth = 10.0;
 	    }
 
 	    r2_t frame = vh->hori_v->frame.local;
@@ -136,12 +136,10 @@ void vh_tbl_scrl_update(view_t* view)
 	if (vh->state > 0)
 	{
 	    vh->steps += 1;
-	    if (vh->steps == 4)
+	    if (vh->steps == 8)
 	    {
 		if (vh->state == 2)
 		{
-		    if (vh->vert_v->parent) view_remove_subview(view, vh->vert_v);
-		    if (vh->hori_v->parent) view_remove_subview(view, vh->hori_v);
 		}
 		vh->state = 0;
 	    }
@@ -154,8 +152,6 @@ void vh_tbl_scrl_show(view_t* view)
     vh_tbl_scrl_t* vh = view->handler_data;
     vh->state         = 1;
     vh->steps         = 0;
-    if (vh->vert_v->parent == NULL) view_add_subview(view, vh->vert_v);
-    if (vh->hori_v->parent == NULL) view_add_subview(view, vh->hori_v);
 }
 
 void vh_tbl_scrl_hide(view_t* view)

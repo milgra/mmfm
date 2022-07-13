@@ -272,14 +272,26 @@ void viewgen_css_apply(vec_t* views, char* csspath, char* respath)
 	    viewgen_css_apply_style(view, style, respath);
 	}
 
-	// apply class selector
-	char csscls[100] = {0};
-	snprintf(csscls, 100, ".%s", view->class);
-
-	style = MGET(styles, csscls);
-	if (style)
+	if (view->class)
 	{
-	    viewgen_css_apply_style(view, style, respath);
+
+	    // apply class selector
+	    char csscls[100] = {0};
+	    snprintf(csscls, 100, "%s", view->class);
+
+	    // tokenize if there is multiple classes
+	    char* token = strtok(csscls, " ");
+	    do
+	    {
+		char cls[100] = {0};
+		snprintf(cls, 100, ".%s", token);
+		style = MGET(styles, cls);
+		zc_log_debug("applying class %s to %s", cls, view->id);
+		if (style)
+		{
+		    viewgen_css_apply_style(view, style, respath);
+		}
+	    } while ((token = strtok(NULL, " ")));
 	}
     }
 }

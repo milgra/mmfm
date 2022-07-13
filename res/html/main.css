@@ -28,8 +28,6 @@
 }
 
 .tablebody {
-    height: 100%;
-    width: 100%;
     color: #000000FF;
     overflow: hidden;
     font-size: 16px;

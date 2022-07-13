@@ -84,6 +84,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/modules/zen_core/zc_memory.c',
 	       'src/modules/zen_core/zc_number.c',
 	       'src/modules/zen_core/zc_string.c',
+	       'src/modules/zen_core/zc_time.c',
 	       'src/modules/zen_core/zc_vector.c',
 	       'src/modules/zen_core/zc_wrapper.c',
 

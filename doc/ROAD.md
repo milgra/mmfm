@@ -2,7 +2,6 @@
 
 linelist component, text fileoknak es hexa viewnak
 OPEN, JUMP ( / ~ usb ) , EDIT ( move, copy, delete, new folder ) , SEARCH buttons
-function runtime measure function in core
 store table states
 media info
 file command for extension/file info

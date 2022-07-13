@@ -11,6 +11,7 @@
 #include "zc_log.c"
 #include "zc_map.c"
 #include "zc_path.c"
+#include "zc_time.c"
 #include <SDL.h>
 #include <getopt.h>
 #include <limits.h>
@@ -27,8 +28,10 @@ struct
 
 void init(int width, int height)
 {
-    player_init();          // DESTROY 0
+    player_init(); // DESTROY 0
+    zc_time(NULL);
     ui_init(width, height); // DESTROY 3
+    zc_time("ui init");
 
     if (mmfm.record)
     {
@@ -91,6 +94,7 @@ int main(int argc, char* argv[])
 {
     zc_log_use_colors(isatty(STDERR_FILENO));
     zc_log_level_info();
+    zc_time(NULL);
 
     printf("MultiMedia File Manager v" MMFM_VERSION " by Milan Toth ( www.milgra.com )\n");
 
@@ -217,6 +221,8 @@ int main(int argc, char* argv[])
 
     if (rec_path) REL(rec_path); // REL 14
     if (rep_path) REL(rep_path); // REL 15
+
+    zc_time("config parsing");
 
     wm_loop(init, update, render, destroy, frm_par);
 

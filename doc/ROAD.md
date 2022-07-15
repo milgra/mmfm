@@ -1,11 +1,14 @@
 # Zen Media development roadmap
 
-linelist component, text fileoknak es hexa viewnak
+media info
+
+vertical scroll guard in table
+horizontal scroll fix after resize
 OPEN, JUMP ( / ~ usb ) , EDIT ( move, copy, delete, new folder ) , SEARCH buttons
 store table states
-media info
-file command for extension/file info
 context menu
+linelist component, text fileoknak es hexa viewnak
+listen for folder change event
 
 - use linux file command for detailed file info
 - hexa viewer

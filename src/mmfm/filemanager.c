@@ -17,6 +17,7 @@ void fm_listdir(char* fm_path, map_t* files);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "cstr_util.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_path.c"
@@ -31,10 +32,12 @@ void fm_listdir(char* fm_path, map_t* files);
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 struct fm_t
 {
@@ -180,6 +183,15 @@ void fm_list(char* fm_path, map_t* files)
 		MPUTR(file, "last_access", cstr_new_format(20, "%li", sb.st_atime));
 		MPUTR(file, "last_modification", cstr_new_format(20, "%li", sb.st_mtime));
 		MPUTR(file, "last_status", cstr_new_format(20, "%li", sb.st_ctime));
+
+		char  buff[500];
+		char* mime    = cstr_new_cstring("");                              // REL 0
+		char* command = cstr_new_format(80, "file -b \"%s\"", dp->d_name); // REL 1
+		FILE* pipe    = popen(command, "r");                               // CLOSE 0
+		while (fgets(buff, sizeof(buff), pipe) != NULL) mime = cstr_append(mime, buff);
+		pclose(pipe); // CLOSE 0
+
+		MPUT(file, "mime", mime);
 
 		struct passwd* pws;
 		pws = getpwuid(sb.st_uid);

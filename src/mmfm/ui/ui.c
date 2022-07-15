@@ -388,6 +388,8 @@ void ui_init(float width, float height)
 
     VADDR(fields, cstr_new_cstring("basename"));
     VADDR(fields, num_new_int(100));
+    VADDR(fields, cstr_new_cstring("mime"));
+    VADDR(fields, num_new_int(200));
     VADDR(fields, cstr_new_cstring("path"));
     VADDR(fields, num_new_int(200));
     VADDR(fields, cstr_new_cstring("size"));

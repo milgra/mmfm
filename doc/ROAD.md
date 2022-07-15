@@ -1,7 +1,5 @@
 # Zen Media development roadmap
 
-media info
-
 vertical scroll guard in table
 horizontal scroll fix after resize
 OPEN, JUMP ( / ~ usb ) , EDIT ( move, copy, delete, new folder ) , SEARCH buttons

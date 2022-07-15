@@ -284,8 +284,8 @@ int coder_load_metadata_into(const char* path, map_t* map)
 		    memcpy(media_type, format->mime_type, slash - format->mime_type);
 		    memcpy(container, slash + 1, strlen(format->mime_type) - (slash - format->mime_type));
 
-		    MPUT(map, "file/media_type", media_type);
-		    MPUT(map, "file/container", container);
+		    MPUT(map, "media/media_type", media_type);
+		    MPUT(map, "media/container", container);
 
 		    REL(media_type); // REL 0
 		    REL(container);  // REL 1
@@ -297,7 +297,7 @@ int coder_load_metadata_into(const char* path, map_t* map)
 		return retv;
 	    }
 
-	    if (strcmp(MGET(map, "file/media_type"), "audio") != 0 && strcmp(MGET(map, "file/media_type"), "video") != 0)
+	    if (strcmp(MGET(map, "media/media_type"), "audio") != 0 && strcmp(MGET(map, "media/media_type"), "video") != 0)
 	    {
 		printf("not audio not video\n");
 		return retv;
@@ -328,13 +328,13 @@ int coder_load_metadata_into(const char* path, map_t* map)
 		int   dur   = pFormatCtx->duration / 1000000;
 		char* dur_s = CAL(10, NULL, cstr_describe);
 		snprintf(dur_s, 10, "%i:%.2i", (int) dur / 60, dur - (int) (dur / 60) * 60);
-		MPUT(map, "file/duration", dur_s);
+		MPUT(map, "media/duration", dur_s);
 		REL(dur_s);
 	    }
 	    else
 	    {
 		printf("coder_get_metadata no stream information found!!!\n");
-		MPUTR(map, "file/duration", cstr_new_cstring("0"));
+		MPUTR(map, "media/duration", cstr_new_cstring("0"));
 	    }
 
 	    for (unsigned i = 0; i < pFormatCtx->nb_streams; i++)
@@ -353,9 +353,9 @@ int coder_load_metadata_into(const char* path, map_t* map)
 			snprintf(bitrate, 10, "%li", param->bit_rate);
 			snprintf(samplerate, 10, "%i", param->sample_rate);
 
-			MPUTR(map, "file/channels", channels);      // REL 0
-			MPUTR(map, "file/bit_rate", bitrate);       // REL 1
-			MPUTR(map, "file/sample_rate", samplerate); // REL 2
+			MPUTR(map, "media/channels", channels);      // REL 0
+			MPUTR(map, "media/bit_rate", bitrate);       // REL 1
+			MPUTR(map, "media/sample_rate", samplerate); // REL 2
 		    }
 		}
 	    }

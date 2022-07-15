@@ -17,6 +17,7 @@ void fm_listdir(char* fm_path, map_t* files);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "coder.c"
 #include "cstr_util.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
@@ -184,6 +185,8 @@ void fm_list(char* fm_path, map_t* files)
 		MPUTR(file, "last_modification", cstr_new_format(20, "%li", sb.st_mtime));
 		MPUTR(file, "last_status", cstr_new_format(20, "%li", sb.st_ctime));
 
+		// get mime type with file command
+
 		char  buff[500];
 		char* mime    = cstr_new_cstring("");                              // REL 0
 		char* command = cstr_new_format(80, "file -b \"%s\"", dp->d_name); // REL 1
@@ -192,6 +195,10 @@ void fm_list(char* fm_path, map_t* files)
 		pclose(pipe); // CLOSE 0
 
 		MPUT(file, "mime", mime);
+
+		// get media metadata
+
+		coder_load_metadata_into(path, file);
 
 		struct passwd* pws;
 		pws = getpwuid(sb.st_uid);

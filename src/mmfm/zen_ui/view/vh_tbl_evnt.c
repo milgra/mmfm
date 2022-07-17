@@ -73,14 +73,25 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 		float dx = vh->sx;
 		float dy = vh->sy;
 
-		if (hth > view->frame.local.h && top > 0.001) dy -= top / 5.0;
-		if (hth > view->frame.local.h && bot < view->frame.local.h - 0.001) dy += (view->frame.local.h - bot) / 5.0;
+		if (top > 0.001) dy -= top / 5.0; // scroll back top item
+		if (bot < view->frame.local.h - 0.001)
+		{
+		    if (hth > view->frame.local.h)
+			dy += (view->frame.local.h - bot) / 5.0; // scroll back bottom item
+		    else
+			dy -= top / 5.0; // scroll back top item
+		}
 		if (lft > 0.01) dx -= lft / 5.0;
-		if (rgt < view->frame.local.w - 0.01) dx += (view->frame.local.w - rgt) / 5.0;
+		if (rgt < view->frame.local.w - 0.01)
+		{
+		    if (head->frame.local.w > view->frame.local.w)
+			dx += (view->frame.local.w - rgt) / 5.0;
+		    else
+			dx -= lft / 5.0;
+		}
 
 		vh_tbl_body_move(vh->tbody_view, dx, dy);
 		if (vh->thead_view) vh_tbl_head_move(vh->thead_view, dx);
-
 		if (vh->tscrl_view && vh->scroll_visible) vh_tbl_scrl_update(vh->tscrl_view);
 	    }
 

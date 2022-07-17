@@ -117,8 +117,8 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    vec_t* selected = userdata;
 	    map_t* info     = selected->data[0];
 
-	    char* type = MGET(info, "type");
-	    char* path = MGET(info, "path");
+	    char* type = MGET(info, "file/type");
+	    char* path = MGET(info, "file/path");
 
 	    if (strcmp(type, "directory") == 0)
 	    {

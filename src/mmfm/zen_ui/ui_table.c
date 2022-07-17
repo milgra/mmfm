@@ -96,6 +96,10 @@ void ui_table_head_align(ui_table_t* uit, int fixed_index, int fixed_pos)
 	    view_set_frame(cellview, frame);
 	    wth += frame.w;
 	}
+
+	r2_t frame = rowview->frame.local;
+	frame.w    = wth;
+	view_set_frame(rowview, frame);
     }
 }
 

@@ -112,6 +112,7 @@ int fm_exists(char* path)
 void fm_list(char* fm_path, map_t* files)
 {
     DIR* dirp = opendir(fm_path);
+    chdir(fm_path);
 
     if (dirp != NULL)
     {

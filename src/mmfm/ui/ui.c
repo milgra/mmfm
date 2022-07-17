@@ -56,8 +56,8 @@ int ui_comp_entry(void* left, void* right)
     map_t* l = left;
     map_t* r = right;
 
-    char* la = MGET(l, "basename");
-    char* ra = MGET(r, "basename");
+    char* la = MGET(l, "file/basename");
+    char* ra = MGET(r, "file/basename");
 
     if (la && ra)
     {

@@ -169,21 +169,24 @@ void fm_list(char* fm_path, map_t* files)
 
 		map_t* file = MNEW();
 
-		MPUTR(file, "type", cstr_new_cstring(type));
-		MPUTR(file, "path", cstr_new_format(PATH_MAX + NAME_MAX, "%s", path));
-		MPUTR(file, "basename", cstr_new_cstring(dp->d_name));
-		MPUTR(file, "device", cstr_new_format(20, "%li", sb.st_dev));
-		MPUTR(file, "size", cstr_new_format(20, "%li", sb.st_size));
-		MPUTR(file, "inode", cstr_new_format(20, "%li", sb.st_ino));
-		MPUTR(file, "links", cstr_new_format(20, "%li", sb.st_nlink));
-		MPUTR(file, "userid", cstr_new_format(20, "%li", sb.st_uid));
-		MPUTR(file, "groupid", cstr_new_format(20, "%li", sb.st_gid));
-		MPUTR(file, "deviceid", cstr_new_format(20, "%li", sb.st_rdev));
-		MPUTR(file, "blocksize", cstr_new_format(20, "%li", sb.st_blksize));
-		MPUTR(file, "blocks", cstr_new_format(20, "%li", sb.st_blocks));
-		MPUTR(file, "last_access", cstr_new_format(20, "%li", sb.st_atime));
-		MPUTR(file, "last_modification", cstr_new_format(20, "%li", sb.st_mtime));
-		MPUTR(file, "last_status", cstr_new_format(20, "%li", sb.st_ctime));
+		MPUTR(file, "file/type", cstr_new_cstring(type));
+		MPUTR(file, "file/path", cstr_new_format(PATH_MAX + NAME_MAX, "%s", path));
+		MPUTR(file, "file/basename", cstr_new_cstring(dp->d_name));
+		MPUTR(file, "file/device", cstr_new_format(20, "%li", sb.st_dev));
+		MPUTR(file, "file/size", cstr_new_format(20, "%li", sb.st_size));
+		MPUTR(file, "file/inode", cstr_new_format(20, "%li", sb.st_ino));
+		MPUTR(file, "file/links", cstr_new_format(20, "%li", sb.st_nlink));
+		MPUTR(file, "file/userid", cstr_new_format(20, "%li", sb.st_uid));
+		MPUTR(file, "file/groupid", cstr_new_format(20, "%li", sb.st_gid));
+		MPUTR(file, "file/deviceid", cstr_new_format(20, "%li", sb.st_rdev));
+		MPUTR(file, "file/blocksize", cstr_new_format(20, "%li", sb.st_blksize));
+		MPUTR(file, "file/blocks", cstr_new_format(20, "%li", sb.st_blocks));
+		struct tm* at = localtime(&sb.st_atime);
+		MPUTR(file, "file/last_access", cstr_new_format(100, "%s", asctime(at)));
+		struct tm* mt = localtime(&sb.st_mtime);
+		MPUTR(file, "file/last_modification", cstr_new_format(100, "%s", asctime(mt)));
+		struct tm* ct = localtime(&sb.st_ctime);
+		MPUTR(file, "file/last_status", cstr_new_format(100, "%s", asctime(ct)));
 
 		// get mime type with file command
 
@@ -194,7 +197,7 @@ void fm_list(char* fm_path, map_t* files)
 		while (fgets(buff, sizeof(buff), pipe) != NULL) mime = cstr_append(mime, buff);
 		pclose(pipe); // CLOSE 0
 
-		MPUT(file, "mime", mime);
+		MPUT(file, "file/mime", mime);
 
 		// get media metadata
 
@@ -203,12 +206,12 @@ void fm_list(char* fm_path, map_t* files)
 		struct passwd* pws;
 		pws = getpwuid(sb.st_uid);
 
-		MPUTR(file, "username", cstr_new_format(100, "%s", pws->pw_name));
+		MPUTR(file, "file/username", cstr_new_format(100, "%s", pws->pw_name));
 
 		struct group* grp;
 		grp = getgrgid(sb.st_gid);
 
-		MPUTR(file, "groupname", cstr_new_format(100, "%s", grp->gr_name));
+		MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name));
 
 		if (strcmp(dp->d_name, ".") != 0)
 		    MPUT(files, path, file); // use relative path as path

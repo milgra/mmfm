@@ -93,6 +93,7 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 
 	    vec_t* keys = VNEW();
 	    map_keys(info, keys);
+	    vec_sort(keys, VSD_ASC, ((int (*)(void*, void*)) strcmp));
 
 	    vec_t* items = VNEW();
 	    for (int index = 0; index < keys->length; index++)
@@ -385,20 +386,19 @@ void ui_init(float width, float height)
     // files table
 
     fields = VNEW();
-
-    VADDR(fields, cstr_new_cstring("basename"));
+    VADDR(fields, cstr_new_cstring("file/basename"));
     VADDR(fields, num_new_int(100));
-    VADDR(fields, cstr_new_cstring("mime"));
+    VADDR(fields, cstr_new_cstring("file/mime"));
     VADDR(fields, num_new_int(200));
-    VADDR(fields, cstr_new_cstring("path"));
+    VADDR(fields, cstr_new_cstring("file/path"));
     VADDR(fields, num_new_int(200));
-    VADDR(fields, cstr_new_cstring("size"));
+    VADDR(fields, cstr_new_cstring("file/size"));
     VADDR(fields, num_new_int(100));
-    VADDR(fields, cstr_new_cstring("last_access"));
+    VADDR(fields, cstr_new_cstring("file/last_access"));
     VADDR(fields, num_new_int(100));
-    VADDR(fields, cstr_new_cstring("last_modification"));
+    VADDR(fields, cstr_new_cstring("file/last_modification"));
     VADDR(fields, num_new_int(100));
-    VADDR(fields, cstr_new_cstring("last_status"));
+    VADDR(fields, cstr_new_cstring("file/last_status"));
     VADDR(fields, num_new_int(100));
 
     view_t* filelist       = view_get_subview(ui.view_base, "filelisttable");

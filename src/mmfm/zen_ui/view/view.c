@@ -157,7 +157,6 @@ struct _view_t
     char* id;        /* identifier for handling view */
     char* class;     /* css class(es) */
     char*    type;   /* html type (button,checkbox) */
-    uint32_t nth;    /* allocation counter for debugging */
     vec_t*   views;  /* subviews */
     view_t*  parent; /* parent view */
     uint32_t index;  /* depth */
@@ -241,7 +240,6 @@ view_t* view_new(char* id, r2_t frame)
 
     view_t* view            = CAL(sizeof(view_t), view_del, view_desc);
     view->id                = cstr_new_cstring(id);
-    view->nth               = view_cnt++;
     view->views             = VNEW();
     view->frame.local       = frame;
     view->frame.global      = frame;

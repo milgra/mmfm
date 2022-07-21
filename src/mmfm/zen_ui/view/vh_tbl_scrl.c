@@ -64,6 +64,9 @@ void vh_tbl_scrl_attach(
     vh->vert_v = RET(view->views->data[0]);
     vh->hori_v = RET(view->views->data[1]);
 
+    view_set_texture_alpha(vh->hori_v, 0.0, 0);
+    view_set_texture_alpha(vh->vert_v, 0.0, 0);
+
     view->handler_data = vh;
 }
 
@@ -151,11 +154,16 @@ void vh_tbl_scrl_update(view_t* view)
 
 void vh_tbl_scrl_show(view_t* view)
 {
-    vh_tbl_scrl_t* vh = view->handler_data;
-    vh->state         = 1;
-    vh->steps         = 0;
-    view_set_texture_alpha(vh->hori_v, 1.0, 0);
-    view_set_texture_alpha(vh->vert_v, 1.0, 0);
+    vh_tbl_scrl_t* vh  = view->handler_data;
+    vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
+
+    if (bvh->items->length > 0 && vh->item_cnt > 0)
+    {
+	vh->state = 1;
+	vh->steps = 0;
+	view_set_texture_alpha(vh->hori_v, 1.0, 0);
+	view_set_texture_alpha(vh->vert_v, 1.0, 0);
+    }
 }
 
 void vh_tbl_scrl_hide(view_t* view)

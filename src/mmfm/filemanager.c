@@ -17,11 +17,6 @@ void fm_listdir(char* fm_path, map_t* files);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "coder.c"
-#include "cstr_util.c"
-#include "zc_cstring.c"
-#include "zc_log.c"
-#include "zc_path.c"
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
@@ -39,6 +34,12 @@ void fm_listdir(char* fm_path, map_t* files);
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+
+#include "coder.c"
+#include "cstr_util.c"
+#include "zc_cstring.c"
+#include "zc_log.c"
+#include "zc_path.c"
 
 struct fm_t
 {

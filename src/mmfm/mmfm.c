@@ -1,7 +1,6 @@
 #include "config.c"
 #include "evrecorder.c"
 #include "filemanager.c"
-#include "player.c"
 #include "ui.c"
 #include "ui_compositor.c"
 #include "ui_manager.c"
@@ -12,6 +11,7 @@
 #include "zc_map.c"
 #include "zc_path.c"
 #include "zc_time.c"
+#include "zplayer.c"
 #include <SDL.h>
 #include <getopt.h>
 #include <limits.h>

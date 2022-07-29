@@ -38,6 +38,7 @@ add_project_arguments('-Wno-unused-but-set-variable', language: 'c')
 
 if get_option('buildtype').startswith('debug')
   add_project_arguments('-DDEBUG', language : 'c')
+#  add_project_arguments('-H', language : 'c')
 endif
 
 mmfm_inc = include_directories(
@@ -50,7 +51,7 @@ mmfm_inc = include_directories(
 	'src/modules/zen_gfx',
 	'src/modules/zen_core',
 	'src/mmfm/zen_wm',
-	'src/mmfm/player',
+	'src/mmfm/viewer',
 	'src/mmfm/zen_media_player',
 	'src/mmfm/coder',
 	'src/mmfm/zen_ui',
@@ -106,14 +107,14 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/mmfm/zen_media_player/frame.c',
 	       'src/mmfm/zen_media_player/options.c',
 	       'src/mmfm/zen_media_player/packet.c',
-	       'src/mmfm/zen_media_player/zplayer.c',
+	       'src/mmfm/zen_media_player/player.c',
 	       'src/mmfm/zen_media_player/render.c',
 	       'src/mmfm/zen_media_player/strcomm.c',
 	       'src/mmfm/zen_media_player/stream.c',
 	       'src/mmfm/zen_media_player/video.c',
 
 	       'src/mmfm/coder/coder.c',
-	       'src/mmfm/player/player.c',
+	       'src/mmfm/viewer/viewer.c',
 
 	       'src/mmfm/zen_wm/wm_connector.c',
 	       'src/mmfm/zen_wm/wm_event.c',

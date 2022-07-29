@@ -15,13 +15,13 @@ void ui_visualizer_show_pdf(char* path);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "pdf.c"
+#include "player.c"
 #include "vh_anim.c"
 #include "vh_button.c"
 #include "vh_roll.c"
 #include "zc_callback.c"
 #include "zc_draw.c"
 #include "zc_log.c"
-#include "zplayer.c"
 
 struct vizualizer_t
 {

@@ -27,6 +27,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "vh_drag.c"
 #include "vh_key.c"
 #include "view_layout.c"
+#include "viewer.c"
 #include "viewgen_css.c"
 #include "viewgen_html.c"
 #include "viewgen_type.c"
@@ -137,6 +138,8 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 		    ui_visualizer_show_pdf(path);
 		}
 	    }
+
+	    viewer_open(path);
 	}
 	break;
 	case UI_TABLE_EVENT_DRAG:

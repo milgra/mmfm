@@ -11,6 +11,7 @@ cc = meson.get_compiler('c')
 freetype = dependency('freetype2')
 math = cc.find_library('m')
 z = cc.find_library('z')
+bz2 = cc.find_library('bz2')
 rt = cc.find_library('rt')
 gl = cc.find_library('GL')
 glew = cc.find_library('GLEW')
@@ -29,8 +30,18 @@ avformat = cc.find_library('avformat')
 avfilter = cc.find_library('avfilter')
 swresample = cc.find_library('swresample')
 
+# for ffmpeg
+va = cc.find_library('va')
+x11 = cc.find_library('X11')
+lvadrm = cc.find_library('va-drm')
+lvax11 = cc.find_library('va-x11')
+lzma = cc.find_library('lzma')
+lvdpau = cc.find_library('vdpau')
+
 mupdf = cc.find_library('mupdf')
 mupdfthird = cc.find_library('mupdf-third')
+
+mmfm_dependencies = [rt, freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau]
 
 mmfm_version = '"@0@"'.format(meson.project_version())
 add_project_arguments('-DMMFM_VERSION=@0@'.format(mmfm_version), language: 'c')
@@ -154,7 +165,6 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/mmfm/zen_ui/ui_table.c',
 	       'src/mmfm/zen_ui/ui_util.c']
 
-mmfm_dependencies = [rt, freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,gumbo,mupdf,mupdfthird]
 
 executable(
   'mmfm',

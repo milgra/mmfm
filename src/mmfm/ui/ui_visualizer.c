@@ -3,6 +3,7 @@
 
 #include "view.c"
 
+void ui_visualizer_open(char* path);
 void ui_visualizer_attach(view_t* baseview);
 void ui_visualizer_detach();
 void ui_visualizer_update();
@@ -15,10 +16,10 @@ void ui_visualizer_show_pdf(char* path);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "pdf.c"
-#include "player.c"
 #include "vh_anim.c"
 #include "vh_button.c"
 #include "vh_roll.c"
+#include "viewer.c"
 #include "zc_callback.c"
 #include "zc_draw.c"
 #include "zc_log.c"
@@ -29,6 +30,7 @@ struct vizualizer_t
     view_t* visuleft;
     view_t* visuright;
     view_t* visuvideo;
+    void*   vs;
 } uiv;
 
 void ui_visualizer_on_roll_in(void* userdata, void* data);
@@ -63,10 +65,21 @@ void ui_visualizer_update()
     /* uiv.visuright->texture.changed = 1; */
 }
 
+void ui_visualizer_open(char* path)
+{
+    uiv.vs = viewer_open(path);
+}
+
 void ui_visualizer_update_video()
 {
-    player_draw_video(uiv.visuvideo->texture.bitmap, 3);
-    uiv.visuvideo->texture.changed = 1;
+    // player_draw_video(uiv.visuvideo->texture.bitmap, 3);
+
+    if (uiv.vs)
+    {
+	double rem;
+	video_refresh(uiv.vs, &rem, uiv.visuvideo->texture.bitmap);
+	uiv.visuvideo->texture.changed = 1;
+    }
 }
 
 void ui_visualizer_show_image(bm_rgba_t* bm)

@@ -139,7 +139,7 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 		}
 	    }
 
-	    viewer_open(path);
+	    ui_visualizer_open(path);
 	}
 	break;
 	case UI_TABLE_EVENT_DRAG:

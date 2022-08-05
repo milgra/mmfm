@@ -1,7 +1,10 @@
 #ifndef viewer_h
 #define viewer_h
 
-void viewer_open(char* path);
+#include "zc_bm_rgba.c"
+
+void* viewer_open(char* path);
+void  video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm);
 
 #endif
 
@@ -13,6 +16,9 @@ void viewer_open(char* path);
 #include "libavutil/frame.h"
 #include "libavutil/opt.h"
 #include "libavutil/time.h"
+#include "libswresample/swresample.h"
+#include "libswscale/swscale.h"
+#include "zc_draw.c"
 #include "zc_log.c"
 #include <SDL.h>
 #include <SDL_thread.h>
@@ -22,8 +28,23 @@ void viewer_open(char* path);
 #define SUBPICTURE_QUEUE_SIZE 16
 #define SAMPLE_QUEUE_SIZE 9
 #define FRAME_QUEUE_SIZE 16
-#define AV_NOSYNC_THRESHOLD 10.0
 #define MIN_FRAMES 25
+
+/* no AV sync correction is done if below the minimum AV sync threshold */
+#define AV_SYNC_THRESHOLD_MIN 0.04
+/* AV sync correction is done if above the maximum AV sync threshold */
+#define AV_SYNC_THRESHOLD_MAX 0.1
+/* If a frame duration is longer than this, it will not be duplicated to compensate AV sync */
+#define AV_SYNC_FRAMEDUP_THRESHOLD 0.1
+/* no AV correction is done if too big error */
+#define AV_NOSYNC_THRESHOLD 10.0
+
+/* external clock speed adjustment constants for realtime sources based on buffer fullness */
+#define EXTERNAL_CLOCK_SPEED_MIN 0.900
+#define EXTERNAL_CLOCK_SPEED_MAX 1.010
+#define EXTERNAL_CLOCK_SPEED_STEP 0.001
+#define EXTERNAL_CLOCK_MIN_FRAMES 2
+#define EXTERNAL_CLOCK_MAX_FRAMES 10
 
 static int     decoder_reorder_pts = -1;
 static int     framedrop           = -1; // drop frames on slow cpu
@@ -32,6 +53,10 @@ static int64_t start_time          = AV_NOPTS_VALUE;
 static int64_t duration            = AV_NOPTS_VALUE;
 static int     autoexit            = -1;
 static int     loop                = 1;
+double         rdftspeed1          = 0.02;
+uint8_t*       scaledpixels[1];
+int            scaledw = 0;
+int            scaledh = 0;
 
 enum
 {
@@ -118,7 +143,7 @@ typedef struct Decoder
 
 typedef struct VideoState
 {
-    AVFormatContext*     ic;
+    AVFormatContext*     ic;       // internal context?
     FrameQueue           pictq;    // frame queue for video
     PacketQueue          videoq;   // pcaket queue for video
     Clock                vidclk;   // clock for video
@@ -148,10 +173,27 @@ typedef struct VideoState
     int64_t              seek_rel;
     int                  step;
     double               frame_timer;
-
+    int                  force_refresh;
+    double               last_vis_time;
+    struct SwsContext*   img_convert_ctx;
 } VideoState;
 
 AVDictionary *format_optsn, *codec_optsn;
+
+static double get_clock(Clock* c)
+{
+    if (*c->queue_serial != c->serial)
+	return NAN;
+    if (c->paused)
+    {
+	return c->pts;
+    }
+    else
+    {
+	double time = av_gettime_relative() / 1000000.0;
+	return c->pts_drift + time - (time - c->last_updated) * (1.0 - c->speed);
+    }
+}
 
 static void set_clock_at(Clock* c, double pts, int serial, double time)
 {
@@ -174,6 +216,29 @@ static void init_clock(Clock* c, int* queue_serial)
     c->queue_serial = queue_serial;
     set_clock(c, NAN, -1);
 }
+static void set_clock_speed(Clock* c, double speed)
+{
+    set_clock(c, get_clock(c), c->serial);
+    c->speed = speed;
+}
+
+static void check_external_clock_speed(VideoState* is)
+{
+    if (is->video_stream >= 0 && is->videoq.nb_packets <= EXTERNAL_CLOCK_MIN_FRAMES)
+    {
+	set_clock_speed(&is->extclk, FFMAX(EXTERNAL_CLOCK_SPEED_MIN, is->extclk.speed - EXTERNAL_CLOCK_SPEED_STEP));
+    }
+    else if (is->video_stream < 0 || is->videoq.nb_packets > EXTERNAL_CLOCK_MAX_FRAMES)
+    {
+	set_clock_speed(&is->extclk, FFMIN(EXTERNAL_CLOCK_SPEED_MAX, is->extclk.speed + EXTERNAL_CLOCK_SPEED_STEP));
+    }
+    else
+    {
+	double speed = is->extclk.speed;
+	if (speed != 1.0)
+	    set_clock_speed(&is->extclk, speed + EXTERNAL_CLOCK_SPEED_STEP * (1.0 - speed) / fabs(1.0 - speed));
+    }
+}
 
 static int get_master_sync_type(VideoState* is)
 {
@@ -187,21 +252,6 @@ static int get_master_sync_type(VideoState* is)
     else
     {
 	return AV_SYNC_EXTERNAL_CLOCK;
-    }
-}
-
-static double get_clock(Clock* c)
-{
-    if (*c->queue_serial != c->serial)
-	return NAN;
-    if (c->paused)
-    {
-	return c->pts;
-    }
-    else
-    {
-	double time = av_gettime_relative() / 1000000.0;
-	return c->pts_drift + time - (time - c->last_updated) * (1.0 - c->speed);
     }
 }
 
@@ -220,6 +270,11 @@ static double get_master_clock(VideoState* is)
 	    break;
     }
     return val;
+}
+
+static void frame_queue_unref_item(Frame* vp)
+{
+    av_frame_unref(vp->frame);
 }
 
 static int frame_queue_init(FrameQueue* f, PacketQueue* pktq, int max_size, int keep_last)
@@ -493,6 +548,21 @@ static int decoder_start(Decoder* d, int (*fn)(void*), const char* thread_name, 
     return 0;
 }
 
+static Frame* frame_queue_peek(FrameQueue* f)
+{
+    return &f->queue[(f->rindex + f->rindex_shown) % f->max_size];
+}
+
+static Frame* frame_queue_peek_next(FrameQueue* f)
+{
+    return &f->queue[(f->rindex + f->rindex_shown + 1) % f->max_size];
+}
+
+static Frame* frame_queue_peek_last(FrameQueue* f)
+{
+    return &f->queue[f->rindex];
+}
+
 static Frame* frame_queue_peek_writable(FrameQueue* f)
 {
     /* wait until we have space to put a new frame */
@@ -516,6 +586,21 @@ static void frame_queue_push(FrameQueue* f)
 	f->windex = 0;
     SDL_LockMutex(f->mutex);
     f->size++;
+    SDL_CondSignal(f->cond);
+    SDL_UnlockMutex(f->mutex);
+}
+static void frame_queue_next(FrameQueue* f)
+{
+    if (f->keep_last && !f->rindex_shown)
+    {
+	f->rindex_shown = 1;
+	return;
+    }
+    frame_queue_unref_item(&f->queue[f->rindex]);
+    if (++f->rindex == f->max_size)
+	f->rindex = 0;
+    SDL_LockMutex(f->mutex);
+    f->size--;
     SDL_CondSignal(f->cond);
     SDL_UnlockMutex(f->mutex);
 }
@@ -1199,7 +1284,7 @@ static int read_thread(void* arg)
     return 0;
 }
 
-void viewer_open(char* path)
+void* viewer_open(char* path)
 {
     zc_log_debug("viewer_open %s", path);
 
@@ -1234,6 +1319,225 @@ void viewer_open(char* path)
 	    zc_log_error("SDL_CreateThread(): %s\n", SDL_GetError());
 	}
     }
+
+    return is;
+}
+
+static void sync_clock_to_slave(Clock* c, Clock* slave)
+{
+    double clock       = get_clock(c);
+    double slave_clock = get_clock(slave);
+    if (!isnan(slave_clock) && (isnan(clock) || fabs(clock - slave_clock) > AV_NOSYNC_THRESHOLD))
+	set_clock(c, slave_clock, slave->serial);
+}
+
+static void update_video_pts(VideoState* is, double pts, int64_t pos, int serial)
+{
+    /* update current video pts */
+    set_clock(&is->vidclk, pts, serial);
+    sync_clock_to_slave(&is->extclk, &is->vidclk);
+}
+static double compute_target_delay(double delay, VideoState* is)
+{
+    double sync_threshold, diff = 0;
+
+    /* update delay to follow master synchronisation source */
+    if (get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER)
+    {
+	/* if video is slave, we try to correct big delays by
+	   duplicating or deleting a frame */
+	diff = get_clock(&is->vidclk) - get_master_clock(is);
+
+	/* skip or repeat frame. We take into account the
+	   delay to compute the threshold. I still don't know
+	   if it is the best guess */
+	sync_threshold = FFMAX(AV_SYNC_THRESHOLD_MIN, FFMIN(AV_SYNC_THRESHOLD_MAX, delay));
+	if (!isnan(diff) && fabs(diff) < is->max_frame_duration)
+	{
+	    if (diff <= -sync_threshold)
+		delay = FFMAX(0, delay + diff);
+	    else if (diff >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD)
+		delay = delay + diff;
+	    else if (diff >= sync_threshold)
+		delay = 2 * delay;
+	}
+    }
+
+    av_log(NULL, AV_LOG_TRACE, "video: delay=%0.3f A-V=%f\n", delay, -diff);
+
+    return delay;
+}
+
+static double vp_duration(VideoState* is, Frame* vp, Frame* nextvp)
+{
+    if (vp->serial == nextvp->serial)
+    {
+	double duration = nextvp->pts - vp->pts;
+	if (isnan(duration) || duration <= 0 || duration > is->max_frame_duration)
+	    return vp->duration;
+	else
+	    return duration;
+    }
+    else
+    {
+	return 0.0;
+    }
+}
+
+static unsigned sws_flags = SWS_BICUBIC;
+
+static int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_convert_ctx, bm_rgba_t* bm)
+{
+    int ret = 0;
+
+    zc_log_debug("upload texture frame %i %i bitmap %i %i", frame->width, frame->height, bm->w, bm->h);
+
+    *img_convert_ctx = sws_getCachedContext(*img_convert_ctx, frame->width, frame->height, frame->format, bm->w, bm->h, AV_PIX_FMT_BGR32, sws_flags, NULL, NULL, NULL);
+
+    if (*img_convert_ctx != NULL)
+    {
+	// uint8_t* pixels[4];
+	int pitch[4];
+
+	pitch[0] = bm->w * 4;
+	sws_scale(*img_convert_ctx, (const uint8_t* const*) frame->data, frame->linesize, 0, frame->height, scaledpixels, pitch);
+
+	if (bm)
+	{
+	    gfx_insert_rgb(bm, scaledpixels[0], bm->w, bm->h, 0, 0);
+	}
+	else
+	{
+	    // gl_upload_to_texture(index, 0, 0, w, h, scaledpixelsn[0]);
+	}
+    }
+    return ret;
+}
+
+static void video_image_display(VideoState* is, bm_rgba_t* bm)
+{
+    Frame*   vp;
+    Frame*   sp = NULL;
+    SDL_Rect rect;
+
+    vp = frame_queue_peek_last(&is->pictq);
+
+    if (!vp->uploaded)
+    {
+	if (upload_texture(NULL, vp->frame, &is->img_convert_ctx, bm) < 0)
+	{
+	    return;
+	}
+	vp->uploaded = 1;
+	vp->flip_v   = vp->frame->linesize[0] < 0;
+    }
+}
+
+/* display the current picture, if any */
+static void video_display(VideoState* is, bm_rgba_t* bm)
+{
+    if (is->video_st) video_image_display(is, bm);
+}
+
+/* called to display each frame */
+void video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm)
+{
+    VideoState* is = opaque;
+    double      time;
+
+    Frame *sp, *sp2;
+
+    if (!is->paused && get_master_sync_type(is) == AV_SYNC_EXTERNAL_CLOCK && is->realtime)
+	check_external_clock_speed(is);
+
+    time = av_gettime_relative() / 1000000.0;
+    if (is->force_refresh || is->last_vis_time + rdftspeed1 < time)
+    {
+	video_display(is, bm);
+	is->last_vis_time = time;
+    }
+    *remaining_time = FFMIN(*remaining_time, is->last_vis_time + rdftspeed1 - time);
+
+    if (is->video_st)
+    {
+	if (scaledw != bm->w || scaledh != bm->h)
+	{
+	    if (scaledw > 0 || scaledh > 0) free(scaledpixels[0]);
+
+	    scaledw         = bm->w;
+	    scaledh         = bm->h;
+	    scaledpixels[0] = malloc(bm->w * bm->h * 4);
+	}
+
+    retry:
+	if (frame_queue_nb_remaining(&is->pictq) == 0)
+	{
+	    // nothing to do, no picture to display in the queue
+	}
+	else
+	{
+	    double last_duration, duration, delay;
+	    Frame *vp, *lastvp;
+
+	    /* dequeue the picture */
+	    lastvp = frame_queue_peek_last(&is->pictq);
+	    vp     = frame_queue_peek(&is->pictq);
+
+	    if (vp->serial != is->videoq.serial)
+	    {
+		frame_queue_next(&is->pictq);
+		goto retry;
+	    }
+
+	    if (lastvp->serial != vp->serial)
+		is->frame_timer = av_gettime_relative() / 1000000.0;
+
+	    if (is->paused)
+		goto display;
+
+	    /* compute nominal last_duration */
+	    last_duration = vp_duration(is, lastvp, vp);
+	    delay         = compute_target_delay(last_duration, is);
+
+	    time = av_gettime_relative() / 1000000.0;
+	    if (time < is->frame_timer + delay)
+	    {
+		*remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
+		goto display;
+	    }
+
+	    is->frame_timer += delay;
+	    if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX)
+		is->frame_timer = time;
+
+	    SDL_LockMutex(is->pictq.mutex);
+	    if (!isnan(vp->pts))
+		update_video_pts(is, vp->pts, vp->pos, vp->serial);
+	    SDL_UnlockMutex(is->pictq.mutex);
+
+	    if (frame_queue_nb_remaining(&is->pictq) > 1)
+	    {
+		Frame* nextvp = frame_queue_peek_next(&is->pictq);
+		duration      = vp_duration(is, vp, nextvp);
+		if (!is->step && (framedrop > 0 || (framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER)) && time > is->frame_timer + duration)
+		{
+		    is->frame_drops_late++;
+		    frame_queue_next(&is->pictq);
+		    goto retry;
+		}
+	    }
+
+	    frame_queue_next(&is->pictq);
+	    is->force_refresh = 1;
+
+	    if (is->step && !is->paused)
+		stream_toggle_pause(is);
+	}
+    display:
+	/* display picture */
+	if (is->force_refresh && is->pictq.rindex_shown) video_display(is, bm);
+    }
+    is->force_refresh = 0;
 }
 
 #endif

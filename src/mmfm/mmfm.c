@@ -1,7 +1,6 @@
 #include "config.c"
 #include "evrecorder.c"
 #include "filemanager.c"
-#include "player.c"
 #include "ui.c"
 #include "ui_compositor.c"
 #include "ui_manager.c"
@@ -28,7 +27,6 @@ struct
 
 void init(int width, int height)
 {
-    player_init(); // DESTROY 0
     zc_time(NULL);
     ui_init(width, height); // DESTROY 3
     zc_time("ui init");
@@ -49,6 +47,7 @@ void update(ev_t ev)
 {
     if (ev.type == EV_TIME)
     {
+	ui_visualizer_update_video();
 
 	if (mmfm.replay)
 	{
@@ -86,8 +85,7 @@ void destroy()
     if (mmfm.replay) evrec_destroy(); // DESTROY 5
     if (mmfm.record) evrec_destroy(); // DESTROY 4
 
-    ui_destroy();     // DESTROY 3
-    player_destroy(); // DESTROY 0
+    ui_destroy(); // DESTROY 3
 }
 
 int main(int argc, char* argv[])

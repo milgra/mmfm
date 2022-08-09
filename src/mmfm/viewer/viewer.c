@@ -48,17 +48,15 @@ void  video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm);
 #define EXTERNAL_CLOCK_MIN_FRAMES 2
 #define EXTERNAL_CLOCK_MAX_FRAMES 10
 
-static int     decoder_reorder_pts = -1;
-static int     framedrop           = -1; // drop frames on slow cpu
-static int     infinite_buffer     = -1;
-static int64_t start_time          = AV_NOPTS_VALUE;
-static int64_t duration            = AV_NOPTS_VALUE;
-static int     autoexit            = -1;
-static int     loop                = 1;
-double         rdftspeed1          = 0.02;
-uint8_t*       scaledpixels[1];
-int            scaledw = 0;
-int            scaledh = 0;
+static int decoder_reorder_pts = -1;
+static int framedrop           = -1; // drop frames on slow cpu
+static int infinite_buffer     = -1;
+static int autoexit            = -1;
+static int loop                = 1;
+double     rdftspeed1          = 0.02;
+uint8_t*   scaledpixels[1];
+int        scaledw = 0;
+int        scaledh = 0;
 
 enum
 {
@@ -87,7 +85,8 @@ typedef struct Decoder
 typedef struct MediaState
 {
     char*            filename;
-    AVFormatContext* format; // format context
+    AVFormatContext* format;      // format context
+    SDL_Thread*      read_thread; // thread for video
 
     Clock vidclk; // clock for video
     Clock audclk; // clock for audio
@@ -96,45 +95,47 @@ typedef struct MediaState
     FrameQueue  vidfq; // frame queue for video, contains complete frames
     PacketQueue vidpq; // pcaket queue for video, packets contain compressed data, one frame per packet in case of video
 
-    SDL_Thread* read_thread; // thread for video
-
     Decoder viddec; // video decoder
 
-    int                abort_request;
-    double             max_frame_duration; // maximum duration of a frame - above this, we consider the jump a timestamp discontinuity
-    int                realtime;           // realtime stream? needed for clock readjustment
-    int                eof;                // end of file reached
-    int                video_stream;
-    AVStream*          video_st;
-    int                queue_attachments_req;
-    SDL_cond*          continue_read_thread;
-    int                av_sync_type;
-    double             frame_last_filter_delay;
-    int                frame_drops_early;
-    int                frame_drops_late;
-    int                paused;
-    int                last_paused;
-    int                read_pause_return;
-    int                seek_req;
-    int                seek_flags;
-    int64_t            seek_pos;
-    int64_t            seek_rel;
-    int                step;
-    double             frame_timer;
-    int                force_refresh;
-    double             last_vis_time;
-    struct SwsContext* img_convert_ctx;
+    AVStream* vidst;       // video stream
+    int       vidst_index; // video stream index
+
+    int check_attachment; // check for video attachment after open and seek
+
+    int    abort_request;
+    double max_frame_duration; // maximum duration of a frame - above this, we consider the jump a timestamp discontinuity
+    int    realtime;           // realtime stream? needed for clock readjustment
+    int    eof;                // end of file reached
+
+    SDL_cond* continue_read_thread;
+    int       av_sync_type;
+    double    frame_last_filter_delay;
+    int       frame_drops_early;
+    int       frame_drops_late;
+    int       paused;
+    int       last_paused;
+    int       read_pause_return;
+    int       seek_req;
+    int       seek_flags;
+    int64_t   seek_pos;
+    int64_t   seek_rel;
+    int       step;
+    double    frame_timer;
+    int       force_refresh;
+    double    last_vis_time;
+
+    struct SwsContext* img_convert_ctx; // image conversion context for scaling on upload
 } MediaState;
 
 AVDictionary *format_optsn, *codec_optsn;
 
 static void check_external_clock_speed(MediaState* ms)
 {
-    if (ms->video_stream >= 0 && ms->vidpq.nb_packets <= EXTERNAL_CLOCK_MIN_FRAMES)
+    if (ms->vidst_index >= 0 && ms->vidpq.nb_packets <= EXTERNAL_CLOCK_MIN_FRAMES)
     {
 	clock_set_speed(&ms->extclk, FFMAX(EXTERNAL_CLOCK_SPEED_MIN, ms->extclk.speed - EXTERNAL_CLOCK_SPEED_STEP));
     }
-    else if (ms->video_stream < 0 || ms->vidpq.nb_packets > EXTERNAL_CLOCK_MAX_FRAMES)
+    else if (ms->vidst_index < 0 || ms->vidpq.nb_packets > EXTERNAL_CLOCK_MAX_FRAMES)
     {
 	clock_set_speed(&ms->extclk, FFMIN(EXTERNAL_CLOCK_SPEED_MAX, ms->extclk.speed + EXTERNAL_CLOCK_SPEED_STEP));
     }
@@ -150,7 +151,7 @@ static int get_master_sync_type(MediaState* ms)
 {
     if (ms->av_sync_type == AV_SYNC_VIDEO_MASTER)
     {
-	if (ms->video_st)
+	if (ms->vidst)
 	    return AV_SYNC_VIDEO_MASTER;
 	else
 	    return AV_SYNC_AUDIO_MASTER;
@@ -186,8 +187,7 @@ static void stream_seek(MediaState* ms, int64_t pos, int64_t rel, int by_bytes)
 	ms->seek_pos = pos;
 	ms->seek_rel = rel;
 	ms->seek_flags &= ~AVSEEK_FLAG_BYTE;
-	if (by_bytes)
-	    ms->seek_flags |= AVSEEK_FLAG_BYTE;
+	if (by_bytes) ms->seek_flags |= AVSEEK_FLAG_BYTE;
 	ms->seek_req = 1;
 	SDL_CondSignal(ms->continue_read_thread);
     }
@@ -507,9 +507,9 @@ static int get_video_frame(MediaState* ms, AVFrame* frame)
 	double dpts = NAN;
 
 	if (frame->pts != AV_NOPTS_VALUE)
-	    dpts = av_q2d(ms->video_st->time_base) * frame->pts;
+	    dpts = av_q2d(ms->vidst->time_base) * frame->pts;
 
-	frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(ms->format, ms->video_st, frame);
+	frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(ms->format, ms->vidst, frame);
 
 	if (framedrop > 0 || (framedrop && get_master_sync_type(ms) != AV_SYNC_VIDEO_MASTER))
 	{
@@ -541,11 +541,10 @@ static int video_thread(void* arg)
     double      pts;
     double      duration;
     int         ret;
-    AVRational  tb         = ms->video_st->time_base;
-    AVRational  frame_rate = av_guess_frame_rate(ms->format, ms->video_st, NULL);
+    AVRational  tb         = ms->vidst->time_base;
+    AVRational  frame_rate = av_guess_frame_rate(ms->format, ms->vidst, NULL);
 
-    if (!frame)
-	return AVERROR(ENOMEM);
+    if (!frame) return AVERROR(ENOMEM);
 
     for (;;)
     {
@@ -655,8 +654,8 @@ static int stream_component_open(MediaState* ms, int stream_index)
 			case AVMEDIA_TYPE_AUDIO:
 			    break;
 			case AVMEDIA_TYPE_VIDEO:
-			    ms->video_stream = stream_index;
-			    ms->video_st     = format->streams[stream_index];
+			    ms->vidst_index = stream_index;
+			    ms->vidst       = format->streams[stream_index];
 
 			    ret = decoder_init(&ms->viddec, avctx, &ms->vidpq, ms->continue_read_thread);
 
@@ -666,7 +665,7 @@ static int stream_component_open(MediaState* ms, int stream_index)
 
 				if (ret >= 0)
 				{
-				    ms->queue_attachments_req = 1;
+				    ms->check_attachment = 1;
 				}
 				else
 				    zc_log_debug("Cannot start decoder");
@@ -848,7 +847,7 @@ static int read_thread(void* arg)
 			    }
 			    else
 			    {
-				if (ms->video_stream >= 0)
+				if (ms->vidst_index >= 0)
 				    packet_queue_flush(&ms->vidpq);
 
 				if (ms->seek_flags & AVSEEK_FLAG_BYTE)
@@ -860,28 +859,28 @@ static int read_thread(void* arg)
 				    clock_set(&ms->extclk, seek_target / (double) AV_TIME_BASE, 0);
 				}
 			    }
-			    ms->seek_req              = 0;
-			    ms->queue_attachments_req = 1;
-			    ms->eof                   = 0;
+			    ms->seek_req         = 0;
+			    ms->check_attachment = 1;
+			    ms->eof              = 0;
 			    if (ms->paused)
 				step_to_next_frame(ms);
 			}
 
-			if (ms->queue_attachments_req)
+			if (ms->check_attachment)
 			{
-			    if (ms->video_st && ms->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC)
+			    if (ms->vidst && ms->vidst->disposition & AV_DISPOSITION_ATTACHED_PIC)
 			    {
-				if ((ret = av_packet_ref(pkt, &ms->video_st->attached_pic)) < 0)
+				if ((ret = av_packet_ref(pkt, &ms->vidst->attached_pic)) < 0)
 				    zc_log_error("cannot ref packet");
 				packet_queue_put(&ms->vidpq, pkt);
-				packet_queue_put_nullpacket(&ms->vidpq, pkt, ms->video_stream);
+				packet_queue_put_nullpacket(&ms->vidpq, pkt, ms->vidst_index);
 			    }
-			    ms->queue_attachments_req = 0;
+			    ms->check_attachment = 0;
 			}
 
 			/* if the queue are full, no need to read more */
 			if (infinite_buffer < 1 &&
-			    (ms->vidpq.size > MAX_QUEUE_SIZE || stream_has_enough_packets(ms->video_st, ms->video_stream, &ms->vidpq)))
+			    (ms->vidpq.size > MAX_QUEUE_SIZE || stream_has_enough_packets(ms->vidst, ms->vidst_index, &ms->vidpq)))
 			{
 			    /* wait 10 ms */
 			    SDL_LockMutex(wait_mutex);
@@ -891,11 +890,11 @@ static int read_thread(void* arg)
 			}
 
 			if (!ms->paused &&
-			    (!ms->video_st || (ms->viddec.finished == ms->vidpq.serial && frame_queue_nb_remaining(&ms->vidfq) == 0)))
+			    (!ms->vidst || (ms->viddec.finished == ms->vidpq.serial && frame_queue_nb_remaining(&ms->vidfq) == 0)))
 			{
 			    if (loop != 1 && (!loop || --loop))
 			    {
-				stream_seek(ms, start_time != AV_NOPTS_VALUE ? start_time : 0, 0, 0);
+				stream_seek(ms, 0, 0, 0);
 			    }
 			    else if (autoexit)
 			    {
@@ -909,8 +908,8 @@ static int read_thread(void* arg)
 			{
 			    if ((ret == AVERROR_EOF || avio_feof(format->pb)) && !ms->eof)
 			    {
-				if (ms->video_stream >= 0)
-				    packet_queue_put_nullpacket(&ms->vidpq, pkt, ms->video_stream);
+				if (ms->vidst_index >= 0)
+				    packet_queue_put_nullpacket(&ms->vidpq, pkt, ms->vidst_index);
 				ms->eof = 1;
 			    }
 			    if (format->pb && format->pb->error)
@@ -930,16 +929,9 @@ static int read_thread(void* arg)
 			    ms->eof = 0;
 			}
 			/* check if packet is in play range specified by user, then queue, otherwise discard */
-			int64_t stream_start_time = format->streams[pkt->stream_index]->start_time;
-			int64_t pkt_ts            = pkt->pts == AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
-			int     pkt_in_play_range = duration == AV_NOPTS_VALUE ||
-						(pkt_ts - (stream_start_time != AV_NOPTS_VALUE ? stream_start_time : 0)) * av_q2d(format->streams[pkt->stream_index]->time_base) -
-							(double) (start_time != AV_NOPTS_VALUE ? start_time : 0) / 1000000 <=
-						    ((double) duration / 1000000);
 
-			if (pkt->stream_index == ms->video_stream &&
-			    pkt_in_play_range &&
-			    !(ms->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC))
+			if (pkt->stream_index == ms->vidst_index &&
+			    !(ms->vidst->disposition & AV_DISPOSITION_ATTACHED_PIC))
 			{
 			    packet_queue_put(&ms->vidpq, pkt);
 			}
@@ -989,8 +981,7 @@ void* viewer_open(char* path)
 
 	ms->continue_read_thread = SDL_CreateCond();
 
-	if (ms->continue_read_thread == NULL)
-	    zc_log_error("cannot create sdl cond");
+	if (ms->continue_read_thread == NULL) zc_log_error("cannot create sdl cond");
 
 	clock_init(&ms->vidclk, &ms->vidpq.serial);
 	clock_init(&ms->extclk, &ms->extclk.serial);
@@ -1124,7 +1115,7 @@ static void video_image_display(MediaState* ms, bm_rgba_t* bm)
 /* display the current picture, if any */
 static void video_display(MediaState* ms, bm_rgba_t* bm)
 {
-    if (ms->video_st) video_image_display(ms, bm);
+    if (ms->vidst) video_image_display(ms, bm);
 }
 
 /* called to display each frame */
@@ -1146,7 +1137,7 @@ void video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm)
     }
     *remaining_time = FFMIN(*remaining_time, ms->last_vis_time + rdftspeed1 - time);
 
-    if (ms->video_st)
+    if (ms->vidst)
     {
 	if (scaledw != bm->w || scaledh != bm->h)
 	{

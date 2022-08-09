@@ -327,7 +327,7 @@ int coder_load_metadata_into(const char* path, map_t* map)
 	    {
 		int   dur   = pFormatCtx->duration / 1000000;
 		char* dur_s = CAL(10, NULL, cstr_describe);
-		snprintf(dur_s, 10, "%i:%.2i", (int) dur / 60, dur - (int) (dur / 60) * 60);
+		snprintf(dur_s, 10, "%i:%.2i", (short) dur / 60, dur - (short) (dur / 60) * 60);
 		MPUT(map, "media/duration", dur_s);
 		REL(dur_s);
 	    }
@@ -349,7 +349,7 @@ int coder_load_metadata_into(const char* path, map_t* map)
 			char* bitrate    = CAL(10, NULL, cstr_describe); // REL 1
 			char* samplerate = CAL(10, NULL, cstr_describe); // REL 2
 
-			snprintf(channels, 10, "%i", param->channels);
+			snprintf(channels, 10, "%i", param->ch_layout.nb_channels);
 			snprintf(bitrate, 10, "%li", param->bit_rate);
 			snprintf(samplerate, 10, "%i", param->sample_rate);
 
@@ -445,7 +445,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* dat
 				switch (param->codec_type)
 				{
 				    case AVMEDIA_TYPE_VIDEO: printf("Video Codec: resolution %d x %d\n", param->width, param->height); break;
-				    case AVMEDIA_TYPE_AUDIO: printf("Audio Codec: %d channels, sample rate %d\n", param->channels, param->sample_rate); break;
+				    case AVMEDIA_TYPE_AUDIO: printf("Audio Codec: %d channels, sample rate %d\n", param->ch_layout.nb_channels, param->sample_rate); break;
 				    default: printf("Other codec: %i\n", param->codec_type); break;
 				}
 
@@ -507,7 +507,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* dat
 					    switch (param->codec_type)
 					    {
 						case AVMEDIA_TYPE_VIDEO: printf("Video Codec: resolution %d x %d\n", param->width, param->height); break;
-						case AVMEDIA_TYPE_AUDIO: printf("Audio Codec: %d channels, sample rate %d\n", param->channels, param->sample_rate); break;
+						case AVMEDIA_TYPE_AUDIO: printf("Audio Codec: %d channels, sample rate %d\n", param->ch_layout.nb_channels, param->sample_rate); break;
 						default: printf("Other codec: %i\n", param->codec_type); break;
 					    }
 
@@ -708,8 +708,8 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* dat
 
 int coder_write_png(char* path, bm_rgba_t* bm)
 {
-    int            success;
-    const AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_PNG);
+    int            success = 0;
+    const AVCodec* codec   = avcodec_find_encoder(AV_CODEC_ID_PNG);
     if (codec)
     {
 	AVCodecContext* enc_ctx = avcodec_alloc_context3(codec); // FREE 0

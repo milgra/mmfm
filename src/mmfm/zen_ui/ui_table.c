@@ -234,9 +234,9 @@ view_t* ui_table_item_create(
 
 		for (int i = 0; i < uit->fields->length; i += 2)
 		{
-		    char*   field    = uit->fields->data[i];
-		    num_t*  size     = uit->fields->data[i + 1];
-		    char*   value    = MGET(data, field);
+		    char*  field = uit->fields->data[i];
+		    num_t* size  = uit->fields->data[i + 1];
+		    // char*   value    = MGET(data, field);
 		    char*   cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field);   // REL 2
 		    view_t* cellview = view_new(cellid, (r2_t){wth + 1, 0, size->intv - 2, 20}); // REL 3
 
@@ -343,8 +343,8 @@ void ui_table_evnt_event(view_t* view, view_t* rowview, vh_tbl_evnt_event_t type
     }
     if (type == VH_TBL_EVENT_OPEN)
     {
-	map_t*   data = uit->items->data[index];
-	uint32_t pos  = vec_index_of_data(uit->selected, data);
+	// map_t* data = uit->items->data[index];
+	// uint32_t pos  = vec_index_of_data(uit->selected, data);
 
 	(*uit->on_event)(uit, UI_TABLE_EVENT_OPEN, uit->selected);
     }

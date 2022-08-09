@@ -193,8 +193,8 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 	    {
 		vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
 
-		int     index = 0;
-		view_t* item  = NULL;
+		int index = 0;
+		// view_t* item  = NULL;
 		for (index = 0; index < bvh->items->length; index++)
 		{
 		    view_t* item = bvh->items->data[index];

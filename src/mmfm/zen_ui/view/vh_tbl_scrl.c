@@ -180,7 +180,7 @@ void vh_tbl_scrl_scroll_v(view_t* view, int y)
 
     if (bvh->items->length > 0 && vh->item_cnt > 0)
     {
-	int vert_pos = bvh->top_index;
+	// int vert_pos = bvh->top_index;
 	int vert_vis = bvh->bot_index - bvh->top_index;
 	int vert_max = vh->item_cnt;
 
@@ -214,7 +214,7 @@ void vh_tbl_scrl_scroll_h(view_t* view, int x)
     {
 	view_t* head = bvh->items->data[0];
 
-	float hori_pos = -head->frame.local.x;
+	// float hori_pos = -head->frame.local.x;
 	float hori_vis = view->frame.local.w;
 	float hori_max = head->frame.local.w;
 

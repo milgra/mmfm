@@ -1,5 +1,11 @@
 # Zen Media development roadmap
 
+warning, leak eltuntetes
+video, audio playing
+pdf, video zoom
+
+visualization level gombok, kep, oszcilloszkop, binaris
+
 OPEN, JUMP ( / ~ usb ) , EDIT ( move, copy, delete, new folder ) , SEARCH buttons
 ffmpeg integration
 store table states

@@ -257,7 +257,7 @@ void ui_generator_render(uint32_t time)
     }
 }
 
-int ui_generator_workloop()
+int ui_generator_workloop(void* mypointer)
 {
     view_t* view;
 

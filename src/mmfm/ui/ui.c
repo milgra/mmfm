@@ -213,7 +213,7 @@ void on_clipboard_event(ui_table_t* table, ui_table_event event, void* userdata)
 	{
 	    if (ui.drag_data)
 	    {
-		int index = (int) userdata;
+		size_t index = (size_t) userdata;
 		zc_log_debug("DROP %i %i", index, ui.drag_data->length);
 		vec_add_in_vector(ui.clip_list_data, ui.drag_data);
 		ui.drag_data = NULL;
@@ -221,6 +221,8 @@ void on_clipboard_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    }
 	}
 	break;
+	default:
+	    break;
     }
 }
 

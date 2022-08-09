@@ -15,17 +15,27 @@ typedef struct Clock
     int*   queue_serial; /* pointer to the current packet queue serial, used for obsolete clock detection */
 } Clock;
 
-double get_clock(Clock* c);
-void   set_clock_at(Clock* c, double pts, int serial, double time);
-void   set_clock(Clock* c, double pts, int serial);
-void   init_clock(Clock* c, int* queue_serial);
-void   set_clock_speed(Clock* c, double speed);
+void   clock_init(Clock* c, int* queue_serial);
+double clock_get(Clock* c);
+void   clock_set(Clock* c, double pts, int serial);
+void   clock_set_at(Clock* c, double pts, int serial, double time);
+void   clock_set_speed(Clock* c, double speed);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-double get_clock(Clock* c)
+#include "libavutil/time.h"
+
+void clock_init(Clock* c, int* queue_serial)
+{
+    c->speed        = 1.0;
+    c->paused       = 0;
+    c->queue_serial = queue_serial;
+    clock_set(c, NAN, -1);
+}
+
+double clock_get(Clock* c)
 {
     if (*c->queue_serial != c->serial) return NAN;
 
@@ -40,7 +50,13 @@ double get_clock(Clock* c)
     }
 }
 
-void set_clock_at(Clock* c, double pts, int serial, double time)
+void clock_set(Clock* c, double pts, int serial)
+{
+    double time = av_gettime_relative() / 1000000.0;
+    clock_set_at(c, pts, serial, time);
+}
+
+void clock_set_at(Clock* c, double pts, int serial, double time)
 {
     c->pts          = pts;
     c->last_updated = time;
@@ -48,23 +64,9 @@ void set_clock_at(Clock* c, double pts, int serial, double time)
     c->serial       = serial;
 }
 
-void set_clock(Clock* c, double pts, int serial)
+void clock_set_speed(Clock* c, double speed)
 {
-    double time = av_gettime_relative() / 1000000.0;
-    set_clock_at(c, pts, serial, time);
-}
-
-void init_clock(Clock* c, int* queue_serial)
-{
-    c->speed        = 1.0;
-    c->paused       = 0;
-    c->queue_serial = queue_serial;
-    set_clock(c, NAN, -1);
-}
-
-void set_clock_speed(Clock* c, double speed)
-{
-    set_clock(c, get_clock(c), c->serial);
+    clock_set(c, clock_get(c), c->serial);
     c->speed = speed;
 }
 

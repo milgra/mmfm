@@ -76,53 +76,54 @@ typedef struct Decoder
     int             finished;
     int             packet_pending;
     SDL_cond*       empty_queue_cond;
-    int64_t         start_pts;
+    int64_t         start_pts; // presentation timestamp
     AVRational      start_pts_tb;
     int64_t         next_pts;
     AVRational      next_pts_tb;
-    SDL_Thread*     decoder_tid;
+    SDL_Thread*     dec_thread;
     int             av_sync_type;
 } Decoder;
 
 typedef struct MediaState
 {
-    char* filename;
-
+    char*            filename;
     AVFormatContext* format; // format context
-    FrameQueue       vidfq;  // frame queue for video, contains complete frames
-    PacketQueue      vidpq;  // pcaket queue for video, packets contain compressed data, one frame per packet in case of video
 
     Clock vidclk; // clock for video
+    Clock audclk; // clock for audio
     Clock extclk; // clock for external
 
-    SDL_Thread* read_tid; // thread for video
+    FrameQueue  vidfq; // frame queue for video, contains complete frames
+    PacketQueue vidpq; // pcaket queue for video, packets contain compressed data, one frame per packet in case of video
 
-    int                  abort_request;
-    const AVInputFormat* iformat;
-    double               max_frame_duration; // maximum duration of a frame - above this, we consider the jump a timestamp discontinuity
-    int                  realtime;           // realtime stream? needed for clock readjustment
-    int                  eof;                // end of file reached
-    int                  video_stream;
-    AVStream*            video_st;
-    int                  queue_attachments_req;
-    Decoder              viddec;
-    SDL_cond*            continue_read_thread;
-    int                  av_sync_type;
-    double               frame_last_filter_delay;
-    int                  frame_drops_early;
-    int                  frame_drops_late;
-    int                  paused;
-    int                  last_paused;
-    int                  read_pause_return;
-    int                  seek_req;
-    int                  seek_flags;
-    int64_t              seek_pos;
-    int64_t              seek_rel;
-    int                  step;
-    double               frame_timer;
-    int                  force_refresh;
-    double               last_vis_time;
-    struct SwsContext*   img_convert_ctx;
+    SDL_Thread* read_thread; // thread for video
+
+    Decoder viddec; // video decoder
+
+    int                abort_request;
+    double             max_frame_duration; // maximum duration of a frame - above this, we consider the jump a timestamp discontinuity
+    int                realtime;           // realtime stream? needed for clock readjustment
+    int                eof;                // end of file reached
+    int                video_stream;
+    AVStream*          video_st;
+    int                queue_attachments_req;
+    SDL_cond*          continue_read_thread;
+    int                av_sync_type;
+    double             frame_last_filter_delay;
+    int                frame_drops_early;
+    int                frame_drops_late;
+    int                paused;
+    int                last_paused;
+    int                read_pause_return;
+    int                seek_req;
+    int                seek_flags;
+    int64_t            seek_pos;
+    int64_t            seek_rel;
+    int                step;
+    double             frame_timer;
+    int                force_refresh;
+    double             last_vis_time;
+    struct SwsContext* img_convert_ctx;
 } MediaState;
 
 AVDictionary *format_optsn, *codec_optsn;
@@ -131,17 +132,17 @@ static void check_external_clock_speed(MediaState* ms)
 {
     if (ms->video_stream >= 0 && ms->vidpq.nb_packets <= EXTERNAL_CLOCK_MIN_FRAMES)
     {
-	set_clock_speed(&ms->extclk, FFMAX(EXTERNAL_CLOCK_SPEED_MIN, ms->extclk.speed - EXTERNAL_CLOCK_SPEED_STEP));
+	clock_set_speed(&ms->extclk, FFMAX(EXTERNAL_CLOCK_SPEED_MIN, ms->extclk.speed - EXTERNAL_CLOCK_SPEED_STEP));
     }
     else if (ms->video_stream < 0 || ms->vidpq.nb_packets > EXTERNAL_CLOCK_MAX_FRAMES)
     {
-	set_clock_speed(&ms->extclk, FFMIN(EXTERNAL_CLOCK_SPEED_MAX, ms->extclk.speed + EXTERNAL_CLOCK_SPEED_STEP));
+	clock_set_speed(&ms->extclk, FFMIN(EXTERNAL_CLOCK_SPEED_MAX, ms->extclk.speed + EXTERNAL_CLOCK_SPEED_STEP));
     }
     else
     {
 	double speed = ms->extclk.speed;
 	if (speed != 1.0)
-	    set_clock_speed(&ms->extclk, speed + EXTERNAL_CLOCK_SPEED_STEP * (1.0 - speed) / fabs(1.0 - speed));
+	    clock_set_speed(&ms->extclk, speed + EXTERNAL_CLOCK_SPEED_STEP * (1.0 - speed) / fabs(1.0 - speed));
     }
 }
 
@@ -168,10 +169,10 @@ static double get_master_clock(MediaState* ms)
     switch (get_master_sync_type(ms))
     {
 	case AV_SYNC_VIDEO_MASTER:
-	    val = get_clock(&ms->vidclk);
+	    val = clock_get(&ms->vidclk);
 	    break;
 	default:
-	    val = get_clock(&ms->extclk);
+	    val = clock_get(&ms->extclk);
 	    break;
     }
     return val;
@@ -202,9 +203,9 @@ static void stream_toggle_pause(MediaState* ms)
 	{
 	    ms->vidclk.paused = 0;
 	}
-	set_clock(&ms->vidclk, get_clock(&ms->vidclk), ms->vidclk.serial);
+	clock_set(&ms->vidclk, clock_get(&ms->vidclk), ms->vidclk.serial);
     }
-    set_clock(&ms->extclk, get_clock(&ms->extclk), ms->extclk.serial);
+    clock_set(&ms->extclk, clock_get(&ms->extclk), ms->extclk.serial);
     ms->paused = ms->vidclk.paused = ms->extclk.paused = !ms->paused;
 }
 
@@ -268,6 +269,8 @@ AVDictionary* filter_codec_opts1(AVDictionary* opts, enum AVCodecID codec_id, AV
 	    prefix = 's';
 	    flags |= AV_OPT_FLAG_SUBTITLE_PARAM;
 	    break;
+	default:
+	    break;
     }
 
     while ((t = av_dict_get(opts, "", t, AV_DICT_IGNORE_SUFFIX)))
@@ -315,8 +318,8 @@ static int decoder_init(Decoder* d, AVCodecContext* avctx, PacketQueue* queue, S
 static int decoder_start(Decoder* d, int (*fn)(void*), const char* thread_name, void* arg)
 {
     packet_queue_start(d->queue);
-    d->decoder_tid = SDL_CreateThread(fn, thread_name, arg);
-    if (!d->decoder_tid)
+    d->dec_thread = SDL_CreateThread(fn, thread_name, arg);
+    if (!d->dec_thread)
     {
 	av_log(NULL, AV_LOG_ERROR, "SDL_CreateThread(): %s\n", SDL_GetError());
 	return AVERROR(ENOMEM);
@@ -403,6 +406,8 @@ static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
 				d->next_pts_tb = tb;
 			    }
 			}
+			break;
+		    default:
 			break;
 		}
 		if (ret == AVERROR_EOF)
@@ -618,6 +623,8 @@ static int stream_component_open(MediaState* ms, int stream_index)
 		    case AVMEDIA_TYPE_VIDEO:
 			zc_log_debug("Video stream");
 			break;
+		    default:
+			break;
 		}
 
 		if (!codec) zc_log_error("No decoder could be found for codec %s", avcodec_get_name(avctx->codec_id));
@@ -750,11 +757,11 @@ static int read_thread(void* arg)
 		else
 		    zc_log_debug("");
 
-		int err = avformat_open_input(&format, ms->filename, ms->iformat, &format_optsn);
+		int err = avformat_open_input(&format, ms->filename, NULL, &format_optsn);
 
 		if (err >= 0)
 		{
-		    zc_log_debug("Input opened");
+		    zc_log_debug("Input opened, format name");
 
 		    // why do we have to set this again?
 		    if (scan_all_pmts_set)
@@ -846,11 +853,11 @@ static int read_thread(void* arg)
 
 				if (ms->seek_flags & AVSEEK_FLAG_BYTE)
 				{
-				    set_clock(&ms->extclk, NAN, 0);
+				    clock_set(&ms->extclk, NAN, 0);
 				}
 				else
 				{
-				    set_clock(&ms->extclk, seek_target / (double) AV_TIME_BASE, 0);
+				    clock_set(&ms->extclk, seek_target / (double) AV_TIME_BASE, 0);
 				}
 			    }
 			    ms->seek_req              = 0;
@@ -923,11 +930,10 @@ static int read_thread(void* arg)
 			    ms->eof = 0;
 			}
 			/* check if packet is in play range specified by user, then queue, otherwise discard */
-			int     stream_start_time = format->streams[pkt->stream_index]->start_time;
+			int64_t stream_start_time = format->streams[pkt->stream_index]->start_time;
 			int64_t pkt_ts            = pkt->pts == AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
 			int     pkt_in_play_range = duration == AV_NOPTS_VALUE ||
-						(pkt_ts - (stream_start_time != AV_NOPTS_VALUE ? stream_start_time : 0)) *
-							    av_q2d(format->streams[pkt->stream_index]->time_base) -
+						(pkt_ts - (stream_start_time != AV_NOPTS_VALUE ? stream_start_time : 0)) * av_q2d(format->streams[pkt->stream_index]->time_base) -
 							(double) (start_time != AV_NOPTS_VALUE ? start_time : 0) / 1000000 <=
 						    ((double) duration / 1000000);
 
@@ -986,11 +992,11 @@ void* viewer_open(char* path)
 	if (ms->continue_read_thread == NULL)
 	    zc_log_error("cannot create sdl cond");
 
-	init_clock(&ms->vidclk, &ms->vidpq.serial);
-	init_clock(&ms->extclk, &ms->extclk.serial);
+	clock_init(&ms->vidclk, &ms->vidpq.serial);
+	clock_init(&ms->extclk, &ms->extclk.serial);
 
-	ms->read_tid = SDL_CreateThread(read_thread, "read_thread", ms);
-	if (!ms->read_tid)
+	ms->read_thread = SDL_CreateThread(read_thread, "read_thread", ms);
+	if (!ms->read_thread)
 	{
 	    zc_log_error("SDL_CreateThread(): %s\n", SDL_GetError());
 	}
@@ -1001,16 +1007,16 @@ void* viewer_open(char* path)
 
 static void sync_clock_to_slave(Clock* c, Clock* slave)
 {
-    double clock       = get_clock(c);
-    double slave_clock = get_clock(slave);
+    double clock       = clock_get(c);
+    double slave_clock = clock_get(slave);
     if (!isnan(slave_clock) && (isnan(clock) || fabs(clock - slave_clock) > AV_NOSYNC_THRESHOLD))
-	set_clock(c, slave_clock, slave->serial);
+	clock_set(c, slave_clock, slave->serial);
 }
 
 static void update_video_pts(MediaState* ms, double pts, int64_t pos, int serial)
 {
     /* update current video pts */
-    set_clock(&ms->vidclk, pts, serial);
+    clock_set(&ms->vidclk, pts, serial);
     sync_clock_to_slave(&ms->extclk, &ms->vidclk);
 }
 static double compute_target_delay(double delay, MediaState* ms)
@@ -1022,7 +1028,7 @@ static double compute_target_delay(double delay, MediaState* ms)
     {
 	/* if video is slave, we try to correct big delays by
 	   duplicating or deleting a frame */
-	diff = get_clock(&ms->vidclk) - get_master_clock(ms);
+	diff = clock_get(&ms->vidclk) - get_master_clock(ms);
 
 	/* skip or repeat frame. We take into account the
 	   delay to compute the threshold. I still don't know
@@ -1098,9 +1104,9 @@ static int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext**
 
 static void video_image_display(MediaState* ms, bm_rgba_t* bm)
 {
-    Frame*   vp;
-    Frame*   sp = NULL;
-    SDL_Rect rect;
+    Frame* vp;
+    // Frame*   sp = NULL;
+    // SDL_Rect rect;
 
     vp = frame_queue_peek_last(&ms->vidfq);
 
@@ -1127,7 +1133,7 @@ void video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm)
     MediaState* ms = opaque;
     double      time;
 
-    Frame *sp, *sp2;
+    // Frame *sp, *sp2;
 
     if (!ms->paused && get_master_sync_type(ms) == AV_SYNC_EXTERNAL_CLOCK && ms->realtime)
 	check_external_clock_speed(ms);

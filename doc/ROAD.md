@@ -1,6 +1,6 @@
 # Zen Media development roadmap
 
-warning, leak eltuntetes
+leak eltuntetes
 video, audio playing
 pdf, video zoom
 

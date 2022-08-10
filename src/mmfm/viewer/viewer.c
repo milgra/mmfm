@@ -101,7 +101,10 @@ typedef struct MediaState
     AVStream* vidst;       // video stream
     int       vidst_index; // video stream index
 
+    // flags
+
     int check_attachment; // check for video attachment after open and seek
+    int step_frame;       // indicates that we should step to next frame instead of playing
 
     int    abort_request;
     double max_frame_duration; // maximum duration of a frame - above this, we consider the jump a timestamp discontinuity
@@ -119,7 +122,6 @@ typedef struct MediaState
     int     seek_flags;
     int64_t seek_pos;
     int64_t seek_rel;
-    int     step;
     double  frame_timer;
     int     force_refresh;
     double  last_vis_time;
@@ -129,23 +131,7 @@ typedef struct MediaState
 
 AVDictionary *format_optsn, *codec_optsn;
 
-static void check_external_clock_speed(MediaState* ms)
-{
-    if (ms->vidst_index >= 0 && ms->vidpq.nb_packets <= EXTERNAL_CLOCK_MIN_FRAMES)
-    {
-	clock_set_speed(&ms->extclk, FFMAX(EXTERNAL_CLOCK_SPEED_MIN, ms->extclk.speed - EXTERNAL_CLOCK_SPEED_STEP));
-    }
-    else if (ms->vidst_index < 0 || ms->vidpq.nb_packets > EXTERNAL_CLOCK_MAX_FRAMES)
-    {
-	clock_set_speed(&ms->extclk, FFMIN(EXTERNAL_CLOCK_SPEED_MAX, ms->extclk.speed + EXTERNAL_CLOCK_SPEED_STEP));
-    }
-    else
-    {
-	double speed = ms->extclk.speed;
-	if (speed != 1.0)
-	    clock_set_speed(&ms->extclk, speed + EXTERNAL_CLOCK_SPEED_STEP * (1.0 - speed) / fabs(1.0 - speed));
-    }
-}
+// timing related
 
 static int get_master_sync_type(MediaState* ms)
 {
@@ -162,7 +148,6 @@ static int get_master_sync_type(MediaState* ms)
     }
 }
 
-/* get the current master clock value */
 static double get_master_clock(MediaState* ms)
 {
     double val;
@@ -179,7 +164,25 @@ static double get_master_clock(MediaState* ms)
     return val;
 }
 
-/* seek in the stream */
+static void check_external_clock_speed(MediaState* ms)
+{
+    if (ms->vidst_index >= 0 && ms->vidpq.nb_packets <= EXTERNAL_CLOCK_MIN_FRAMES)
+    {
+	clock_set_speed(&ms->extclk, FFMAX(EXTERNAL_CLOCK_SPEED_MIN, ms->extclk.speed - EXTERNAL_CLOCK_SPEED_STEP));
+    }
+    else if (ms->vidst_index < 0 || ms->vidpq.nb_packets > EXTERNAL_CLOCK_MAX_FRAMES)
+    {
+	clock_set_speed(&ms->extclk, FFMIN(EXTERNAL_CLOCK_SPEED_MAX, ms->extclk.speed + EXTERNAL_CLOCK_SPEED_STEP));
+    }
+    else
+    {
+	double speed = ms->extclk.speed;
+	if (speed != 1.0) clock_set_speed(&ms->extclk, speed + EXTERNAL_CLOCK_SPEED_STEP * (1.0 - speed) / fabs(1.0 - speed));
+    }
+}
+
+// stream related
+
 static void stream_seek(MediaState* ms, int64_t pos, int64_t rel, int by_bytes)
 {
     if (!ms->seek_req)
@@ -193,7 +196,6 @@ static void stream_seek(MediaState* ms, int64_t pos, int64_t rel, int by_bytes)
     }
 }
 
-/* pause or resume the video */
 static void stream_toggle_pause(MediaState* ms)
 {
     if (ms->paused)
@@ -212,19 +214,11 @@ static void stream_toggle_pause(MediaState* ms)
 static void step_to_next_frame(MediaState* ms)
 {
     /* if the stream is paused unpause it, then step */
-    if (ms->paused)
-	stream_toggle_pause(ms);
-    ms->step = 1;
+    if (ms->paused) stream_toggle_pause(ms);
+    ms->step_frame = 1;
 }
 
-static int decode_interrupt_cb(void* ctx)
-{
-    MediaState* ms = ctx;
-    return ms->abort_request;
-}
-
-/* check if stream is realtimne */
-static int is_realtime(AVFormatContext* format)
+static int check_stream_realtime(AVFormatContext* format)
 {
     if (!strcmp(format->iformat->name, "rtp") || !strcmp(format->iformat->name, "rtsp") || !strcmp(format->iformat->name, "sdp"))
 	return 1;
@@ -234,15 +228,22 @@ static int is_realtime(AVFormatContext* format)
     return 0;
 }
 
-int check_stream_specifier1(AVFormatContext* format, AVStream* st, const char* spec)
+int check_stream_specifier(AVFormatContext* format, AVStream* st, const char* spec)
 {
     int ret = avformat_match_stream_specifier(format, st, spec);
-    if (ret < 0)
-	av_log(format, AV_LOG_ERROR, "Invalid stream specifier: %s.\n", spec);
+    if (ret < 0) av_log(format, AV_LOG_ERROR, "Invalid stream specifier: %s.\n", spec);
     return ret;
 }
 
-AVDictionary* filter_codec_opts1(AVDictionary* opts, enum AVCodecID codec_id, AVFormatContext* format, AVStream* st, const AVCodec* codec)
+// trash
+
+static int decode_interrupt_cb(void* ctx)
+{
+    MediaState* ms = ctx;
+    return ms->abort_request;
+}
+
+AVDictionary* filter_codec_opts(AVDictionary* opts, enum AVCodecID codec_id, AVFormatContext* format, AVStream* st, const AVCodec* codec)
 {
     AVDictionary*            ret    = NULL;
     const AVDictionaryEntry* t      = NULL;
@@ -251,9 +252,7 @@ AVDictionary* filter_codec_opts1(AVDictionary* opts, enum AVCodecID codec_id, AV
     char                     prefix = 0;
     const AVClass*           cc     = avcodec_get_class();
 
-    if (!codec)
-	codec = format->oformat ? avcodec_find_encoder(codec_id)
-				: avcodec_find_decoder(codec_id);
+    if (!codec) codec = format->oformat ? avcodec_find_encoder(codec_id) : avcodec_find_decoder(codec_id);
 
     switch (st->codecpar->codec_type)
     {
@@ -280,7 +279,7 @@ AVDictionary* filter_codec_opts1(AVDictionary* opts, enum AVCodecID codec_id, AV
 
 	/* check stream specification in opt name */
 	if (p)
-	    switch (check_stream_specifier1(format, st, p + 1))
+	    switch (check_stream_specifier(format, st, p + 1))
 	    {
 		case 1: *p = 0; break;
 		case 0: continue;
@@ -301,12 +300,13 @@ AVDictionary* filter_codec_opts1(AVDictionary* opts, enum AVCodecID codec_id, AV
     return ret;
 }
 
+// decoder related
+
 static int decoder_init(Decoder* d, AVCodecContext* avctx, PacketQueue* queue, SDL_cond* empty_queue_cond)
 {
     memset(d, 0, sizeof(Decoder));
     d->pkt = av_packet_alloc();
-    if (!d->pkt)
-	return AVERROR(ENOMEM);
+    if (!d->pkt) return AVERROR(ENOMEM);
     d->avctx            = avctx;
     d->queue            = queue;
     d->empty_queue_cond = empty_queue_cond;
@@ -342,48 +342,12 @@ static void decoder_destroy(Decoder* d)
     avcodec_free_context(&d->avctx);
 }
 
-static int queue_picture(MediaState* ms, AVFrame* src_frame, double pts, double duration, int64_t pos, int serial)
-{
-    zc_log_debug("queue_picture");
-
-    Frame* vp;
-
-#if defined(DEBUG_SYNC)
-    printf("frame_type=%c pts=%0.3f\n", av_get_picture_type_char(src_frame->pict_type), pts);
-#endif
-
-    if (!(vp = frame_queue_peek_writable(&ms->vidfq, ms->vidpq.abort_request)))
-	return -1;
-
-    vp->sar      = src_frame->sample_aspect_ratio;
-    vp->uploaded = 0;
-
-    vp->width  = src_frame->width;
-    vp->height = src_frame->height;
-    vp->format = src_frame->format;
-
-    vp->pts      = pts;
-    vp->duration = duration;
-    vp->pos      = pos;
-    vp->serial   = serial;
-
-    // set_default_window_size(vp->width, vp->height, vp->sar);
-
-    av_frame_move_ref(vp->frame, src_frame);
-    frame_queue_push(&ms->vidfq);
-    return 0;
-}
-
 static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
 {
-    zc_log_debug("decoder_decode_frame");
-
     int ret = AVERROR(EAGAIN);
 
     for (;;)
     {
-	zc_log_debug("nb packets %i", d->queue->nb_packets);
-
 	if (d->queue->serial == d->pkt_serial)
 	{
 	    do {
@@ -437,10 +401,7 @@ static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
 	}
 
 	do {
-	    zc_log_debug("pending %i", d->packet_pending);
-
-	    if (d->queue->nb_packets == 0)
-		SDL_CondSignal(d->empty_queue_cond);
+	    if (d->queue->nb_packets == 0) SDL_CondSignal(d->empty_queue_cond);
 
 	    if (d->packet_pending)
 	    {
@@ -449,13 +410,11 @@ static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
 	    else
 	    {
 		int old_serial = d->pkt_serial;
-		zc_log_debug("ee");
+
 		if (packet_queue_get(d->queue, d->pkt, 1, &d->pkt_serial) < 0)
 		{
-		    zc_log_debug("e");
 		    return -1;
 		}
-		zc_log_debug("eee");
 
 		if (old_serial != d->pkt_serial)
 		{
@@ -472,21 +431,6 @@ static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
 
 	if (d->avctx->codec_type == AVMEDIA_TYPE_SUBTITLE)
 	{
-	    int got_frame = 0;
-	    ret           = avcodec_decode_subtitle2(d->avctx, sub, &got_frame, d->pkt);
-	    if (ret < 0)
-	    {
-		ret = AVERROR(EAGAIN);
-	    }
-	    else
-	    {
-		if (got_frame && !d->pkt->data)
-		{
-		    d->packet_pending = 1;
-		}
-		ret = got_frame ? 0 : (d->pkt->data ? AVERROR(EAGAIN) : AVERROR_EOF);
-	    }
-	    av_packet_unref(d->pkt);
 	}
 	else
 	{
@@ -503,22 +447,17 @@ static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
     }
 }
 
-static int get_video_frame(MediaState* ms, AVFrame* frame)
+static int video_decode_get_frame(MediaState* ms, AVFrame* frame)
 {
-    zc_log_debug("get_video_frame");
-
     int got_picture = decoder_decode_frame(&ms->viddec, frame, NULL);
 
     if (got_picture < 0)
     {
-	zc_log_debug("no picture");
 	return -1;
     }
 
     if (got_picture)
     {
-	zc_log_debug("got picture");
-
 	double dpts = NAN;
 
 	if (frame->pts != AV_NOPTS_VALUE)
@@ -547,9 +486,39 @@ static int get_video_frame(MediaState* ms, AVFrame* frame)
     return got_picture;
 }
 
-static int video_thread(void* arg)
+static int video_decode_queue_picture(MediaState* ms, AVFrame* src_frame, double pts, double duration, int64_t pos, int serial)
 {
-    zc_log_debug("video thread start");
+    Frame* vp;
+
+#if defined(DEBUG_SYNC)
+    printf("frame_type=%c pts=%0.3f\n", av_get_picture_type_char(src_frame->pict_type), pts);
+#endif
+
+    if (!(vp = frame_queue_peek_writable(&ms->vidfq, ms->vidpq.abort_request)))
+	return -1;
+
+    vp->sar      = src_frame->sample_aspect_ratio;
+    vp->uploaded = 0;
+
+    vp->width  = src_frame->width;
+    vp->height = src_frame->height;
+    vp->format = src_frame->format;
+
+    vp->pts      = pts;
+    vp->duration = duration;
+    vp->pos      = pos;
+    vp->serial   = serial;
+
+    // set_default_window_size(vp->width, vp->height, vp->sar);
+
+    av_frame_move_ref(vp->frame, src_frame);
+    frame_queue_push(&ms->vidfq);
+    return 0;
+}
+
+static int video_decode_thread(void* arg)
+{
+    zc_log_debug("Video decoder thread started.");
 
     MediaState* ms    = arg;
     AVFrame*    frame = av_frame_alloc();
@@ -563,7 +532,7 @@ static int video_thread(void* arg)
 
     for (;;)
     {
-	ret = get_video_frame(ms, frame);
+	ret = video_decode_get_frame(ms, frame);
 
 	if (ret < 0) break;
 
@@ -572,7 +541,7 @@ static int video_thread(void* arg)
 	duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
 	pts      = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
 
-	ret = queue_picture(
+	ret = video_decode_queue_picture(
 	    ms,
 	    frame,
 	    pts,
@@ -606,27 +575,27 @@ static int stream_component_open(MediaState* ms, int stream_index)
     if (stream_index >= 0 || stream_index < format->nb_streams)
     {
 	// allocate codec context
-	AVCodecContext* avctx = avcodec_alloc_context3(NULL);
+	AVCodecContext* codecctx = avcodec_alloc_context3(NULL);
 
-	if (avctx)
+	if (codecctx)
 	{
 	    zc_log_debug("AVCodecContext allocated");
 
 	    ret = avcodec_parameters_to_context(
-		avctx,
+		codecctx,
 		format->streams[stream_index]->codecpar);
 
 	    if (ret >= 0)
 	    {
 		zc_log_debug("Codec parameters read");
 
-		avctx->pkt_timebase = format->streams[stream_index]->time_base;
+		codecctx->pkt_timebase = format->streams[stream_index]->time_base;
 
-		zc_log_debug("Timebase : %i/%i", avctx->pkt_timebase.num, avctx->pkt_timebase.den);
+		zc_log_debug("Timebase : %i/%i", codecctx->pkt_timebase.num, codecctx->pkt_timebase.den);
 
-		codec = avcodec_find_decoder(avctx->codec_id);
+		codec = avcodec_find_decoder(codecctx->codec_id);
 
-		switch (avctx->codec_type)
+		switch (codecctx->codec_type)
 		{
 		    case AVMEDIA_TYPE_AUDIO:
 			zc_log_debug("Audio stream");
@@ -641,30 +610,30 @@ static int stream_component_open(MediaState* ms, int stream_index)
 			break;
 		}
 
-		if (!codec) zc_log_error("No decoder could be found for codec %s", avcodec_get_name(avctx->codec_id));
+		if (!codec) zc_log_error("No decoder could be found for codec %s", avcodec_get_name(codecctx->codec_id));
 
-		avctx->codec_id = codec->id;
+		codecctx->codec_id = codec->id;
 		zc_log_debug("codec id %i", codec->id);
 
 		zc_log_debug("The maximum value for lowres supported by the decoder is %d", codec->max_lowres);
 
-		avctx->flags2 |= AV_CODEC_FLAG2_FAST;
+		codecctx->flags2 |= AV_CODEC_FLAG2_FAST;
 		zc_log_debug("Setting fast decoding");
 
-		opts = filter_codec_opts1(codec_optsn, avctx->codec_id, format, format->streams[stream_index], codec);
+		opts = filter_codec_opts(codec_optsn, codecctx->codec_id, format, format->streams[stream_index], codec);
 
 		if (!av_dict_get(opts, "threads", NULL, 0)) av_dict_set(&opts, "threads", "auto", 0);
 
 		zc_log_debug("Setting auto thread usage");
 
-		ret = avcodec_open2(avctx, codec, &opts);
+		ret = avcodec_open2(codecctx, codec, &opts);
 
 		if (ret >= 0)
 		{
 		    ms->eof                                = 0;
 		    format->streams[stream_index]->discard = AVDISCARD_DEFAULT;
 
-		    switch (avctx->codec_type)
+		    switch (codecctx->codec_type)
 		    {
 			case AVMEDIA_TYPE_AUDIO:
 			    break;
@@ -672,11 +641,11 @@ static int stream_component_open(MediaState* ms, int stream_index)
 			    ms->vidst_index = stream_index;
 			    ms->vidst       = format->streams[stream_index];
 
-			    ret = decoder_init(&ms->viddec, avctx, &ms->vidpq, ms->continue_read_thread);
+			    ret = decoder_init(&ms->viddec, codecctx, &ms->vidpq, ms->continue_read_thread);
 
 			    if (ret >= 0)
 			    {
-				ret = decoder_start(&ms->viddec, video_thread, "video_decoder", ms);
+				ret = decoder_start(&ms->viddec, video_decode_thread, "video_decoder", ms);
 
 				if (ret >= 0)
 				{
@@ -695,7 +664,7 @@ static int stream_component_open(MediaState* ms, int stream_index)
 			    break;
 		    }
 
-		    // avcodec_free_context(&avctx);
+		    // avcodec_free_context(&codecctx);
 
 		    av_channel_layout_uninit(&ch_layout);
 		    av_dict_free(&opts);
@@ -760,6 +729,7 @@ static int stream_has_enough_packets(AVStream* st, int stream_id, PacketQueue* q
 /* this thread gets the stream from the disk or the network */
 static int read_thread(void* arg)
 {
+    zc_log_debug("Read thread started.");
     MediaState* ms = arg;
 
     // create mutex
@@ -836,7 +806,7 @@ static int read_thread(void* arg)
 		    ms->max_frame_duration = (format->iformat->flags & AVFMT_TS_DISCONT) ? 10.0 : 3600.0;
 
 		    // check realtimeness, speed adjusment may be needed on realtime streams during refresh
-		    ms->realtime = is_realtime(format);
+		    ms->realtime = check_stream_realtime(format);
 
 		    // print format info
 		    av_dump_format(format, 0, ms->filename, 0);
@@ -1011,18 +981,13 @@ void* viewer_open(char* path)
 
     ms = av_mallocz(sizeof(MediaState));
 
-    // store filename
-
     ms->filename = av_strdup(path);
 
     if (ms)
     {
+	if (frame_queue_init(&ms->vidfq, VIDEO_PICTURE_QUEUE_SIZE, 1) < 0) zc_log_debug("cannot create frame queue");
 
-	if (frame_queue_init(&ms->vidfq, VIDEO_PICTURE_QUEUE_SIZE, 1) < 0)
-	    zc_log_debug("cannot create frame queue");
-
-	if (packet_queue_init(&ms->vidpq) < 0)
-	    zc_log_debug("cannot create packet queue");
+	if (packet_queue_init(&ms->vidpq) < 0) zc_log_debug("cannot create packet queue");
 
 	ms->continue_read_thread = SDL_CreateCond();
 
@@ -1132,7 +1097,7 @@ static int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext**
 {
     int ret = 0;
 
-    zc_log_debug("upload texture frame %i %i bitmap %i %i", frame->width, frame->height, bm->w, bm->h);
+    // zc_log_debug("upload texture frame %i %i bitmap %i %i", frame->width, frame->height, bm->w, bm->h);
 
     if (frame->width > 0 && frame->height > 0)
     {
@@ -1267,7 +1232,7 @@ void video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm)
 	    {
 		Frame* nextvp = frame_queue_peek_next(&ms->vidfq);
 		duration      = vp_duration(ms, vp, nextvp);
-		if (!ms->step && (framedrop > 0 || (framedrop && get_master_sync_type(ms) != AV_SYNC_VIDEO_MASTER)) && time > ms->frame_timer + duration)
+		if (!ms->step_frame && (framedrop > 0 || (framedrop && get_master_sync_type(ms) != AV_SYNC_VIDEO_MASTER)) && time > ms->frame_timer + duration)
 		{
 		    ms->frame_drops_late++;
 		    frame_queue_next(&ms->vidfq);
@@ -1278,7 +1243,7 @@ void video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm)
 	    frame_queue_next(&ms->vidfq);
 	    ms->force_refresh = 1;
 
-	    if (ms->step && !ms->paused)
+	    if (ms->step_frame && !ms->paused)
 		stream_toggle_pause(ms);
 	}
     display:

@@ -38,6 +38,7 @@ typedef struct FrameQueue
 
 int    frame_queue_init(FrameQueue* f, int max_size, int keep_last);
 void   frame_queue_destroy(FrameQueue* f);
+void   frame_queue_signal(FrameQueue* f);
 void   frame_queue_push(FrameQueue* f);
 void   frame_queue_next(FrameQueue* f);
 void   frame_queue_unref_item(Frame* vp);
@@ -84,6 +85,13 @@ void frame_queue_destroy(FrameQueue* f)
     }
     SDL_DestroyMutex(f->mutex);
     SDL_DestroyCond(f->cond);
+}
+
+void frame_queue_signal(FrameQueue* f)
+{
+    SDL_LockMutex(f->mutex);
+    SDL_CondSignal(f->cond);
+    SDL_UnlockMutex(f->mutex);
 }
 
 void frame_queue_push(FrameQueue* f)

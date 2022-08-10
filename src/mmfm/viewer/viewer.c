@@ -84,9 +84,10 @@ typedef struct Decoder
 
 typedef struct MediaState
 {
-    char*            filename;
-    AVFormatContext* format;      // format context
-    SDL_Thread*      read_thread; // thread for video
+    char*            filename;             // filename, to use in functions and for format dumping
+    AVFormatContext* format;               // format context, used for aspect ratio, framerate, seek calcualtions
+    SDL_Thread*      read_thread;          // thread for video
+    SDL_cond*        continue_read_thread; // conditional for read thread start/stop
 
     Clock vidclk; // clock for video
     Clock audclk; // clock for audio
@@ -107,22 +108,21 @@ typedef struct MediaState
     int    realtime;           // realtime stream? needed for clock readjustment
     int    eof;                // end of file reached
 
-    SDL_cond* continue_read_thread;
-    int       av_sync_type;
-    double    frame_last_filter_delay;
-    int       frame_drops_early;
-    int       frame_drops_late;
-    int       paused;
-    int       last_paused;
-    int       read_pause_return;
-    int       seek_req;
-    int       seek_flags;
-    int64_t   seek_pos;
-    int64_t   seek_rel;
-    int       step;
-    double    frame_timer;
-    int       force_refresh;
-    double    last_vis_time;
+    int     av_sync_type;
+    double  frame_last_filter_delay;
+    int     frame_drops_early;
+    int     frame_drops_late;
+    int     paused;
+    int     last_paused;
+    int     read_pause_return; // read pause return value
+    int     seek_req;
+    int     seek_flags;
+    int64_t seek_pos;
+    int64_t seek_rel;
+    int     step;
+    double  frame_timer;
+    int     force_refresh;
+    double  last_vis_time;
 
     struct SwsContext* img_convert_ctx; // image conversion context for scaling on upload
 } MediaState;
@@ -325,6 +325,21 @@ static int decoder_start(Decoder* d, int (*fn)(void*), const char* thread_name, 
 	return AVERROR(ENOMEM);
     }
     return 0;
+}
+
+static void decoder_abort(Decoder* d, FrameQueue* fq)
+{
+    packet_queue_abort(d->queue);
+    frame_queue_signal(fq);
+    SDL_WaitThread(d->dec_thread, NULL);
+    d->dec_thread = NULL;
+    packet_queue_flush(d->queue);
+}
+
+static void decoder_destroy(Decoder* d)
+{
+    av_packet_free(&d->pkt);
+    avcodec_free_context(&d->avctx);
 }
 
 static int queue_picture(MediaState* ms, AVFrame* src_frame, double pts, double duration, int64_t pos, int serial)
@@ -704,6 +719,36 @@ static int stream_component_open(MediaState* ms, int stream_index)
     return ret;
 }
 
+static void stream_component_close(MediaState* ms, int stream_index)
+{
+    AVFormatContext*   format = ms->format;
+    AVCodecParameters* codecpar;
+
+    if (stream_index < 0 || stream_index >= format->nb_streams) return;
+    codecpar = format->streams[stream_index]->codecpar;
+
+    switch (codecpar->codec_type)
+    {
+	case AVMEDIA_TYPE_VIDEO:
+	    decoder_abort(&ms->viddec, &ms->vidfq);
+	    decoder_destroy(&ms->viddec);
+	    break;
+	default:
+	    break;
+    }
+
+    format->streams[stream_index]->discard = AVDISCARD_ALL;
+    switch (codecpar->codec_type)
+    {
+	case AVMEDIA_TYPE_VIDEO:
+	    ms->vidst       = NULL;
+	    ms->vidst_index = -1;
+	    break;
+	default:
+	    break;
+    }
+}
+
 static int stream_has_enough_packets(AVStream* st, int stream_id, PacketQueue* queue)
 {
     return stream_id < 0 ||
@@ -994,6 +1039,30 @@ void* viewer_open(char* path)
     }
 
     return ms;
+}
+
+static void viewer_close(MediaState* ms)
+{
+    /* XXX: use a special url_shutdown call to abort parse cleanly */
+    ms->abort_request = 1;
+    SDL_WaitThread(ms->read_thread, NULL);
+
+    /* close each stream */
+    if (ms->vidst >= 0)
+	stream_component_close(ms, ms->vidst_index);
+
+    avformat_close_input(&ms->format);
+
+    packet_queue_destroy(&ms->vidpq);
+
+    /* free all pictures */
+    frame_queue_destroy(&ms->vidfq);
+    SDL_DestroyCond(ms->continue_read_thread);
+
+    sws_freeContext(ms->img_convert_ctx);
+
+    av_free(ms->filename);
+    av_free(ms);
 }
 
 static void sync_clock_to_slave(Clock* c, Clock* slave)

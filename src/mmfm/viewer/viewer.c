@@ -11,6 +11,7 @@ void  video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "clock.c"
+#include "decoder.c"
 #include "framequeue.c"
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
@@ -48,12 +49,11 @@ void  video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm);
 #define EXTERNAL_CLOCK_MIN_FRAMES 2
 #define EXTERNAL_CLOCK_MAX_FRAMES 10
 
-static int decoder_reorder_pts = -1;
-static int framedrop           = -1; // drop frames on slow cpu
-static int infinite_buffer     = -1;
-static int autoexit            = -1;
-static int loop                = 1;
-double     rdftspeed1          = 0.02;
+static int framedrop       = -1; // drop frames on slow cpu
+static int infinite_buffer = -1;
+static int autoexit        = -1;
+static int loop            = 1;
+double     rdftspeed1      = 0.02;
 uint8_t*   scaledpixels[1];
 int        scaledw = 0;
 int        scaledh = 0;
@@ -65,35 +65,14 @@ enum
     AV_SYNC_EXTERNAL_CLOCK, /* synchronize to an external clock */
 };
 
-typedef struct Decoder
-{
-    AVPacket* pkt;
-
-    PacketQueue*    pqueue;
-    AVCodecContext* codctx;
-    int             pkt_serial;
-    int             finished;
-    int             packet_pending;
-    SDL_cond*       empty_queue_cond;
-    int64_t         start_pts; // presentation timestamp
-    AVRational      start_pts_tb;
-    int64_t         next_pts;
-    AVRational      next_pts_tb;
-    SDL_Thread*     dec_thread;
-    int             av_sync_type;
-
-    // frame drop counter
-
-    int frame_drops_early;
-    int frame_drops_late;
-} Decoder;
-
 typedef struct MediaState
 {
     char*            filename;             // filename, to use in functions and for format dumping
     AVFormatContext* format;               // format context, used for aspect ratio, framerate, seek calcualtions
-    SDL_Thread*      read_thread;          // thread for video
+    SDL_Thread*      read_thread;          // thread for reading packets
     SDL_cond*        continue_read_thread; // conditional for read thread start/stop
+
+    SDL_Thread* video_thread; // thread for video decoding
 
     Clock vidclk; // clock for video
     Clock audclk; // clock for audio
@@ -303,156 +282,9 @@ AVDictionary* filter_codec_opts(AVDictionary* opts, enum AVCodecID codec_id, AVF
     return ret;
 }
 
-// decoder related
-
-static int decoder_init(Decoder* d, AVCodecContext* codctx, PacketQueue* queue, SDL_cond* empty_queue_cond)
-{
-    memset(d, 0, sizeof(Decoder));
-    d->pkt = av_packet_alloc();
-    if (!d->pkt) return AVERROR(ENOMEM);
-    d->codctx           = codctx;
-    d->pqueue           = queue;
-    d->empty_queue_cond = empty_queue_cond;
-    d->start_pts        = AV_NOPTS_VALUE;
-    d->pkt_serial       = -1;
-    return 0;
-}
-
-static int decoder_start(Decoder* d, int (*fn)(void*), const char* thread_name, void* arg)
-{
-    packet_queue_start(d->pqueue);
-    d->dec_thread = SDL_CreateThread(fn, thread_name, arg);
-    if (!d->dec_thread)
-    {
-	av_log(NULL, AV_LOG_ERROR, "SDL_CreateThread(): %s\n", SDL_GetError());
-	return AVERROR(ENOMEM);
-    }
-    return 0;
-}
-
-static void decoder_abort(Decoder* d, FrameQueue* fq)
-{
-    packet_queue_abort(d->pqueue);
-    frame_queue_signal(fq);
-    SDL_WaitThread(d->dec_thread, NULL);
-    d->dec_thread = NULL;
-    packet_queue_flush(d->pqueue);
-}
-
-static void decoder_destroy(Decoder* d)
-{
-    av_packet_free(&d->pkt);
-    avcodec_free_context(&d->codctx);
-}
-
-static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
-{
-    int ret = AVERROR(EAGAIN);
-
-    for (;;)
-    {
-	if (d->pqueue->serial == d->pkt_serial)
-	{
-	    do {
-		if (d->pqueue->abort_request) return -1;
-
-		switch (d->codctx->codec_type)
-		{
-		    case AVMEDIA_TYPE_VIDEO:
-			ret = avcodec_receive_frame(d->codctx, frame);
-			if (ret >= 0)
-			{
-			    if (decoder_reorder_pts == -1)
-			    {
-				frame->pts = frame->best_effort_timestamp;
-			    }
-			    else if (!decoder_reorder_pts)
-			    {
-				frame->pts = frame->pkt_dts;
-			    }
-			}
-			break;
-		    case AVMEDIA_TYPE_AUDIO:
-			ret = avcodec_receive_frame(d->codctx, frame);
-			if (ret >= 0)
-			{
-			    AVRational tb = (AVRational){1, frame->sample_rate};
-			    if (frame->pts != AV_NOPTS_VALUE)
-				frame->pts = av_rescale_q(frame->pts, d->codctx->pkt_timebase, tb);
-			    else if (d->next_pts != AV_NOPTS_VALUE)
-				frame->pts = av_rescale_q(d->next_pts, d->next_pts_tb, tb);
-			    if (frame->pts != AV_NOPTS_VALUE)
-			    {
-				d->next_pts    = frame->pts + frame->nb_samples;
-				d->next_pts_tb = tb;
-			    }
-			}
-			break;
-		    default:
-			break;
-		}
-		if (ret == AVERROR_EOF)
-		{
-		    d->finished = d->pkt_serial;
-		    avcodec_flush_buffers(d->codctx);
-		    return 0;
-		}
-
-		if (ret >= 0) return 1;
-
-	    } while (ret != AVERROR(EAGAIN));
-	}
-
-	do
-	{
-	    if (d->pqueue->nb_packets == 0) SDL_CondSignal(d->empty_queue_cond);
-
-	    if (d->packet_pending)
-	    {
-		d->packet_pending = 0;
-	    }
-	    else
-	    {
-		int old_serial = d->pkt_serial;
-
-		if (packet_queue_get(d->pqueue, d->pkt, 1, &d->pkt_serial) < 0)
-		{
-		    return -1;
-		}
-
-		if (old_serial != d->pkt_serial)
-		{
-		    avcodec_flush_buffers(d->codctx);
-		    d->finished    = 0;
-		    d->next_pts    = d->start_pts;
-		    d->next_pts_tb = d->start_pts_tb;
-		}
-	    }
-	    if (d->pqueue->serial == d->pkt_serial) break;
-	    av_packet_unref(d->pkt);
-	} while (1);
-
-	if (d->codctx->codec_type == AVMEDIA_TYPE_SUBTITLE)
-	{
-	}
-	else
-	{
-	    if (avcodec_send_packet(d->codctx, d->pkt) == AVERROR(EAGAIN))
-	    {
-		av_log(d->codctx, AV_LOG_ERROR, "Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n");
-		d->packet_pending = 1;
-	    }
-	    else
-	    {
-		av_packet_unref(d->pkt);
-	    }
-	}
-    }
-}
-
 static int video_decode_get_frame(MediaState* ms, AVFrame* frame)
 {
-    int got_picture = decoder_decode_frame(&ms->viddec, frame, NULL);
+    int got_picture = decoder_decode_frame(&ms->viddec, frame);
 
     if (got_picture < 0)
     {
@@ -463,8 +295,7 @@ static int video_decode_get_frame(MediaState* ms, AVFrame* frame)
     {
 	double dpts = NAN;
 
-	if (frame->pts != AV_NOPTS_VALUE)
-	    dpts = av_q2d(ms->vidst->time_base) * frame->pts;
+	if (frame->pts != AV_NOPTS_VALUE) dpts = av_q2d(ms->vidst->time_base) * frame->pts;
 
 	frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(ms->format, ms->vidst, frame);
 
@@ -649,14 +480,17 @@ static int stream_component_open(MediaState* ms, int stream_index)
 
 			    if (ret >= 0)
 			    {
-				ret = decoder_start(&ms->viddec, video_decode_thread, "video_decoder", ms);
+				decoder_start(&ms->viddec);
 
-				if (ret >= 0)
+				ms->video_thread = SDL_CreateThread(video_decode_thread, "video_decoder", ms);
+
+				if (!ms->video_thread)
 				{
-				    ms->check_attachment = 1;
+				    av_log(NULL, AV_LOG_ERROR, "SDL_CreateThread(): %s\n", SDL_GetError());
+				    return AVERROR(ENOMEM);
 				}
-				else
-				    zc_log_debug("Cannot start decoder");
+
+				ms->check_attachment = 1;
 			    }
 			    else
 				zc_log_debug("Cannot init decoder");
@@ -703,7 +537,13 @@ static void stream_component_close(MediaState* ms, int stream_index)
     switch (codecpar->codec_type)
     {
 	case AVMEDIA_TYPE_VIDEO:
+
 	    decoder_abort(&ms->viddec, &ms->vidfq);
+
+	    // can't we do this before abort?
+	    SDL_WaitThread(ms->video_thread, NULL);
+	    ms->video_thread = NULL;
+
 	    decoder_destroy(&ms->viddec);
 	    break;
 	default:

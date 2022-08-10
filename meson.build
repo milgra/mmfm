@@ -112,6 +112,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/modules/zen_gfx/zc_text.c',
 
 	       'src/mmfm/coder/coder.c',
+	       'src/mmfm/viewer/decoder.c',
 	       'src/mmfm/viewer/packetqueue.c',
 	       'src/mmfm/viewer/framequeue.c',
 	       'src/mmfm/viewer/clock.c',

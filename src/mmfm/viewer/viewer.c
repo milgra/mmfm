@@ -68,8 +68,8 @@ enum
 typedef struct Decoder
 {
     AVPacket*       pkt;
-    PacketQueue*    queue;
-    AVCodecContext* avctx;
+    PacketQueue*    pqueue;
+    AVCodecContext* codctx;
     int             pkt_serial;
     int             finished;
     int             packet_pending;
@@ -302,13 +302,13 @@ AVDictionary* filter_codec_opts(AVDictionary* opts, enum AVCodecID codec_id, AVF
 
 // decoder related
 
-static int decoder_init(Decoder* d, AVCodecContext* avctx, PacketQueue* queue, SDL_cond* empty_queue_cond)
+static int decoder_init(Decoder* d, AVCodecContext* codctx, PacketQueue* queue, SDL_cond* empty_queue_cond)
 {
     memset(d, 0, sizeof(Decoder));
     d->pkt = av_packet_alloc();
     if (!d->pkt) return AVERROR(ENOMEM);
-    d->avctx            = avctx;
-    d->queue            = queue;
+    d->codctx           = codctx;
+    d->pqueue           = queue;
     d->empty_queue_cond = empty_queue_cond;
     d->start_pts        = AV_NOPTS_VALUE;
     d->pkt_serial       = -1;
@@ -317,7 +317,7 @@ static int decoder_init(Decoder* d, AVCodecContext* avctx, PacketQueue* queue, S
 
 static int decoder_start(Decoder* d, int (*fn)(void*), const char* thread_name, void* arg)
 {
-    packet_queue_start(d->queue);
+    packet_queue_start(d->pqueue);
     d->dec_thread = SDL_CreateThread(fn, thread_name, arg);
     if (!d->dec_thread)
     {
@@ -329,17 +329,17 @@ static int decoder_start(Decoder* d, int (*fn)(void*), const char* thread_name, 
 
 static void decoder_abort(Decoder* d, FrameQueue* fq)
 {
-    packet_queue_abort(d->queue);
+    packet_queue_abort(d->pqueue);
     frame_queue_signal(fq);
     SDL_WaitThread(d->dec_thread, NULL);
     d->dec_thread = NULL;
-    packet_queue_flush(d->queue);
+    packet_queue_flush(d->pqueue);
 }
 
 static void decoder_destroy(Decoder* d)
 {
     av_packet_free(&d->pkt);
-    avcodec_free_context(&d->avctx);
+    avcodec_free_context(&d->codctx);
 }
 
 static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
@@ -348,16 +348,15 @@ static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
 
     for (;;)
     {
-	if (d->queue->serial == d->pkt_serial)
+	if (d->pqueue->serial == d->pkt_serial)
 	{
 	    do {
-		if (d->queue->abort_request)
-		    return -1;
+		if (d->pqueue->abort_request) return -1;
 
-		switch (d->avctx->codec_type)
+		switch (d->codctx->codec_type)
 		{
 		    case AVMEDIA_TYPE_VIDEO:
-			ret = avcodec_receive_frame(d->avctx, frame);
+			ret = avcodec_receive_frame(d->codctx, frame);
 			if (ret >= 0)
 			{
 			    if (decoder_reorder_pts == -1)
@@ -371,12 +370,12 @@ static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
 			}
 			break;
 		    case AVMEDIA_TYPE_AUDIO:
-			ret = avcodec_receive_frame(d->avctx, frame);
+			ret = avcodec_receive_frame(d->codctx, frame);
 			if (ret >= 0)
 			{
 			    AVRational tb = (AVRational){1, frame->sample_rate};
 			    if (frame->pts != AV_NOPTS_VALUE)
-				frame->pts = av_rescale_q(frame->pts, d->avctx->pkt_timebase, tb);
+				frame->pts = av_rescale_q(frame->pts, d->codctx->pkt_timebase, tb);
 			    else if (d->next_pts != AV_NOPTS_VALUE)
 				frame->pts = av_rescale_q(d->next_pts, d->next_pts_tb, tb);
 			    if (frame->pts != AV_NOPTS_VALUE)
@@ -392,16 +391,18 @@ static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
 		if (ret == AVERROR_EOF)
 		{
 		    d->finished = d->pkt_serial;
-		    avcodec_flush_buffers(d->avctx);
+		    avcodec_flush_buffers(d->codctx);
 		    return 0;
 		}
-		if (ret >= 0)
-		    return 1;
+
+		if (ret >= 0) return 1;
+
 	    } while (ret != AVERROR(EAGAIN));
 	}
 
-	do {
-	    if (d->queue->nb_packets == 0) SDL_CondSignal(d->empty_queue_cond);
+	do
+	{
+	    if (d->pqueue->nb_packets == 0) SDL_CondSignal(d->empty_queue_cond);
 
 	    if (d->packet_pending)
 	    {
@@ -411,32 +412,31 @@ static int decoder_decode_frame(Decoder* d, AVFrame* frame, AVSubtitle* sub)
 	    {
 		int old_serial = d->pkt_serial;
 
-		if (packet_queue_get(d->queue, d->pkt, 1, &d->pkt_serial) < 0)
+		if (packet_queue_get(d->pqueue, d->pkt, 1, &d->pkt_serial) < 0)
 		{
 		    return -1;
 		}
 
 		if (old_serial != d->pkt_serial)
 		{
-		    avcodec_flush_buffers(d->avctx);
+		    avcodec_flush_buffers(d->codctx);
 		    d->finished    = 0;
 		    d->next_pts    = d->start_pts;
 		    d->next_pts_tb = d->start_pts_tb;
 		}
 	    }
-	    if (d->queue->serial == d->pkt_serial)
-		break;
+	    if (d->pqueue->serial == d->pkt_serial) break;
 	    av_packet_unref(d->pkt);
 	} while (1);
 
-	if (d->avctx->codec_type == AVMEDIA_TYPE_SUBTITLE)
+	if (d->codctx->codec_type == AVMEDIA_TYPE_SUBTITLE)
 	{
 	}
 	else
 	{
-	    if (avcodec_send_packet(d->avctx, d->pkt) == AVERROR(EAGAIN))
+	    if (avcodec_send_packet(d->codctx, d->pkt) == AVERROR(EAGAIN))
 	    {
-		av_log(d->avctx, AV_LOG_ERROR, "Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n");
+		av_log(d->codctx, AV_LOG_ERROR, "Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n");
 		d->packet_pending = 1;
 	    }
 	    else
@@ -486,13 +486,13 @@ static int video_decode_get_frame(MediaState* ms, AVFrame* frame)
     return got_picture;
 }
 
-static int video_decode_queue_picture(MediaState* ms, AVFrame* src_frame, double pts, double duration, int64_t pos, int serial)
+static int video_decode_queue_frame(MediaState* ms, AVFrame* src_frame, double pts, double duration, int64_t pos, int serial)
 {
     Frame* vp;
 
-#if defined(DEBUG_SYNC)
+    //#if defined(DEBUG_SYNC)
     printf("frame_type=%c pts=%0.3f\n", av_get_picture_type_char(src_frame->pict_type), pts);
-#endif
+    //#endif
 
     if (!(vp = frame_queue_peek_writable(&ms->vidfq, ms->vidpq.abort_request)))
 	return -1;
@@ -528,6 +528,8 @@ static int video_decode_thread(void* arg)
     AVRational  tb         = ms->vidst->time_base;
     AVRational  frame_rate = av_guess_frame_rate(ms->format, ms->vidst, NULL);
 
+    zc_log_debug("time base %f framerate %f", (float) tb.num / (float) tb.den, (float) frame_rate.num / (float) frame_rate.den);
+
     if (!frame) return AVERROR(ENOMEM);
 
     for (;;)
@@ -541,7 +543,7 @@ static int video_decode_thread(void* arg)
 	duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
 	pts      = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
 
-	ret = video_decode_queue_picture(
+	ret = video_decode_queue_frame(
 	    ms,
 	    frame,
 	    pts,
@@ -918,7 +920,7 @@ static int read_thread(void* arg)
 			    }
 			}
 
-			ret = av_read_frame(format, pkt);
+			ret = av_read_frame(format, pkt); // read next packet
 			if (ret < 0)
 			{
 			    if ((ret == AVERROR_EOF || avio_feof(format->pb)) && !ms->eof)

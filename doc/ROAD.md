@@ -1,6 +1,7 @@
 # Zen Media development roadmap
 
 leak eltuntetes
+detailed stream infos video/audional file infoba
 video, audio playing
 pdf, video zoom
 

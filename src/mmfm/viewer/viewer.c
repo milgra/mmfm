@@ -67,7 +67,8 @@ enum
 
 typedef struct Decoder
 {
-    AVPacket*       pkt;
+    AVPacket* pkt;
+
     PacketQueue*    pqueue;
     AVCodecContext* codctx;
     int             pkt_serial;
@@ -80,6 +81,11 @@ typedef struct Decoder
     AVRational      next_pts_tb;
     SDL_Thread*     dec_thread;
     int             av_sync_type;
+
+    // frame drop counter
+
+    int frame_drops_early;
+    int frame_drops_late;
 } Decoder;
 
 typedef struct MediaState
@@ -112,9 +118,6 @@ typedef struct MediaState
     int    eof;                // end of file reached
 
     int     av_sync_type;
-    double  frame_last_filter_delay;
-    int     frame_drops_early;
-    int     frame_drops_late;
     int     paused;
     int     last_paused;
     int     read_pause_return; // read pause return value
@@ -471,11 +474,10 @@ static int video_decode_get_frame(MediaState* ms, AVFrame* frame)
 	    {
 		double diff = dpts - get_master_clock(ms);
 		if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD &&
-		    diff - ms->frame_last_filter_delay < 0 &&
 		    ms->viddec.pkt_serial == ms->vidclk.serial &&
 		    ms->vidpq.nb_packets)
 		{
-		    ms->frame_drops_early++;
+		    ms->viddec.frame_drops_early++;
 		    av_frame_unref(frame);
 		    got_picture = 0;
 		}
@@ -1236,7 +1238,7 @@ void video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm)
 		duration      = vp_duration(ms, vp, nextvp);
 		if (!ms->step_frame && (framedrop > 0 || (framedrop && get_master_sync_type(ms) != AV_SYNC_VIDEO_MASTER)) && time > ms->frame_timer + duration)
 		{
-		    ms->frame_drops_late++;
+		    ms->viddec.frame_drops_late++;
 		    frame_queue_next(&ms->vidfq);
 		    goto retry;
 		}

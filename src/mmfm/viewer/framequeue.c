@@ -46,6 +46,7 @@ int    frame_queue_nb_remaining(FrameQueue* f);
 Frame* frame_queue_peek(FrameQueue* f);
 Frame* frame_queue_peek_next(FrameQueue* f);
 Frame* frame_queue_peek_last(FrameQueue* f);
+Frame* frame_queue_peek_readable(FrameQueue* f, int abort_request);
 Frame* frame_queue_peek_writable(FrameQueue* f, int abort_request);
 
 #endif
@@ -148,6 +149,23 @@ Frame* frame_queue_peek_next(FrameQueue* f)
 Frame* frame_queue_peek_last(FrameQueue* f)
 {
     return &f->queue[f->rindex];
+}
+
+Frame* frame_queue_peek_readable(FrameQueue* f, int abort_request)
+{
+    /* wait until we have a readable a new frame */
+    SDL_LockMutex(f->mutex);
+    while (f->size - f->rindex_shown <= 0 &&
+	   !abort_request)
+    {
+	SDL_CondWait(f->cond, f->mutex);
+    }
+    SDL_UnlockMutex(f->mutex);
+
+    if (abort_request)
+	return NULL;
+
+    return &f->queue[(f->rindex + f->rindex_shown) % f->max_size];
 }
 
 Frame* frame_queue_peek_writable(FrameQueue* f, int abort_request)

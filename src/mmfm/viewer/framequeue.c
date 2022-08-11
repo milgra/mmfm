@@ -52,6 +52,8 @@ Frame* frame_queue_peek_writable(FrameQueue* f, int abort_request);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "zc_log.c"
+
 int frame_queue_init(FrameQueue* f, int max_size, int keep_last)
 {
     int i;
@@ -102,6 +104,8 @@ void frame_queue_push(FrameQueue* f)
     f->size++;
     SDL_CondSignal(f->cond);
     SDL_UnlockMutex(f->mutex);
+
+    // zc_log_debug("pushing frame in queue, size %i", f->size);
 }
 
 void frame_queue_next(FrameQueue* f)

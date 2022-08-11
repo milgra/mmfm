@@ -26,6 +26,7 @@ void   clock_set_speed(Clock* c, double speed);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "libavutil/time.h"
+#include "zc_log.c"
 
 void clock_init(Clock* c, int* queue_serial)
 {
@@ -62,6 +63,8 @@ void clock_set_at(Clock* c, double pts, int serial, double time)
     c->last_updated = time;
     c->pts_drift    = c->pts - time;
     c->serial       = serial;
+
+    // zc_log_debug("clock set at pts %f last upd %f drift %f", c->pts, c->last_updated, c->pts_drift);
 }
 
 void clock_set_speed(Clock* c, double speed)

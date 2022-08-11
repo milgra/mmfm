@@ -1,9 +1,13 @@
 # Zen Media development roadmap
 
+new play with old stream closing
+audio streamplaying
 leak eltuntetes
 detailed stream infos video/audional file infoba
 video, audio playing
 pdf, video zoom
+
+viewer legyen egy kulon library ffmpeg felett
 
 visualization level gombok, kep, oszcilloszkop, binaris
 

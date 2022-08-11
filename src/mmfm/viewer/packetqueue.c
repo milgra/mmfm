@@ -38,6 +38,8 @@ int  packet_queue_get(PacketQueue* q, AVPacket* pkt, int block, int* serial);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "zc_log.c"
+
 int packet_queue_init(PacketQueue* q)
 {
     memset(q, 0, sizeof(PacketQueue));
@@ -118,8 +120,12 @@ int packet_queue_put_private(PacketQueue* q, AVPacket* pkt)
     q->nb_packets++;
     q->size += pkt1.pkt->size + sizeof(pkt1);
     q->duration += pkt1.pkt->duration;
+
     /* XXX: should duplicate packet data in DV case */
     SDL_CondSignal(q->cond);
+
+    // zc_log_debug("putting packet in queue, packets %i size %i duration %i", q->nb_packets, q->size, q->duration);
+
     return 0;
 }
 

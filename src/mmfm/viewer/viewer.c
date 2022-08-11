@@ -282,73 +282,6 @@ AVDictionary* filter_codec_opts(AVDictionary* opts, enum AVCodecID codec_id, AVF
     return ret;
 }
 
-static int video_decode_get_frame(MediaState* ms, AVFrame* frame)
-{
-    int got_picture = decoder_decode_frame(&ms->viddec, frame);
-
-    if (got_picture < 0)
-    {
-	return -1;
-    }
-
-    if (got_picture)
-    {
-	double dpts = NAN;
-
-	if (frame->pts != AV_NOPTS_VALUE) dpts = av_q2d(ms->vidst->time_base) * frame->pts;
-
-	frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(ms->format, ms->vidst, frame);
-
-	if (framedrop > 0 || (framedrop && get_master_sync_type(ms) != AV_SYNC_VIDEO_MASTER))
-	{
-	    if (frame->pts != AV_NOPTS_VALUE)
-	    {
-		double diff = dpts - get_master_clock(ms);
-		if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD &&
-		    ms->viddec.pkt_serial == ms->vidclk.serial &&
-		    ms->vidpq.nb_packets)
-		{
-		    ms->viddec.frame_drops_early++;
-		    av_frame_unref(frame);
-		    got_picture = 0;
-		}
-	    }
-	}
-    }
-
-    return got_picture;
-}
-
-static int video_decode_queue_frame(MediaState* ms, AVFrame* src_frame, double pts, double duration, int64_t pos, int serial)
-{
-    Frame* vp;
-
-    //#if defined(DEBUG_SYNC)
-    printf("frame_type=%c pts=%0.3f\n", av_get_picture_type_char(src_frame->pict_type), pts);
-    //#endif
-
-    if (!(vp = frame_queue_peek_writable(&ms->vidfq, ms->vidpq.abort_request)))
-	return -1;
-
-    vp->sar      = src_frame->sample_aspect_ratio;
-    vp->uploaded = 0;
-
-    vp->width  = src_frame->width;
-    vp->height = src_frame->height;
-    vp->format = src_frame->format;
-
-    vp->pts      = pts;
-    vp->duration = duration;
-    vp->pos      = pos;
-    vp->serial   = serial;
-
-    // set_default_window_size(vp->width, vp->height, vp->sar);
-
-    av_frame_move_ref(vp->frame, src_frame);
-    frame_queue_push(&ms->vidfq);
-    return 0;
-}
-
 static int video_decode_thread(void* arg)
 {
     zc_log_debug("Video decoder thread started.");
@@ -367,26 +300,77 @@ static int video_decode_thread(void* arg)
 
     for (;;)
     {
-	ret = video_decode_get_frame(ms, frame);
+	// decode next frame
+	ret = decoder_decode_frame(&ms->viddec, frame);
 
-	if (ret < 0) break;
+	// check frame drop
+	if (ret >= 0)
+	{
+	    double dpts = NAN;
+	    if (frame->pts != AV_NOPTS_VALUE) dpts = av_q2d(ms->vidst->time_base) * frame->pts;
+	    if (framedrop > 0 || (framedrop && get_master_sync_type(ms) != AV_SYNC_VIDEO_MASTER))
+	    {
+		if (frame->pts != AV_NOPTS_VALUE)
+		{
+		    double diff = dpts - get_master_clock(ms);
+		    if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD &&
+			ms->viddec.pkt_serial == ms->vidclk.serial &&
+			ms->vidpq.nb_packets)
+		    {
+			ms->viddec.frame_drops_early++;
+			av_frame_unref(frame);
+			continue; // we have to drop this frame
+		    }
+		}
+	    }
+	}
 
-	if (!ret) continue;
+	if (ret > 0) // we got frame!
+	{
+	    // calculate aspect ratio
+	    frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(ms->format, ms->vidst, frame);
 
-	duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
-	pts      = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+	    duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
+	    pts      = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
 
-	ret = video_decode_queue_frame(
-	    ms,
-	    frame,
-	    pts,
-	    duration,
-	    frame->pkt_pos,
-	    ms->viddec.pkt_serial);
+	    // printf("frame_type=%c pts=%0.3f\n", av_get_picture_type_char(frame->pict_type), pts);
 
-	av_frame_unref(frame);
+	    Frame* qframe = frame_queue_peek_writable(&ms->vidfq, ms->vidpq.abort_request);
 
-	if (ret < 0) break;
+	    if (qframe)
+	    {
+		qframe->sar      = frame->sample_aspect_ratio;
+		qframe->uploaded = 0;
+
+		qframe->width  = frame->width;
+		qframe->height = frame->height;
+		qframe->format = frame->format;
+
+		qframe->pts      = pts;
+		qframe->duration = duration;
+		qframe->pos      = frame->pkt_pos;
+		qframe->serial   = ms->viddec.pkt_serial;
+
+		// set_default_window_size(qframe->width, qframe->height, qframe->sar);
+
+		av_frame_move_ref(qframe->frame, frame);
+		frame_queue_push(&ms->vidfq);
+
+		av_frame_unref(frame);
+	    }
+	    else // we have no frame
+	    {
+		break;
+	    }
+	}
+	else if (ret == 0) // no frame yet
+	{
+	    continue;
+	}
+	else if (ret < 0) // shit happened
+	{
+	    break;
+	}
     }
 
     av_frame_free(&frame);

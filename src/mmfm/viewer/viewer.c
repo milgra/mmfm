@@ -1,3 +1,14 @@
+/*
+  Media Viewer namespace
+
+  viewer_open creates a read thread that reads up packets from the given media.
+  The read thread creates one or multiple decoder threads depending on the media streams. Decoders decode packets to frames.
+  After the threads are started and reading/decoding is running a final frame can be requested with video_refresh, if there is
+  a frame available, it gets copied to the given bitmap.
+  Sound streams are played by SDL audio.
+
+ */
+
 #ifndef viewer_h
 #define viewer_h
 
@@ -50,10 +61,11 @@ void  video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm);
 #define EXTERNAL_CLOCK_MAX_FRAMES 10
 
 static int framedrop       = -1; // drop frames on slow cpu
-static int infinite_buffer = -1;
-static int autoexit        = -1;
-static int loop            = 1;
-double     rdftspeed1      = 0.02;
+static int infinite_buffer = -1; // don't limit the input buffer size (useful with realtime streams)
+
+static int autoexit   = -1;
+static int loop       = 1;
+double     rdftspeed1 = 0.02;
 uint8_t*   scaledpixels[1];
 int        scaledw = 0;
 int        scaledh = 0;
@@ -111,7 +123,7 @@ typedef struct MediaState
     struct SwsContext* img_convert_ctx; // image conversion context for scaling on upload
 } MediaState;
 
-AVDictionary *format_optsn, *codec_optsn;
+AVDictionary* codec_optsn;
 
 // timing related
 
@@ -218,12 +230,6 @@ int check_stream_specifier(AVFormatContext* format, AVStream* st, const char* sp
 }
 
 // trash
-
-static int decode_interrupt_cb(void* ctx)
-{
-    MediaState* ms = ctx;
-    return ms->abort_request;
-}
 
 AVDictionary* filter_codec_opts(AVDictionary* opts, enum AVCodecID codec_id, AVFormatContext* format, AVStream* st, const AVCodec* codec)
 {
@@ -524,7 +530,7 @@ static void stream_component_close(MediaState* ms, int stream_index)
 
 	    decoder_abort(&ms->viddec, &ms->vidfq);
 
-	    // can't we do this before abort?
+	    // can't we do this before decoder abort?
 	    SDL_WaitThread(ms->video_thread, NULL);
 	    ms->video_thread = NULL;
 
@@ -546,6 +552,12 @@ static void stream_component_close(MediaState* ms, int stream_index)
     }
 }
 
+static int decode_interrupt_cb(void* ctx)
+{
+    MediaState* ms = ctx;
+    return ms->abort_request;
+}
+
 static int stream_has_enough_packets(AVStream* st, int stream_id, PacketQueue* queue)
 {
     return stream_id < 0 ||
@@ -558,85 +570,45 @@ static int stream_has_enough_packets(AVStream* st, int stream_id, PacketQueue* q
 static int read_thread(void* arg)
 {
     zc_log_debug("Read thread started.");
-    MediaState* ms = arg;
 
-    // create mutex
-    SDL_mutex* wait_mutex = SDL_CreateMutex();
+    MediaState* ms = arg;
+    int         st_index[AVMEDIA_TYPE_NB];
+    SDL_mutex*  wait_mutex = SDL_CreateMutex();
+
+    memset(st_index, -1, sizeof(st_index));
 
     if (wait_mutex)
     {
-	zc_log_debug("Wait mutex created.");
-
-	int st_index[AVMEDIA_TYPE_NB]; // stream index
-
-	memset(st_index, -1, sizeof(st_index));
-
-	// create packet
-	AVPacket* pkt = av_packet_alloc(); // current packet
+	AVPacket* pkt = av_packet_alloc();
 
 	if (pkt)
 	{
-	    zc_log_debug("AVPacket allocated");
-
-	    // create context
-	    AVFormatContext* format = avformat_alloc_context(); // corrent format context
+	    AVFormatContext* format = avformat_alloc_context();
 
 	    if (format)
 	    {
-		zc_log_debug("AVFormatContext allocated");
-
 		format->interrupt_callback.callback = decode_interrupt_cb;
 		format->interrupt_callback.opaque   = ms;
 
-		int scan_all_pmts_set = 0; // could get all parameters
+		AVDictionary* format_optsn;
+		av_dict_set(&format_optsn, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
 
-		if (!av_dict_get(format_optsn, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE))
+		int ret = avformat_open_input(&format, ms->filename, NULL, &format_optsn);
+
+		if (ret >= 0)
 		{
-		    // in case of scan all not set, set it
-		    av_dict_set(&format_optsn, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
-		    scan_all_pmts_set = 1;
-		}
-		else
-		    zc_log_debug("");
-
-		int err = avformat_open_input(&format, ms->filename, NULL, &format_optsn);
-
-		if (err >= 0)
-		{
-		    zc_log_debug("Input opened, format name");
-
-		    // why do we have to set this again?
-		    if (scan_all_pmts_set)
-			av_dict_set(&format_optsn, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
-
-		    // avformat_open_input fills up format_optsn with non-existing parameters
-
-		    const AVDictionaryEntry* t;
-
-		    if ((t = av_dict_get(format_optsn, "", NULL, AV_DICT_IGNORE_SUFFIX)))
-		    {
-			zc_log_debug("Option %s not found.", t->key);
-		    }
-
 		    ms->format = format;
-
-		    // do we need this?
-		    /* if (genpts) */
-		    /* 	format->flags |= AVFMT_FLAG_GENPTS; */
-
-		    // why?
-		    av_format_inject_global_side_data(format);
 
 		    // set eof reached, fix?
 		    if (format->pb) format->pb->eof_reached = 0; // FIXME hack, ffplay maybe should not use avio_feof() to test for the end
 
-		    // get max frame duration for checing timestamp discontinuity
+		    // get max frame duration for checking timestamp discontinuity
 		    ms->max_frame_duration = (format->iformat->flags & AVFMT_TS_DISCONT) ? 10.0 : 3600.0;
 
 		    // check realtimeness, speed adjusment may be needed on realtime streams during refresh
 		    ms->realtime = check_stream_realtime(format);
 
-		    // print format info
+		    // print format info, should be done by coder and shown in preview
 		    av_dump_format(format, 0, ms->filename, 0);
 
 		    // find video streaam
@@ -653,12 +625,13 @@ static int read_thread(void* arg)
 		    if (st_index[AVMEDIA_TYPE_VIDEO] >= 0)
 		    {
 			ret = stream_component_open(ms, st_index[AVMEDIA_TYPE_VIDEO]);
+			if (ret < 0) zc_log_error("Can't open video stream, errno %i", ret);
 		    }
 
 		    // set infinite buffer
-		    if (infinite_buffer < 0 && ms->realtime)
-			infinite_buffer = 1;
+		    if (infinite_buffer < 0 && ms->realtime) infinite_buffer = 1;
 
+		    // start packet reading
 		    for (;;)
 		    {
 			// abort if needed
@@ -784,19 +757,13 @@ static int read_thread(void* arg)
 			}
 		    }
 		}
-		else
-		{
-		    zc_log_debug("Cannot open input");
-		}
+		else zc_log_debug("Cannot open input, errno : %i", ret);
 	    }
-	    else
-		zc_log_debug("Cannot create format context");
+	    else zc_log_debug("Cannot create format context");
 	}
-	else
-	    zc_log_debug("Cannot create packet");
+	else zc_log_debug("Cannot create packet");
     }
-    else
-	zc_log_debug("Cannot create mutex %s", SDL_GetError());
+    else zc_log_debug("Cannot create mutex %s", SDL_GetError());
 
     return 0;
 }
@@ -805,30 +772,31 @@ void* viewer_open(char* path)
 {
     zc_log_debug("viewer_open %s", path);
 
-    MediaState* ms;
-
-    ms = av_mallocz(sizeof(MediaState));
-
-    ms->filename = av_strdup(path);
+    MediaState* ms = av_mallocz(sizeof(MediaState));
 
     if (ms)
     {
-	if (frame_queue_init(&ms->vidfq, VIDEO_PICTURE_QUEUE_SIZE, 1) < 0) zc_log_debug("cannot create frame queue");
-
-	if (packet_queue_init(&ms->vidpq) < 0) zc_log_debug("cannot create packet queue");
-
-	ms->continue_read_thread = SDL_CreateCond();
-
-	if (ms->continue_read_thread == NULL) zc_log_error("cannot create sdl cond");
-
-	clock_init(&ms->vidclk, &ms->vidpq.serial);
-	clock_init(&ms->extclk, &ms->extclk.serial);
-
-	ms->read_thread = SDL_CreateThread(read_thread, "read_thread", ms);
-	if (!ms->read_thread)
+	if (frame_queue_init(&ms->vidfq, VIDEO_PICTURE_QUEUE_SIZE, 1) >= 0)
 	{
-	    zc_log_error("SDL_CreateThread(): %s\n", SDL_GetError());
+	    if (packet_queue_init(&ms->vidpq) >= 0)
+	    {
+		ms->continue_read_thread = SDL_CreateCond();
+
+		if (ms->continue_read_thread)
+		{
+		    clock_init(&ms->vidclk, &ms->vidpq.serial);
+		    clock_init(&ms->extclk, &ms->extclk.serial);
+
+		    ms->filename    = av_strdup(path);
+		    ms->read_thread = SDL_CreateThread(read_thread, "read_thread", ms);
+
+		    if (!ms->read_thread) zc_log_error("Cannot create read thread : %s\n", SDL_GetError());
+		}
+		else zc_log_error("Cannot create conditional");
+	    }
+	    else zc_log_error("Cannot create packet queue.");
 	}
+	else zc_log_error("Cannot create frame queue.");
     }
 
     return ms;
@@ -836,7 +804,6 @@ void* viewer_open(char* path)
 
 static void viewer_close(MediaState* ms)
 {
-    /* XXX: use a special url_shutdown call to abort parse cleanly */
     ms->abort_request = 1;
     SDL_WaitThread(ms->read_thread, NULL);
 

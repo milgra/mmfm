@@ -353,9 +353,23 @@ int coder_load_metadata_into(const char* path, map_t* map)
 			snprintf(bitrate, 10, "%li", param->bit_rate);
 			snprintf(samplerate, 10, "%i", param->sample_rate);
 
-			MPUTR(map, "media/channels", channels);      // REL 0
-			MPUTR(map, "media/bit_rate", bitrate);       // REL 1
-			MPUTR(map, "media/sample_rate", samplerate); // REL 2
+			MPUTR(map, "audio/channels", channels);      // REL 0
+			MPUTR(map, "audio/bit_rate", bitrate);       // REL 1
+			MPUTR(map, "audio/sample_rate", samplerate); // REL 2
+		    }
+		    else if (param->codec_type == AVMEDIA_TYPE_VIDEO)
+		    {
+			char* channels   = CAL(10, NULL, cstr_describe); // REL 0
+			char* bitrate    = CAL(10, NULL, cstr_describe); // REL 1
+			char* samplerate = CAL(10, NULL, cstr_describe); // REL 2
+
+			snprintf(channels, 10, "%i", param->ch_layout.nb_channels);
+			snprintf(bitrate, 10, "%li", param->bit_rate);
+			snprintf(samplerate, 10, "%i", param->sample_rate);
+
+			MPUTR(map, "video/channels", channels);      // REL 0
+			MPUTR(map, "video/bit_rate", bitrate);       // REL 1
+			MPUTR(map, "video/sample_rate", samplerate); // REL 2
 		    }
 		}
 	    }

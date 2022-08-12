@@ -963,7 +963,7 @@ int viewer_read_thread(void* arg)
 		    av_dump_format(format, 0, ms->filename, 0);
 
 		    /* reset eof reached, fix? */
-		    if (format->pb) format->pb->eof_reached = 0; // FIXME hack, ffplay maybe should not use avio_feof() to test for the end
+		    if (format->pb) format->pb->eof_reached = 0; // FIXME hack, ffplay maybe should not use avio_feof() to test for the end http://www.gidnetwork.com/b-58.html
 
 		    /* get max frame duration for checking timestamp discontinuity */
 		    ms->max_frame_duration = (format->iformat->flags & AVFMT_TS_DISCONT) ? 10.0 : 3600.0;

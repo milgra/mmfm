@@ -3,45 +3,45 @@ project(
   'c',
   version: '0.1',
   license: 'MIT',
-  default_options: ['c_std=c99']
+  default_options: ['c_std=gnu99']
 )
 
 cc = meson.get_compiler('c')
 
-freetype = dependency('freetype2')
-math = cc.find_library('m')
-z = cc.find_library('z')
-bz2 = cc.find_library('bz2')
-rt = cc.find_library('rt')
-gl = cc.find_library('GL')
-glew = cc.find_library('GLEW')
-sdl2 = cc.find_library('SDL2')
-swscale = cc.find_library('swscale')
-pthread = cc.find_library('pthread')
-jpeg = cc.find_library('jpeg')
-jbig = cc.find_library('jbig2dec')
-ojpeg = cc.find_library('openjp2')
-hb = cc.find_library('harfbuzz')
-gumbo = cc.find_library('gumbo')
-avutil = cc.find_library('avutil')
-avcodec = cc.find_library('avcodec')
-avdevice = cc.find_library('avdevice')
-avformat = cc.find_library('avformat')
-avfilter = cc.find_library('avfilter')
-swresample = cc.find_library('swresample')
+freetype = cc.find_library('freetype',static:false)
+math = cc.find_library('m',static:false)
+z = cc.find_library('z',static:false)
+bz2 = cc.find_library('bz2',static:false)
+rt = cc.find_library('rt',static:false)
+gl = cc.find_library('GL',static:false)
+glew = cc.find_library('GLEW',static:false)
+sdl2 = cc.find_library('SDL2',static:false)
+swscale = cc.find_library('swscale',static:false)
+pthread = cc.find_library('pthread',static:false)
+jpeg = cc.find_library('jpeg',static:false)
+jbig = cc.find_library('jbig2dec',static:false)
+ojpeg = cc.find_library('openjp2',static:false)
+hb = cc.find_library('harfbuzz',static:false)
+gumbo = cc.find_library('gumbo',static:false)
+avutil = cc.find_library('avutil',static:false)
+avcodec = cc.find_library('avcodec',static:false)
+avdevice = cc.find_library('avdevice',static:false)
+avformat = cc.find_library('avformat',static:false)
+avfilter = cc.find_library('avfilter',static:false)
+swresample = cc.find_library('swresample',static:false)
 
 # for ffmpeg
-va = cc.find_library('va')
-x11 = cc.find_library('X11')
-lvadrm = cc.find_library('va-drm')
-lvax11 = cc.find_library('va-x11')
-lzma = cc.find_library('lzma')
-lvdpau = cc.find_library('vdpau')
+va = cc.find_library('va',static:false)
+x11 = cc.find_library('X11',static:false)
+lvadrm = cc.find_library('va-drm',static:false)
+lvax11 = cc.find_library('va-x11',static:false)
+lzma = cc.find_library('lzma',static:false)
+lvdpau = cc.find_library('vdpau',static:false)
 
 mupdf = cc.find_library('mupdf')
 mupdfthird = cc.find_library('mupdf-third')
 
-mmfm_dependencies = [rt, freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau]
+mmfm_dependencies = [rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau]
 
 mmfm_version = '"@0@"'.format(meson.project_version())
 add_project_arguments('-DMMFM_VERSION=@0@'.format(mmfm_version), language: 'c')
@@ -57,6 +57,7 @@ mmfm_inc = include_directories(
 	'/usr/include/GL',
 	'/usr/include/SDL2',
 	'/usr/include/mupdf',
+	'/usr/include/freetype2',
 	'src/modules',
 	'src/modules/zen_math',
 	'src/modules/zen_gfx',

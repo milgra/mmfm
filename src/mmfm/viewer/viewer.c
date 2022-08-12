@@ -187,6 +187,9 @@ double viewer_get_master_clock(MediaState* ms)
 	case AV_SYNC_VIDEO_MASTER:
 	    val = clock_get(&ms->vidclk);
 	    break;
+	case AV_SYNC_AUDIO_MASTER:
+	    val = clock_get(&ms->audclk);
+	    break;
 	default:
 	    val = clock_get(&ms->extclk);
 	    break;
@@ -229,7 +232,7 @@ void viewer_stream_toggle_pause(MediaState* ms)
 	clock_set(&ms->vidclk, clock_get(&ms->vidclk), ms->vidclk.serial);
     }
     clock_set(&ms->extclk, clock_get(&ms->extclk), ms->extclk.serial);
-    ms->paused = ms->vidclk.paused = ms->extclk.paused = !ms->paused;
+    ms->paused = ms->audclk.paused = ms->vidclk.paused = ms->extclk.paused = !ms->paused;
 }
 
 void viewer_step_to_next_frame(MediaState* ms)
@@ -527,10 +530,14 @@ static void viewer_sdl_audio_callback(void* opaque, Uint8* stream, int len)
 	len1 = ms->audio_buf_size - ms->audio_buf_index;
 	if (len1 > len)
 	    len1 = len;
+
 	if (!ms->muted && ms->audio_buf && ms->audio_volume == SDL_MIX_MAXVOLUME)
+	{
 	    memcpy(stream, (uint8_t*) ms->audio_buf + ms->audio_buf_index, len1);
+	}
 	else
 	{
+	    zc_log_debug("");
 	    memset(stream, 0, len1);
 	    if (!ms->muted && ms->audio_buf)
 		SDL_MixAudioFormat(stream, (uint8_t*) ms->audio_buf + ms->audio_buf_index, AUDIO_S16SYS, len1, ms->audio_volume);
@@ -540,6 +547,7 @@ static void viewer_sdl_audio_callback(void* opaque, Uint8* stream, int len)
 	ms->audio_buf_index += len1;
     }
     ms->audio_write_buf_size = ms->audio_buf_size - ms->audio_buf_index;
+
     /* Let's assume the audio driver that ms used by SDL has two periods. */
     if (!isnan(ms->audio_clock))
     {
@@ -550,6 +558,8 @@ static void viewer_sdl_audio_callback(void* opaque, Uint8* stream, int len)
 
 int viewer_audio_open(void* opaque, AVChannelLayout* wanted_channel_layout, int wanted_sample_rate, struct AudioParams* audio_hw_params)
 {
+    zc_log_debug("viewer audio open");
+
     SDL_AudioSpec    wanted_spec, spec;
     const char*      env;
     static const int next_nb_channels[]   = {0, 0, 1, 6, 2, 6, 4, 6};
@@ -558,6 +568,9 @@ int viewer_audio_open(void* opaque, AVChannelLayout* wanted_channel_layout, int 
     int              wanted_nb_channels   = wanted_channel_layout->nb_channels;
 
     env = SDL_getenv("SDL_AUDIO_CHANNELS");
+
+    zc_log_debug("ENV CHANNELS %s", env);
+
     if (env)
     {
 	wanted_nb_channels = atoi(env);
@@ -569,6 +582,7 @@ int viewer_audio_open(void* opaque, AVChannelLayout* wanted_channel_layout, int 
 	av_channel_layout_uninit(wanted_channel_layout);
 	av_channel_layout_default(wanted_channel_layout, wanted_nb_channels);
     }
+
     wanted_nb_channels   = wanted_channel_layout->nb_channels;
     wanted_spec.channels = wanted_nb_channels;
     wanted_spec.freq     = wanted_sample_rate;
@@ -579,6 +593,7 @@ int viewer_audio_open(void* opaque, AVChannelLayout* wanted_channel_layout, int 
     }
     while (next_sample_rate_idx && next_sample_rates[next_sample_rate_idx] >= wanted_spec.freq)
 	next_sample_rate_idx--;
+
     wanted_spec.format   = AUDIO_S16SYS;
     wanted_spec.silence  = 0;
     wanted_spec.samples  = FFMAX(SDL_AUDIO_MIN_BUFFER_SIZE, 2 << av_log2(wanted_spec.freq / SDL_AUDIO_MAX_CALLBACKS_PER_SEC));
@@ -600,11 +615,13 @@ int viewer_audio_open(void* opaque, AVChannelLayout* wanted_channel_layout, int 
 	}
 	av_channel_layout_default(wanted_channel_layout, wanted_spec.channels);
     }
+
     if (spec.format != AUDIO_S16SYS)
     {
 	av_log(NULL, AV_LOG_ERROR, "SDL advised audio format %d is not supported!\n", spec.format);
 	return -1;
     }
+
     if (spec.channels != wanted_spec.channels)
     {
 	av_channel_layout_uninit(wanted_channel_layout);
@@ -622,48 +639,59 @@ int viewer_audio_open(void* opaque, AVChannelLayout* wanted_channel_layout, int 
 	return -1;
     audio_hw_params->frame_size    = av_samples_get_buffer_size(NULL, audio_hw_params->ch_layout.nb_channels, 1, audio_hw_params->fmt, 1);
     audio_hw_params->bytes_per_sec = av_samples_get_buffer_size(NULL, audio_hw_params->ch_layout.nb_channels, audio_hw_params->freq, audio_hw_params->fmt, 1);
+
     if (audio_hw_params->bytes_per_sec <= 0 || audio_hw_params->frame_size <= 0)
     {
 	av_log(NULL, AV_LOG_ERROR, "av_samples_get_buffer_size failed\n");
 	return -1;
     }
+
+    zc_log_debug("spec size %i channels %i freq %i", spec.size, spec.channels, spec.freq);
+
     return spec.size;
 }
 
 int viewer_audio_decode_thread(void* arg)
 {
+    zc_log_debug("Audio decoder thread started.");
+
     MediaState* is    = arg;
     AVFrame*    frame = av_frame_alloc();
-    Frame*      af;
-    int         got_frame = 0;
-    AVRational  tb;
-    int         ret = 0;
+    int         ret   = 0;
 
-    if (!frame)
-	return AVERROR(ENOMEM);
+    if (frame)
+    {
+	do {
+	    int got_frame = decoder_decode_frame(&is->auddec, frame);
 
-    do {
-	if ((got_frame = decoder_decode_frame(&is->auddec, frame)) < 0)
-	    goto the_end;
+	    if (got_frame >= 0)
+	    {
+		if (got_frame)
+		{
+		    AVRational tb = (AVRational){1, frame->sample_rate};
+		    Frame*     af = frame_queue_peek_writable(&is->audfq, is->audpq.abort_request);
 
-	if (got_frame)
-	{
-	    tb = (AVRational){1, frame->sample_rate};
+		    if (af)
+		    {
+			af->pts      = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+			af->pos      = frame->pkt_pos;
+			af->serial   = is->auddec.pkt_serial;
+			af->duration = av_q2d((AVRational){frame->nb_samples, frame->sample_rate});
 
-	    if (!(af = frame_queue_peek_writable(&is->audfq, is->audpq.abort_request)))
-		goto the_end;
+			av_frame_move_ref(af->frame, frame);
+			frame_queue_push(&is->audfq);
+		    }
+		    else break;
+		}
+	    }
+	    else break;
 
-	    af->pts      = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
-	    af->pos      = frame->pkt_pos;
-	    af->serial   = is->auddec.pkt_serial;
-	    af->duration = av_q2d((AVRational){frame->nb_samples, frame->sample_rate});
+	} while (ret >= 0 || ret == AVERROR(EAGAIN) || ret == AVERROR_EOF);
 
-	    av_frame_move_ref(af->frame, frame);
-	    frame_queue_push(&is->audfq);
-	}
-    } while (ret >= 0 || ret == AVERROR(EAGAIN) || ret == AVERROR_EOF);
-the_end:
-    av_frame_free(&frame);
+	av_frame_free(&frame); // cleanup
+    }
+    else return AVERROR(ENOMEM); // cannot allocate frame
+
     return ret;
 }
 
@@ -837,6 +865,33 @@ void viewer_stream_close(MediaState* ms, int stream_index)
 
 	    decoder_destroy(&ms->viddec);
 	    break;
+
+	case AVMEDIA_TYPE_AUDIO:
+
+	    decoder_abort(&ms->auddec, &ms->audfq);
+
+	    // can't we do this before decoder abort?
+	    SDL_WaitThread(ms->audio_thread, NULL);
+	    ms->audio_thread = NULL;
+
+	    SDL_CloseAudioDevice(audio_dev);
+	    decoder_destroy(&ms->auddec);
+
+	    swr_free(&ms->swr_ctx);
+	    av_freep(&ms->audio_buf1);
+
+	    ms->audio_buf1_size = 0;
+	    ms->audio_buf       = NULL;
+
+	    /* if (ms->rdft) */
+	    /* { */
+	    /* 	av_rdft_end(ms->rdft); */
+	    /* 	av_freep(&ms->rdft_data); */
+	    /* 	ms->rdft      = NULL; */
+	    /* 	ms->rdft_bits = 0; */
+	    /* } */
+	    break;
+
 	default:
 	    break;
     }
@@ -847,6 +902,10 @@ void viewer_stream_close(MediaState* ms, int stream_index)
 	case AVMEDIA_TYPE_VIDEO:
 	    ms->vidst       = NULL;
 	    ms->vidst_index = -1;
+	    break;
+	case AVMEDIA_TYPE_AUDIO:
+	    ms->audst       = NULL;
+	    ms->audst_index = -1;
 	    break;
 	default:
 	    break;
@@ -1066,19 +1125,18 @@ int viewer_read_thread(void* arg)
 			    ms->eof = 0;
 			}
 
-			/* check if packet is in play range specified by user, then queue, otherwise discard */
+			/* finally queue packet or discard */
 
-			int index_ok      = pkt->stream_index == ms->vidst_index;
-			int is_attachment = ms->vidst->disposition & AV_DISPOSITION_ATTACHED_PIC;
-
-			if (index_ok && !is_attachment)
+			if (pkt->stream_index == ms->audst_index)
 			{
-			    /* put packet in queue */
+			    packet_queue_put(&ms->audpq, pkt);
+			}
+			else if (pkt->stream_index == ms->vidst_index && !(ms->vidst->disposition & AV_DISPOSITION_ATTACHED_PIC))
+			{
 			    packet_queue_put(&ms->vidpq, pkt);
 			}
 			else
 			{
-			    /* we don't need the packet */
 			    av_packet_unref(pkt);
 			}
 		    }
@@ -1123,8 +1181,9 @@ void* viewer_open(char* path)
 		    clock_init(&ms->audclk, &ms->audpq.serial);
 		    clock_init(&ms->extclk, &ms->extclk.serial);
 
-		    ms->filename    = av_strdup(path);
-		    ms->read_thread = SDL_CreateThread(viewer_read_thread, "read_thread", ms);
+		    ms->audio_volume = 100;
+		    ms->filename     = av_strdup(path);
+		    ms->read_thread  = SDL_CreateThread(viewer_read_thread, "read_thread", ms);
 
 		    if (!ms->read_thread) zc_log_error("Cannot create read thread : %s\n", SDL_GetError());
 		}

@@ -57,8 +57,20 @@ void vh_tbl_body_vjump(
 void vh_tbl_body_del(void* p)
 {
     vh_tbl_body_t* vh = p;
+
+    zc_log_debug("tbl body del");
+    // remove items
+
+    for (int index = 0;
+	 index < vh->items->length;
+	 index++)
+    {
+	view_t* item = vh->items->data[index];
+	view_remove_from_parent(item);
+	zc_log_debug("%s %i", item->id, mem_retaincount(item));
+    }
+
     REL(vh->items);
-    if (vh->userdata) REL(vh->userdata);
 }
 
 void vh_tbl_body_desc(void* p, int level)
@@ -75,10 +87,10 @@ void vh_tbl_body_attach(
     assert(view->handler == NULL && view->handler_data == NULL);
 
     vh_tbl_body_t* vh = CAL(sizeof(vh_tbl_body_t), vh_tbl_body_del, vh_tbl_body_desc);
-    if (userdata) vh->userdata = RET(userdata);
-    vh->items        = VNEW(); // REL 0
-    vh->item_create  = item_create;
-    vh->item_recycle = item_recycle;
+    vh->userdata      = userdata;
+    vh->items         = VNEW(); // REL 0
+    vh->item_create   = item_create;
+    vh->item_recycle  = item_recycle;
 
     view->handler_data = vh;
 }
@@ -125,6 +137,7 @@ void vh_tbl_body_move(
 		VADD(vh->items, item);
 		view_add_subview(view, item);
 		view_set_frame(item, (r2_t){vh->head_xpos, 0, item->frame.local.w, item->frame.local.h});
+		REL(item);
 	    }
 	    else
 	    {
@@ -184,6 +197,8 @@ void vh_tbl_body_move(
 		    view_add_subview(view, item);
 
 		    view_set_frame(item, (r2_t){vh->head_xpos, tail->frame.local.y + tail->frame.local.h, item->frame.local.w, item->frame.local.h});
+
+		    REL(item);
 		}
 		else
 		{
@@ -203,20 +218,20 @@ void vh_tbl_body_move(
 
 		if (head->frame.local.y + head->frame.local.h < 0.0 - TBL_BODY_PRELOAD_DISTANCE && vh->items->length > 1)
 		{
-		    VREM(vh->items, head);
 		    vh->head_index += 1;
 		    view_remove_from_parent(head);
 		    if (vh->item_recycle) (*vh->item_recycle)(view, head, vh->userdata);
+		    VREM(vh->items, head);
 		}
 
 		// remove tail if needed
 
 		if (tail->frame.local.y > view->frame.local.h + TBL_BODY_PRELOAD_DISTANCE && vh->items->length > 1)
 		{
-		    VREM(vh->items, tail);
 		    vh->tail_index -= 1;
 		    view_remove_from_parent(tail);
 		    if (vh->item_recycle) (*vh->item_recycle)(view, tail, vh->userdata);
+		    VREM(vh->items, tail);
 		}
 	    }
 	}

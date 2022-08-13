@@ -193,6 +193,11 @@ void vh_tbl_head_jump(
 
 void vh_tbl_head_del(void* p)
 {
+    vh_tbl_head_t* th = p;
+
+    view_remove_from_parent(th->head);
+    REL(th->head);
+    th->head = NULL;
 }
 
 void vh_tbl_head_desc(void* p, int level)
@@ -216,7 +221,7 @@ void vh_tbl_head_attach(
     vh->head_move     = head_move;
     vh->head_resize   = head_resize;
     vh->head_reorder  = head_reorder;
-    vh->head          = (*head_create)(view, userdata);
+    vh->head          = (*head_create)(view, userdata); // REL 0
     vh->active        = -1;
 
     view->handler_data = vh;

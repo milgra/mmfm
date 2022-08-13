@@ -316,6 +316,7 @@ void ui_init(float width, float height)
 {
     text_init();                    // DESTROY 0
     ui_manager_init(width, height); // DESTROY 1
+
     ui_create_views(width, height);
 
     // setup key events
@@ -329,11 +330,11 @@ void ui_init(float width, float height)
     ui.view_drag = view_get_subview(ui.view_base, "draglayer");
     vh_drag_attach(ui.view_drag);
 
-    // setup visualizer
+    /* // setup visualizer */
 
     ui_visualizer_attach(ui.view_base); // DETACH 8
 
-    // tables
+    /* // tables */
 
     textstyle_t ts  = {0};
     ts.font         = config_get("font_path");
@@ -344,7 +345,7 @@ void ui_init(float width, float height)
     ts.backcolor    = 0xFFFFFFFF;
     ts.multiline    = 0;
 
-    // preview block
+    /* // preview block */
 
     view_t* preview = view_get_subview(ui.view_base, "preview");
 
@@ -356,7 +357,7 @@ void ui_init(float width, float height)
     else
 	zc_log_debug("cliplistbck not found");
 
-    // file info table
+    /* // file info table */
 
     vec_t* fields = VNEW();
     VADDR(fields, cstr_new_cstring("key"));
@@ -386,9 +387,11 @@ void ui_init(float width, float height)
 	fields,
 	on_fileinfo_event);
 
+    zc_log_debug("RETC 0 %u", mem_retaincount(ui.fileinfotable));
+
     REL(fields);
 
-    // files table
+    /* // files table */
 
     fields = VNEW();
     VADDR(fields, cstr_new_cstring("file/basename"));
@@ -428,7 +431,7 @@ void ui_init(float width, float height)
 	fields,
 	on_files_event);
 
-    ui.file_list_data = VNEW();
+    ui.file_list_data = VNEW(); // REL S0
     ui_table_set_data(ui.filelisttable, ui.file_list_data);
 
     // clipboard table
@@ -465,13 +468,13 @@ void ui_init(float width, float height)
     map_t* files = MNEW(); // REL 0
     fm_list(config_get("top_path"), files);
     map_values(files, ui.file_list_data);
+    REL(files);
 
     vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);
 
     ui_table_set_data(ui.filelisttable, ui.file_list_data);
-    REL(files);
 
-    /* // show texture map for debug */
+    // show texture map for debug
 
     /* view_t* texmap       = view_new("texmap", ((r2_t){0, 0, 150, 150})); */
     /* texmap->needs_touch  = 0; */
@@ -485,8 +488,19 @@ void ui_init(float width, float height)
 
 void ui_destroy()
 {
+    ui_manager_remove(ui.view_base);
+
+    REL(ui.view_base);
+    REL(ui.fileinfotable);
+    REL(ui.filelisttable);
+    REL(ui.cliptable);
+
+    REL(ui.file_list_data);
+    REL(ui.clip_list_data);
+
     ui_manager_destroy(); // DESTROY 1
-    text_destroy();       // DESTROY 0
+
+    text_destroy(); // DESTROY 0
 }
 
 #endif

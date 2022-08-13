@@ -18,7 +18,7 @@ textstyle_t ui_util_gen_textstyle(view_t* view)
 {
     textstyle_t style = {0};
 
-    style.font = fontconfig_new_path(view->style.font_family);
+    style.font = fontconfig_new_path(view->style.font_family); // REL 0
     style.size = view->style.font_size > 0 ? view->style.font_size : 15;
 
     style.align = view->style.text_align;

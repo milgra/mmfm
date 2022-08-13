@@ -60,25 +60,6 @@ void ui_table_set_data(
 #include "zc_memory.c"
 #include "zc_number.c"
 
-void ui_table_del(
-    void* p)
-{
-    ui_table_t* uit = p;
-    REL(uit->id);
-    REL(uit->cache);
-    REL(uit->fields);
-    if (uit->body_v) REL(uit->body_v);
-    if (uit->evnt_v) REL(uit->evnt_v);
-    if (uit->scrl_v) REL(uit->scrl_v);
-}
-
-void ui_table_desc(
-    void* p,
-    int   level)
-{
-    printf("ui_table");
-}
-
 void ui_table_head_align(ui_table_t* uit, int fixed_index, int fixed_pos)
 {
     for (int ri = 0; ri < uit->body_v->views->length; ri++)
@@ -219,7 +200,7 @@ view_t* ui_table_item_create(
 
 	    if (uit->cache->length > 0)
 	    {
-		rowview = uit->cache->data[0];
+		rowview = RET(uit->cache->data[0]);
 		vec_rem_at_index(uit->cache, 0);
 	    }
 	    else
@@ -358,6 +339,36 @@ void ui_table_evnt_event(view_t* view, view_t* rowview, vh_tbl_evnt_event_t type
     }
 }
 
+void ui_table_del(
+    void* p)
+{
+    ui_table_t* uit = p;
+
+    zc_log_debug("ui_table del");
+
+    // remove items from view
+    REL(uit->id);       // REL S0
+    REL(uit->cache);    // REL S1
+    REL(uit->fields);   // REL S2
+    REL(uit->selected); // REL S3
+
+    if (uit->items) REL(uit->items);
+
+    // TODO maybe textstyle should handle this release itself
+    REL(uit->textstyle.font);
+
+    if (uit->body_v) REL(uit->body_v);
+    if (uit->evnt_v) REL(uit->evnt_v);
+    if (uit->scrl_v) REL(uit->scrl_v);
+}
+
+void ui_table_desc(
+    void* p,
+    int   level)
+{
+    printf("ui_table");
+}
+
 ui_table_t* ui_table_create(
     char*   id, // id has to be unique
     view_t* body,
@@ -371,10 +382,10 @@ ui_table_t* ui_table_create(
     assert(body != NULL);
 
     ui_table_t* uit = CAL(sizeof(ui_table_t), ui_table_del, ui_table_desc);
-    uit->id         = cstr_new_cstring(id);
-    uit->cache      = VNEW();
-    uit->fields     = RET(fields);
-    uit->selected   = VNEW();
+    uit->id         = cstr_new_cstring(id); // REL S0
+    uit->cache      = VNEW();               // REL S1
+    uit->fields     = RET(fields);          // REL S2
+    uit->selected   = VNEW();               // REL S3
     uit->on_event   = on_event;
 
     uit->body_v = RET(body);

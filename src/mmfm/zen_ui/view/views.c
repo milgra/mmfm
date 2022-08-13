@@ -34,7 +34,7 @@ void views_destroy()
 #ifdef DEBUG
     printf("***VIEW STATS***\n");
     printf("UNRELEASED VIEWS : %i\n", views.names->count);
-    map_describe(views.names, 0);
+    if (views.names->count > 0) map_describe(views.names, 0);
 #endif
 
     REL(views.names);

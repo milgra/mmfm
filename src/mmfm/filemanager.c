@@ -193,13 +193,14 @@ void fm_list(char* fm_path, map_t* files)
 		// get mime type with file command
 
 		char  buff[500];
-		char* mime    = cstr_new_cstring("");                              // REL 0
-		char* command = cstr_new_format(80, "file -b \"%s\"", dp->d_name); // REL 1
+		char* mime    = cstr_new_cstring("");                              // REL L0
+		char* command = cstr_new_format(80, "file -b \"%s\"", dp->d_name); // REL L1
 		FILE* pipe    = popen(command, "r");                               // CLOSE 0
 		while (fgets(buff, sizeof(buff), pipe) != NULL) mime = cstr_append(mime, buff);
 		pclose(pipe); // CLOSE 0
+		REL(command); // REL L1
 
-		MPUT(file, "file/mime", mime);
+		MPUTR(file, "file/mime", mime);
 
 		// get media metadata
 

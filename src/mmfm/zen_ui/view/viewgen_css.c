@@ -286,7 +286,7 @@ void viewgen_css_apply(vec_t* views, char* csspath, char* respath)
 		char cls[100] = {0};
 		snprintf(cls, 100, ".%s", token);
 		style = MGET(styles, cls);
-		zc_log_debug("applying class %s to %s", cls, view->id);
+		// zc_log_debug("applying class %s to %s", cls, view->id);
 		if (style)
 		{
 		    viewgen_css_apply_style(view, style, respath);
@@ -294,6 +294,8 @@ void viewgen_css_apply(vec_t* views, char* csspath, char* respath)
 	    } while ((token = strtok(NULL, " ")));
 	}
     }
+
+    REL(styles);
 }
 
 #endif

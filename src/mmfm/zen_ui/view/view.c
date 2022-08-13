@@ -225,6 +225,8 @@ void view_del(void* pointer)
     if (view->tex_gen_data) REL(view->tex_gen_data);
 
     if (view->texture.bitmap) REL(view->texture.bitmap); // not all views has texture
+    if (view->class) REL(view->class);
+    if (view->type) REL(view->type);
 
     REL(view->id);
     REL(view->views);
@@ -355,9 +357,7 @@ void view_remove_from_parent(view_t* view)
 
 void view_set_parent(view_t* view, view_t* parent)
 {
-    if (view->parent) REL(view->parent);
     view->parent = parent;
-    if (view->parent) RET(view->parent);
 }
 
 void view_coll_touched(view_t* view, ev_t ev, vec_t* queue)
@@ -542,7 +542,7 @@ void view_describe(void* pointer, int level)
 	printf("%s", arrow);
     }
 
-    printf("%s [x:%.0f y:%.0f w:%.0f h:%.0f tx:%i eh:%i tg:%i]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->texture.page, view->handler != NULL, view->tex_gen != NULL);
+    printf("%s [x:%.0f y:%.0f w:%.0f h:%.0f tx:%i eh:%i tg:%i rc:%zu]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->texture.page, view->handler != NULL, view->tex_gen != NULL, mem_retaincount(view));
 
     for (int i = 0; i < view->views->length; i++) view_describe(view->views->data[i], level + 1);
 }

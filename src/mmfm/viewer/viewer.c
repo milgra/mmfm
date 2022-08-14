@@ -956,10 +956,10 @@ int viewer_read_thread(void* arg)
 		format->interrupt_callback.opaque   = ms;
 
 		/* in case of mpeg-2 force scan all program mapping tables and combine them */
-		AVDictionary* format_optsn = NULL;
-		av_dict_set(&format_optsn, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
+		AVDictionary* format_opts = NULL;
+		av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
 
-		int ret = avformat_open_input(&format, ms->filename, NULL, &format_optsn);
+		int ret = avformat_open_input(&format, ms->filename, NULL, &format_opts);
 
 		if (ret >= 0)
 		{
@@ -1148,10 +1148,16 @@ int viewer_read_thread(void* arg)
 		    }
 		}
 		else zc_log_debug("Cannot open input, errno : %i", ret);
+
+		av_dict_free(&format_opts);
 	    }
 	    else zc_log_debug("Cannot create format context");
+
+	    av_packet_free(&pkt);
 	}
 	else zc_log_debug("Cannot create packet");
+
+	SDL_DestroyMutex(wait_mutex);
     }
     else zc_log_debug("Cannot create mutex %s", SDL_GetError());
 

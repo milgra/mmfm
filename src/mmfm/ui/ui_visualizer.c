@@ -67,7 +67,12 @@ void ui_visualizer_update()
 
 void ui_visualizer_open(char* path)
 {
-    uiv.vs = viewer_open(path);
+    if (uiv.vs)
+    {
+	viewer_close(uiv.vs);
+	uiv.vs = NULL;
+    }
+    else uiv.vs = viewer_open(path);
 }
 
 void ui_visualizer_update_video()

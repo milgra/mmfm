@@ -15,6 +15,7 @@
 #include "zc_bm_rgba.c"
 
 void* viewer_open(char* path);
+void  viewer_close(void* ms);
 void  video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm);
 
 #endif
@@ -298,7 +299,7 @@ int viewer_video_decode_thread(void* arg)
 		// printf("frame_type=%c pts=%0.3f\n", av_get_picture_type_char(frame->pict_type), pts);
 
 		// push to queue
-		Frame* qframe = frame_queue_peek_writable(&ms->vidfq, ms->vidpq.abort_request);
+		Frame* qframe = frame_queue_peek_writable(&ms->vidfq, &ms->vidpq.abort_request);
 
 		if (qframe)
 		{
@@ -410,7 +411,7 @@ int viewer_audio_decode_frame(MediaState* is)
 	return -1;
 
     do {
-	if (!(af = frame_queue_peek_readable(&is->audfq, is->audpq.abort_request)))
+	if (!(af = frame_queue_peek_readable(&is->audfq, &is->audpq.abort_request)))
 	    return -1;
 	frame_queue_next(&is->audfq);
     } while (af->serial != is->audpq.serial);
@@ -492,7 +493,7 @@ int viewer_audio_decode_frame(MediaState* is)
 #ifdef DEBUG
     {
 	static double last_clock;
-	printf("audio: delay=%0.3f clock=%0.3f clock0=%0.3f\n", is->audio_clock - last_clock, is->audio_clock, audio_clock0);
+	// printf("audio: delay=%0.3f clock=%0.3f clock0=%0.3f\n", is->audio_clock - last_clock, is->audio_clock, audio_clock0);
 	last_clock = is->audio_clock;
     }
 #endif
@@ -512,6 +513,7 @@ static void viewer_sdl_audio_callback(void* opaque, Uint8* stream, int len)
 	if (ms->audio_buf_index >= ms->audio_buf_size)
 	{
 	    audio_size = viewer_audio_decode_frame(ms);
+
 	    if (audio_size < 0)
 	    {
 		/* if error, just output silence */
@@ -537,7 +539,6 @@ static void viewer_sdl_audio_callback(void* opaque, Uint8* stream, int len)
 	}
 	else
 	{
-	    zc_log_debug("");
 	    memset(stream, 0, len1);
 	    if (!ms->muted && ms->audio_buf)
 		SDL_MixAudioFormat(stream, (uint8_t*) ms->audio_buf + ms->audio_buf_index, AUDIO_S16SYS, len1, ms->audio_volume);
@@ -669,7 +670,7 @@ int viewer_audio_decode_thread(void* arg)
 		if (got_frame)
 		{
 		    AVRational tb = (AVRational){1, frame->sample_rate};
-		    Frame*     af = frame_queue_peek_writable(&is->audfq, is->audpq.abort_request);
+		    Frame*     af = frame_queue_peek_writable(&is->audfq, &is->audpq.abort_request);
 
 		    if (af)
 		    {
@@ -690,7 +691,12 @@ int viewer_audio_decode_thread(void* arg)
 
 	av_frame_free(&frame); // cleanup
     }
-    else return AVERROR(ENOMEM); // cannot allocate frame
+    else
+    {
+	ret = AVERROR(ENOMEM); // cannot allocate frame
+    }
+
+    zc_log_debug("Audio decoder thread finished.");
 
     return ret;
 }
@@ -1149,6 +1155,8 @@ int viewer_read_thread(void* arg)
     }
     else zc_log_debug("Cannot create mutex %s", SDL_GetError());
 
+    zc_log_debug("Read thread finished.");
+
     return 0;
 }
 
@@ -1162,7 +1170,6 @@ void* viewer_open(char* path)
 
     if (ms)
     {
-
 	int res1 = frame_queue_init(&ms->audfq, SAMPLE_QUEUE_SIZE, 1);
 	int res2 = frame_queue_init(&ms->vidfq, VIDEO_PICTURE_QUEUE_SIZE, 1);
 
@@ -1182,6 +1189,8 @@ void* viewer_open(char* path)
 		    clock_init(&ms->extclk, &ms->extclk.serial);
 
 		    ms->audio_volume = 100;
+		    ms->vidst_index  = -1;
+		    ms->audst_index  = -1;
 		    ms->filename     = av_strdup(path);
 		    ms->read_thread  = SDL_CreateThread(viewer_read_thread, "read_thread", ms);
 
@@ -1199,22 +1208,27 @@ void* viewer_open(char* path)
 
 /* end playing */
 
-void viewer_close(MediaState* ms)
+void viewer_close(void* msp)
 {
+    MediaState* ms = msp;
+
     zc_log_debug("viewer_close %s", ms->filename);
 
     ms->abort_request = 1;
     SDL_WaitThread(ms->read_thread, NULL);
 
     /* close each stream */
-    if (ms->vidst >= 0) viewer_stream_close(ms, ms->vidst_index);
+    if (ms->vidst_index >= 0) viewer_stream_close(ms, ms->vidst_index);
+    if (ms->audst_index >= 0) viewer_stream_close(ms, ms->audst_index);
 
     avformat_close_input(&ms->format);
 
     packet_queue_destroy(&ms->vidpq);
+    packet_queue_destroy(&ms->audpq);
 
-    /* free all pictures */
     frame_queue_destroy(&ms->vidfq);
+    frame_queue_destroy(&ms->audfq);
+
     SDL_DestroyCond(ms->continue_read_thread);
 
     sws_freeContext(ms->img_convert_ctx);

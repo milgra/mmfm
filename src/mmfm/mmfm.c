@@ -150,8 +150,10 @@ int main(int argc, char* argv[])
     char cwd[PATH_MAX] = {"~"};
     getcwd(cwd, sizeof(cwd));
 
-    char* top_path    = path_new_normalize(cwd, NULL);                                                                          // REL 5
-    char* wrk_path    = path_new_normalize(SDL_GetBasePath(), NULL);                                                            // REL 6
+    char* top_path = path_new_normalize(cwd, NULL); // REL 5
+    char* sdl_base = SDL_GetBasePath();
+    char* wrk_path = path_new_normalize(sdl_base, NULL); // REL 6
+    SDL_free(sdl_base);
     char* res_path    = res_par ? path_new_normalize(res_par, wrk_path) : cstr_new_cstring("/usr/share/mmfm");                  // REL 7
     char* cfgdir_path = cfg_par ? path_new_normalize(cfg_par, wrk_path) : path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 8
     char* css_path    = path_new_append(res_path, "html/main.css");                                                             // REL 9

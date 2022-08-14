@@ -16,6 +16,7 @@ listen for folder change event
 fileboard, free resize files/fileboard, go to file in file browser, vertical layout ( ket preview ablak alul legyen ), horizontal layout ( preview ablakok jobbra)
 \xed?
 hacker news headerless c - sov, mmfm
+libkineticui - sdl renderer / texture based
 
 - hexa viewer
 - pdf viewer

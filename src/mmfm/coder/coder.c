@@ -107,7 +107,7 @@ void coder_load_image_into(const char* path, bm_rgba_t* bitmap)
 {
     AVFormatContext* src_ctx = avformat_alloc_context(); // FREE 0
 
-    /* // open the specified path */
+    // open the specified path
     if (avformat_open_input(&src_ctx, path, NULL, NULL) == 0) // CLOSE 0
     {
 	// find the first attached picture, if available
@@ -129,6 +129,7 @@ void coder_load_image_into(const char* path, bm_rgba_t* bitmap)
 		while (av_read_frame(src_ctx, packet) >= 0)
 		{
 		    avcodec_send_packet(codecContext, packet);
+		    av_packet_unref(packet);
 		}
 
 		avcodec_receive_frame(codecContext, frame);
@@ -157,19 +158,17 @@ void coder_load_image_into(const char* path, bm_rgba_t* bitmap)
 		    sws_freeContext(img_convert_ctx); // FREE 4
 		}
 
-		av_frame_free(&frame); // FREE 2
-		av_packet_unref(packet);
+		av_frame_free(&frame);   // FREE 2
 		av_packet_free(&packet); // FREE 3
 
-		avcodec_free_context(&codecContext); // FREE 1
 		avcodec_close(codecContext);         // CLOSE 1
+		avcodec_free_context(&codecContext); // FREE 1
 	    }
 	}
 
 	avformat_close_input(&src_ctx); // CLOSE 0
     }
-    else
-	zc_log_error("cannot find file : %s", path);
+    else zc_log_error("cannot find file : %s", path);
 
     avformat_free_context(src_ctx); // FREE 0
 }
@@ -267,124 +266,119 @@ int coder_load_metadata_into(const char* path, map_t* map)
     av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
 
     /* // open the specified path */
-    if (avformat_open_input(&pFormatCtx, path, NULL, &format_opts) == 0) // CLOSE 0
-    {
-	if (pFormatCtx)
-	{
-	    const AVOutputFormat* format = av_guess_format(NULL, path, NULL);
-	    if (format && format->mime_type)
-	    {
-		char* slash = strstr(format->mime_type, "/");
+    /* if (avformat_open_input(&pFormatCtx, path, NULL, &format_opts) == 0) // CLOSE 0 */
+    /* { */
+    /* 	if (pFormatCtx) */
+    /* 	{ */
+    /* 	    const AVOutputFormat* format = av_guess_format(NULL, path, NULL); */
+    /* 	    if (format && format->mime_type) */
+    /* 	    { */
+    /* 		char* slash = strstr(format->mime_type, "/"); */
 
-		if (slash)
-		{
-		    char* media_type = CAL(strlen(format->mime_type), NULL, cstr_describe); // REL 0
-		    char* container  = CAL(strlen(format->mime_type), NULL, cstr_describe); // REL 1
+    /* 		if (slash) */
+    /* 		{ */
+    /* 		    char* media_type = CAL(strlen(format->mime_type), NULL, cstr_describe); // REL 0 */
+    /* 		    char* container  = CAL(strlen(format->mime_type), NULL, cstr_describe); // REL 1 */
 
-		    memcpy(media_type, format->mime_type, slash - format->mime_type);
-		    memcpy(container, slash + 1, strlen(format->mime_type) - (slash - format->mime_type));
+    /* 		    memcpy(media_type, format->mime_type, slash - format->mime_type); */
+    /* 		    memcpy(container, slash + 1, strlen(format->mime_type) - (slash - format->mime_type)); */
 
-		    MPUT(map, "media/media_type", media_type);
-		    MPUT(map, "media/container", container);
+    /* 		    MPUT(map, "media/media_type", media_type); */
+    /* 		    MPUT(map, "media/container", container); */
 
-		    REL(media_type); // REL 0
-		    REL(container);  // REL 1
-		}
-	    }
-	    else
-	    {
-		printf("cannot guess format for %s\n", path);
-		return retv;
-	    }
+    /* 		    REL(media_type); // REL 0 */
+    /* 		    REL(container);  // REL 1 */
+    /* 		} */
 
-	    if (strcmp(MGET(map, "media/media_type"), "audio") != 0 && strcmp(MGET(map, "media/media_type"), "video") != 0)
-	    {
-		printf("not audio not video\n");
-		return retv;
-	    }
+    /* 		retv = 0; */
 
-	    retv = 0;
+    /* 		av_dict_set(&format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE); */
 
-	    av_dict_set(&format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
+    /* 		AVDictionaryEntry* tag = NULL; */
 
-	    AVDictionaryEntry* tag = NULL;
+    /* 		while ((tag = av_dict_get(pFormatCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) */
+    /* 		{ */
+    /* 		    char* value = cstr_new_cstring(tag->value);                    // REL 0 */
+    /* 		    char* key   = cstr_new_format(100, "%s/%s", "meta", tag->key); // REL 1 */
 
-	    while ((tag = av_dict_get(pFormatCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
-	    {
-		char* value = cstr_new_cstring(tag->value);                    // REL 0
-		char* key   = cstr_new_format(100, "%s/%s", "meta", tag->key); // REL 1
+    /* 		    MPUT(map, key, value); */
 
-		MPUT(map, key, value);
+    /* 		    REL(key);   // REL 0 */
+    /* 		    REL(value); // REL 1 */
+    /* 		} */
 
-		REL(key);   // REL 0
-		REL(value); // REL 1
-	    }
+    /* 		// Retrieve stream information */
+    /* 		retv = avformat_find_stream_info(pFormatCtx, NULL); */
 
-	    // Retrieve stream information
-	    retv = avformat_find_stream_info(pFormatCtx, NULL);
+    /* 		if (retv >= 0) */
+    /* 		{ */
+    /* 		    int   dur   = pFormatCtx->duration / 1000000; */
+    /* 		    char* dur_s = CAL(10, NULL, cstr_describe); */
+    /* 		    snprintf(dur_s, 10, "%i:%.2i", (short) dur / 60, dur - (short) (dur / 60) * 60); */
+    /* 		    MPUT(map, "media/duration", dur_s); */
+    /* 		    REL(dur_s); */
+    /* 		} */
+    /* 		else */
+    /* 		{ */
+    /* 		    printf("coder_get_metadata no stream information found!!!\n"); */
+    /* 		    MPUTR(map, "media/duration", cstr_new_cstring("0")); */
+    /* 		} */
 
-	    if (retv >= 0)
-	    {
-		int   dur   = pFormatCtx->duration / 1000000;
-		char* dur_s = CAL(10, NULL, cstr_describe);
-		snprintf(dur_s, 10, "%i:%.2i", (short) dur / 60, dur - (short) (dur / 60) * 60);
-		MPUT(map, "media/duration", dur_s);
-		REL(dur_s);
-	    }
-	    else
-	    {
-		printf("coder_get_metadata no stream information found!!!\n");
-		MPUTR(map, "media/duration", cstr_new_cstring("0"));
-	    }
+    /* 		for (unsigned i = 0; i < pFormatCtx->nb_streams; i++) */
+    /* 		{ */
+    /* 		    AVCodecParameters* param = pFormatCtx->streams[i]->codecpar; */
+    /* 		    const AVCodec*     codec = avcodec_find_encoder(pFormatCtx->streams[i]->codecpar->codec_id); */
+    /* 		    if (codec) */
+    /* 		    { */
+    /* 			if (param->codec_type == AVMEDIA_TYPE_AUDIO) */
+    /* 			{ */
+    /* 			    char* channels   = CAL(10, NULL, cstr_describe); // REL 0 */
+    /* 			    char* bitrate    = CAL(10, NULL, cstr_describe); // REL 1 */
+    /* 			    char* samplerate = CAL(10, NULL, cstr_describe); // REL 2 */
 
-	    for (unsigned i = 0; i < pFormatCtx->nb_streams; i++)
-	    {
-		AVCodecParameters* param = pFormatCtx->streams[i]->codecpar;
-		const AVCodec*     codec = avcodec_find_encoder(pFormatCtx->streams[i]->codecpar->codec_id);
-		if (codec)
-		{
-		    if (param->codec_type == AVMEDIA_TYPE_AUDIO)
-		    {
-			char* channels   = CAL(10, NULL, cstr_describe); // REL 0
-			char* bitrate    = CAL(10, NULL, cstr_describe); // REL 1
-			char* samplerate = CAL(10, NULL, cstr_describe); // REL 2
+    /* 			    snprintf(channels, 10, "%i", param->ch_layout.nb_channels); */
+    /* 			    snprintf(bitrate, 10, "%li", param->bit_rate); */
+    /* 			    snprintf(samplerate, 10, "%i", param->sample_rate); */
 
-			snprintf(channels, 10, "%i", param->ch_layout.nb_channels);
-			snprintf(bitrate, 10, "%li", param->bit_rate);
-			snprintf(samplerate, 10, "%i", param->sample_rate);
+    /* 			    MPUTR(map, "audio/channels", channels);      // REL 0 */
+    /* 			    MPUTR(map, "audio/bit_rate", bitrate);       // REL 1 */
+    /* 			    MPUTR(map, "audio/sample_rate", samplerate); // REL 2 */
+    /* 			} */
+    /* 			else if (param->codec_type == AVMEDIA_TYPE_VIDEO) */
+    /* 			{ */
+    /* 			    char* channels   = CAL(10, NULL, cstr_describe); // REL 0 */
+    /* 			    char* bitrate    = CAL(10, NULL, cstr_describe); // REL 1 */
+    /* 			    char* samplerate = CAL(10, NULL, cstr_describe); // REL 2 */
 
-			MPUTR(map, "audio/channels", channels);      // REL 0
-			MPUTR(map, "audio/bit_rate", bitrate);       // REL 1
-			MPUTR(map, "audio/sample_rate", samplerate); // REL 2
-		    }
-		    else if (param->codec_type == AVMEDIA_TYPE_VIDEO)
-		    {
-			char* channels   = CAL(10, NULL, cstr_describe); // REL 0
-			char* bitrate    = CAL(10, NULL, cstr_describe); // REL 1
-			char* samplerate = CAL(10, NULL, cstr_describe); // REL 2
+    /* 			    snprintf(channels, 10, "%i", param->ch_layout.nb_channels); */
+    /* 			    snprintf(bitrate, 10, "%li", param->bit_rate); */
+    /* 			    snprintf(samplerate, 10, "%i", param->sample_rate); */
 
-			snprintf(channels, 10, "%i", param->ch_layout.nb_channels);
-			snprintf(bitrate, 10, "%li", param->bit_rate);
-			snprintf(samplerate, 10, "%i", param->sample_rate);
+    /* 			    MPUTR(map, "video/channels", channels);      // REL 0 */
+    /* 			    MPUTR(map, "video/bit_rate", bitrate);       // REL 1 */
+    /* 			    MPUTR(map, "video/sample_rate", samplerate); // REL 2 */
+    /* 			} */
+    /* 		    } */
+    /* 		} */
+    /* 	    } */
+    /* 	    else */
+    /* 	    { */
+    /* 		printf("cannot guess format for %s\n", path); */
+    /* 	    } */
+    /* 	} */
+    /* 	else */
+    /* 	{ */
+    /* 	    zc_log_info("coder : skpping %s, no media context present", path); */
+    /* 	} */
 
-			MPUTR(map, "video/channels", channels);      // REL 0
-			MPUTR(map, "video/bit_rate", bitrate);       // REL 1
-			MPUTR(map, "video/sample_rate", samplerate); // REL 2
-		    }
-		}
-	    }
-	}
-	else
-	{
-	    zc_log_info("coder : skpping %s, no media context present", path);
-	}
+    /* 	avformat_close_input(&pFormatCtx); // CLOSE 0 */
+    /* } */
+    /* else */
+    /* { */
+    /* 	zc_log_info("coder : skipping %s, probably not a media file", path); */
+    /* } */
 
-	avformat_close_input(&pFormatCtx); // CLOSE 0
-    }
-    else
-    {
-	zc_log_info("coder : skipping %s, probably not a media file", path);
-    }
+    if (format_opts) av_dict_free(&format_opts);
 
     avformat_free_context(pFormatCtx); // FREE 0
 

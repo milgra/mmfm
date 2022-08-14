@@ -27,7 +27,6 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "vh_drag.c"
 #include "vh_key.c"
 #include "view_layout.c"
-#include "viewer.c"
 #include "viewgen_css.c"
 #include "viewgen_html.c"
 #include "viewgen_type.c"
@@ -92,23 +91,25 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    vec_t* selected = userdata;
 	    map_t* info     = selected->data[0];
 
-	    vec_t* keys = VNEW();
+	    vec_t* keys = VNEW(); // REL L0
 	    map_keys(info, keys);
 	    vec_sort(keys, VSD_ASC, ((int (*)(void*, void*)) strcmp));
 
-	    vec_t* items = VNEW();
+	    vec_t* items = VNEW(); // REL L1
 	    for (int index = 0; index < keys->length; index++)
 	    {
 		char*  key = keys->data[index];
 		map_t* map = MNEW();
 		MPUT(map, "key", key);
 		MPUT(map, "value", MGET(info, key));
-		VADD(items, map);
+		VADDR(items, map);
 	    }
+
+	    REL(keys); // REL L0
 
 	    ui_table_set_data(ui.fileinfotable, items);
 
-	    // REL!!!
+	    REL(items); // REL L1
 	}
 	break;
 	case UI_TABLE_EVENT_OPEN:

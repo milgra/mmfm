@@ -216,8 +216,7 @@ void fm_list(char* fm_path, map_t* files)
 
 		MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name));
 
-		if (strcmp(dp->d_name, ".") != 0)
-		    MPUT(files, path, file); // use relative path as path
+		if (strcmp(dp->d_name, ".") != 0) MPUT(files, path, file); // use relative path as path
 
 		REL(file);
 	    }

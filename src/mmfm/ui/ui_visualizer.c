@@ -31,7 +31,7 @@ struct vizualizer_t
     view_t* visuright;
     view_t* visuvideo;
     void*   vs;
-} uiv;
+} uiv = {0};
 
 void ui_visualizer_on_roll_in(void* userdata, void* data);
 void ui_visualizer_on_roll_out(void* userdata, void* data);

@@ -46,6 +46,11 @@ void ui_visualizer_attach(view_t* baseview)
 
 void ui_visualizer_detach()
 {
+    if (uiv.vs)
+    {
+	viewer_close(uiv.vs);
+	uiv.vs = NULL;
+    }
 }
 
 void ui_visualizer_update()

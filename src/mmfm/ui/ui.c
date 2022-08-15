@@ -24,12 +24,14 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "ui_manager.c"
 #include "ui_table.c"
 #include "ui_visualizer.c"
+#include "vh_button.c"
 #include "vh_drag.c"
 #include "vh_key.c"
 #include "view_layout.c"
 #include "viewgen_css.c"
 #include "viewgen_html.c"
 #include "viewgen_type.c"
+#include "wm_connector.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_number.c"
@@ -42,6 +44,8 @@ struct _ui_t
     view_t* view_base;
     view_t* view_drag; // drag overlay
     view_t* cursor;    // replay cursor
+
+    view_t* close_btn;
 
     vec_t* file_list_data;
     vec_t* clip_list_data;
@@ -238,6 +242,17 @@ void ui_on_key_down(void* userdata, void* data)
     // ev_t* ev = (ev_t*) data;
 }
 
+void ui_on_btn_event(void* userdata, void* data)
+{
+    // ev_t* ev = (ev_t*) data;
+    view_t* btnview = data;
+
+    if (btnview == ui.close_btn)
+    {
+	wm_close();
+    }
+}
+
 void ui_add_cursor()
 {
     ui.cursor                         = view_new("ui.cursor", ((r2_t){10, 10, 10, 10}));
@@ -333,11 +348,11 @@ void ui_init(float width, float height)
     ui.view_drag = view_get_subview(ui.view_base, "draglayer");
     vh_drag_attach(ui.view_drag);
 
-    /* // setup visualizer */
+    /* setup visualizer */
 
     ui_visualizer_attach(ui.view_base); // DETACH 8
 
-    /* // tables */
+    /* tables */
 
     textstyle_t ts  = {0};
     ts.font         = config_get("font_path");
@@ -348,7 +363,7 @@ void ui_init(float width, float height)
     ts.backcolor    = 0xFFFFFFFF;
     ts.multiline    = 0;
 
-    /* // preview block */
+    /* preview block */
 
     view_t* preview = view_get_subview(ui.view_base, "preview");
 
@@ -360,7 +375,7 @@ void ui_init(float width, float height)
     else
 	zc_log_debug("cliplistbck not found");
 
-    /* // file info table */
+    /* file info table */
 
     vec_t* fields = VNEW();
     VADDR(fields, cstr_new_cstring("key"));
@@ -477,6 +492,14 @@ void ui_init(float width, float height)
 
     ui_table_set_data(ui.filelisttable, ui.file_list_data);
 
+    /* close button */
+
+    ui.close_btn = view_get_subview(ui.view_base, "app_close_btn");
+
+    cb_t* btn_cb = cb_new(ui_on_btn_event, NULL);
+    vh_button_add(ui.close_btn, VH_BUTTON_NORMAL, btn_cb);
+    REL(btn_cb);
+
     // show texture map for debug
 
     /* view_t* texmap       = view_new("texmap", ((r2_t){0, 0, 150, 150})); */
@@ -491,6 +514,8 @@ void ui_init(float width, float height)
 
 void ui_destroy()
 {
+    ui_visualizer_detach();
+
     ui_manager_remove(ui.view_base);
 
     REL(ui.view_base);

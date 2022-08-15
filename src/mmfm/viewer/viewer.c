@@ -956,14 +956,30 @@ int viewer_read_thread(void* arg)
 		format->interrupt_callback.opaque   = ms;
 
 		/* in case of mpeg-2 force scan all program mapping tables and combine them */
-		AVDictionary* format_opts = NULL;
-		av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
+		AVDictionary* format_opts       = NULL;
+		int           scan_all_pmts_set = 0;
+
+		if (!av_dict_get(format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE))
+		{
+		    av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
+		    scan_all_pmts_set = 1;
+		}
 
 		int ret = avformat_open_input(&format, ms->filename, NULL, &format_opts);
 
 		if (ret >= 0)
 		{
 		    ms->format = format;
+
+		    /* I don't know yet why we have to do this */
+		    if (scan_all_pmts_set) av_dict_set(&format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
+
+		    /* why? */
+		    av_format_inject_global_side_data(format);
+
+		    /* find stream info before dump */
+		    ret = avformat_find_stream_info(format, NULL);
+		    if (ret < 0) zc_log_debug("can't find stream info");
 
 		    /* print format info, should be done by coder and shown in preview */
 		    av_dump_format(format, 0, ms->filename, 0);
@@ -999,12 +1015,14 @@ int viewer_read_thread(void* arg)
 			ret = viewer_stream_open(ms, videost);
 			if (ret < 0) zc_log_error("Can't open video stream, errno %i", ret);
 		    }
+		    else zc_log_debug("No video stream.");
 
 		    if (audiost >= 0)
 		    {
 			ret = viewer_stream_open(ms, audiost);
 			if (ret < 0) zc_log_error("Can't open audio stream, errno %i", ret);
 		    }
+		    else zc_log_debug("No audio stream.");
 
 		    /* read packets forever */
 		    for (;;)

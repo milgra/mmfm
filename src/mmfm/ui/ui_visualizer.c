@@ -72,7 +72,15 @@ void ui_visualizer_open(char* path)
 	viewer_close(uiv.vs);
 	uiv.vs = NULL;
     }
-    else uiv.vs = viewer_open(path);
+
+    if (strstr(path, ".pdf") != NULL)
+    {
+	ui_visualizer_show_pdf(path);
+    }
+    else
+    {
+	uiv.vs = viewer_open(path);
+    }
 }
 
 void ui_visualizer_update_video()

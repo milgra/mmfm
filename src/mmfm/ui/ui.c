@@ -134,13 +134,8 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    }
 	    else
 	    {
-		if (strstr(path, ".pdf") != NULL)
-		{
-		    ui_visualizer_show_pdf(path);
-		}
+		ui_visualizer_open(path);
 	    }
-
-	    ui_visualizer_open(path);
 	}
 	break;
 	case UI_TABLE_EVENT_DRAG:

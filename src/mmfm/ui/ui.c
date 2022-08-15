@@ -34,6 +34,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "zc_log.c"
 #include "zc_number.c"
 #include "zc_path.c"
+#include "zc_time.c"
 #include <limits.h>
 
 struct _ui_t
@@ -91,6 +92,10 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    vec_t* selected = userdata;
 	    map_t* info     = selected->data[0];
 
+	    // ask fore detailed info if needed
+
+	    if (!MGET(info, "file/mime")) fm_detail(info);
+
 	    vec_t* keys = VNEW(); // REL L0
 	    map_keys(info, keys);
 	    vec_sort(keys, VSD_ASC, ((int (*)(void*, void*)) strcmp));
@@ -125,7 +130,9 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    if (strcmp(type, "directory") == 0)
 	    {
 		map_t* files = MNEW(); // REL 0
+		zc_time(NULL);
 		fm_list(path, files);
+		zc_time("file list");
 		vec_reset(ui.file_list_data);
 		map_values(files, ui.file_list_data);
 		vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);
@@ -392,8 +399,8 @@ void ui_init(float width, float height)
     fields = VNEW();
     VADDR(fields, cstr_new_cstring("file/basename"));
     VADDR(fields, num_new_int(100));
-    VADDR(fields, cstr_new_cstring("file/mime"));
-    VADDR(fields, num_new_int(200));
+    /* VADDR(fields, cstr_new_cstring("file/mime")); */
+    /* VADDR(fields, num_new_int(200)); */
     VADDR(fields, cstr_new_cstring("file/path"));
     VADDR(fields, num_new_int(200));
     VADDR(fields, cstr_new_cstring("file/size"));

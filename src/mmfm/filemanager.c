@@ -12,6 +12,7 @@ int  fm_rename(char* old, char* new, char* new_dirs);
 int  fm_exists(char* path);
 void fm_list(char* fmpath, map_t* db);
 void fm_listdir(char* fm_path, map_t* files);
+void fm_detail(map_t* file);
 
 #endif
 
@@ -172,6 +173,7 @@ void fm_list(char* fm_path, map_t* files)
 		map_t* file = MNEW();
 
 		MPUTR(file, "file/type", cstr_new_cstring(type));
+		MPUTR(file, "file/parent", cstr_new_cstring(fm_path));
 		MPUTR(file, "file/path", cstr_new_format(PATH_MAX + NAME_MAX, "%s", path));
 		MPUTR(file, "file/basename", cstr_new_cstring(dp->d_name));
 		MPUTR(file, "file/device", cstr_new_format(20, "%li", sb.st_dev));
@@ -190,32 +192,6 @@ void fm_list(char* fm_path, map_t* files)
 		struct tm* ct = localtime(&sb.st_ctime);
 		MPUTR(file, "file/last_status", cstr_new_format(100, "%s", asctime(ct)));
 
-		// get mime type with file command
-
-		char  buff[500];
-		char* mime    = cstr_new_cstring("");                              // REL L0
-		char* command = cstr_new_format(80, "file -b \"%s\"", dp->d_name); // REL L1
-		FILE* pipe    = popen(command, "r");                               // CLOSE 0
-		while (fgets(buff, sizeof(buff), pipe) != NULL) mime = cstr_append(mime, buff);
-		pclose(pipe); // CLOSE 0
-		REL(command); // REL L1
-
-		MPUTR(file, "file/mime", mime);
-
-		// get media metadata
-
-		coder_load_metadata_into(path, file);
-
-		struct passwd* pws;
-		pws = getpwuid(sb.st_uid);
-
-		MPUTR(file, "file/username", cstr_new_format(100, "%s", pws->pw_name));
-
-		struct group* grp;
-		grp = getgrgid(sb.st_gid);
-
-		MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name));
-
 		if (strcmp(dp->d_name, ".") != 0) MPUT(files, path, file); // use relative path as path
 
 		REL(file);
@@ -228,6 +204,46 @@ void fm_list(char* fm_path, map_t* files)
 
 	closedir(dirp);
     }
+}
+
+void fm_detail(map_t* file)
+{
+    char* parent = MGET(file, "file/parent");
+    char* path   = MGET(file, "file/path");
+    char* name   = MGET(file, "file/basename");
+
+    chdir(parent);
+
+    /* get user and group */
+
+    char* uid = MGET(file, "file/userid");
+    char* gid = MGET(file, "file/groupid");
+
+    struct passwd* pws;
+    pws = getpwuid(atoi(uid));
+
+    MPUTR(file, "file/username", cstr_new_format(100, "%s", pws->pw_name));
+
+    struct group* grp;
+    grp = getgrgid(atoi(gid));
+
+    MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name));
+
+    // get mime type with file command
+
+    char  buff[500];
+    char* mime    = cstr_new_cstring("");                        // REL L0
+    char* command = cstr_new_format(80, "file -b \"%s\"", name); // REL L1
+    FILE* pipe    = popen(command, "r");                         // CLOSE 0
+    while (fgets(buff, sizeof(buff), pipe) != NULL) mime = cstr_append(mime, buff);
+    pclose(pipe); // CLOSE 0
+    REL(command); // REL L1
+
+    MPUTR(file, "file/mime", mime);
+
+    // get media metadata
+
+    coder_load_metadata_into(path, file);
 }
 
 #endif

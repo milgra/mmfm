@@ -69,13 +69,6 @@
     background-color: #000000FF;
 }
 
-#bottom_container {
-    display: flex;
-    flex-direction: row;
-    height: 300px;
-    width: 100%;
-}
-
 #headerbck {
     background-color: #DEDEDEFF;
     width: 100%;
@@ -152,6 +145,13 @@
     blocks: no;
 }
 
+.dragger {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    background-color: #555555FF;
+}
+
 #settingsbtn {
     width: 30px;
     height: 30px;
@@ -182,7 +182,6 @@
     blocks: no;
 }
 
-
 #aboutbtn {
     width: 30px;
     height: 30px;
@@ -196,4 +195,18 @@
     height: 30px;
     background-image: url("home.png");
     blocks: no;
+}
+
+#fileinfobox {
+    display: flex;
+    flex-direction: column;
+    width: 350px;
+    height: 100%;
+}
+
+#cliplistbox {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100px;
 }

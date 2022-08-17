@@ -35,6 +35,8 @@ void view_layout(view_t* view)
 		    rel_w -= v->style.width;
 		    rem_w -= 1;
 		}
+		v->frame.local.x = 0;
+		v->frame.local.y = 0;
 	    }
 	}
 	if (view->style.flexdir == FD_COL)
@@ -47,6 +49,8 @@ void view_layout(view_t* view)
 		    rel_h -= v->style.height;
 		    rem_h -= 1;
 		}
+		v->frame.local.x = 0;
+		v->frame.local.y = 0;
 	    }
 	}
     }

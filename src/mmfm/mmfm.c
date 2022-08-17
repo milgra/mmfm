@@ -71,8 +71,18 @@ void update(ev_t ev)
 	}
     }
 
+    if (ev.type == EV_RESIZE)
+    {
+	ui_update_layout(ev.w, ev.h);
+    }
+
     // in case of replay only send time events
     if (!mmfm.replay || ev.type == EV_TIME) ui_manager_event(ev);
+
+    if (ev.type == EV_RESIZE)
+    {
+	ui_describe();
+    }
 }
 
 void render(uint32_t time)

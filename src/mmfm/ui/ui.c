@@ -9,6 +9,8 @@ void ui_add_cursor();
 void ui_update_cursor(r2_t frame);
 void ui_render_without_cursor(uint32_t time);
 void ui_save_screenshot(uint32_t time, char hide_cursor);
+void ui_update_layout(float w, float h);
+void ui_describe();
 
 #endif
 
@@ -26,7 +28,9 @@ void ui_save_screenshot(uint32_t time, char hide_cursor);
 #include "ui_visualizer.c"
 #include "vh_button.c"
 #include "vh_drag.c"
+#include "vh_dragger.c"
 #include "vh_key.c"
+#include "vh_touch.c"
 #include "view_layout.c"
 #include "viewgen_css.c"
 #include "viewgen_html.c"
@@ -45,7 +49,12 @@ struct _ui_t
     view_t* view_drag; // drag overlay
     view_t* cursor;    // replay cursor
 
-    view_t* close_btn;
+    view_t* exit_btn;
+    view_t* full_btn;
+
+    view_t* main_bottom;
+    view_t* left_dragger;
+    view_t* prev_dragger;
 
     vec_t* file_list_data;
     vec_t* clip_list_data;
@@ -95,6 +104,9 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 
 	    vec_t* selected = userdata;
 	    map_t* info     = selected->data[0];
+	    char*  path     = MGET(info, "file/path");
+
+	    ui_visualizer_open(path);
 
 	    // ask fore detailed info if needed
 
@@ -247,9 +259,47 @@ void ui_on_btn_event(void* userdata, void* data)
     // ev_t* ev = (ev_t*) data;
     view_t* btnview = data;
 
-    if (btnview == ui.close_btn)
+    if (btnview == ui.exit_btn) wm_close();
+    if (btnview == ui.full_btn) wm_toggle_fullscreen();
+
+    if (btnview == ui.left_dragger)
     {
-	wm_close();
+	ui.left_dragger->blocks_touch = 0;
+	view_remove_from_parent(ui.left_dragger);
+	vh_drag_drag(ui.view_drag, ui.left_dragger);
+    }
+    if (btnview == ui.prev_dragger)
+    {
+	ui.prev_dragger->blocks_touch = 0;
+	view_remove_from_parent(ui.prev_dragger);
+	vh_drag_drag(ui.view_drag, ui.prev_dragger);
+    }
+}
+
+void ui_on_drag_move(void* userdata, void* data)
+{
+    view_t* v = userdata;
+}
+
+void ui_on_drag_drop(void* userdata, void* data)
+{
+    view_t* v = data;
+
+    if (v == ui.left_dragger)
+    {
+	view_insert_subview(ui.view_base, ui.left_dragger, ui.view_base->views->length - 2);
+	ui.left_dragger->blocks_touch = 1;
+	// set cliplistbox height
+	view_t* box       = view_get_subview(ui.view_base, "cliplistbox");
+	view_t* lft       = view_get_subview(ui.view_base, "left_container");
+	box->style.height = lft->frame.global.h - v->frame.global.y;
+	zc_log_debug("height %i", box->style.height);
+	view_layout(lft);
+    }
+    if (v == ui.prev_dragger)
+    {
+	view_insert_subview(ui.view_base, ui.prev_dragger, ui.view_base->views->length - 2);
+	ui.prev_dragger->blocks_touch = 1;
     }
 }
 
@@ -345,8 +395,11 @@ void ui_init(float width, float height)
 
     // setup drag layer
 
+    cb_t* move_cb = cb_new(ui_on_drag_move, NULL);
+    cb_t* drop_cb = cb_new(ui_on_drag_drop, NULL);
+
     ui.view_drag = view_get_subview(ui.view_base, "draglayer");
-    vh_drag_attach(ui.view_drag);
+    vh_drag_attach(ui.view_drag, move_cb, drop_cb);
 
     /* setup visualizer */
 
@@ -494,10 +547,28 @@ void ui_init(float width, float height)
 
     /* close button */
 
-    ui.close_btn = view_get_subview(ui.view_base, "app_close_btn");
-
     cb_t* btn_cb = cb_new(ui_on_btn_event, NULL);
-    vh_button_add(ui.close_btn, VH_BUTTON_NORMAL, btn_cb);
+
+    ui.exit_btn = view_get_subview(ui.view_base, "app_close_btn");
+    vh_button_add(ui.exit_btn, VH_BUTTON_NORMAL, btn_cb);
+
+    ui.full_btn = view_get_subview(ui.view_base, "app_maximize_btn");
+    vh_button_add(ui.full_btn, VH_BUTTON_NORMAL, btn_cb);
+
+    // get main bottom for layout change
+
+    ui.main_bottom  = view_get_subview(ui.view_base, "main_bottom");
+    ui.left_dragger = view_get_subview(ui.view_base, "left_dragger");
+    ui.prev_dragger = view_get_subview(ui.view_base, "prev_dragger");
+
+    ui.left_dragger->blocks_touch = 1;
+    ui.prev_dragger->blocks_touch = 1;
+
+    ui.prev_dragger->frame.local.x = 100;
+
+    vh_touch_add(ui.left_dragger, btn_cb);
+    vh_touch_add(ui.prev_dragger, btn_cb);
+
     REL(btn_cb);
 
     // show texture map for debug
@@ -529,6 +600,23 @@ void ui_destroy()
     ui_manager_destroy(); // DESTROY 1
 
     text_destroy(); // DESTROY 0
+}
+
+void ui_update_layout(float w, float h)
+{
+    if (w > h && ui.main_bottom->style.flexdir == FD_COL)
+    {
+	ui.main_bottom->style.flexdir = FD_ROW;
+    }
+    else
+    {
+	ui.main_bottom->style.flexdir = FD_COL;
+    }
+}
+
+void ui_describe()
+{
+    view_describe(ui.view_base, 0);
 }
 
 #endif

@@ -41,7 +41,7 @@ void ui_visualizer_attach(view_t* baseview)
 {
     /* uiv.visuleft  = view_get_subview(baseview, "visuleft"); */
     /* uiv.visuright = view_get_subview(baseview, "visuright"); */
-    uiv.visuvideo = view_get_subview(baseview, "visuvideo");
+    uiv.visuvideo = view_get_subview(baseview, "previewcont");
 }
 
 void ui_visualizer_detach()

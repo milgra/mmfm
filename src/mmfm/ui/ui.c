@@ -27,6 +27,9 @@ void ui_describe();
 #include "ui_table.c"
 #include "ui_visualizer.c"
 #include "vh_button.c"
+#include "vh_cv_body.c"
+#include "vh_cv_evnt.c"
+#include "vh_cv_scrl.c"
 #include "vh_drag.c"
 #include "vh_dragger.c"
 #include "vh_key.c"
@@ -418,15 +421,24 @@ void ui_init(float width, float height)
 
     /* preview block */
 
-    view_t* preview = view_get_subview(ui.view_base, "preview");
+    view_t* preview     = view_get_subview(ui.view_base, "preview");
+    view_t* previewbody = view_get_subview(ui.view_base, "previewbody");
+    view_t* previewscrl = view_get_subview(ui.view_base, "previewscrl");
+    view_t* previewevnt = view_get_subview(ui.view_base, "previewevnt");
 
     if (preview)
     {
 	tg_text_add(preview);
+	ts.backcolor = 0x666666FF;
 	tg_text_set(preview, "PREVIEW", ts);
+	ts.backcolor = 0xFFFFFFFF;
     }
     else
 	zc_log_debug("cliplistbck not found");
+
+    vh_cv_body_attach(previewbody, NULL);
+    vh_cv_scrl_attach(previewscrl, previewbody, NULL);
+    vh_cv_evnt_attach(previewevnt, previewbody, previewscrl, NULL);
 
     /* file info table */
 

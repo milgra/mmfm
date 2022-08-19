@@ -217,8 +217,14 @@ void ui_generator_render(uint32_t time)
 	{
 	    reset_texmap |= ui_compositor_upd_bmp(i, view->frame.global, view->style.shadow_blur, view->texture.bitmap);
 
+	    view->texture.changed = 0;
+	}
+
+	if (view->frame.dim_changed)
+	{
+	    ui_compositor_upd_dim(i, view->frame.global, view->style.shadow_blur);
+
 	    view->frame.dim_changed = 0;
-	    view->texture.changed   = 0;
 	}
 
 	if (view->frame.pos_changed)

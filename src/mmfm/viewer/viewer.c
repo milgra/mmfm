@@ -13,8 +13,9 @@
 #define viewer_h
 
 #include "zc_bm_rgba.c"
+#include "zc_callback.c"
 
-void* viewer_open(char* path);
+void* viewer_open(char* path, cb_t* sizecb);
 void  viewer_close(void* ms);
 void  video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm);
 
@@ -36,6 +37,7 @@ void  video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm);
 #include "packetqueue.c"
 #include "zc_draw.c"
 #include "zc_log.c"
+#include "zc_vec2.c"
 #include <SDL.h>
 #include <SDL_thread.h>
 
@@ -91,6 +93,7 @@ typedef struct AudioParams
 
 typedef struct MediaState
 {
+    cb_t*            sizecb;
     char*            filename;             // filename, to use in functions and for format dumping
     AVFormatContext* format;               // format context, used for aspect ratio, framerate, seek calcualtions
     SDL_Thread*      read_thread;          // thread for reading packets
@@ -116,6 +119,9 @@ typedef struct MediaState
     int       vidst_index; // video stream index
     AVStream* audst;       // audio stream
     int       audst_index; // audio stream index
+
+    int wth; // lasat frame width
+    int hth; // last frame height
 
     double max_frame_duration; // maximum duration of a frame - above this, we consider the jump a timestamp discontinuity. used for target duration, frame duration
 
@@ -316,6 +322,13 @@ int viewer_video_decode_thread(void* arg)
 		    qframe->serial   = ms->viddec.pkt_serial;
 
 		    // set_default_window_size(qframe->width, qframe->height, qframe->sar);
+		    if (ms->wth != frame->width || ms->hth != frame->height)
+		    {
+			ms->wth   = frame->width;
+			ms->hth   = frame->height;
+			v2_t rect = (v2_t){ms->wth, ms->hth};
+			if (ms->sizecb) (*ms->sizecb->fp)(NULL, &rect);
+		    }
 
 		    av_frame_move_ref(qframe->frame, frame);
 		    frame_queue_push(&ms->vidfq);
@@ -1186,7 +1199,7 @@ int viewer_read_thread(void* arg)
 
 /* entry point, opens/plays media under path */
 
-void* viewer_open(char* path)
+void* viewer_open(char* path, cb_t* sizecb)
 {
     zc_log_debug("viewer_open %s", path);
 
@@ -1212,6 +1225,7 @@ void* viewer_open(char* path)
 		    clock_init(&ms->audclk, &ms->audpq.serial);
 		    clock_init(&ms->extclk, &ms->extclk.serial);
 
+		    ms->sizecb       = RET(sizecb);
 		    ms->audio_volume = 100;
 		    ms->vidst_index  = -1;
 		    ms->audst_index  = -1;
@@ -1257,6 +1271,7 @@ void viewer_close(void* msp)
 
     sws_freeContext(ms->img_convert_ctx);
 
+    if (ms->sizecb) REL(ms->sizecb);
     av_free(ms->filename);
     av_free(ms);
 }

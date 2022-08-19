@@ -144,9 +144,11 @@ void wm_loop(void (*init)(int, int), void (*update)(ev_t), void (*render)(uint32
 			}
 			else if (event.type == SDL_MOUSEWHEEL)
 			{
-			    ev.type = EV_SCROLL;
-			    ev.dx   = event.wheel.x * 5.0;
-			    ev.dy   = event.wheel.y * 5.0;
+			    ev.type       = EV_SCROLL;
+			    ev.dx         = event.wheel.x * 5.0;
+			    ev.dy         = event.wheel.y * 5.0;
+			    ev.ctrl_down  = SDL_GetModState() & KMOD_CTRL;
+			    ev.shift_down = SDL_GetModState() & KMOD_SHIFT;
 			    (*update)(ev);
 			}
 			else if (event.type == SDL_QUIT)

@@ -21,6 +21,7 @@ void ui_describe();
 #include "config.c"
 #include "filemanager.c"
 #include "tg_css.c"
+#include "tg_scaledimg.c"
 #include "tg_text.c"
 #include "ui_compositor.c"
 #include "ui_manager.c"
@@ -425,6 +426,11 @@ void ui_init(float width, float height)
     view_t* previewbody = view_get_subview(ui.view_base, "previewbody");
     view_t* previewscrl = view_get_subview(ui.view_base, "previewscrl");
     view_t* previewevnt = view_get_subview(ui.view_base, "previewevnt");
+    view_t* previewcont = view_get_subview(ui.view_base, "previewcont");
+
+    tg_scaledimg_add(previewcont, 300, 300);
+    view_set_frame(previewcont, (r2_t){0, 0, 300, 300});
+    previewcont->style.margin = INT_MAX;
 
     if (preview)
     {

@@ -1,9 +1,9 @@
 # Zen Media development roadmap
 
-resize dot a harom table koze
 zoomolhato preview
 pdf, video zoom
 log uzenet status baron
+doksi, ui teszt, 0.1 release aur
 
 detailed stream infos video/audional file infoba
 visualization level gombok, kep, oszcilloszkop, binaris

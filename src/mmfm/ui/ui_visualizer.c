@@ -18,6 +18,7 @@ void ui_visualizer_show_pdf(char* path);
 #include "pdf.c"
 #include "vh_anim.c"
 #include "vh_button.c"
+#include "vh_cv_body.c"
 #include "vh_roll.c"
 #include "viewer.c"
 #include "zc_callback.c"
@@ -27,6 +28,7 @@ void ui_visualizer_show_pdf(char* path);
 struct vizualizer_t
 {
     int     visu;
+    view_t* visubody;
     view_t* visuleft;
     view_t* visuright;
     view_t* visuvideo;
@@ -42,6 +44,7 @@ void ui_visualizer_attach(view_t* baseview)
     /* uiv.visuleft  = view_get_subview(baseview, "visuleft"); */
     /* uiv.visuright = view_get_subview(baseview, "visuright"); */
     uiv.visuvideo = view_get_subview(baseview, "previewcont");
+    uiv.visubody  = view_get_subview(baseview, "previewbody");
 }
 
 void ui_visualizer_detach()
@@ -70,6 +73,13 @@ void ui_visualizer_update()
     /* uiv.visuright->texture.changed = 1; */
 }
 
+void ui_visualizer_content_size_cb(void* userdata, void* data)
+{
+    v2_t* r = (v2_t*) data;
+
+    vh_cv_body_set_content_size(uiv.visubody, (int) r->x, (int) r->y);
+}
+
 void ui_visualizer_open(char* path)
 {
     if (uiv.vs)
@@ -84,7 +94,9 @@ void ui_visualizer_open(char* path)
     }
     else
     {
-	uiv.vs = viewer_open(path);
+	cb_t* sizecb = cb_new(ui_visualizer_content_size_cb, NULL);
+	uiv.vs       = viewer_open(path, sizecb);
+	REL(sizecb);
     }
 }
 
@@ -112,8 +124,10 @@ void ui_visualizer_show_image(bm_rgba_t* bm)
 void ui_visualizer_show_pdf(char* path)
 {
     bm_rgba_t* pdfbmp = pdf_render(path);
+
+    vh_cv_body_set_content_size(uiv.visubody, pdfbmp->w, pdfbmp->h);
+
     ui_visualizer_show_image(pdfbmp);
-    zc_log_debug("SHOW PDF");
     REL(pdfbmp);
 }
 

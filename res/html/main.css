@@ -147,10 +147,10 @@
 }
 
 .dragger {
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    background-color: #555555FF;
+    width: 15px;
+    height: 15px;
+    border-radius: 2px;
+    background-color: #995555FF;
 }
 
 #settingsbtn {

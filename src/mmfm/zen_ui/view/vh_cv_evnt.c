@@ -47,8 +47,15 @@ void vh_cv_evnt_evt(view_t* view, ev_t ev)
     }
     else if (ev.type == EV_SCROLL)
     {
-	vh->sx -= ev.dx;
-	vh->sy += ev.dy;
+	if (!ev.ctrl_down)
+	{
+	    vh->sx -= ev.dx;
+	    vh->sy += ev.dy;
+	}
+	else
+	{
+	    vh_cv_body_zoom(vh->tbody_view, ev.dy);
+	}
     }
     else if (ev.type == EV_RESIZE)
     {

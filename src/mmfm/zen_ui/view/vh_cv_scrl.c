@@ -77,74 +77,65 @@ void vh_cv_scrl_update(view_t* view)
     vh_cv_scrl_t* vh  = view->handler_data;
     vh_cv_body_t* bvh = vh->tbody_view->handler_data;
 
-    /* if (bvh->items->length > 0 && vh->item_cnt > 0) */
-    /* { */
-    /* 	view_t* head = bvh->items->data[0]; */
+    r2_t vf = view->frame.local;
+    r2_t cf = bvh->content->frame.local;
 
-    /* int vert_pos = bvh->top_index; */
-    /* int vert_vis = bvh->bot_index - bvh->top_index; */
-    /* int vert_max = vh->item_cnt; */
+    float pratio = cf.y / (vf.h - cf.h);
+    float sratio = vf.h / cf.h;
 
-    /* if (vert_max > 1.0) */
-    /* { */
-    /*     float pratio = (float) vert_pos / (float) vert_max; */
-    /*     float sratio = (float) vert_vis / (float) vert_max; */
+    if (sratio < 1.0)
+    {
 
-    /*     float pos = view->frame.local.h * pratio; */
-    /*     float hth = view->frame.local.h * sratio; */
+	float hth = vf.h * sratio;
+	float pos = vf.h * pratio;
 
-    /*     if (vh->state == 2) */
-    /*     { */
-    /* 	pos += hth / 2.0; */
-    /* 	hth = 1.0; */
-    /*     } */
+	if (vh->state == 2)
+	{
+	    pos += hth / 2.0;
+	    hth = 1.0;
+	}
 
-    /*     r2_t frame = vh->vert_v->frame.local; */
-    /*     frame.h += (hth - frame.h) / 2.0; */
-    /*     frame.y += (pos - frame.y) / 2.0; */
+	r2_t frame = vh->vert_v->frame.local;
+	frame.h += (hth - frame.h) / 2.0;
+	frame.y += (pos - frame.y) / 2.0;
 
-    /*     view_set_frame(vh->vert_v, frame); */
-    /* } */
+	view_set_frame(vh->vert_v, frame);
+    }
 
-    /* float hori_pos = -head->frame.local.x; */
-    /* float hori_vis = view->frame.local.w; */
-    /* float hori_max = head->frame.local.w; */
+    pratio = cf.x / (vf.w - cf.w);
+    sratio = vf.w / cf.w;
 
-    /* if (hori_max > 1.0) */
-    /* { */
-    /*     float pratio = (float) hori_pos / (float) hori_max; */
-    /*     float sratio = (float) hori_vis / (float) hori_max; */
+    if (sratio < 1.0)
+    {
+	float wth = vf.w * sratio;
+	float pos = vf.w * pratio;
 
-    /*     float pos = view->frame.local.w * pratio; */
-    /*     float wth = view->frame.local.w * sratio; */
+	if (vh->state == 2)
+	{
+	    pos += wth / 2.0;
+	    wth = 1.0;
+	}
 
-    /*     if (vh->state == 2) */
-    /*     { */
-    /* 	pos += wth / 2.0; */
-    /* 	wth = 1.0; */
-    /*     } */
+	r2_t frame = vh->hori_v->frame.local;
+	frame.w += (wth - frame.w) / 2.0;
+	frame.x += (pos - frame.x) / 2.0;
 
-    /*     r2_t frame = vh->hori_v->frame.local; */
-    /*     frame.w += (wth - frame.w) / 2.0; */
-    /*     frame.x += (pos - frame.x) / 2.0; */
+	view_set_frame(vh->hori_v, frame);
+    }
 
-    /*     view_set_frame(vh->hori_v, frame); */
-    /* } */
-
-    /* if (vh->state > 0) */
-    /* { */
-    /*     vh->steps += 1; */
-    /*     if (vh->steps == 5) */
-    /*     { */
-    /* 	if (vh->state == 2) */
-    /* 	{ */
-    /* 	    view_set_texture_alpha(vh->hori_v, 0.0, 0); */
-    /* 	    view_set_texture_alpha(vh->vert_v, 0.0, 0); */
-    /* 	} */
-    /* 	vh->state = 0; */
-    /*     } */
-    /* } */
-    /* } */
+    if (vh->state > 0)
+    {
+	vh->steps += 1;
+	if (vh->steps == 5)
+	{
+	    if (vh->state == 2)
+	    {
+		view_set_texture_alpha(vh->hori_v, 0.0, 0);
+		view_set_texture_alpha(vh->vert_v, 0.0, 0);
+	    }
+	    vh->state = 0;
+	}
+    }
 }
 
 void vh_cv_scrl_show(view_t* view)
@@ -152,13 +143,10 @@ void vh_cv_scrl_show(view_t* view)
     vh_cv_scrl_t* vh  = view->handler_data;
     vh_cv_body_t* bvh = vh->tbody_view->handler_data;
 
-    /* if (bvh->items->length > 0 && vh->item_cnt > 0) */
-    /* { */
-    /* 	vh->state = 1; */
-    /* 	vh->steps = 0; */
-    /* 	view_set_texture_alpha(vh->hori_v, 1.0, 0); */
-    /* 	view_set_texture_alpha(vh->vert_v, 1.0, 0); */
-    /* } */
+    vh->state = 1;
+    vh->steps = 0;
+    view_set_texture_alpha(vh->hori_v, 1.0, 0);
+    view_set_texture_alpha(vh->vert_v, 1.0, 0);
 }
 
 void vh_cv_scrl_hide(view_t* view)

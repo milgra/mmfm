@@ -44,6 +44,12 @@ void vh_cv_evnt_evt(view_t* view, ev_t ev)
 	vh->sy *= 0.8;
 
 	vh_cv_body_move(vh->tbody_view, vh->sx, vh->sy);
+
+	if (vh->tscrl_view && vh->scroll_visible) vh_cv_scrl_update(vh->tscrl_view);
+
+	vh_cv_scrl_t* svh = vh->tscrl_view->handler_data;
+
+	if (svh->state > 0) vh_cv_scrl_update(vh->tscrl_view);
     }
     else if (ev.type == EV_SCROLL)
     {

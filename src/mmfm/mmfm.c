@@ -81,7 +81,7 @@ void update(ev_t ev)
 
     if (ev.type == EV_RESIZE)
     {
-	ui_describe();
+	// ui_describe();
     }
 }
 

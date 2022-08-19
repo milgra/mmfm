@@ -85,7 +85,6 @@ void vh_cv_scrl_update(view_t* view)
 
     if (sratio < 1.0)
     {
-
 	float hth = vf.h * sratio;
 	float pos = vf.h * pratio;
 

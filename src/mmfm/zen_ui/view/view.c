@@ -184,16 +184,16 @@ void    view_evt(view_t* view, ev_t ev); /* general event, sending to all views 
 void    view_coll_touched(view_t* view, ev_t ev, vec_t* queue);
 view_t* view_get_subview(view_t* view, char* id);
 void    view_gen_texture(view_t* view);
-
-void view_set_frame(view_t* view, r2_t frame);
-void view_set_region(view_t* view, r2_t frame);
-void view_set_style(view_t* view, vstyle_t style);
-void view_set_block_touch(view_t* view, char block, char recursive);
-void view_set_texture_bmp(view_t* view, bm_rgba_t* tex);
-void view_set_texture_page(view_t* view, uint32_t page);
-void view_set_texture_type(view_t* view, textype_t type);
-void view_set_texture_alpha(view_t* view, float alpha, char recur);
-void view_invalidate_texture(view_t* view);
+void    view_set_masked(view_t* view, char masked);
+void    view_set_frame(view_t* view, r2_t frame);
+void    view_set_region(view_t* view, r2_t frame);
+void    view_set_style(view_t* view, vstyle_t style);
+void    view_set_block_touch(view_t* view, char block, char recursive);
+void    view_set_texture_bmp(view_t* view, bm_rgba_t* tex);
+void    view_set_texture_page(view_t* view, uint32_t page);
+void    view_set_texture_type(view_t* view, textype_t type);
+void    view_set_texture_alpha(view_t* view, float alpha, char recur);
+void    view_invalidate_texture(view_t* view);
 
 void view_describe(void* pointer, int level);
 void view_desc(void* pointer, int level);

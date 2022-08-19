@@ -119,7 +119,7 @@ void viewgen_css_apply_style(view_t* view, map_t* style, char* respath)
 	else if (strcmp(key, "overflow") == 0)
 	{
 	    if (strcmp(val, "hidden") == 0)
-		view->style.masked = 1;
+		view_set_masked(view, 1);
 	}
 	else if (strcmp(key, "flex-direction") == 0)
 	{

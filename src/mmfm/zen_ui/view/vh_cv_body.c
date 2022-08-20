@@ -10,8 +10,8 @@ typedef struct _vh_cv_body_t
     void* userdata;
 
     view_t* content;
-    float   sx;
-    float   sy;
+    float   cw; // content width
+    float   ch; // content height
     float   px;
     float   py;
     float   scale;
@@ -23,8 +23,8 @@ void vh_cv_body_attach(
 
 void vh_cv_body_set_content_size(
     view_t* view,
-    int     sx,
-    int     sy);
+    int     cw,
+    int     ch);
 
 void vh_cv_body_move(
     view_t* view,
@@ -76,24 +76,52 @@ void vh_cv_body_attach(
     vh->content      = view->views->data[0];
     vh->scale        = 1.0;
 
+    vh->cw = 1;
+    vh->ch = 1;
+
     view->handler_data = vh;
 }
 
 void vh_cv_body_set_content_size(
     view_t* view,
-    int     sx,
-    int     sy)
+    int     cw,
+    int     ch)
 {
     vh_cv_body_t* vh = view->handler_data;
-    vh->sx           = sx;
-    vh->sy           = sy;
+
+    vh->cw = cw;
+    vh->ch = ch;
+
+    r2_t lf = view->frame.local; // local frame
+
+    float cr = (float) ch / (float) cw; // content aspect ratio
+
+    /* fit width first */
+
+    float nw = lf.w;
+    float nh = nw * cr;
+
+    vh->scale = (float) nw / cw;
+
+    if (nh > lf.h)
+    {
+	cr = lf.h / nh;
+
+	nh = lf.h;
+	nw *= cr;
+	vh->scale = (float) nh / ch;
+    }
 
     r2_t frame = vh->content->frame.local;
-    frame.w    = sx;
-    frame.h    = sy;
+    frame.x    = (lf.w - nw) / 2.0;
+    frame.y    = (lf.h - nh) / 2.0;
+    frame.w    = nw;
+    frame.h    = nh;
 
-    tg_scaledimg_set_content_size(vh->content, frame.w, frame.h);
     view_set_frame(vh->content, frame);
+
+    tg_scaledimg_set_content_size(vh->content, cw, ch);
+    tg_scaledimg_gen(vh->content);
 }
 
 void vh_cv_body_move(
@@ -132,10 +160,18 @@ void vh_cv_body_zoom(
 
     /* new dimensions */
 
-    vh->scale += s / 100.0;
+    float ds = s / 100.0;
+    if (ds > 0.5) ds = 0.5;
+    if (ds < -0.5) ds = -0.5;
 
-    float nw = vh->sx * vh->scale;
-    float nh = vh->sy * vh->scale;
+    if (vh->scale + ds > 10.0) vh->scale = 10.0;
+    else if (vh->scale + ds < 0.1) vh->scale = 0.1;
+    else vh->scale += ds;
+
+    zc_log_debug("%f %f %f %f %f", lf.x, lf.y, lf.w, lf.h, vh->scale);
+
+    float nw = vh->cw * vh->scale;
+    float nh = vh->ch * vh->scale;
 
     lf.x = (float) x - rw * nw - view->frame.global.x;
     lf.y = (float) y - rh * nh - view->frame.global.y;

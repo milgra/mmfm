@@ -1337,7 +1337,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
 {
     int ret = 0;
 
-    // zc_log_debug("upload texture frame %i %i bitmap %i %i", frame->width, frame->height, bm->w, bm->h);
+    /* zc_log_debug("upload texture frame %i %i bitmap %i %i", frame->width, frame->height, bm->w, bm->h); */
 
     if (frame->width > 0 && frame->height > 0)
     {
@@ -1414,8 +1414,9 @@ void video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm)
 	{
 	    if (scaledw > 0 || scaledh > 0) free(scaledpixels[0]);
 
-	    scaledw         = bm->w;
-	    scaledh         = bm->h;
+	    scaledw = bm->w;
+	    scaledh = bm->h;
+
 	    scaledpixels[0] = malloc(bm->w * bm->h * 4);
 	}
 

@@ -405,6 +405,9 @@ void ui_init(float width, float height)
     ui.view_drag = view_get_subview(ui.view_base, "draglayer");
     vh_drag_attach(ui.view_drag, move_cb, drop_cb);
 
+    REL(move_cb);
+    REL(drop_cb);
+
     /* setup visualizer */
 
     ui_visualizer_attach(ui.view_base); // DETACH 8

@@ -1341,6 +1341,15 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
 
     if (frame->width > 0 && frame->height > 0)
     {
+	if (scaledw != bm->w || scaledh != bm->h)
+	{
+	    if (scaledw > 0 || scaledh > 0) free(scaledpixels[0]);
+
+	    scaledw = bm->w;
+	    scaledh = bm->h;
+
+	    scaledpixels[0] = malloc(bm->w * bm->h * 4);
+	}
 
 	*img_convert_ctx = sws_getCachedContext(*img_convert_ctx, frame->width, frame->height, frame->format, bm->w, bm->h, AV_PIX_FMT_BGR32, sws_flags, NULL, NULL, NULL);
 
@@ -1354,6 +1363,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
 
 	    if (bm)
 	    {
+
 		gfx_insert_rgb(bm, scaledpixels[0], bm->w, bm->h, 0, 0);
 	    }
 	    else
@@ -1410,16 +1420,6 @@ void video_refresh(void* opaque, double* remaining_time, bm_rgba_t* bm)
 
     if (ms->vidst)
     {
-	if (scaledw != bm->w || scaledh != bm->h)
-	{
-	    if (scaledw > 0 || scaledh > 0) free(scaledpixels[0]);
-
-	    scaledw = bm->w;
-	    scaledh = bm->h;
-
-	    scaledpixels[0] = malloc(bm->w * bm->h * 4);
-	}
-
     retry:
 	if (frame_queue_nb_remaining(&ms->vidfq) == 0)
 	{

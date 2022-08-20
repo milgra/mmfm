@@ -16,6 +16,9 @@ typedef struct _vh_cv_evnt_t
     int     scroll_visible;
     float   sx;
     float   sy;
+    float   mx;
+    float   my;
+    float   z;
 } vh_cv_evnt_t;
 
 void vh_cv_evnt_attach(
@@ -45,6 +48,12 @@ void vh_cv_evnt_evt(view_t* view, ev_t ev)
 
 	vh_cv_body_move(vh->tbody_view, vh->sx, vh->sy);
 
+	if (vh->z > 0.001 || vh->z < -0.001)
+	{
+	    vh->z *= 0.8;
+	    vh_cv_body_zoom(vh->tbody_view, vh->z, vh->mx, vh->my);
+	}
+
 	if (vh->tscrl_view && vh->scroll_visible) vh_cv_scrl_update(vh->tscrl_view);
 
 	vh_cv_scrl_t* svh = vh->tscrl_view->handler_data;
@@ -60,7 +69,7 @@ void vh_cv_evnt_evt(view_t* view, ev_t ev)
 	}
 	else
 	{
-	    vh_cv_body_zoom(vh->tbody_view, ev.dy);
+	    vh->z += ev.dy;
 	}
     }
     else if (ev.type == EV_RESIZE)
@@ -85,6 +94,9 @@ void vh_cv_evnt_evt(view_t* view, ev_t ev)
 		vh_cv_scrl_scroll_h(vh->tscrl_view, ev.x - view->frame.global.x);
 	    }
 	}
+
+	vh->mx = ev.x;
+	vh->my = ev.y;
     }
     else if (ev.type == EV_MMOVE_OUT)
     {

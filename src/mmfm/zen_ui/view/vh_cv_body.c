@@ -33,7 +33,9 @@ void vh_cv_body_move(
 
 void vh_cv_body_zoom(
     view_t* view,
-    float   dy);
+    float   s,
+    int     x,
+    int     y);
 
 void vh_cv_body_reset(
     view_t* view);
@@ -109,16 +111,38 @@ void vh_cv_body_move(
 
 void vh_cv_body_zoom(
     view_t* view,
-    float   dy)
+    float   s,
+    int     x,
+    int     y)
 {
     vh_cv_body_t* vh = view->handler_data;
-    vh->scale += dy / 100.0;
 
-    r2_t frame = vh->content->frame.local;
-    frame.w    = vh->sx * vh->scale;
-    frame.h    = vh->sy * vh->scale;
+    r2_t gf = vh->content->frame.global;
+    r2_t lf = vh->content->frame.local;
 
-    view_set_frame(vh->content, frame);
+    /* partial width and height from mouse position */
+
+    float pw = (float) x - gf.x;
+    float ph = (float) y - gf.y;
+
+    /* ratios */
+
+    float rw = pw / gf.w;
+    float rh = ph / gf.h;
+
+    /* new dimensions */
+
+    vh->scale += s / 100.0;
+
+    float nw = vh->sx * vh->scale;
+    float nh = vh->sy * vh->scale;
+
+    lf.x = (float) x - rw * nw - view->frame.global.x;
+    lf.y = (float) y - rh * nh - view->frame.global.y;
+    lf.w = nw;
+    lf.h = nh;
+
+    view_set_frame(vh->content, lf);
 }
 
 void vh_cv_body_reset(

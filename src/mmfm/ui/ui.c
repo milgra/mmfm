@@ -388,7 +388,6 @@ void ui_init(float width, float height)
 {
     text_init();                    // DESTROY 0
     ui_manager_init(width, height); // DESTROY 1
-
     ui_create_views(width, height);
 
     // setup key events

@@ -64,6 +64,7 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 		float top = head->frame.local.y;
 		float bot = tail->frame.local.y + tail->frame.local.h;
 		float hth = bot - top;
+		float wth = head->frame.local.w;
 		float lft = head->frame.local.x;
 		float rgt = head->frame.local.x + head->frame.local.w;
 
@@ -84,7 +85,7 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 		if (lft > 0.01) dx -= lft / 5.0;
 		if (rgt < view->frame.local.w - 0.01)
 		{
-		    if (head->frame.local.w > view->frame.local.w)
+		    if (wth > view->frame.local.w)
 			dx += (view->frame.local.w - rgt) / 5.0;
 		    else
 			dx -= lft / 5.0;

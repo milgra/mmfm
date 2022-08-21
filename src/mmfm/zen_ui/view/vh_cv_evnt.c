@@ -42,15 +42,61 @@ void vh_cv_evnt_evt(view_t* view, ev_t ev)
     if (ev.type == EV_TIME)
     {
 	vh_cv_body_t* bvh = vh->tbody_view->handler_data;
+	r2_t          cf  = bvh->content->frame.local;
 
 	vh->sx *= 0.8;
 	vh->sy *= 0.8;
 
-	vh_cv_body_move(vh->tbody_view, vh->sx, vh->sy);
+	float dx = vh->sx;
+	float dy = vh->sy;
+
+	float top = cf.y;
+	float bot = cf.y + cf.h;
+	float wth = cf.w;
+	float hth = cf.h;
+	float lft = cf.x;
+	float rgt = cf.x + cf.w;
+
+	if (cf.h >= view->frame.local.h)
+	{
+	    if (top > 0.001) dy -= top / 5.0; // scroll back top item
+	    if (bot < view->frame.local.h - 0.001)
+	    {
+		if (hth > view->frame.local.h)
+		    dy += (view->frame.local.h - bot) / 5.0; // scroll back bottom item
+		else
+		    dy -= top / 5.0; // scroll back top item
+	    }
+	}
+	else
+	{
+	    float cy = view->frame.local.h / 2 - cf.h / 2;
+	    dy += (cy - cf.y) / 2;
+	}
+
+	if (cf.w >= view->frame.local.w)
+	{
+	    if (lft > 0.01) dx -= lft / 5.0;
+	    if (rgt < view->frame.local.w - 0.01)
+	    {
+		if (wth > view->frame.local.w)
+		    dx += (view->frame.local.w - rgt) / 5.0;
+		else
+		    dx -= lft / 5.0;
+	    }
+	}
+	else
+	{
+	    float cx = view->frame.local.w / 2 - cf.w / 2;
+	    dx += (cx - cf.x) / 2;
+	}
+
+	vh_cv_body_move(vh->tbody_view, dx, dy);
 
 	if (vh->z > 0.001 || vh->z < -0.001)
 	{
 	    vh->z *= 0.8;
+
 	    vh_cv_body_zoom(vh->tbody_view, vh->z, vh->mx, vh->my);
 	}
 

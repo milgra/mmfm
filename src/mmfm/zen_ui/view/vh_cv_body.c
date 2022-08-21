@@ -168,8 +168,6 @@ void vh_cv_body_zoom(
     else if (vh->scale + ds < 0.1) vh->scale = 0.1;
     else vh->scale += ds;
 
-    zc_log_debug("%f %f %f %f %f", lf.x, lf.y, lf.w, lf.h, vh->scale);
-
     float nw = vh->cw * vh->scale;
     float nh = vh->ch * vh->scale;
 

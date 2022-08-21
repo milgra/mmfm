@@ -43,8 +43,6 @@ void vh_drag_evt(view_t* view, ev_t ev)
 
 	if (vh->dragged_view)
 	{
-	    view_remove_from_parent(vh->dragged_view);
-
 	    if (vh->dropcb) (*vh->dropcb->fp)(view, vh->dragged_view);
 
 	    REL(vh->dragged_view);
@@ -57,11 +55,7 @@ void vh_drag_del(void* p)
 {
     vh_drag_t* vh = p;
 
-    if (vh->dragged_view)
-    {
-	view_remove_from_parent(vh->dragged_view);
-	REL(vh->dragged_view);
-    }
+    if (vh->dragged_view) REL(vh->dragged_view);
     if (vh->movecb) REL(vh->movecb);
     if (vh->dropcb) REL(vh->dropcb);
 }
@@ -90,14 +84,12 @@ void vh_drag_drag(view_t* view, view_t* item)
 
     if (vh->dragged_view)
     {
-	view_remove_from_parent(vh->dragged_view);
 	REL(vh->dragged_view);
 	vh->dragged_view = NULL;
     }
     if (item)
     {
 	vh->dragged_view = RET(item);
-	view_add_subview(view, item);
     }
 }
 

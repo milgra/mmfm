@@ -32,7 +32,6 @@ void ui_describe();
 #include "vh_cv_evnt.c"
 #include "vh_cv_scrl.c"
 #include "vh_drag.c"
-#include "vh_dragger.c"
 #include "vh_key.c"
 #include "vh_touch.c"
 #include "view_layout.c"
@@ -51,6 +50,7 @@ struct _ui_t
 {
     view_t* view_base;
     view_t* view_drag; // drag overlay
+    view_t* view_doc;  //  file drag icon
     view_t* cursor;    // replay cursor
 
     view_t* exit_btn;
@@ -173,10 +173,13 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 	    docview->style.background_image = imagepath;
 	    tg_css_add(docview);
 
+	    view_insert_subview(ui.view_base, docview, ui.view_base->views->length - 2);
+
 	    vh_drag_drag(ui.view_drag, docview);
 	    REL(docview);
 
 	    ui.drag_data = selected;
+	    ui.view_doc  = docview;
 	}
 	break;
 	case UI_TABLE_EVENT_DROP:
@@ -241,6 +244,11 @@ void on_clipboard_event(ui_table_t* table, ui_table_event event, void* userdata)
 		vec_add_in_vector(ui.clip_list_data, ui.drag_data);
 		ui.drag_data = NULL;
 		ui_table_set_data(ui.cliptable, ui.clip_list_data);
+
+		if (ui.view_doc)
+		{
+		    view_remove_from_parent(ui.view_doc);
+		}
 	    }
 	}
 	break;
@@ -268,14 +276,10 @@ void ui_on_btn_event(void* userdata, void* data)
 
     if (btnview == ui.left_dragger)
     {
-	ui.left_dragger->blocks_touch = 0;
-	view_remove_from_parent(ui.left_dragger);
 	vh_drag_drag(ui.view_drag, ui.left_dragger);
     }
     if (btnview == ui.prev_dragger)
     {
-	ui.prev_dragger->blocks_touch = 0;
-	view_remove_from_parent(ui.prev_dragger);
 	vh_drag_drag(ui.view_drag, ui.prev_dragger);
     }
 }
@@ -291,19 +295,11 @@ void ui_on_drag_drop(void* userdata, void* data)
 
     if (v == ui.left_dragger)
     {
-	view_insert_subview(ui.view_base, ui.left_dragger, ui.view_base->views->length - 2);
-	ui.left_dragger->blocks_touch = 1;
-	// set cliplistbox height
 	view_t* box       = view_get_subview(ui.view_base, "cliplistbox");
 	view_t* lft       = view_get_subview(ui.view_base, "left_container");
 	box->style.height = lft->frame.global.h - v->frame.global.y;
 	zc_log_debug("height %i", box->style.height);
 	view_layout(lft);
-    }
-    if (v == ui.prev_dragger)
-    {
-	view_insert_subview(ui.view_base, ui.prev_dragger, ui.view_base->views->length - 2);
-	ui.prev_dragger->blocks_touch = 1;
     }
 }
 
@@ -579,15 +575,10 @@ void ui_init(float width, float height)
 
     ui.main_bottom  = view_get_subview(ui.view_base, "main_bottom");
     ui.left_dragger = view_get_subview(ui.view_base, "left_dragger");
-    ui.prev_dragger = view_get_subview(ui.view_base, "prev_dragger");
 
     ui.left_dragger->blocks_touch = 1;
-    ui.prev_dragger->blocks_touch = 1;
-
-    ui.prev_dragger->frame.local.x = 100;
 
     vh_touch_add(ui.left_dragger, btn_cb);
-    vh_touch_add(ui.prev_dragger, btn_cb);
 
     REL(btn_cb);
 

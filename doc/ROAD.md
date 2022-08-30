@@ -1,10 +1,15 @@
 # Zen Media development roadmap
 
-zoomolhato preview
-pdf, video zoom
 log uzenet status baron
+dark color
+table header mask fix
+file path filelist tetejere
+datumbol napot kivenni
+status tf resize problem
+seek bar/pdf paging
 doksi, ui teszt, 0.1 release aur
 
+image eseten ne is inditson threadet viewer -> gyorsabb
 detailed stream infos video/audional file infoba
 visualization level gombok, kep, oszcilloszkop, binaris
 OPEN, JUMP ( / ~ usb ) , EDIT ( move, copy, delete, new folder ) , SEARCH buttons

@@ -57,38 +57,38 @@ void vh_cv_evnt_evt(view_t* view, ev_t ev)
 	float lft = cf.x;
 	float rgt = cf.x + cf.w;
 
-	if (cf.h >= view->frame.local.h)
+	if (hth >= view->frame.local.h)
 	{
 	    if (top > 0.001) dy -= top / 5.0; // scroll back top item
 	    if (bot < view->frame.local.h - 0.001)
 	    {
-		if (hth > view->frame.local.h)
-		    dy += (view->frame.local.h - bot) / 5.0; // scroll back bottom item
-		else
-		    dy -= top / 5.0; // scroll back top item
+		dy += (view->frame.local.h - bot) / 5.0; // scroll back bottom item
 	    }
 	}
 	else
 	{
-	    float cy = view->frame.local.h / 2 - cf.h / 2;
-	    dy += (cy - cf.y) / 2;
+	    if (top < 0.001) dy -= top / 5.0; // scroll back top item
+	    if (bot > view->frame.local.h - 0.001)
+	    {
+		dy += (view->frame.local.h - bot) / 5.0; // scroll back bottom item
+	    }
 	}
 
-	if (cf.w >= view->frame.local.w)
+	if (wth >= view->frame.local.w)
 	{
 	    if (lft > 0.01) dx -= lft / 5.0;
 	    if (rgt < view->frame.local.w - 0.01)
 	    {
-		if (wth > view->frame.local.w)
-		    dx += (view->frame.local.w - rgt) / 5.0;
-		else
-		    dx -= lft / 5.0;
+		dx += (view->frame.local.w - rgt) / 5.0;
 	    }
 	}
 	else
 	{
-	    float cx = view->frame.local.w / 2 - cf.w / 2;
-	    dx += (cx - cf.x) / 2;
+	    if (lft < 0.01) dx -= lft / 5.0;
+	    if (rgt > view->frame.local.w - 0.01)
+	    {
+		dx += (view->frame.local.w - rgt) / 5.0;
+	    }
 	}
 
 	vh_cv_body_move(vh->tbody_view, dx, dy);

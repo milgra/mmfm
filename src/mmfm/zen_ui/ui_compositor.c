@@ -234,9 +234,6 @@ void ui_compositor_upd_dim(int index, r2_t frame, float border)
 
     // printf("ui_compositor_upd_dim %s w %i h %i\n", rect->id, bm->w, bm->h);
 
-    frame.w = frame.w - 2 * border;
-    frame.h = frame.h - 2 * border;
-
     if (border > 0.0) frame = r2_expand(frame, border);
     crect_set_frame(rect, frame);
 

@@ -76,7 +76,7 @@ void ui_manager_event(ev_t ev)
 	    view_layout(uim.root);
 	    ui_generator_resize(ev.w, ev.h);
 #ifdef DEBUG
-		// view_desc(uim.root, 0);
+		/* view_describe(uim.root, 0); */
 #endif
 	    view_evt(uim.root, ev);
 	}

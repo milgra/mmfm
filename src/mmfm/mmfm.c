@@ -81,6 +81,7 @@ void update(ev_t ev)
 
     if (ev.type == EV_RESIZE)
     {
+	ui_update_dragger();
 	// ui_describe();
     }
 }

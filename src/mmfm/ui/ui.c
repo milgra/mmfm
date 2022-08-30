@@ -7,6 +7,7 @@ void ui_init(float width, float height);
 void ui_destroy();
 void ui_add_cursor();
 void ui_update_cursor(r2_t frame);
+void ui_update_dragger();
 void ui_render_without_cursor(uint32_t time);
 void ui_save_screenshot(uint32_t time, char hide_cursor);
 void ui_update_layout(float w, float h);
@@ -295,11 +296,14 @@ void ui_on_drag_drop(void* userdata, void* data)
 
     if (v == ui.left_dragger)
     {
-	view_t* box       = view_get_subview(ui.view_base, "cliplistbox");
-	view_t* lft       = view_get_subview(ui.view_base, "left_container");
-	box->style.height = lft->frame.global.h - v->frame.global.y;
-	zc_log_debug("height %i", box->style.height);
-	view_layout(lft);
+	view_t* cbox       = view_get_subview(ui.view_base, "cliplistbox");
+	view_t* fbox       = view_get_subview(ui.view_base, "fileinfobox");
+	view_t* lft        = view_get_subview(ui.view_base, "left_container");
+	view_t* top        = view_get_subview(ui.view_base, "top_container");
+	cbox->style.height = lft->frame.global.h - v->frame.global.y + 28.0;
+	fbox->style.width  = top->frame.global.w - v->frame.global.x - 9;
+	zc_log_debug("height %i width %i", cbox->style.height, fbox->style.width);
+	view_layout(top);
     }
 }
 
@@ -573,9 +577,8 @@ void ui_init(float width, float height)
 
     // get main bottom for layout change
 
-    ui.main_bottom  = view_get_subview(ui.view_base, "main_bottom");
-    ui.left_dragger = view_get_subview(ui.view_base, "left_dragger");
-
+    ui.main_bottom                = view_get_subview(ui.view_base, "main_bottom");
+    ui.left_dragger               = view_get_subview(ui.view_base, "left_dragger");
     ui.left_dragger->blocks_touch = 1;
 
     vh_touch_add(ui.left_dragger, btn_cb);
@@ -623,6 +626,15 @@ void ui_update_layout(float w, float h)
     {
 	ui.main_bottom->style.flexdir = FD_COL;
     }
+}
+
+void ui_update_dragger()
+{
+    view_t* filelist = view_get_subview(ui.view_base, "filelisttable");
+    r2_t    df       = ui.left_dragger->frame.local;
+    df.x             = filelist->frame.global.x + filelist->frame.global.w;
+    df.y             = filelist->frame.global.y + filelist->frame.global.h;
+    view_set_frame(ui.left_dragger, df);
 }
 
 void ui_describe()

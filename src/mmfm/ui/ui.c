@@ -55,6 +55,7 @@ struct _ui_t
     view_t* view_doc;  //  file drag icon
     view_t* cursor;    // replay cursor
     view_t* view_infotf;
+    view_t* view_maingap;
 
     view_t* exit_btn;
     view_t* full_btn;
@@ -431,8 +432,8 @@ void ui_init(float width, float height)
     ts.align        = TA_CENTER;
     ts.margin_right = 0;
     ts.size         = 60.0;
-    ts.textcolor    = 0xEEEEEEFF;
-    ts.backcolor    = 0xFFFFFFFF;
+    ts.textcolor    = 0x353535FF;
+    ts.backcolor    = 0x252525FF;
     ts.multiline    = 0;
 
     /* preview block */
@@ -450,9 +451,9 @@ void ui_init(float width, float height)
     if (preview)
     {
 	tg_text_add(preview);
-	ts.backcolor = 0x666666FF;
+	/* ts.backcolor = 0x343434FF; */
 	tg_text_set(preview, "PREVIEW", ts);
-	ts.backcolor = 0xFFFFFFFF;
+	/* ts.backcolor = 0x252525FF; */
     }
     else
 	zc_log_debug("cliplistbck not found");
@@ -606,6 +607,10 @@ void ui_init(float width, float height)
     ui.progress_style = ui_util_gen_textstyle(ui.view_infotf);
     ui_show_progress("Directory loaded");
 
+    // main gap
+
+    ui.view_maingap = view_get_subview(ui.view_base, "main_gap");
+
     // show texture map for debug
 
     /* view_t* texmap       = view_new("texmap", ((r2_t){0, 0, 150, 150})); */
@@ -642,10 +647,28 @@ void ui_update_layout(float w, float h)
     if (w > h && ui.main_bottom->style.flexdir == FD_COL)
     {
 	ui.main_bottom->style.flexdir = FD_ROW;
+
+	if (ui.view_maingap)
+	{
+	    ui.view_maingap->style.w_per = 0;
+	    ui.view_maingap->style.width = 5;
+
+	    ui.view_maingap->style.h_per  = 1;
+	    ui.view_maingap->style.height = 0;
+	}
     }
     else
     {
 	ui.main_bottom->style.flexdir = FD_COL;
+
+	if (ui.view_maingap)
+	{
+	    ui.view_maingap->style.h_per  = 0;
+	    ui.view_maingap->style.height = 5;
+
+	    ui.view_maingap->style.w_per = 1;
+	    ui.view_maingap->style.width = 0;
+	}
     }
 }
 

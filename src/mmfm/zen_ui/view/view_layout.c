@@ -89,7 +89,7 @@ void view_layout(view_t* view)
 	    float width = rel_w;
 	    if (view->style.display == LD_FLEX && view->style.flexdir == FD_ROW)
 	    {
-		width   = rel_w / rem_w;
+		width   = floorf(rel_w / rem_w);
 		frame.x = act_x;
 		act_x += width;
 		rem_w -= 1;
@@ -102,7 +102,7 @@ void view_layout(view_t* view)
 	    float height = rel_h;
 	    if (view->style.display == LD_FLEX && view->style.flexdir == FD_COL)
 	    {
-		height  = rel_h / rem_h;
+		height  = floorf(rel_h / rem_h);
 		frame.y = act_y;
 		act_y += height;
 		rem_h -= 1;

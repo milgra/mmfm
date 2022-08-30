@@ -231,7 +231,7 @@ view_t* ui_table_item_create(
 		}
 	    }
 
-	    rowview->style.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+	    rowview->style.background_color = index % 2 != 0 ? 0x35353588 : 0x45454588;
 
 	    if (uit->selected->length > 0)
 	    {
@@ -302,7 +302,7 @@ void ui_table_evnt_event(view_t* view, view_t* rowview, vh_tbl_evnt_event_t type
 		    view_t* item = bvh->items->data[index];
 		    if (item->style.background_color == 0x00FF00FF)
 		    {
-			item->style.background_color = (bvh->head_index + index) % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+			item->style.background_color = (bvh->head_index + index) % 2 != 0 ? 0x353535388 : 0x45454588;
 			view_invalidate_texture(item);
 		    }
 		}
@@ -315,7 +315,7 @@ void ui_table_evnt_event(view_t* view, view_t* rowview, vh_tbl_evnt_event_t type
 	else
 	{
 	    VREM(uit->selected, data);
-	    rowview->style.background_color = index % 2 != 0 ? 0xFEFEFE88 : 0xEDEDED88;
+	    rowview->style.background_color = index % 2 != 0 ? 0x35353588 : 0x45454588;
 	    view_invalidate_texture(rowview);
 	}
 

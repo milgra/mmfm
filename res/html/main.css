@@ -25,10 +25,11 @@
 .tablehead {
     height: 20px;
     width: 100%;
+    background-color: #454545FF;
 }
 
 .tablebody {
-    color: #000000FF;
+    color: #DEDEDEFF;
     overflow: hidden;
     font-size: 16px;
     font-family: "Terminus (TTF):style=Bold";
@@ -38,25 +39,25 @@
     width: 10px;
     height: 100px;
     right: 0px;
-    background-color: #00000066;
+    background-color: #ACACAC66;
 }
 
 .horiscroll {
     width: 100px;
     height: 10px;
     bottom: 0px;
-    background-color: #00000066;
+    background-color: #ACACAC66;
 }
 
 .vertgap5 {
     height: 5px;
     width: 100%;
-    background-color: #DEDEDEFF;
+    background-color: #151515FF;
 }
 .horgap5 {
     height: 100%;
     width: 5px;
-    background-color: #DEDEDEFF;
+    background-color: #151515FF;
 }
 
 .gap {
@@ -69,7 +70,7 @@
 }
 
 #headerbck {
-    background-color: #DEDEDEFF;
+    background-color: #343434FF;
     width: 100%;
     height: 38px;
 }
@@ -84,7 +85,7 @@
 }
 
 .closebtn {
-    background-color: #FFFFFFFF;
+    background-color: #454545FF;
     width: 30px;
     height: 30px;
     border-radius: 4px;
@@ -99,7 +100,7 @@
 }
 
 #app_maximize_btn {
-    background-color: #FFFFFFFF;
+    background-color: #454545FF;
     width: 30px;
     height: 30px;
     border-radius: 4px;
@@ -113,25 +114,10 @@
     blocks: no;
 }
 
-#app_search_btn {
-    background-color: #FFFFFFFF;
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    box-shadow: 5px #0000000A;
-}
-
-#searchicon {
-    width: 30px;
-    height: 30px;
-    background-image: url("shuffle.png");
-    blocks: no;
-}
-
 .infobck {
     width: 100%;
     height: 30px;
-    background-color: #FFFFFFFF;
+    background-color: #454545FF;
     border-radius: 4px;
     box-shadow: 5px #0000000A;
 }
@@ -140,7 +126,7 @@
     width: 100%;
     height: 100%;
     blocks: no;
-    color: #000000FF;
+    color: #DEDEDEFF;
     font-size: 16px;
     text-align: center;
     font-family: "Terminus (TTF):style=Bold";
@@ -151,51 +137,6 @@
     height: 15px;
     border-radius: 2px;
     background-color: #00000099;
-}
-
-#settingsbtn {
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    background-color: #FFFFFFFF;
-    box-shadow: 5px #0000000A;
-}
-
-#settingsicon {
-    width: 30px;
-    height: 30px;
-    background-image: url("settings.png");
-    blocks: no;
-}
-
-#editbtn {
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    background-color: #FFFFFFFF;
-    box-shadow: 5px #0000000A;
-}
-
-#editicon {
-    width: 30px;
-    height: 30px;
-    background-image: url("editor.png");
-    blocks: no;
-}
-
-#aboutbtn {
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    background-color: #FFFFFFFF;
-    box-shadow: 5px #0000000A;
-}
-
-#abouticon {
-    width: 30px;
-    height: 30px;
-    background-image: url("home.png");
-    blocks: no;
 }
 
 #fileinfobox {

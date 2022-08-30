@@ -1,10 +1,8 @@
 # Zen Media development roadmap
 
-dark color
 table header mask fix
 file path filelist tetejere
 doksi, ui teszt, 0.1 release aur
-
 
 seek bar/pdf paging
 image eseten ne is inditson threadet viewer -> gyorsabb

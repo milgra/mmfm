@@ -70,6 +70,8 @@ struct _ui_t
     ui_table_t* cliptable;
     ui_table_t* filelisttable;
     ui_table_t* fileinfotable;
+
+    textstyle_t progress_style;
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -93,6 +95,11 @@ int ui_comp_entry(void* left, void* right)
 	else
 	    return 0;
     }
+}
+
+void ui_show_progress(char* progress)
+{
+    tg_text_set(ui.view_infotf, progress, ui.progress_style);
 }
 
 void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
@@ -137,6 +144,8 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 
 	    ui_table_set_data(ui.fileinfotable, items);
 
+	    ui_show_progress("File info/data loaded");
+
 	    REL(items); // REL L1
 	}
 	break;
@@ -161,6 +170,8 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 		vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);
 		ui_table_set_data(ui.filelisttable, ui.file_list_data);
 		REL(files);
+
+		ui_show_progress("Directory loaded");
 	    }
 	    else
 	    {
@@ -491,8 +502,8 @@ void ui_init(float width, float height)
     VADDR(fields, num_new_int(100));
     /* VADDR(fields, cstr_new_cstring("file/mime")); */
     /* VADDR(fields, num_new_int(200)); */
-    VADDR(fields, cstr_new_cstring("file/path"));
-    VADDR(fields, num_new_int(200));
+    /* VADDR(fields, cstr_new_cstring("file/path")); */
+    /* VADDR(fields, num_new_int(200)); */
     VADDR(fields, cstr_new_cstring("file/size"));
     VADDR(fields, num_new_int(100));
     VADDR(fields, cstr_new_cstring("file/last_access"));
@@ -592,9 +603,8 @@ void ui_init(float width, float height)
     ui.view_infotf = view_get_subview(ui.view_base, "infotf");
     tg_text_add(ui.view_infotf);
 
-    textstyle_t its = ui_util_gen_textstyle(ui.view_infotf);
-
-    tg_text_set(ui.view_infotf, "Directory loaded", its);
+    ui.progress_style = ui_util_gen_textstyle(ui.view_infotf);
+    ui_show_progress("Directory loaded");
 
     // show texture map for debug
 

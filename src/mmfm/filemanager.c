@@ -186,11 +186,11 @@ void fm_list(char* fm_path, map_t* files)
 		MPUTR(file, "file/blocksize", cstr_new_format(20, "%li", sb.st_blksize));
 		MPUTR(file, "file/blocks", cstr_new_format(20, "%li", sb.st_blocks));
 		struct tm* at = localtime(&sb.st_atime);
-		MPUTR(file, "file/last_access", cstr_new_format(100, "%s", asctime(at)));
+		MPUTR(file, "file/last_access", cstr_new_format(100, "%i/%.2i/%.2i %.2i:%.2i:%.2i", 1900 + at->tm_year, at->tm_mon, at->tm_mday, at->tm_hour, at->tm_min, at->tm_sec));
 		struct tm* mt = localtime(&sb.st_mtime);
-		MPUTR(file, "file/last_modification", cstr_new_format(100, "%s", asctime(mt)));
+		MPUTR(file, "file/last_modification", cstr_new_format(100, "%i/%.2i/%.2i %.2i:%.2i:%.2i", 1900 + mt->tm_year, mt->tm_mon, mt->tm_mday, mt->tm_hour, mt->tm_min, mt->tm_sec));
 		struct tm* ct = localtime(&sb.st_ctime);
-		MPUTR(file, "file/last_status", cstr_new_format(100, "%s", asctime(ct)));
+		MPUTR(file, "file/last_status", cstr_new_format(100, "%i/%.2i/%.2i %.2i:%.2i:%.2i", 1900 + ct->tm_year, ct->tm_mon, ct->tm_mday, ct->tm_hour, ct->tm_min, ct->tm_sec));
 
 		if (strcmp(dp->d_name, ".") != 0) MPUT(files, path, file); // use relative path as path
 

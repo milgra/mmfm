@@ -105,7 +105,6 @@ void ui_show_progress(char* progress)
 
 void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 {
-    zc_log_debug("on_files_event %i", event);
     switch (event)
     {
 	case UI_TABLE_EVENT_FIELDS_UPDATE:
@@ -628,6 +627,9 @@ void ui_destroy()
     ui_visualizer_detach();
 
     ui_manager_remove(ui.view_base);
+
+    // TODO create a heap based textstyle object to make this easier
+    REL(ui.progress_style.font);
 
     REL(ui.view_base);
     REL(ui.fileinfotable);

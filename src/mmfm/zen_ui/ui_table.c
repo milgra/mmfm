@@ -166,6 +166,8 @@ view_t* ui_table_head_create(
 
 	wth += size->intv;
 
+	ts.backcolor = 0x454545FF;
+
 	tg_text_add(cellview);
 	tg_text_set(cellview, field, ts);
 

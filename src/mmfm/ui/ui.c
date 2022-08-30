@@ -27,6 +27,7 @@ void ui_describe();
 #include "ui_compositor.c"
 #include "ui_manager.c"
 #include "ui_table.c"
+#include "ui_util.c"
 #include "ui_visualizer.c"
 #include "vh_button.c"
 #include "vh_cv_body.c"
@@ -53,6 +54,7 @@ struct _ui_t
     view_t* view_drag; // drag overlay
     view_t* view_doc;  //  file drag icon
     view_t* cursor;    // replay cursor
+    view_t* view_infotf;
 
     view_t* exit_btn;
     view_t* full_btn;
@@ -584,6 +586,15 @@ void ui_init(float width, float height)
     vh_touch_add(ui.left_dragger, btn_cb);
 
     REL(btn_cb);
+
+    // info textfield
+
+    ui.view_infotf = view_get_subview(ui.view_base, "infotf");
+    tg_text_add(ui.view_infotf);
+
+    textstyle_t its = ui_util_gen_textstyle(ui.view_infotf);
+
+    tg_text_set(ui.view_infotf, "Directory loaded", its);
 
     // show texture map for debug
 

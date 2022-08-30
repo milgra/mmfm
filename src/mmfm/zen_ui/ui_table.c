@@ -156,7 +156,6 @@ view_t* ui_table_head_create(
 
     int         wth = 0;
     textstyle_t ts  = uit->textstyle;
-    ts.backcolor    = 0xFF4455FF;
 
     for (int i = 0; i < uit->fields->length; i += 2)
     {

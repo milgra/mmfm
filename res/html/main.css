@@ -128,7 +128,7 @@
     blocks: no;
 }
 
-.timebck {
+.infobck {
     width: 100%;
     height: 30px;
     background-color: #FFFFFFFF;
@@ -136,10 +136,14 @@
     box-shadow: 5px #0000000A;
 }
 
-.timetf {
+.infotf {
     width: 100%;
     height: 100%;
     blocks: no;
+    color: #000000FF;
+    font-size: 16px;
+    text-align: center;
+    font-family: "Terminus (TTF):style=Bold";
 }
 
 .dragger {

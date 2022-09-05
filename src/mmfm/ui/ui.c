@@ -57,8 +57,13 @@ struct _ui_t
     view_t* view_infotf;
     view_t* view_maingap;
 
+    view_t* cliplistbox;
+    view_t* fileinfobox;
+
     view_t* exit_btn;
     view_t* full_btn;
+    view_t* clip_btn;
+    view_t* prop_btn;
 
     view_t* main_bottom;
     view_t* left_dragger;
@@ -288,6 +293,37 @@ void ui_on_btn_event(void* userdata, void* data)
     if (btnview == ui.exit_btn) wm_close();
     if (btnview == ui.full_btn) wm_toggle_fullscreen();
 
+    if (btnview == ui.clip_btn)
+    {
+	view_t* top = view_get_subview(ui.view_base, "top_container");
+	if (ui.fileinfobox->parent) view_remove_from_parent(ui.fileinfobox);
+
+	if (ui.cliplistbox->parent)
+	{
+	    view_remove_from_parent(ui.cliplistbox);
+	}
+	else
+	{
+	    view_add_subview(top, ui.cliplistbox);
+	}
+	view_layout(top);
+    }
+    if (btnview == ui.prop_btn)
+    {
+	view_t* top = view_get_subview(ui.view_base, "top_container");
+	if (ui.cliplistbox->parent) view_remove_from_parent(ui.cliplistbox);
+
+	if (ui.fileinfobox->parent)
+	{
+	    view_remove_from_parent(ui.fileinfobox);
+	}
+	else
+	{
+	    view_add_subview(top, ui.fileinfobox);
+	}
+	view_layout(top);
+    }
+
     if (btnview == ui.left_dragger)
     {
 	vh_drag_drag(ui.view_drag, ui.left_dragger);
@@ -455,7 +491,7 @@ void ui_init(float width, float height)
 	/* ts.backcolor = 0x252525FF; */
     }
     else
-	zc_log_debug("cliplistbck not found");
+	zc_log_debug("preview not found");
 
     vh_cv_body_attach(previewbody, NULL);
     vh_cv_scrl_attach(previewscrl, previewbody, NULL);
@@ -478,20 +514,18 @@ void ui_init(float width, float height)
     {
 	tg_text_add(fileinfo);
 	tg_text_set(fileinfo, "FILE INFO", ts);
+
+	ui.fileinfotable = ui_table_create(
+	    "fileinfotable",
+	    fileinfo,
+	    fileinfoscroll,
+	    fileinfoevt,
+	    fileinfohead,
+	    fields,
+	    on_fileinfo_event);
     }
     else
 	zc_log_debug("fileinfobck not found");
-
-    ui.fileinfotable = ui_table_create(
-	"fileinfotable",
-	fileinfo,
-	fileinfoscroll,
-	fileinfoevt,
-	fileinfohead,
-	fields,
-	on_fileinfo_event);
-
-    zc_log_debug("RETC 0 %u", mem_retaincount(ui.fileinfotable));
 
     REL(fields);
 
@@ -549,23 +583,23 @@ void ui_init(float width, float height)
     {
 	tg_text_add(cliplist);
 	tg_text_set(cliplist, "CLIPBOARD", ts);
+
+	ui.cliptable = ui_table_create(
+	    "cliptable",
+	    cliplist,
+	    cliplistscroll,
+	    cliplistevt,
+	    cliplisthead,
+	    fields,
+	    on_clipboard_event);
+
+	ui.clip_list_data = VNEW();
+	ui_table_set_data(ui.cliptable, ui.clip_list_data);
     }
     else
 	zc_log_debug("cliplistbck not found");
 
-    ui.cliptable = ui_table_create(
-	"cliptable",
-	cliplist,
-	cliplistscroll,
-	cliplistevt,
-	cliplisthead,
-	fields,
-	on_clipboard_event);
-
     REL(fields);
-
-    ui.clip_list_data = VNEW();
-    ui_table_set_data(ui.cliptable, ui.clip_list_data);
 
     // fill up files table
 
@@ -587,6 +621,12 @@ void ui_init(float width, float height)
 
     ui.full_btn = view_get_subview(ui.view_base, "app_maximize_btn");
     vh_button_add(ui.full_btn, VH_BUTTON_NORMAL, btn_cb);
+
+    ui.clip_btn = view_get_subview(ui.view_base, "show_clipboard_btn");
+    vh_button_add(ui.clip_btn, VH_BUTTON_NORMAL, btn_cb);
+
+    ui.prop_btn = view_get_subview(ui.view_base, "show_properties_btn");
+    vh_button_add(ui.prop_btn, VH_BUTTON_NORMAL, btn_cb);
 
     // get main bottom for layout change
 
@@ -610,6 +650,12 @@ void ui_init(float width, float height)
 
     ui.view_maingap = view_get_subview(ui.view_base, "main_gap");
 
+    ui.cliplistbox = RET(view_get_subview(ui.view_base, "cliplistbox"));
+    ui.fileinfobox = RET(view_get_subview(ui.view_base, "fileinfobox"));
+
+    view_remove_from_parent(ui.cliplistbox);
+    view_remove_from_parent(ui.fileinfobox);
+
     // show texture map for debug
 
     /* view_t* texmap       = view_new("texmap", ((r2_t){0, 0, 150, 150})); */
@@ -627,6 +673,9 @@ void ui_destroy()
     ui_visualizer_detach();
 
     ui_manager_remove(ui.view_base);
+
+    REL(ui.cliplistbox);
+    REL(ui.fileinfobox);
 
     // TODO create a heap based textstyle object to make this easier
     REL(ui.progress_style.font);

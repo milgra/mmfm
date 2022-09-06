@@ -119,15 +119,18 @@ void ui_generator_resend_views()
 	    }
 	}
 
-	ui_compositor_add(view->id, view->style.masked,
-			  view->frame.global,      // frame
-			  view->style.shadow_blur, // view border
-			  view->texture.alpha,
-			  view->texture.page,     // texture page
-			  view->texture.full,     // needs full texture
-			  view->texture.page > 0, // external texture
-			  uig.wpwr,
-			  uig.hpwr);
+	ui_compositor_add(
+	    view->id,
+	    view->style.masked,
+	    view->style.unmask,
+	    view->frame.global,      // frame
+	    view->style.shadow_blur, // view border
+	    view->texture.alpha,
+	    view->texture.page,     // texture page
+	    view->texture.full,     // needs full texture
+	    view->texture.page > 0, // external texture
+	    uig.wpwr,
+	    uig.hpwr);
 
 	// TODO make this switchable from options
 	if (view->texture.type == TT_MANAGED && view->texture.state == TS_BLANK)

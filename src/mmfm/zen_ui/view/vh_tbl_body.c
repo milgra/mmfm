@@ -118,6 +118,8 @@ void vh_tbl_body_move(
 	frame.x = vh->head_xpos;
 	frame.y += dy;
 
+	if (frame.w < view->frame.local.w) frame.w = view->frame.local.w;
+
 	view_set_frame(iview, frame);
     }
 

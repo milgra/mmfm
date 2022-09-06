@@ -26,14 +26,18 @@ void ui_compositor_rel_texture(int page);
 void ui_compositor_resize_texture(int page, int width, int height);
 
 void ui_compositor_rewind();
-void ui_compositor_add(char* id, char masked, r2_t frame,
-		       float border, // view border
-		       float alpha,
-		       int   page, // texture pagev
-		       int   full, // needs full texture
-		       int   ext,  // external texture
-		       int   tex_w,
-		       int   tex_h); // texture id
+void ui_compositor_add(
+    char* id,
+    char  masked,
+    char  unmask,
+    r2_t  frame,
+    float border, // view border
+    float alpha,
+    int   page, // texture pagev
+    int   full, // needs full texture
+    int   ext,  // external texture
+    int   tex_w,
+    int   tex_h); // texture id
 void ui_compositor_upd_pos(int index, r2_t frame, float border);
 void ui_compositor_upd_dim(int index, r2_t frame, float border);
 char ui_compositor_upd_bmp(int index, r2_t frame, float border, bm_rgba_t* bm);
@@ -52,6 +56,7 @@ void ui_compositor_render_to_bmp(bm_rgba_t* bitmap);
 #include "gl_floatbuffer.c"
 #include "ui_texmap.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 #include "zc_map.c"
 #include "zc_mat4.c"
 #include "zc_vector.c"
@@ -61,6 +66,7 @@ typedef struct _crect_t
     char* id;
     float data[36];
     char  masked;
+    char  unmask;
     r2_t  frame;
 } crect_t;
 
@@ -68,6 +74,7 @@ void crect_del(void* rect);
 void crect_desc(void* p, int level);
 void crect_set_id(crect_t* rect, char* id);
 void crect_set_masked(crect_t* r, char masked);
+void crect_set_unmask(crect_t* r, char unmask);
 void crect_set_page(crect_t* rect, uint32_t page);
 void crect_set_alpha(crect_t* r, float alpha);
 void crect_set_frame(crect_t* rect, r2_t uirect);
@@ -134,16 +141,20 @@ void ui_compositor_resize_texture(int page, int width, int height)
     gl_new_texture(page, width, height);
 }
 
-void ui_compositor_add(char* id, char masked, r2_t frame,
-		       float border, // view border
-		       float alpha,
-		       int   page, // texture page
-		       int   full, // needs full texture
-		       int   ext,  // external texture
-		       int   tex_w,
-		       int   tex_h)
+void ui_compositor_add(
+    char* id,
+    char  masked,
+    char  unmask,
+    r2_t  frame,
+    float border, // view border
+    float alpha,
+    int   page, // texture page
+    int   full, // needs full texture
+    int   ext,  // external texture
+    int   tex_w,
+    int   tex_h)
 {
-    // printf("ui_compositor_add %s %f %f %f %f masked %i\n", id, frame.x, frame.y, frame.w, frame.h, masked);
+    /* printf("ui_compositor_add %s %f %f %f %f masked %i\n", id, frame.x, frame.y, frame.w, frame.h, masked); */
 
     // fill up cache if needed
     if (uic.cache_ind + 1 > uic.cache->length)
@@ -160,6 +171,9 @@ void ui_compositor_add(char* id, char masked, r2_t frame,
 
     // set masked
     crect_set_masked(rect, masked);
+
+    // set umask
+    crect_set_unmask(rect, unmask);
 
     // set frame
     if (border > 0.0) frame = r2_expand(frame, border);
@@ -355,7 +369,8 @@ void ui_compositor_render(uint32_t time, int width, int height, int tex_w, int t
     uic.ren_frame += 1;
 
     // rendering region
-    glrect_t reg_full = {0, 0, width, height};
+    glrect_t region   = {0, 0, width, height};
+    glrect_t viewport = {0, 0, width, height};
 
     // reset main buffer
     gl_clear_framebuffer(TEX_CTX, 0.8, 0.8, 0.8, 1.0);
@@ -363,52 +378,59 @@ void ui_compositor_render(uint32_t time, int width, int height, int tex_w, int t
     // reset mask
     gl_clear_framebuffer(1, 0.0, 0.0, 0.0, 1.0);
 
-    int last    = 0;
-    int index   = 0;
-    int in_mask = 0;
+    int last  = 0;
+    int index = 0;
 
     for (int i = 0; i < uic.cache_ind; i++)
     {
 	crect_t* rect = uic.cache->data[i];
-	if (rect->masked && !in_mask)
+	if (rect->masked)
 	{
-	    in_mask = 1;
 	    // draw buffer so far into main buffer
-	    gl_draw_vertexes_in_framebuffer(TEX_CTX, last * 6, index * 6, reg_full, reg_full, SH_TEXTURE, 0, tex_w, tex_h);
+	    gl_draw_vertexes_in_framebuffer(TEX_CTX, last * 6, index * 6, viewport, viewport, SH_TEXTURE, 0, tex_w, tex_h);
 
-	    // draw into mask texture
-	    gl_clear_framebuffer(1, 0.0, 0.0, 0.0, 0.0);
-	    // TODO use masked rectangle
-	    gl_draw_vertexes_in_framebuffer(1, index * 6, (index + 1) * 6, reg_full, reg_full, SH_TEXTURE, 0, tex_w, tex_h);
+	    viewport.x = rect->frame.x;
+	    viewport.y = (float) height - (rect->frame.y + rect->frame.h);
+	    viewport.w = rect->frame.w;
+	    viewport.h = rect->frame.h;
 
-	    // set last index
-	    last = index;
-	}
-	if (in_mask && !rect->masked)
-	{
-	    // draw buffer so far into main buffer with mask
-	    // TODO use mask rectangle
-	    gl_draw_vertexes_in_framebuffer(TEX_CTX, last * 6, index * 6, reg_full, reg_full, SH_TEXTURE, 1, tex_w, tex_h);
-
-	    // reset mask
-	    // gl_clear_framebuffer(1, 0.0, 0.0, 0.0, 1.0);
-	    in_mask = 0;
+	    region.x = rect->frame.x;
+	    region.y = rect->frame.y;
+	    region.w = rect->frame.w;
+	    region.h = rect->frame.h;
 
 	    // set last index
 	    last = index;
 	}
 
 	index += 1;
+
+	if (rect->unmask)
+	{
+	    // draw buffer so far into main buffer with mask
+	    gl_draw_vertexes_in_framebuffer(TEX_CTX, last * 6, index * 6, viewport, region, SH_TEXTURE, 0, tex_w, tex_h);
+
+	    // TODO jump back to previous mask if nested
+
+	    viewport.x = 0;
+	    viewport.y = 0;
+	    viewport.w = width;
+	    viewport.h = height;
+
+	    region.x = 0;
+	    region.y = 0;
+	    region.w = width;
+	    region.h = height;
+
+	    // set last index
+	    last = index;
+	}
     }
 
     // draw remaining buffer
     if (last < index)
     {
-	// render remaining
-	if (in_mask)
-	    gl_draw_vertexes_in_framebuffer(TEX_CTX, last * 6, index * 6, reg_full, reg_full, SH_TEXTURE, 1, tex_w, tex_h);
-	else
-	    gl_draw_vertexes_in_framebuffer(TEX_CTX, last * 6, index * 6, reg_full, reg_full, SH_TEXTURE, 0, tex_w, tex_h);
+	gl_draw_vertexes_in_framebuffer(TEX_CTX, last * 6, index * 6, viewport, viewport, SH_TEXTURE, 0, tex_w, tex_h);
     }
 
     /* if (time > uic.upd_stamp) */
@@ -509,6 +531,11 @@ void crect_set_id(crect_t* r, char* id)
 void crect_set_masked(crect_t* r, char masked)
 {
     r->masked = masked;
+}
+
+void crect_set_unmask(crect_t* r, char unmask)
+{
+    r->unmask = unmask;
 }
 
 void crect_set_frame(crect_t* r, r2_t rect)

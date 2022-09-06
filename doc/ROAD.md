@@ -2,10 +2,10 @@
 
 table header mask fix
 file path filelist tetejere
-file info/clipboard selector
-table item mindig legyen legalabb table szeles
+up/down arrows
 doksi, ui teszt, 0.1 release aur
 
+shortcuts - show help
 seek bar/pdf paging
 image eseten ne is inditson threadet viewer -> gyorsabb
 detailed stream infos video/audional file infoba

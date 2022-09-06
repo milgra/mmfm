@@ -94,6 +94,7 @@ struct _vstyle_t
     /* non-css */
 
     char masked; /* view should be used as mask for subviews? OVERFLOW */
+    char unmask; /* masking should be stopped, helper variable */
 };
 
 typedef enum _texst_t // texture loading state
@@ -286,11 +287,6 @@ void view_set_class(view_t* view, char* class)
 void view_set_masked(view_t* view, char masked)
 {
     view->style.masked = 1;
-    for (int i = 0; i < view->views->length; i++)
-    {
-	view_t* sview = view->views->data[i];
-	view_set_masked(sview, masked);
-    }
 }
 
 void view_add_subview(view_t* view, view_t* subview)
@@ -310,8 +306,6 @@ void view_add_subview(view_t* view, view_t* subview)
     view_set_parent(subview, view);
 
     VADD(view->views, subview);
-
-    if (view->style.masked) view_set_masked(subview, 1);
 
     view_calc_global(view);
 }

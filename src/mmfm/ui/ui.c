@@ -479,23 +479,23 @@ void ui_init(float width, float height)
     view_t* previewevnt = view_get_subview(ui.view_base, "previewevnt");
     view_t* previewcont = view_get_subview(ui.view_base, "previewcont");
 
-    tg_scaledimg_add(previewcont, 300, 300);
-    view_set_frame(previewcont, (r2_t){0, 0, 300, 300});
-    previewcont->style.margin = INT_MAX;
-
     if (preview)
     {
 	tg_text_add(preview);
 	/* ts.backcolor = 0x343434FF; */
 	tg_text_set(preview, "PREVIEW", ts);
 	/* ts.backcolor = 0x252525FF; */
+
+	tg_scaledimg_add(previewcont, 300, 300);
+	view_set_frame(previewcont, (r2_t){0, 0, 300, 300});
+	previewcont->style.margin = INT_MAX;
+
+	vh_cv_body_attach(previewbody, NULL);
+	vh_cv_scrl_attach(previewscrl, previewbody, NULL);
+	vh_cv_evnt_attach(previewevnt, previewbody, previewscrl, NULL);
     }
     else
 	zc_log_debug("preview not found");
-
-    vh_cv_body_attach(previewbody, NULL);
-    vh_cv_scrl_attach(previewscrl, previewbody, NULL);
-    vh_cv_evnt_attach(previewevnt, previewbody, previewscrl, NULL);
 
     /* file info table */
 
@@ -533,19 +533,19 @@ void ui_init(float width, float height)
 
     fields = VNEW();
     VADDR(fields, cstr_new_cstring("file/basename"));
-    VADDR(fields, num_new_int(100));
+    VADDR(fields, num_new_int(400));
     /* VADDR(fields, cstr_new_cstring("file/mime")); */
     /* VADDR(fields, num_new_int(200)); */
     /* VADDR(fields, cstr_new_cstring("file/path")); */
     /* VADDR(fields, num_new_int(200)); */
     VADDR(fields, cstr_new_cstring("file/size"));
-    VADDR(fields, num_new_int(100));
+    VADDR(fields, num_new_int(120));
     VADDR(fields, cstr_new_cstring("file/last_access"));
-    VADDR(fields, num_new_int(100));
+    VADDR(fields, num_new_int(180));
     VADDR(fields, cstr_new_cstring("file/last_modification"));
-    VADDR(fields, num_new_int(100));
+    VADDR(fields, num_new_int(180));
     VADDR(fields, cstr_new_cstring("file/last_status"));
-    VADDR(fields, num_new_int(100));
+    VADDR(fields, num_new_int(180));
 
     view_t* filelist       = view_get_subview(ui.view_base, "filelisttable");
     view_t* filelistscroll = view_get_subview(ui.view_base, "filelistscroll");

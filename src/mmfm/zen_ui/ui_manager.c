@@ -217,8 +217,14 @@ void ui_manager_activate(view_t* view)
 void ui_manager_collect(view_t* view, vec_t* views)
 {
     if (!view->exclude) VADD(views, view);
+    if (view->style.unmask == 1) view->style.unmask = 0; // reset unmasking
     vec_t* vec = view->views;
     for (int i = 0; i < vec->length; i++) ui_manager_collect(vec->data[i], views);
+    if (view->style.masked)
+    {
+	view_t* last       = views->data[views->length - 1];
+	last->style.unmask = 1;
+    }
 }
 
 void ui_manager_render(uint32_t time)

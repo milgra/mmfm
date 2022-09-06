@@ -3,6 +3,10 @@
     width: 100%;
 }
 
+.black {
+    background-color: #000000FF;
+}
+
 .colflex {
     display: flex;
     flex-direction: column;
@@ -30,7 +34,6 @@
 
 .tablebody {
     color: #DEDEDEFF;
-    overflow: hidden;
     font-size: 16px;
     font-family: "Terminus (TTF):style=Bold";
 }
@@ -66,7 +69,6 @@
 
 .overflowhidden {
     overflow: hidden;
-
 }
 
 #headerbck {

@@ -420,10 +420,10 @@ void gl_draw_rectangle(glrect_t src_reg, glrect_t tgt_reg)
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void gl_draw_vertexes_in_framebuffer(int page, int start, int end, glrect_t reg_src, glrect_t reg_tgt, gl_sha_typ_t shader, int domask, int tex_w, int tex_h)
+void gl_draw_vertexes_in_framebuffer(int page, int start, int end, glrect_t viewport, glrect_t region, gl_sha_typ_t shader, int domask, int tex_w, int tex_h)
 {
     matrix4array_t projection;
-    projection.matrix = m4_defaultortho(0.0, reg_src.w, reg_src.h, 0, 0.0, 1.0);
+    projection.matrix = m4_defaultortho(region.x, region.w + region.x, region.h + region.y, region.y, 0.0, 1.0);
 
     glUseProgram(gl.shaders[shader].name);
 
@@ -436,13 +436,13 @@ void gl_draw_vertexes_in_framebuffer(int page, int start, int end, glrect_t reg_
 	glUniform2i(gl.shaders[shader].uni_loc[12], tex_w, tex_h);
 
 	glUniformMatrix4fv(gl.shaders[shader].uni_loc[0], 1, 0, projection.array);
-	glViewport(0, 0, reg_tgt.w, reg_tgt.h);
     }
     else if (shader == SH_COLOR)
     {
 	glUniformMatrix4fv(gl.shaders[shader].uni_loc[0], 1, 0, projection.array);
-	glViewport(0, 0, reg_tgt.w, reg_tgt.h);
     }
+
+    glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
 
     glBindVertexArray(gl.vertexes[1].vao);
     glBindFramebuffer(GL_FRAMEBUFFER, gl.textures[page].fb);

@@ -442,6 +442,11 @@ void gl_draw_vertexes_in_framebuffer(int page, int start, int end, glrect_t view
 	glUniformMatrix4fv(gl.shaders[shader].uni_loc[0], 1, 0, projection.array);
     }
 
+    viewport.x = region.x;
+    viewport.y = viewport.h - (region.y + region.h);
+    viewport.w = region.w;
+    viewport.h = region.h;
+
     glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
 
     glBindVertexArray(gl.vertexes[1].vao);

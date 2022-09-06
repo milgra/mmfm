@@ -389,11 +389,6 @@ void ui_compositor_render(uint32_t time, int width, int height, int tex_w, int t
 	    // draw buffer so far into main buffer
 	    gl_draw_vertexes_in_framebuffer(TEX_CTX, last * 6, index * 6, viewport, viewport, SH_TEXTURE, 0, tex_w, tex_h);
 
-	    viewport.x = rect->frame.x;
-	    viewport.y = (float) height - (rect->frame.y + rect->frame.h);
-	    viewport.w = rect->frame.w;
-	    viewport.h = rect->frame.h;
-
 	    region.x = rect->frame.x;
 	    region.y = rect->frame.y;
 	    region.w = rect->frame.w;
@@ -411,11 +406,6 @@ void ui_compositor_render(uint32_t time, int width, int height, int tex_w, int t
 	    gl_draw_vertexes_in_framebuffer(TEX_CTX, last * 6, index * 6, viewport, region, SH_TEXTURE, 0, tex_w, tex_h);
 
 	    // TODO jump back to previous mask if nested
-
-	    viewport.x = 0;
-	    viewport.y = 0;
-	    viewport.w = width;
-	    viewport.h = height;
 
 	    region.x = 0;
 	    region.y = 0;

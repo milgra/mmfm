@@ -18,12 +18,13 @@ typedef enum _ui_table_event
 typedef struct _ui_table_t ui_table_t;
 struct _ui_table_t
 {
-    char*       id;       // unique id for item generation
-    uint32_t    cnt;      // item count for item generation
-    vec_t*      items;    // data items
-    vec_t*      cache;    // item cache
-    vec_t*      fields;   // field name field size interleaved vector
-    vec_t*      selected; // selected items
+    char*       id;             // unique id for item generation
+    uint32_t    cnt;            // item count for item generation
+    vec_t*      items;          // data items
+    vec_t*      cache;          // item cache
+    vec_t*      fields;         // field name field size interleaved vector
+    vec_t*      selected;       // selected items
+    int32_t     selected_index; // index of last selected
     view_t*     body_v;
     view_t*     evnt_v;
     view_t*     scrl_v;
@@ -238,9 +239,10 @@ view_t* ui_table_item_create(
 	    if (uit->selected->length > 0)
 	    {
 		uint32_t pos = vec_index_of_data(uit->selected, data);
+
 		if (pos < UINT32_MAX)
 		{
-		    rowview->style.background_color = 0x00FF00FF;
+		    rowview->style.background_color = 0x006600FF;
 		}
 	    }
 
@@ -302,16 +304,16 @@ void ui_table_evnt_event(view_t* view, view_t* rowview, vh_tbl_evnt_event_t type
 		for (int index = 0; index < bvh->items->length; index++)
 		{
 		    view_t* item = bvh->items->data[index];
-		    if (item->style.background_color == 0x00FF00FF)
+		    if (item->style.background_color == 0x006600FF)
 		    {
-			item->style.background_color = (bvh->head_index + index) % 2 != 0 ? 0x353535388 : 0x45454588;
+			item->style.background_color = (bvh->head_index + index) % 2 != 0 ? (uint32_t) 0x353535388 : (uint32_t) 0x45454588;
 			view_invalidate_texture(item);
 		    }
 		}
 	    }
 
 	    VADD(uit->selected, data);
-	    rowview->style.background_color = 0x00FF00FF;
+	    rowview->style.background_color = 0x006600FF;
 	    view_invalidate_texture(rowview);
 	}
 	else
@@ -338,14 +340,51 @@ void ui_table_evnt_event(view_t* view, view_t* rowview, vh_tbl_evnt_event_t type
     {
 	(*uit->on_event)(uit, UI_TABLE_EVENT_DROP, (void*) ((size_t) index));
     }
+    if (type == VH_TBL_EVENT_KEY)
+    {
+	if (uit->items->length > 0)
+	{
+	    // move selection
+	    if (ev.keycode == SDLK_DOWN) uit->selected_index += 1;
+	    if (ev.keycode == SDLK_UP) uit->selected_index -= 1;
+	    if (uit->selected_index < 0) uit->selected_index = 0;
+	    if (uit->selected_index > uit->items->length - 1) uit->selected_index = uit->items->length - 1;
+
+	    // TODO create separate selector function used by TBL_EVENT_SELECT ALSO
+
+	    vec_reset(uit->selected);
+	    map_t* sel = uit->items->data[uit->selected_index];
+	    VADD(uit->selected, sel);
+
+	    (*uit->on_event)(uit, UI_TABLE_EVENT_SELECT, uit->selected);
+
+	    vh_tbl_body_t* bvh = uit->body_v->handler_data;
+
+	    for (int index = 0; index < bvh->items->length; index++)
+	    {
+		int     realindex = bvh->head_index + index;
+		view_t* item      = bvh->items->data[index];
+
+		if (item->style.background_color == 0x006600FF)
+		{
+		    item->style.background_color = realindex % 2 != 0 ? (uint32_t) 0x353535388 : (uint32_t) 0x45454588;
+		    view_invalidate_texture(item);
+		}
+
+		if (realindex == uit->selected_index)
+		{
+		    item->style.background_color = 0x006600FF;
+		    view_invalidate_texture(item);
+		}
+	    }
+	}
+    }
 }
 
 void ui_table_del(
     void* p)
 {
     ui_table_t* uit = p;
-
-    zc_log_debug("ui_table del");
 
     // remove items from view
     REL(uit->id);       // REL S0
@@ -446,7 +485,11 @@ void ui_table_set_data(
     if (uit->items) REL(uit->items);
     uit->items = RET(data);
 
-    zc_log_debug("ui table set data %i", data->length);
+    if (uit->selected_index < uit->items->length)
+    {
+	map_t* sel = uit->items->data[uit->selected_index];
+	VADD(uit->selected, sel);
+    }
 
     vh_tbl_body_reset(uit->body_v);
     vh_tbl_body_move(uit->body_v, 0, 0);

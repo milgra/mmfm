@@ -1,10 +1,13 @@
 # Zen Media development roadmap
 
-table header mask fix
 file path filelist tetejere
-up/down arrows
 doksi, ui teszt, 0.1 release aur
 
+about window verzioszammal
+delete ikon menu barra
+add del
+enable clipboard
+shortcutok config fileba vagy kulon fileba,sway szeru
 shortcuts - show help
 seek bar/pdf paging
 image eseten ne is inditson threadet viewer -> gyorsabb

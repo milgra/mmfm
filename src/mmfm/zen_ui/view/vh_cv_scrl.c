@@ -139,8 +139,7 @@ void vh_cv_scrl_update(view_t* view)
 
 void vh_cv_scrl_show(view_t* view)
 {
-    vh_cv_scrl_t* vh  = view->handler_data;
-    vh_cv_body_t* bvh = vh->tbody_view->handler_data;
+    vh_cv_scrl_t* vh = view->handler_data;
 
     vh->state = 1;
     vh->steps = 0;
@@ -157,8 +156,8 @@ void vh_cv_scrl_hide(view_t* view)
 
 void vh_cv_scrl_scroll_v(view_t* view, int y)
 {
-    vh_cv_scrl_t* vh  = view->handler_data;
-    vh_cv_body_t* bvh = vh->tbody_view->handler_data;
+    /* vh_cv_scrl_t* vh  = view->handler_data; */
+    /* vh_cv_body_t* bvh = vh->tbody_view->handler_data; */
 
     /* if (bvh->items->length > 0 && vh->item_cnt > 0) */
     /* { */
@@ -189,8 +188,8 @@ void vh_cv_scrl_scroll_v(view_t* view, int y)
 
 void vh_cv_scrl_scroll_h(view_t* view, int x)
 {
-    vh_cv_scrl_t* vh  = view->handler_data;
-    vh_cv_body_t* bvh = vh->tbody_view->handler_data;
+    /* vh_cv_scrl_t* vh  = view->handler_data; */
+    /* vh_cv_body_t* bvh = vh->tbody_view->handler_data; */
 
     /* if (bvh->items->length > 0 && vh->item_cnt > 0) */
     /* { */

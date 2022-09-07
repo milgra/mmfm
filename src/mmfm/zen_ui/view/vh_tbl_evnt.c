@@ -12,7 +12,8 @@ typedef enum _vh_tbl_evnt_event_t
     VH_TBL_EVENT_SELECT,
     VH_TBL_EVENT_OPEN,
     VH_TBL_EVENT_DRAG,
-    VH_TBL_EVENT_DROP
+    VH_TBL_EVENT_DROP,
+    VH_TBL_EVENT_KEY
 } vh_tbl_evnt_event_t;
 
 typedef struct _vh_tbl_evnt_t
@@ -213,6 +214,11 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 	}
 	vh->scroll_drag = 0;
     }
+    else if (ev.type == EV_KDOWN)
+    {
+	zc_log_debug("KDOWN");
+	(*vh->on_event)(view, NULL, VH_TBL_EVENT_KEY, 0, vh->userdata, ev);
+    }
 }
 
 void vh_tbl_evnt_del(void* p)
@@ -243,6 +249,8 @@ void vh_tbl_evnt_attach(
 
     view->handler_data = vh;
     view->handler      = vh_tbl_evnt_evt;
+
+    view->needs_key = 1;
 }
 
 #endif

@@ -58,7 +58,6 @@ void vh_tbl_body_del(void* p)
 {
     vh_tbl_body_t* vh = p;
 
-    zc_log_debug("tbl body del");
     // remove items
 
     for (int index = 0;
@@ -67,7 +66,6 @@ void vh_tbl_body_del(void* p)
     {
 	view_t* item = vh->items->data[index];
 	view_remove_from_parent(item);
-	zc_log_debug("%s %i", item->id, mem_retaincount(item));
     }
 
     REL(vh->items);

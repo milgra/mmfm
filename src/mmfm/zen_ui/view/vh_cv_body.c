@@ -57,7 +57,6 @@ void vh_cv_body_vjump(
 
 void vh_cv_body_del(void* p)
 {
-    vh_cv_body_t* vh = p;
 }
 
 void vh_cv_body_desc(void* p, int level)
@@ -182,21 +181,18 @@ void vh_cv_body_zoom(
 void vh_cv_body_reset(
     view_t* view)
 {
-    vh_cv_body_t* vh = view->handler_data;
 }
 
 void vh_cv_body_hjump(
     view_t* view,
     float   x)
 {
-    vh_cv_body_t* vh = view->handler_data;
 }
 
 void vh_cv_body_vjump(
     view_t* view,
     int     topindex)
 {
-    vh_cv_body_t* vh = view->handler_data;
 }
 
 #endif

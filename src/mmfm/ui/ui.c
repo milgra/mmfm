@@ -336,7 +336,6 @@ void ui_on_btn_event(void* userdata, void* data)
 
 void ui_on_drag_move(void* userdata, void* data)
 {
-    view_t* v = userdata;
 }
 
 void ui_on_drag_drop(void* userdata, void* data)
@@ -622,8 +621,8 @@ void ui_init(float width, float height)
     ui.full_btn = view_get_subview(ui.view_base, "app_maximize_btn");
     vh_button_add(ui.full_btn, VH_BUTTON_NORMAL, btn_cb);
 
-    ui.clip_btn = view_get_subview(ui.view_base, "show_clipboard_btn");
-    vh_button_add(ui.clip_btn, VH_BUTTON_NORMAL, btn_cb);
+    /* ui.clip_btn = view_get_subview(ui.view_base, "show_clipboard_btn"); */
+    /* vh_button_add(ui.clip_btn, VH_BUTTON_NORMAL, btn_cb); */
 
     ui.prop_btn = view_get_subview(ui.view_base, "show_properties_btn");
     vh_button_add(ui.prop_btn, VH_BUTTON_NORMAL, btn_cb);

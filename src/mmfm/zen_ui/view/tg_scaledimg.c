@@ -17,6 +17,7 @@ typedef struct _tg_scaledimg_t
 } tg_scaledimg_t;
 
 void tg_scaledimg_add(view_t* view, int w, int h);
+void tg_scaledimg_gen(view_t* view);
 void tg_scaledimg_set_content_size(view_t* view, int w, int h);
 
 #endif

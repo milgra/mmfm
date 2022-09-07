@@ -1,21 +1,31 @@
 # MultiMedia File Manager
 
-MultiMedia File Manager is a file manager for multimedia and other content. It can preview and play up to 5000+ media formats.
+MultiMedia File Manager is a file viewer and manager for multimedia and document files. It can play and view everything ffmpeg and mupdf can.
 
 ## Features ##
 
-- Instant preview for more than 6000 media formats
-- It's really instant, super fast!!!
-- Super detailed file info - extracts all info available via stat and file commands, also extracts all stream and metadata info from multimedia files, also shows the raw hexa/ASCII bytes of the file if needed
-- Visual Pasteboard, drop files and folders there for later reuse or create folders for collecting files
-- Works without a window manager for super hackers
+- Instant preview for all known media formats and for pdf files
+- Super fast
+- Super detailed file info - extracts all info available via stat and file commands
 - Beautiful and smooth UX experience
-- Frequency and scope analyzer visualizers for audio conent
-- Activity window and human-readable database for transparent operation
-  
+- Activity bar and human-readable database for transparent operation
+
 Read the user guide for further information : [Open User Guide](doc/USER.md)
 
 ## Installation ##
+
+Run these commands:
+
+```
+git clone https://github.com/milgra/mmfm.git
+cd mmfm
+meson build --buildtype=release
+ninja -C build
+sudo ninja -C build install
+```
+### From packages
+
+[![Packaging status](https://repology.org/badge/tiny-repos/sov.svg)](https://repology.org/project/sov/versions)
 
 ## User Guide ##
 
@@ -28,8 +38,9 @@ Please report issues and add feature requests here on github.
 ## Libraries used - Thanks for creating these! ##
 
 - FFMPEG / media parsing
+- mupdf / pdf rendering
 - SDL2 / window/graphics context handling
-- stb_truetype / text generation
+- freetype / text generation
 - Neil Hanning's utf8.h / case-insensitive utf8 comparison
 
 ## Programs used - Thanks for creating these! ##
@@ -52,4 +63,4 @@ Contributors are welcome!
 
 ## License ##
 
-Zen Music is released under the GPLv3 (or later) license.
+MultiMedia File Manager is released under the GPLv3 (or later) license.

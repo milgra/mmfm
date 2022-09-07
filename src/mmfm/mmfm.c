@@ -165,11 +165,10 @@ int main(int argc, char* argv[])
     char* sdl_base = SDL_GetBasePath();
     char* wrk_path = path_new_normalize(sdl_base, NULL); // REL 6
     SDL_free(sdl_base);
-    char* res_path    = res_par ? path_new_normalize(res_par, wrk_path) : cstr_new_cstring("/usr/share/mmfm");                  // REL 7
+    char* res_path    = res_par ? path_new_normalize(res_par, wrk_path) : cstr_new_cstring(PKG_DATADIR);                        // REL 7
     char* cfgdir_path = cfg_par ? path_new_normalize(cfg_par, wrk_path) : path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 8
     char* css_path    = path_new_append(res_path, "html/main.css");                                                             // REL 9
     char* html_path   = path_new_append(res_path, "html/main.html");                                                            // REL 10
-    char* font_path   = path_new_append(res_path, "Baloo.ttf");                                                                 // REL 11
     char* cfg_path    = path_new_append(cfgdir_path, "config.kvl");                                                             // REL 12
     char* per_path    = path_new_append(cfgdir_path, "state.kvl");                                                              // REL 13
     char* rec_path    = rec_par ? path_new_normalize(rec_par, wrk_path) : NULL;                                                 // REL 14
@@ -184,7 +183,6 @@ int main(int argc, char* argv[])
     zc_log_debug("state path   : %s", per_path);
     zc_log_debug("css path      : %s", css_path);
     zc_log_debug("html path     : %s", html_path);
-    zc_log_debug("font path     : %s", font_path);
     zc_log_debug("record path   : %s", rec_path);
     zc_log_debug("replay path   : %s", rep_path);
 
@@ -207,7 +205,6 @@ int main(int argc, char* argv[])
     config_set("per_path", per_path);
     config_set("css_path", css_path);
     config_set("html_path", html_path);
-    config_set("font_path", font_path);
 
     if (rec_path) config_set("rec_path", rec_path);
     if (rep_path) config_set("rep_path", rep_path);
@@ -226,7 +223,6 @@ int main(int argc, char* argv[])
     REL(cfgdir_path); // REL 8
     REL(css_path);    // REL 9
     REL(html_path);   // REL 10
-    REL(font_path);   // REL 11
     REL(cfg_path);    // REL 12
     REL(per_path);    // REL 13
 

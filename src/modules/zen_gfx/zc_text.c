@@ -143,6 +143,7 @@ void text_destroy()
 
 void text_font_load(char* path)
 {
+    assert(path != NULL);
     assert(txt_ft.fonts != NULL);
 
     FT_Library library;
@@ -170,7 +171,7 @@ void text_font_load(char* path)
 	    if (error == FT_Err_Unknown_File_Format) { printf("FT Unknown font file format\n"); }
 	    else if (error)
 	    {
-		printf("FT New Face error\n");
+		printf("FT New Face error %s\n", path);
 	    }
 	}
     }

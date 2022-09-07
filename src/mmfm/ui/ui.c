@@ -461,8 +461,10 @@ void ui_init(float width, float height)
 
     /* tables */
 
-    textstyle_t ts  = {0};
-    ts.font         = config_get("font_path");
+    view_t* filelist = view_get_subview(ui.view_base, "filelisttable");
+
+    textstyle_t ts = ui_util_gen_textstyle(filelist);
+
     ts.align        = TA_CENTER;
     ts.margin_right = 0;
     ts.size         = 60.0;
@@ -546,7 +548,7 @@ void ui_init(float width, float height)
     VADDR(fields, cstr_new_cstring("file/last_status"));
     VADDR(fields, num_new_int(180));
 
-    view_t* filelist       = view_get_subview(ui.view_base, "filelisttable");
+    // view_t* filelist       = view_get_subview(ui.view_base, "filelisttable");
     view_t* filelistscroll = view_get_subview(ui.view_base, "filelistscroll");
     view_t* filelistevt    = view_get_subview(ui.view_base, "filelistevt");
     view_t* filelisthead   = view_get_subview(ui.view_base, "filelisthead");

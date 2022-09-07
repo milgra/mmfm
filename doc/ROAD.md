@@ -24,6 +24,12 @@ hacker news headerless c - sov, mmfm, swayos
 libffplayer legyen egy kulon library ffmpeg felett
 libkineticui - sdl renderer / texture based
 
+
+- Also extracts all stream and metadata info from multimedia files, also shows the raw hexa/ASCII bytes of the file if needed
+- Visual Pasteboard, drop files and folders there for later reuse or create folders for collecting files
+- Works without a window manager for super hackers
+- Frequency and scope analyzer visualizers for audio conent
+  
 - frekvenica eses/emelkedes hatterben
 
 - hexa viewer

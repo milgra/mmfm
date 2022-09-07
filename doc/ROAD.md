@@ -1,26 +1,38 @@
 # Zen Media development roadmap
 
-file path filelist tetejere
-doksi, ui teszt, 0.1 release aur
+0.2
 
-about window verzioszammal
-delete ikon menu barra
-add del
+file path on the top
++/- to zoom in/out media
+pdf paging
+video seek ( seek bar, + arrows )
+del to delete file ( + ikon, + shortcut )
+
+0.3
+
+about window verzioszammal, shortcuts
 enable clipboard
-shortcutok config fileba vagy kulon fileba,sway szeru
-shortcuts - show help
-seek bar/pdf paging
-image eseten ne is inditson threadet viewer -> gyorsabb
+drag from clipboard - copy
+CTRL + drag from clipboard - move
 detailed stream infos video/audional file infoba
-visualization level gombok, kep, oszcilloszkop, binaris
-OPEN, JUMP ( / ~ usb ) , EDIT ( move, copy, delete, new folder ) , SEARCH buttons
 store table states
-context menu
+context menu - copy to clipboard, delete, paste clipboard
+
+Future
+
 linelist component, text fileoknak es hexa viewnak
-listen for folder change event
-fileboard, free resize files/fileboard, go to file in file browser, vertical layout ( ket preview ablak alul legyen ), horizontal layout ( preview ablakok jobbra)
-keep reader and decoder threads running in viewer to speed up media playing
+visualization level gombok, kep, oszcilloszkop, binaris
+search bar
+
 hacker news headerless c - sov, mmfm, swayos
+
+Would be awesome some day
+
+shortcutok config fileba vagy kulon fileba,sway szeru
+listen for folder change event
+image eseten ne is inditson threadet viewer -> gyorsabb
+keep reader and decoder threads running in viewer to speed up media playing
+
 libffplayer legyen egy kulon library ffmpeg felett
 libkineticui - sdl renderer / texture based
 

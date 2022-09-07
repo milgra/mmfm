@@ -1,6 +1,6 @@
-# MultiMedia File Manager
+# Multimedia File Manager
 
-MultiMedia File Manager is a file viewer and manager for multimedia and document files. It can play and view everything ffmpeg and mupdf can.
+Multimedia File Manager is a file viewer and manager for multimedia and document files. It can play and view everything ffmpeg and mupdf can.
 
 ## Features ##
 

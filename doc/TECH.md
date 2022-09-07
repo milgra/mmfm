@@ -1,11 +1,11 @@
-# Zen Music technical information
+# Multimedia File Manager technical information
 for contributors and developers
 
 ## 1. Overview ##
 
-Zen Music is a pure C project written in [headerless C](https://github.com/milgra/headerlessc).
-It uses the ffmpeg library for media decoding/encoding/transcoding, SDL2 library for window and audio handling and OpenGL context creation.
-It uses a custom UI renderer called Zen UI, it is backed by OpenGL at the moment, Vulkan backend is on the roadmap.
+Multimedia File Manager is a pure C project written in [headerless C](https://github.com/milgra/headerlessc).
+It uses the ffmpeg library for media decoding/encoding/transcoding, SDL2 library for window and audio handling and OpenGL context creation, mupdf for pdf rendering and freetype for text generation.
+It uses a custom UI renderer called Zen UI.
 It uses the Zen Core library for memory management, map/vector/bitmap container implementations, utf8 string and math functions.
 For database and persistent storage it uses simple key-value text files.
 
@@ -20,8 +20,8 @@ Graphics stack :
 Media stack :
 
 ```
-[OS] -> [SDL2][ffmpeg] -> [ZEN MEDIA PLAYER]
-     		       	  [ZEN MEDIA TRANSCODER]
+[OS] -> [SDL2][ffmpeg] -> [coder.c]
+     		       	  [viewer.c]
 ```
 
 Database stack :
@@ -34,36 +34,30 @@ kvlist.c -> database.c
 ## 3. Project structure ##
 
 ```
-bin - build directory and built executable files
 doc - documentation
 res - resources, html, css and images for the ui
 src - code source files
- modules - external modules
- zenmusic - zen music logic
-  ui - zen music ui controllers
+ modules - zen modules
+ mmfm - mmfm logic
 svg - media source files
 tst - recorded test sessions and test working directory
 ```
  
-## 4. Zen Music Logic ##
+## 4. Multimedia File Manager Logic ##
 
 ```
-callbacks.c - callback collector & invocator
 config.c - configuration settings collector & writer
-database.c - song database handler & writer
 evrecroder.c - event recorder for test sessions
-files.c - file handling helper functions
+filemanager.c - file managing functions
+fontconfig.c - extracts font path from os environment
 kvlist.c - key-value list reader & writer
-library.c - media library parser/modifier
-remote.c - remote control handler
-selection.c - selected item collector for library browser
-visible.c - visible item handler ( after filtering & sort )
-zenmusic.c - entering point, main controller logic
+mmfm.c - entering point, main controller logic
+pdf.c - pdf renderer
 ```
 
 ## 5. Program Flow ##
 
-Entering point is in zenmusic.c. It inits Zen WM module that inits SDL2 and openGL. Zen WM calls four functions in zenmusic.c :
+Entering point is in mmfm.c. It inits Zen WM module that inits SDL2 and openGL. Zen WM calls four functions in zenmusic.c :
 - init - inits all zen music logic
 - update - updates program state
 - render - render UI
@@ -71,15 +65,8 @@ Entering point is in zenmusic.c. It inits Zen WM module that inits SDL2 and open
 
 Internal state change happens in response to a UI event or timer event. All events are coming from Zen WM. In update they are sent to the UI and all views.
 The views change their state based on the events and may call callbacks.
-View related logic is in the corresponding view controller. For example, metadata editing logic in in src/zenmusic/ui/ui_editor_popup.c .
 
-## 5. Development ##
-
-The following packages are needed for development :
-
-```
-sdl2 ffmpeg glew gmake clang-format
-```
+## 6. Development ##
 
 Use your preferred IDE. It's advised that you hook clang-format to file save.
 
@@ -95,5 +82,7 @@ Please follow these guidelines :
 To create a dev build, type
 
 ```
-gmake dev
+CC=clang meson build --buildtype=debug -Db_sanitize=address -Db_lundef=false
+ninja -C build
+
 ```

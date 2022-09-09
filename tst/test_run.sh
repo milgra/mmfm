@@ -24,7 +24,7 @@ while true; do
     ((cnt+=1))
 
     if test -f $abs_path; then
-	bin/zenmusic -r $res_path -c $cfg_path -p $ses_path -f $frm_size
+	build/mmfm -r $res_path -c $cfg_path -p $ses_path -f $frm_size
     else
 	break
     fi

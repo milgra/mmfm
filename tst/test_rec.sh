@@ -26,7 +26,7 @@ while [ $res = "y" ]; do
     
     ((cnt+=1))
     
-    bin/zenmusic -r $res_path -c $cfg_path -s $ses_path -f $frm_size
+    build/mmfm -r $res_path -s $ses_path -f $frm_size
 
     echo "Record another session? y/n"
 

@@ -211,12 +211,18 @@ int main(int argc, char* argv[])
     if (rec_path) config_set("rec_path", rec_path);
     if (rep_path) config_set("rep_path", rep_path);
 
+    zc_time("config parsing");
+
+    wm_loop(init, update, render, destroy, frm_par);
+
+    config_destroy(); // DESTROY 0
+
     // cleanup
 
     if (cfg_par) REL(cfg_par); // REL 0
     if (res_par) REL(res_par); // REL 1
     if (rec_par) REL(rec_par); // REL 2
-    if (rec_par) REL(rep_par); // REL 3
+    if (rep_par) REL(rep_par); // REL 3
     if (frm_par) REL(frm_par); // REL 4
 
     REL(top_path);    // REL 5
@@ -230,12 +236,6 @@ int main(int argc, char* argv[])
 
     if (rec_path) REL(rec_path); // REL 14
     if (rep_path) REL(rep_path); // REL 15
-
-    zc_time("config parsing");
-
-    wm_loop(init, update, render, destroy, frm_par);
-
-    config_destroy(); // DESTROY 0
 
 #ifdef DEBUG
     mem_stats();

@@ -77,6 +77,7 @@ struct _ui_t
     ui_table_t* filelisttable;
     ui_table_t* fileinfotable;
 
+    textstyle_t background_style;
     textstyle_t progress_style;
 } ui;
 
@@ -503,6 +504,8 @@ void ui_init(float width, float height)
     ts.backcolor    = 0x252525FF;
     ts.multiline    = 0;
 
+    ui.background_style = ts;
+
     /* preview block */
 
     view_t* preview     = view_get_subview(ui.view_base, "preview");
@@ -716,6 +719,7 @@ void ui_destroy()
 
     // TODO create a heap based textstyle object to make this easier
     REL(ui.progress_style.font);
+    REL(ui.background_style.font);
 
     REL(ui.view_base);
     REL(ui.fileinfotable);

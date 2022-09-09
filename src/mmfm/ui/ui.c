@@ -452,7 +452,6 @@ void ui_create_views(float width, float height)
     // initial layout of views
 
     view_set_frame(ui.view_base, (r2_t){0.0, 0.0, (float) width, (float) height});
-    view_layout(ui.view_base);
     ui_manager_add(ui.view_base);
 }
 
@@ -665,11 +664,14 @@ void ui_init(float width, float height)
 
     // get main bottom for layout change
 
-    ui.main_bottom                = view_get_subview(ui.view_base, "main_bottom");
-    ui.left_dragger               = view_get_subview(ui.view_base, "left_dragger");
-    ui.left_dragger->blocks_touch = 1;
+    ui.main_bottom  = view_get_subview(ui.view_base, "main_bottom");
+    ui.left_dragger = view_get_subview(ui.view_base, "left_dragger");
 
-    vh_touch_add(ui.left_dragger, btn_cb);
+    if (ui.left_dragger)
+    {
+	ui.left_dragger->blocks_touch = 1;
+	vh_touch_add(ui.left_dragger, btn_cb);
+    }
 
     REL(btn_cb);
 
@@ -730,7 +732,7 @@ void ui_destroy()
 
 void ui_update_layout(float w, float h)
 {
-    if (w > h && ui.main_bottom->style.flexdir == FD_COL)
+    if (w > h)
     {
 	ui.main_bottom->style.flexdir = FD_ROW;
 
@@ -756,6 +758,9 @@ void ui_update_layout(float w, float h)
 	    ui.view_maingap->style.width = 0;
 	}
     }
+    view_layout(ui.view_base);
+
+    view_describe(ui.view_base, 0);
 }
 
 void ui_update_dragger()

@@ -41,6 +41,8 @@ void init(int width, int height)
 	evrec_init_player(config_get("rep_path")); // DESTROY 5
 	ui_add_cursor();
     }
+
+    ui_update_layout(width, height);
 }
 
 void update(ev_t ev)

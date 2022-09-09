@@ -2,7 +2,6 @@
 
 0.2
 
-key down should scroll table
 file path on the top
 +/- to zoom in/out media
 pdf paging

@@ -477,6 +477,16 @@ void ui_table_select(
     if (uit->selected_index < 0) uit->selected_index = 0;
     if (uit->selected_index > uit->items->length - 1) uit->selected_index = uit->items->length - 1;
 
+    vh_tbl_body_t* bvh = uit->body_v->handler_data;
+    if (bvh->bot_index <= uit->selected_index)
+    {
+	vh_tbl_body_vjump(uit->body_v, uit->selected_index);
+    }
+    if (uit->selected_index <= bvh->top_index)
+    {
+	vh_tbl_body_vjump(uit->body_v, uit->selected_index);
+    }
+
     vec_reset(uit->selected);
     map_t* sel = uit->items->data[uit->selected_index];
     VADD(uit->selected, sel);
@@ -484,8 +494,6 @@ void ui_table_select(
     (*uit->on_event)(uit, UI_TABLE_EVENT_SELECT, uit->selected);
 
     /* color item */
-
-    vh_tbl_body_t* bvh = uit->body_v->handler_data;
 
     for (int index = 0; index < bvh->items->length; index++)
     {

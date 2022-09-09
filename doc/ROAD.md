@@ -1,5 +1,8 @@
 # Zen Media development roadmap
 
+automatikusan file browser legyen fokuszban
+enter mukodjon
+
 0.2
 
 file path on the top

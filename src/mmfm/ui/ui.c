@@ -178,10 +178,6 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 
 		ui_show_progress("Directory loaded");
 	    }
-	    else
-	    {
-		ui_visualizer_open(path);
-	    }
 	}
 	break;
 	case UI_TABLE_EVENT_DRAG:
@@ -199,6 +195,42 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 
 	    ui.drag_data = selected;
 	    ui.view_doc  = docview;
+	}
+	break;
+	case UI_TABLE_EVENT_KEY:
+	{
+	    ev_t ev = *((ev_t*) userdata);
+
+	    if (ev.keycode == SDLK_DOWN || ev.keycode == SDLK_UP)
+	    {
+		int32_t index = table->selected_index;
+
+		if (ev.keycode == SDLK_DOWN) index += 1;
+		if (ev.keycode == SDLK_UP) index -= 1;
+		ui_table_select(table, index);
+	    }
+	    else if (ev.keycode == SDLK_RETURN)
+	    {
+		map_t* info = table->selected->data[0];
+
+		char* type = MGET(info, "file/type");
+		char* path = MGET(info, "file/path");
+
+		if (strcmp(type, "directory") == 0)
+		{
+		    map_t* files = MNEW(); // REL 0
+		    zc_time(NULL);
+		    fm_list(path, files);
+		    zc_time("file list");
+		    vec_reset(ui.file_list_data);
+		    map_values(files, ui.file_list_data);
+		    vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);
+		    ui_table_set_data(ui.filelisttable, ui.file_list_data);
+		    REL(files);
+
+		    ui_show_progress("Directory loaded");
+		}
+	    }
 	}
 	break;
 	case UI_TABLE_EVENT_DROP:
@@ -572,6 +604,8 @@ void ui_init(float width, float height)
 
     ui.file_list_data = VNEW(); // REL S0
     ui_table_set_data(ui.filelisttable, ui.file_list_data);
+
+    ui_manager_activate(filelistevt);
 
     // clipboard table
 

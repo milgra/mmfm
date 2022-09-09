@@ -12,6 +12,7 @@ typedef enum _ui_table_event
     UI_TABLE_EVENT_OPEN,
     UI_TABLE_EVENT_DRAG,
     UI_TABLE_EVENT_DROP,
+    UI_TABLE_EVENT_KEY,
     UI_TABLE_EVENT_FIELDS_UPDATE
 } ui_table_event;
 
@@ -40,6 +41,10 @@ ui_table_t* ui_table_create(
     view_t* head,
     vec_t*  fields,
     void (*on_event)(ui_table_t* table, ui_table_event event, void* userdata));
+
+void ui_table_select(
+    ui_table_t* table,
+    int32_t     index);
 
 void ui_table_set_data(
     ui_table_t* uit, vec_t* data);
@@ -342,42 +347,7 @@ void ui_table_evnt_event(view_t* view, view_t* rowview, vh_tbl_evnt_event_t type
     }
     if (type == VH_TBL_EVENT_KEY)
     {
-	if (uit->items->length > 0)
-	{
-	    // move selection
-	    if (ev.keycode == SDLK_DOWN) uit->selected_index += 1;
-	    if (ev.keycode == SDLK_UP) uit->selected_index -= 1;
-	    if (uit->selected_index < 0) uit->selected_index = 0;
-	    if (uit->selected_index > uit->items->length - 1) uit->selected_index = uit->items->length - 1;
-
-	    // TODO create separate selector function used by TBL_EVENT_SELECT ALSO
-
-	    vec_reset(uit->selected);
-	    map_t* sel = uit->items->data[uit->selected_index];
-	    VADD(uit->selected, sel);
-
-	    (*uit->on_event)(uit, UI_TABLE_EVENT_SELECT, uit->selected);
-
-	    vh_tbl_body_t* bvh = uit->body_v->handler_data;
-
-	    for (int index = 0; index < bvh->items->length; index++)
-	    {
-		int     realindex = bvh->head_index + index;
-		view_t* item      = bvh->items->data[index];
-
-		if (item->style.background_color == 0x006600FF)
-		{
-		    item->style.background_color = realindex % 2 != 0 ? (uint32_t) 0x353535388 : (uint32_t) 0x45454588;
-		    view_invalidate_texture(item);
-		}
-
-		if (realindex == uit->selected_index)
-		{
-		    item->style.background_color = 0x006600FF;
-		    view_invalidate_texture(item);
-		}
-	    }
-	}
+	(*uit->on_event)(uit, UI_TABLE_EVENT_KEY, (void*) &ev);
     }
 }
 
@@ -495,6 +465,45 @@ void ui_table_set_data(
     vh_tbl_body_move(uit->body_v, 0, 0);
 
     if (uit->scrl_v) vh_tbl_scrl_set_item_count(uit->scrl_v, data->length);
+}
+
+/* select index */
+
+void ui_table_select(
+    ui_table_t* uit,
+    int32_t     index)
+{
+    uit->selected_index = index;
+    if (uit->selected_index < 0) uit->selected_index = 0;
+    if (uit->selected_index > uit->items->length - 1) uit->selected_index = uit->items->length - 1;
+
+    vec_reset(uit->selected);
+    map_t* sel = uit->items->data[uit->selected_index];
+    VADD(uit->selected, sel);
+
+    (*uit->on_event)(uit, UI_TABLE_EVENT_SELECT, uit->selected);
+
+    /* color item */
+
+    vh_tbl_body_t* bvh = uit->body_v->handler_data;
+
+    for (int index = 0; index < bvh->items->length; index++)
+    {
+	int     realindex = bvh->head_index + index;
+	view_t* item      = bvh->items->data[index];
+
+	if (item->style.background_color == 0x006600FF)
+	{
+	    item->style.background_color = realindex % 2 != 0 ? (uint32_t) 0x353535388 : (uint32_t) 0x45454588;
+	    view_invalidate_texture(item);
+	}
+
+	if (realindex == uit->selected_index)
+	{
+	    item->style.background_color = 0x006600FF;
+	    view_invalidate_texture(item);
+	}
+    }
 }
 
 #endif

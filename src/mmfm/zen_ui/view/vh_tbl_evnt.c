@@ -216,7 +216,6 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
     }
     else if (ev.type == EV_KDOWN)
     {
-	zc_log_debug("KDOWN");
 	(*vh->on_event)(view, NULL, VH_TBL_EVENT_KEY, 0, vh->userdata, ev);
     }
 }

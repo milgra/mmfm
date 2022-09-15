@@ -44,18 +44,14 @@ mupdfthird = cc.find_library('mupdf-third')
 mmfm_dependencies = [rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau]
 
 mmfm_version = '"@0@"'.format(meson.project_version())
-pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'sov'
+pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
 add_project_arguments('-DPKG_DATADIR="' + pkg_datadir + '"',
 		      '-DMMFM_VERSION=@0@'.format(mmfm_version),
 		      language: 'c')
 add_project_arguments('-Wno-unused-but-set-variable', language: 'c')
 
-
-
-
-if get_option('buildtype').startswith('debug')
-  add_project_arguments('-DDEBUG', language : 'c')
-#  add_project_arguments('-H', language : 'c')
+if get_option('buildtype') == 'debug'
+    add_project_arguments('-DDEBUG',language: 'c')
 endif
 
 mmfm_inc = include_directories(
@@ -167,7 +163,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/mmfm/zen_ui/ui_table.c',
 	       'src/mmfm/zen_ui/ui_util.c']
 
-pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'sov'
+pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
 install_data('res/html/main.html', install_dir : pkg_datadir / 'html' )
 install_data('res/html/main.css', install_dir : pkg_datadir / 'html' )
 install_data('res/img/close.png', install_dir : pkg_datadir / 'img' )

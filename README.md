@@ -25,7 +25,7 @@ sudo ninja -C build install
 ```
 ### From packages
 
-[![Packaging status](https://repology.org/badge/tiny-repos/sov.svg)](https://repology.org/project/sov/versions)
+[![Packaging status](https://repology.org/badge/tiny-repos/mmfm.svg)](https://repology.org/project/mmfm/versions)
 
 ## User Guide ##
 

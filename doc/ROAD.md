@@ -2,6 +2,7 @@
 
 0.2
 
+fullscreen crash
 refactor ui.c based on vmp, remove ui_visualizer
 file path on the top
 +/- to zoom in/out media

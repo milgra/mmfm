@@ -216,8 +216,6 @@ void coder_load_cover_into(const char* path, bm_rgba_t* bitmap)
 	    avcodec_send_packet(codecContext, &pkt);
 	    avcodec_receive_frame(codecContext, frame);
 
-	    printf("received frame %i %i\n", frame->width, frame->height);
-
 	    static unsigned sws_flags = SWS_BICUBIC;
 
 	    struct SwsContext* img_convert_ctx = sws_getContext(frame->width, frame->height, frame->format, bitmap->w, bitmap->h, AV_PIX_FMT_RGBA, sws_flags, NULL, NULL,
@@ -242,6 +240,7 @@ void coder_load_cover_into(const char* path, bm_rgba_t* bitmap)
 		}
 
 		sws_freeContext(img_convert_ctx); // FREE 3
+		free(scaledpixels[0]);
 	    }
 
 	    avcodec_free_context(&codecContext); // FREE 1
@@ -298,12 +297,12 @@ int coder_load_metadata_into(const char* path, map_t* map)
 
 		while ((tag = av_dict_get(pFormatCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
 		{
-		    char* value = cstr_new_cstring(tag->value);                    // REL 0
-		    char* key   = cstr_new_format(100, "%s/%s", "meta", tag->key); // REL 1
+		    char* value = cstr_new_cstring(tag->value); // REL 0
+		    /* char* key   = cstr_new_format(100, "%s/%s", "meta", tag->key); // REL 1 */
 
-		    MPUT(map, key, value);
+		    MPUT(map, tag->key, value);
 
-		    REL(key);   // REL 0
+		    /* REL(key);   // REL 0 */
 		    REL(value); // REL 1
 		}
 
@@ -737,19 +736,16 @@ int coder_write_png(char* path, bm_rgba_t* bm)
 
 		av_image_fill_arrays(frame_in->data, frame_in->linesize, bm->data, AV_PIX_FMT_RGBA, bm->w, bm->h, 1);
 
-		AVPacket pkt;
-		pkt.data = NULL;
-		pkt.size = 0;
-		// av_init_packet(&pkt);
+		AVPacket* pkt = av_packet_alloc();
 
 		if (avcodec_send_frame(enc_ctx, frame_in) >= 0)
 		{
-		    if (avcodec_receive_packet(enc_ctx, &pkt) >= 0)
+		    if (avcodec_receive_packet(enc_ctx, pkt) >= 0)
 		    {
 			FILE* file = fopen(path, "wb");
-			fwrite(pkt.data, 1, pkt.size, file);
+			fwrite(pkt->data, 1, pkt->size, file);
 			fclose(file);
-			av_packet_unref(&pkt);
+			av_packet_free(&pkt);
 		    }
 		    else
 			printf("Error during encoding\n");

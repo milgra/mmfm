@@ -3,7 +3,7 @@
 
 #include "zc_vector.c"
 
-vec_t* viewgen_html_create(char* htmlpath);
+void viewgen_html_parse(char* htmlpath, vec_t* views);
 
 #endif
 
@@ -13,12 +13,11 @@ vec_t* viewgen_html_create(char* htmlpath);
 #include "html.c"
 #include "view.c"
 
-vec_t* viewgen_html_create(char* htmlpath)
+void viewgen_html_parse(char* htmlpath, vec_t* views)
 {
-    vec_t* views = VNEW();
-    char*  html  = cstr_new_file(htmlpath); // REL 0
-    tag_t* tags  = html_new(html);          // REL 1
-    tag_t* head  = tags;
+    char*  html = cstr_new_file(htmlpath); // REL 0
+    tag_t* tags = html_new(html);          // REL 1
+    tag_t* head = tags;
 
     while ((*tags).len > 0)
     {
@@ -77,8 +76,6 @@ vec_t* viewgen_html_create(char* htmlpath)
 
     REL(head); // REL 1
     REL(html); // REL 0
-
-    return views;
 }
 
 #endif

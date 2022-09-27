@@ -98,6 +98,8 @@ void vh_tbl_scrl_update(view_t* view)
 	    float pos = view->frame.local.h * pratio;
 	    float hth = view->frame.local.h * sratio;
 
+	    if (hth < 30.0) hth = 30.0;
+
 	    if (vh->state == 2)
 	    {
 		pos += hth / 2.0;
@@ -122,6 +124,8 @@ void vh_tbl_scrl_update(view_t* view)
 
 	    float pos = view->frame.local.w * pratio;
 	    float wth = view->frame.local.w * sratio;
+
+	    if (wth < 30.0) wth = 30.0;
 
 	    if (vh->state == 2)
 	    {

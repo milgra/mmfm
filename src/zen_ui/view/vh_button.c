@@ -167,6 +167,8 @@ void vh_button_add(view_t* view, vh_button_type_t type, cb_t* event)
 
     view->handler      = vh_button_evt;
     view->handler_data = vh;
+    view->needs_touch  = 1;
+    view->blocks_touch = 1;
 }
 
 #endif

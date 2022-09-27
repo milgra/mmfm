@@ -166,6 +166,8 @@ void vh_tbl_body_move(
 		    view_insert_subview(view, item, 0);
 
 		    view_set_frame(item, (r2_t){vh->head_xpos, head->frame.local.y - item->frame.local.h, item->frame.local.w, item->frame.local.h});
+
+		    REL(item);
 		}
 		else
 		{

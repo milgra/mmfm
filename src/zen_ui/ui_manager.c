@@ -166,10 +166,11 @@ void ui_manager_event(ev_t ev)
 	for (int i = uim.explqueue->length - 1; i > -1; i--)
 	{
 	    view_t* v = uim.explqueue->data[i];
+
 	    if (v->needs_key)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
-		break;
+		if (v->blocks_key) break;
 	    }
 	}
     }

@@ -157,7 +157,7 @@ view_t* ui_table_head_create(
     ui_table_t* uit = (ui_table_t*) userdata;
 
     char*   headid   = cstr_new_format(100, "%s_header", uit->id); // REL 0
-    view_t* headview = view_new(headid, (r2_t){0, 0, 100, 20});
+    view_t* headview = view_new(headid, (r2_t){0, 0, 100, uit->textstyle.line_height});
     REL(headid); // REL 0
 
     int         wth = 0;
@@ -167,8 +167,8 @@ view_t* ui_table_head_create(
     {
 	char*   field    = uit->fields->data[i];
 	num_t*  size     = uit->fields->data[i + 1];
-	char*   cellid   = cstr_new_format(100, "%s_cell_%s", headview->id, field);  // REL 2
-	view_t* cellview = view_new(cellid, (r2_t){wth + 1, 0, size->intv - 2, 20}); // REL 3
+	char*   cellid   = cstr_new_format(100, "%s_cell_%s", headview->id, field);              // REL 2
+	view_t* cellview = view_new(cellid, (r2_t){wth + 1, 0, size->intv - 2, ts.line_height}); // REL 3
 
 	wth += size->intv;
 
@@ -183,7 +183,7 @@ view_t* ui_table_head_create(
 	REL(cellview); // REL 3
     }
 
-    view_set_frame(headview, (r2_t){0, 0, wth, 20});
+    view_set_frame(headview, (r2_t){0, 0, wth, ts.line_height});
 
     return headview;
 }
@@ -213,7 +213,7 @@ view_t* ui_table_item_create(
 	    else
 	    {
 		char* rowid = cstr_new_format(100, "%s_rowitem_%i", uit->id, uit->cnt++); // REL 0
-		rowview     = view_new(rowid, (r2_t){0, 0, table_v->frame.local.w, 20});
+		rowview     = view_new(rowid, (r2_t){0, 0, table_v->frame.local.w, ts.line_height});
 		REL(rowid); // REL 0
 
 		tg_css_add(rowview);
@@ -225,8 +225,8 @@ view_t* ui_table_item_create(
 		    char*  field = uit->fields->data[i];
 		    num_t* size  = uit->fields->data[i + 1];
 		    // char*   value    = MGET(data, field);
-		    char*   cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field);   // REL 2
-		    view_t* cellview = view_new(cellid, (r2_t){wth + 1, 0, size->intv - 2, 20}); // REL 3
+		    char*   cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field);               // REL 2
+		    view_t* cellview = view_new(cellid, (r2_t){wth + 1, 0, size->intv - 2, ts.line_height}); // REL 3
 
 		    wth += size->intv;
 
@@ -269,10 +269,10 @@ view_t* ui_table_item_create(
 
 		wth += size->intv;
 
-		tg_text_set(cellview, value, ts);
+		if (value) tg_text_set(cellview, value, ts);
 	    }
 
-	    view_set_frame(rowview, (r2_t){0, 0, wth, 20});
+	    view_set_frame(rowview, (r2_t){0, 0, wth, ts.line_height});
 	}
     }
 
@@ -364,9 +364,6 @@ void ui_table_del(
 
     if (uit->items) REL(uit->items);
 
-    // TODO maybe textstyle should handle this release itself
-    REL(uit->textstyle.font);
-
     if (uit->body_v) REL(uit->body_v);
     if (uit->evnt_v) REL(uit->evnt_v);
     if (uit->scrl_v) REL(uit->scrl_v);
@@ -408,6 +405,7 @@ ui_table_t* ui_table_create(
 
     uit->textstyle             = ui_util_gen_textstyle(body);
     uit->textstyle.margin_left = 5;
+    if (uit->textstyle.line_height == 0) uit->textstyle.line_height = (int) uit->textstyle.size;
 
     if (head)
     {

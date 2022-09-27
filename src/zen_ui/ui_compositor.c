@@ -373,7 +373,7 @@ void ui_compositor_render(uint32_t time, int width, int height, int tex_w, int t
     glrect_t viewport = {0, 0, width, height};
 
     // reset main buffer
-    gl_clear_framebuffer(TEX_CTX, 0.8, 0.8, 0.8, 1.0);
+    gl_clear_framebuffer(TEX_CTX, 0.0, 0.0, 0.0, 1.0);
 
     // reset mask
     gl_clear_framebuffer(1, 0.0, 0.0, 0.0, 1.0);

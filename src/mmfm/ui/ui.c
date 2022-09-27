@@ -134,7 +134,7 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 
 	    vec_t* keys = VNEW(); // REL L0
 	    map_keys(info, keys);
-	    vec_sort(keys, VSD_ASC, ((int (*)(void*, void*)) strcmp));
+	    vec_sort(keys, ((int (*)(void*, void*)) strcmp));
 
 	    vec_t* items = VNEW(); // REL L1
 	    for (int index = 0; index < keys->length; index++)
@@ -173,7 +173,7 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 		zc_time("file list");
 		vec_reset(ui.file_list_data);
 		map_values(files, ui.file_list_data);
-		vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);
+		vec_sort(ui.file_list_data, ui_comp_entry);
 		ui_table_set_data(ui.filelisttable, ui.file_list_data);
 		REL(files);
 
@@ -225,7 +225,7 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 		    zc_time("file list");
 		    vec_reset(ui.file_list_data);
 		    map_values(files, ui.file_list_data);
-		    vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);
+		    vec_sort(ui.file_list_data, ui_comp_entry);
 		    ui_table_set_data(ui.filelisttable, ui.file_list_data);
 		    REL(files);
 
@@ -444,7 +444,8 @@ void ui_create_views(float width, float height)
 {
     // generate views from descriptors
 
-    vec_t* view_list = viewgen_html_create(config_get("html_path"));
+    vec_t* view_list = VNEW();
+    viewgen_html_parse(config_get("html_path"), view_list);
     viewgen_css_apply(view_list, config_get("css_path"), config_get("res_path"));
     viewgen_type_apply(view_list);
     ui.view_base = RET(vec_head(view_list));
@@ -645,7 +646,7 @@ void ui_init(float width, float height)
     map_values(files, ui.file_list_data);
     REL(files);
 
-    vec_sort(ui.file_list_data, VSD_ASC, ui_comp_entry);
+    vec_sort(ui.file_list_data, ui_comp_entry);
 
     ui_table_set_data(ui.filelisttable, ui.file_list_data);
 

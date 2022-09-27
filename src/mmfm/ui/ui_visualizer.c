@@ -15,12 +15,12 @@ void ui_visualizer_show_pdf(char* path);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "mediaplayer.c"
 #include "pdf.c"
 #include "vh_anim.c"
 #include "vh_button.c"
 #include "vh_cv_body.c"
 #include "vh_roll.c"
-#include "viewer.c"
 #include "zc_callback.c"
 #include "zc_draw.c"
 #include "zc_log.c"
@@ -51,7 +51,7 @@ void ui_visualizer_detach()
 {
     if (uiv.vs)
     {
-	viewer_close(uiv.vs);
+	mp_close(uiv.vs);
 	uiv.vs = NULL;
     }
 }
@@ -84,7 +84,7 @@ void ui_visualizer_open(char* path)
 {
     if (uiv.vs)
     {
-	viewer_close(uiv.vs);
+	mp_close(uiv.vs);
 	uiv.vs = NULL;
     }
 
@@ -95,7 +95,7 @@ void ui_visualizer_open(char* path)
     else
     {
 	cb_t* sizecb = cb_new(ui_visualizer_content_size_cb, NULL);
-	uiv.vs       = viewer_open(path, sizecb);
+	uiv.vs       = mp_open(path, sizecb);
 	REL(sizecb);
     }
 }
@@ -107,7 +107,7 @@ void ui_visualizer_update_video()
     if (uiv.vs)
     {
 	double rem;
-	video_refresh(uiv.vs, &rem, uiv.visuvideo->texture.bitmap);
+	mp_video_refresh(uiv.vs, &rem, uiv.visuvideo->texture.bitmap);
 	uiv.visuvideo->texture.changed = 1;
     }
 }

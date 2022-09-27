@@ -101,6 +101,7 @@ void vh_textinput_upd(view_t* view)
 		{
 		    r2_t f  = gv->frame.local;
 		    r2_t nf = (r2_t){g.x, g.y, g.w, g.h};
+
 		    if (f.w == 0 || f.h == 0)
 		    {
 			bm_rgba_t* texture = bm_rgba_new(g.w, g.h); // REL 0

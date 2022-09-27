@@ -4,6 +4,7 @@
 #include "zc_text.c"
 #include "zc_bm_rgba.c"
 #include "zc_string.c"
+#include <linux/limits.h>
 #include <stdint.h>
 
 typedef enum _textalign_t
@@ -29,7 +30,7 @@ typedef enum _autosize_t
 
 typedef struct _textstyle_t
 {
-    char*       font;
+    char        font[PATH_MAX];
     textalign_t align;
     vertalign_t valign;
     autosize_t  autosize;
@@ -82,6 +83,8 @@ void text_render(str_t* text, textstyle_t style, bm_rgba_t* bitmap);
 void text_measure(str_t* text, textstyle_t style, int w, int h, int* nw, int* nh);
 
 void text_describe_style(textstyle_t style);
+
+void text_describe_glyphs(glyph_t* glyphs, int count);
 
 #endif
 
@@ -429,22 +432,26 @@ void text_shift_glyphs(glyph_t* glyphs, int count, textstyle_t style)
 
 void text_render_glyph(glyph_t g, textstyle_t style, bm_rgba_t* bitmap)
 {
+    if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
+
+    wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
+    wrapper_t* libwrp  = MGET(txt_ft.libs, style.font);
+    if (facewrp == NULL)
+    {
+	text_font_load(style.font);
+	facewrp = MGET(txt_ft.fonts, style.font);
+	libwrp  = MGET(txt_ft.libs, style.font);
+	if (!facewrp) return;
+    }
+    FT_Face    font    = facewrp->data;
+    FT_Library library = libwrp->data;
+
+    // don't write bitmap in case of empty glyphs ( space )
     if (g.w > 0 && g.h > 0)
     {
-	if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
-
-	wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
-	if (facewrp == NULL)
-	{
-	    text_font_load(style.font);
-	    facewrp = MGET(txt_ft.fonts, style.font);
-	    if (!facewrp) return;
-	}
-	FT_Face font = facewrp->data;
-
 	int size = g.w * g.h;
 
-	// increase glyph baking bitmap size if needed
+	// increase glyph baking bitMap size if needed
 	if (size > txt_ft.gcount)
 	{
 	    txt_ft.gcount = size;
@@ -459,8 +466,26 @@ void text_render_glyph(glyph_t g, textstyle_t style, bm_rgba_t* bitmap)
 
 	FT_Bitmap fontmap = font->glyph->bitmap;
 
-	// insert to bitmap
-	gfx_blend_8(bitmap, 0, 0, style.textcolor, fontmap.buffer, g.w, g.h);
+	// printf("blending fontmap width %i height %i mode %i pitch %i\n", fontmap.width, fontmap.rows, fontmap.pixel_mode, fontmap.pitch);
+
+	if (fontmap.pixel_mode == ft_pixel_mode_mono)
+	{
+	    // todo avoid conversion somehow
+	    FT_Bitmap convmap;
+	    FT_Bitmap_New(&convmap);
+
+	    FT_Bitmap_Convert(library, &fontmap, &convmap, 1);
+
+	    // insert to bitmap
+	    gfx_blend_8_1(bitmap, 0, 0, style.textcolor, convmap.buffer, convmap.width, convmap.rows);
+
+	    FT_Bitmap_Done(library, &convmap);
+	}
+	else
+	{
+	    // insert to bitmap
+	    gfx_blend_8(bitmap, 0, 0, style.textcolor, fontmap.buffer, fontmap.width, fontmap.rows);
+	}
     }
 }
 

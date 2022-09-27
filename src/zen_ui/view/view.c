@@ -328,8 +328,6 @@ void view_insert_subview(view_t* view, view_t* subview, uint32_t index)
 
     view_set_parent(subview, view);
 
-    if (view->style.masked) view_set_masked(subview, 1);
-
     view_calc_global(view);
 }
 

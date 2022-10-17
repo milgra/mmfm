@@ -21,7 +21,6 @@ void ui_visualizer_show_pdf(char* path);
 #include "vh_button.c"
 #include "vh_cv_body.c"
 #include "vh_roll.c"
-#include "zc_callback.c"
 #include "zc_draw.c"
 #include "zc_log.c"
 
@@ -73,11 +72,9 @@ void ui_visualizer_update()
     /* uiv.visuright->texture.changed = 1; */
 }
 
-void ui_visualizer_content_size_cb(void* userdata, void* data)
+void ui_visualizer_on_mp_event(ms_event event)
 {
-    v2_t* r = (v2_t*) data;
-
-    vh_cv_body_set_content_size(uiv.visubody, (int) r->x, (int) r->y);
+    vh_cv_body_set_content_size(uiv.visubody, (int) event.rect.x, (int) event.rect.y);
 }
 
 void ui_visualizer_open(char* path)
@@ -94,9 +91,7 @@ void ui_visualizer_open(char* path)
     }
     else
     {
-	cb_t* sizecb = cb_new(ui_visualizer_content_size_cb, NULL);
-	uiv.vs       = mp_open(path, sizecb);
-	REL(sizecb);
+	uiv.vs = mp_open(path, ui_visualizer_on_mp_event);
     }
 }
 

@@ -26,7 +26,6 @@
 #include "libswscale/swscale.h"
 #include "packetqueue.c"
 #include "zc_bm_rgba.c"
-#include "zc_callback.c"
 #include "zc_draw.c"
 #include "zc_log.c"
 #include "zc_vec2.c"
@@ -45,6 +44,20 @@ enum av_sync_type_t
     AV_SYNC_EXTERNAL_CLOCK, /* synchronize to an external clock */
 };
 
+typedef struct MediaState MediaState;
+
+enum ms_event_id
+{
+    MS_EVENT_SIZE
+};
+
+typedef struct _ms_event
+{
+    enum ms_event_id id;
+    MediaState*      ms;
+    v2_t             rect;
+} ms_event;
+
 typedef struct AudioParams
 {
     int                 freq;
@@ -54,9 +67,9 @@ typedef struct AudioParams
     int                 bytes_per_sec;
 } AudioParams;
 
-typedef struct MediaState
+struct MediaState
 {
-    cb_t*               sizecb;
+    void (*on_event)(ms_event);
     float               duration;
     int                 finished; // playing reached end
     enum av_sync_type_t av_sync_type;
@@ -154,10 +167,9 @@ typedef struct MediaState
 
     int xpos;
     int visutype;
+};
 
-} MediaState;
-
-MediaState* mp_open(char* path, cb_t* sizecb);
+MediaState* mp_open(char* path, void (*on_event)(ms_event event));
 void        mp_play(MediaState* ms);
 void        mp_pause(MediaState* ms);
 void        mp_close(MediaState* ms);
@@ -371,10 +383,11 @@ int mp_video_decode_thread(void* arg)
 		    // set_default_window_size(qframe->width, qframe->height, qframe->sar);
 		    if (ms->wth != frame->width || ms->hth != frame->height)
 		    {
-			ms->wth   = frame->width;
-			ms->hth   = frame->height;
-			v2_t rect = (v2_t){ms->wth, ms->hth};
-			if (ms->sizecb) (*ms->sizecb->fp)(NULL, &rect);
+			ms->wth        = frame->width;
+			ms->hth        = frame->height;
+			v2_t     rect  = (v2_t){ms->wth, ms->hth};
+			ms_event event = {.id = MS_EVENT_SIZE, .ms = ms, .rect = rect};
+			if (ms->on_event) (*ms->on_event)(event);
 		    }
 
 		    av_frame_move_ref(qframe->frame, frame);
@@ -1275,7 +1288,7 @@ int mp_read_thread(void* arg)
 
 /* entry point, opens/plays media under path */
 
-MediaState* mp_open(char* path, cb_t* sizecb)
+MediaState* mp_open(char* path, void (*on_event)(ms_event event))
 {
     zc_log_debug("mp_open %s", path);
 
@@ -1304,7 +1317,7 @@ MediaState* mp_open(char* path, cb_t* sizecb)
 		    printf("AUDCLK %zu\n", (size_t) &ms->audclk);
 		    printf("EXTCLK %zu\n", (size_t) &ms->extclk);
 
-		    ms->sizecb       = RET(sizecb);
+		    ms->on_event     = on_event;
 		    ms->audio_volume = 100;
 		    ms->vidst_index  = -1;
 		    ms->audst_index  = -1;
@@ -1348,7 +1361,6 @@ void mp_close(MediaState* ms)
 
     sws_freeContext(ms->img_convert_ctx);
 
-    if (ms->sizecb) REL(ms->sizecb);
     av_free(ms->filename);
     av_free(ms);
 }

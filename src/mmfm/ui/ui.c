@@ -109,58 +109,99 @@ void ui_show_progress(char* progress)
     tg_text_set(ui.view_infotf, progress, ui.progress_style);
 }
 
-void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
+void on_files_event(ui_table_event event)
 {
-    switch (event)
+    if (event.id == UI_TABLE_EVENT_FIELDS_UPDATE)
     {
-	case UI_TABLE_EVENT_FIELDS_UPDATE:
+	zc_log_debug("fields update %s", event.table->id);
+    }
+    else if (event.id == UI_TABLE_EVENT_SELECT)
+    {
+	zc_log_debug("select %s", event.table->id);
+
+	map_t* info = event.selected_items->data[0];
+	char*  path = MGET(info, "file/path");
+
+	ui_visualizer_open(path);
+
+	// ask fore detailed info if needed
+
+	if (!MGET(info, "file/mime")) fm_detail(info);
+
+	vec_t* keys = VNEW(); // REL L0
+	map_keys(info, keys);
+	vec_sort(keys, ((int (*)(void*, void*)) strcmp));
+
+	vec_t* items = VNEW(); // REL L1
+	for (int index = 0; index < keys->length; index++)
 	{
-	    zc_log_debug("fields update %s", table->id);
+	    char*  key = keys->data[index];
+	    map_t* map = MNEW();
+	    MPUT(map, "key", key);
+	    MPUT(map, "value", MGET(info, key));
+	    VADDR(items, map);
 	}
-	break;
-	case UI_TABLE_EVENT_SELECT:
+
+	REL(keys); // REL L0
+
+	ui_table_set_data(ui.fileinfotable, items);
+
+	ui_show_progress("File info/data loaded");
+
+	REL(items); // REL L1
+    }
+    else if (event.id == UI_TABLE_EVENT_OPEN)
+    {
+	zc_log_debug("open %s", event.table->id);
+
+	map_t* info = event.selected_items->data[0];
+
+	char* type = MGET(info, "file/type");
+	char* path = MGET(info, "file/path");
+
+	if (strcmp(type, "directory") == 0)
 	{
-	    zc_log_debug("select %s", table->id);
+	    map_t* files = MNEW(); // REL 0
+	    zc_time(NULL);
+	    fm_list(path, files);
+	    zc_time("file list");
+	    vec_reset(ui.file_list_data);
+	    map_values(files, ui.file_list_data);
+	    vec_sort(ui.file_list_data, ui_comp_entry);
+	    ui_table_set_data(ui.filelisttable, ui.file_list_data);
+	    REL(files);
 
-	    vec_t* selected = userdata;
-	    map_t* info     = selected->data[0];
-	    char*  path     = MGET(info, "file/path");
-
-	    ui_visualizer_open(path);
-
-	    // ask fore detailed info if needed
-
-	    if (!MGET(info, "file/mime")) fm_detail(info);
-
-	    vec_t* keys = VNEW(); // REL L0
-	    map_keys(info, keys);
-	    vec_sort(keys, ((int (*)(void*, void*)) strcmp));
-
-	    vec_t* items = VNEW(); // REL L1
-	    for (int index = 0; index < keys->length; index++)
-	    {
-		char*  key = keys->data[index];
-		map_t* map = MNEW();
-		MPUT(map, "key", key);
-		MPUT(map, "value", MGET(info, key));
-		VADDR(items, map);
-	    }
-
-	    REL(keys); // REL L0
-
-	    ui_table_set_data(ui.fileinfotable, items);
-
-	    ui_show_progress("File info/data loaded");
-
-	    REL(items); // REL L1
+	    ui_show_progress("Directory loaded");
 	}
-	break;
-	case UI_TABLE_EVENT_OPEN:
-	{
-	    zc_log_debug("open %s", table->id);
+    }
+    else if (event.id == UI_TABLE_EVENT_DRAG)
+    {
+	view_t* docview                 = view_new("dragged_view", ((r2_t){.x = 0, .y = 0, .w = 50, .h = 50}));
+	char*   imagepath               = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
+	docview->style.background_image = imagepath;
+	tg_css_add(docview);
 
-	    vec_t* selected = userdata;
-	    map_t* info     = selected->data[0];
+	view_insert_subview(ui.view_base, docview, ui.view_base->views->length - 2);
+
+	vh_drag_drag(ui.view_drag, docview);
+	REL(docview);
+
+	ui.drag_data = event.selected_items;
+	ui.view_doc  = docview;
+    }
+    else if (event.id == UI_TABLE_EVENT_KEY)
+    {
+	if (event.ev.keycode == SDLK_DOWN || event.ev.keycode == SDLK_UP)
+	{
+	    int32_t index = event.selected_index;
+
+	    if (event.ev.keycode == SDLK_DOWN) index += 1;
+	    if (event.ev.keycode == SDLK_UP) index -= 1;
+	    ui_table_select(event.table, index);
+	}
+	else if (event.ev.keycode == SDLK_RETURN)
+	{
+	    map_t* info = event.selected_items->data[0];
 
 	    char* type = MGET(info, "file/type");
 	    char* path = MGET(info, "file/path");
@@ -180,148 +221,81 @@ void on_files_event(ui_table_t* table, ui_table_event event, void* userdata)
 		ui_show_progress("Directory loaded");
 	    }
 	}
-	break;
-	case UI_TABLE_EVENT_DRAG:
-	{
-	    vec_t*  selected                = userdata;
-	    view_t* docview                 = view_new("dragged_view", ((r2_t){.x = 0, .y = 0, .w = 50, .h = 50}));
-	    char*   imagepath               = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
-	    docview->style.background_image = imagepath;
-	    tg_css_add(docview);
-
-	    view_insert_subview(ui.view_base, docview, ui.view_base->views->length - 2);
-
-	    vh_drag_drag(ui.view_drag, docview);
-	    REL(docview);
-
-	    ui.drag_data = selected;
-	    ui.view_doc  = docview;
-	}
-	break;
-	case UI_TABLE_EVENT_KEY:
-	{
-	    ev_t ev = *((ev_t*) userdata);
-
-	    if (ev.keycode == SDLK_DOWN || ev.keycode == SDLK_UP)
-	    {
-		int32_t index = table->selected_index;
-
-		if (ev.keycode == SDLK_DOWN) index += 1;
-		if (ev.keycode == SDLK_UP) index -= 1;
-		ui_table_select(table, index);
-	    }
-	    else if (ev.keycode == SDLK_RETURN)
-	    {
-		map_t* info = table->selected->data[0];
-
-		char* type = MGET(info, "file/type");
-		char* path = MGET(info, "file/path");
-
-		if (strcmp(type, "directory") == 0)
-		{
-		    map_t* files = MNEW(); // REL 0
-		    zc_time(NULL);
-		    fm_list(path, files);
-		    zc_time("file list");
-		    vec_reset(ui.file_list_data);
-		    map_values(files, ui.file_list_data);
-		    vec_sort(ui.file_list_data, ui_comp_entry);
-		    ui_table_set_data(ui.filelisttable, ui.file_list_data);
-		    REL(files);
-
-		    ui_show_progress("Directory loaded");
-		}
-	    }
-	}
-	break;
-	case UI_TABLE_EVENT_DROP:
-	    break;
     }
 }
 
-void on_clipboard_event(ui_table_t* table, ui_table_event event, void* userdata)
+void on_clipboard_event(ui_table_event event)
 {
-    switch (event)
+    if (event.id == UI_TABLE_EVENT_FIELDS_UPDATE)
     {
-	case UI_TABLE_EVENT_FIELDS_UPDATE:
+	zc_log_debug("fields update %s", event.table->id);
+    }
+    else if (event.id == UI_TABLE_EVENT_SELECT)
+    {
+	zc_log_debug("select %s", event.table->id);
+
+	map_t* info = event.selected_items->data[0];
+
+	vec_t* keys = VNEW();
+	map_keys(info, keys);
+
+	vec_t* items = VNEW();
+	for (int index = 0; index < keys->length; index++)
 	{
-	    zc_log_debug("fields update %s", table->id);
+	    char*  key = keys->data[index];
+	    map_t* map = MNEW();
+	    MPUT(map, "key", key);
+	    MPUT(map, "value", MGET(info, key));
+	    VADD(items, map);
 	}
-	break;
-	case UI_TABLE_EVENT_SELECT:
+
+	ui_table_set_data(ui.fileinfotable, items);
+
+	// REL!!!
+
+	char* path = MGET(info, "path");
+
+	if (path)
 	{
-	    zc_log_debug("select %s", table->id);
+	    zc_log_debug("SELECTED %s", path);
 
-	    vec_t* selected = userdata;
-	    map_t* info     = selected->data[0];
-
-	    vec_t* keys = VNEW();
-	    map_keys(info, keys);
-
-	    vec_t* items = VNEW();
-	    for (int index = 0; index < keys->length; index++)
+	    if (strstr(path, ".pdf") != NULL)
 	    {
-		char*  key = keys->data[index];
-		map_t* map = MNEW();
-		MPUT(map, "key", key);
-		MPUT(map, "value", MGET(info, key));
-		VADD(items, map);
-	    }
-
-	    ui_table_set_data(ui.fileinfotable, items);
-
-	    // REL!!!
-
-	    char* path = MGET(info, "path");
-
-	    if (path)
-	    {
-		zc_log_debug("SELECTED %s", path);
-
-		if (strstr(path, ".pdf") != NULL)
-		{
-		    ui_visualizer_show_pdf(path);
-		}
+		ui_visualizer_show_pdf(path);
 	    }
 	}
-	break;
-	case UI_TABLE_EVENT_DRAG:
-	    break;
-	case UI_TABLE_EVENT_DROP:
+    }
+    else if (event.id == UI_TABLE_EVENT_DROP)
+    {
+	if (ui.drag_data)
 	{
-	    if (ui.drag_data)
-	    {
-		size_t index = (size_t) userdata;
-		zc_log_debug("DROP %i %i", index, ui.drag_data->length);
-		vec_add_in_vector(ui.clip_list_data, ui.drag_data);
-		ui.drag_data = NULL;
-		ui_table_set_data(ui.cliptable, ui.clip_list_data);
+	    size_t index = (size_t) event.selected_index;
+	    zc_log_debug("DROP %i %i", index, ui.drag_data->length);
+	    vec_add_in_vector(ui.clip_list_data, ui.drag_data);
+	    ui.drag_data = NULL;
+	    ui_table_set_data(ui.cliptable, ui.clip_list_data);
 
-		if (ui.view_doc)
-		{
-		    view_remove_from_parent(ui.view_doc);
-		}
+	    if (ui.view_doc)
+	    {
+		view_remove_from_parent(ui.view_doc);
 	    }
 	}
-	break;
-	default:
-	    break;
     }
 }
 
-void on_fileinfo_event(ui_table_t* table, ui_table_event event, void* userdata)
+void on_fileinfo_event(ui_table_event event)
 {
 }
 
-void ui_on_key_down(void* userdata, void* data)
+void ui_on_key_down(vh_key_event event)
 {
     // ev_t* ev = (ev_t*) data;
 }
 
-void ui_on_btn_event(void* userdata, void* data)
+void ui_on_btn_event(vh_button_event event)
 {
     // ev_t* ev = (ev_t*) data;
-    view_t* btnview = data;
+    view_t* btnview = event.view;
 
     if (btnview == ui.exit_btn) wm_close();
     if (btnview == ui.full_btn) wm_toggle_fullscreen();
@@ -356,33 +330,29 @@ void ui_on_btn_event(void* userdata, void* data)
 	}
 	view_layout(top);
     }
+}
 
-    if (btnview == ui.left_dragger)
+void ui_on_touch_event(vh_touch_event event)
+{
+    if (event.view == ui.left_dragger)
     {
 	vh_drag_drag(ui.view_drag, ui.left_dragger);
     }
-    if (btnview == ui.prev_dragger)
+    if (event.view == ui.prev_dragger)
     {
 	vh_drag_drag(ui.view_drag, ui.prev_dragger);
     }
 }
-
-void ui_on_drag_move(void* userdata, void* data)
+void ui_on_drag(vh_drag_event event)
 {
-}
-
-void ui_on_drag_drop(void* userdata, void* data)
-{
-    view_t* v = data;
-
-    if (v == ui.left_dragger)
+    if (event.dragged_view == ui.left_dragger)
     {
 	view_t* cbox       = view_get_subview(ui.view_base, "cliplistbox");
 	view_t* fbox       = view_get_subview(ui.view_base, "fileinfobox");
 	view_t* lft        = view_get_subview(ui.view_base, "left_container");
 	view_t* top        = view_get_subview(ui.view_base, "top_container");
-	cbox->style.height = lft->frame.global.h - v->frame.global.y + 28.0;
-	fbox->style.width  = top->frame.global.w - v->frame.global.x - 9;
+	cbox->style.height = lft->frame.global.h - event.dragged_view->frame.global.y + 28.0;
+	fbox->style.width  = top->frame.global.w - event.dragged_view->frame.global.x - 9;
 	zc_log_debug("height %i width %i", cbox->style.height, fbox->style.width);
 	view_layout(top);
     }
@@ -473,20 +443,12 @@ void ui_init(float width, float height)
 
     // setup key events
 
-    cb_t* key_cb = cb_new(ui_on_key_down, NULL);
-    vh_key_add(ui.view_base, key_cb); // listen on ui.view_base for shortcuts
-    REL(key_cb);
+    vh_key_add(ui.view_base, ui_on_key_down); // listen on ui.view_base for shortcuts
 
     // setup drag layer
 
-    cb_t* move_cb = cb_new(ui_on_drag_move, NULL);
-    cb_t* drop_cb = cb_new(ui_on_drag_drop, NULL);
-
     ui.view_drag = view_get_subview(ui.view_base, "draglayer");
-    vh_drag_attach(ui.view_drag, move_cb, drop_cb);
-
-    REL(move_cb);
-    REL(drop_cb);
+    vh_drag_attach(ui.view_drag, ui_on_drag);
 
     /* setup visualizer */
 
@@ -652,19 +614,17 @@ void ui_init(float width, float height)
 
     /* close button */
 
-    cb_t* btn_cb = cb_new(ui_on_btn_event, NULL);
-
     ui.exit_btn = view_get_subview(ui.view_base, "app_close_btn");
-    vh_button_add(ui.exit_btn, VH_BUTTON_NORMAL, btn_cb);
+    vh_button_add(ui.exit_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
     ui.full_btn = view_get_subview(ui.view_base, "app_maximize_btn");
-    vh_button_add(ui.full_btn, VH_BUTTON_NORMAL, btn_cb);
+    vh_button_add(ui.full_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
     /* ui.clip_btn = view_get_subview(ui.view_base, "show_clipboard_btn"); */
     /* vh_button_add(ui.clip_btn, VH_BUTTON_NORMAL, btn_cb); */
 
     ui.prop_btn = view_get_subview(ui.view_base, "show_properties_btn");
-    vh_button_add(ui.prop_btn, VH_BUTTON_NORMAL, btn_cb);
+    vh_button_add(ui.prop_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
     // get main bottom for layout change
 
@@ -674,10 +634,8 @@ void ui_init(float width, float height)
     if (ui.left_dragger)
     {
 	ui.left_dragger->blocks_touch = 1;
-	vh_touch_add(ui.left_dragger, btn_cb);
+	vh_touch_add(ui.left_dragger, ui_on_touch_event);
     }
-
-    REL(btn_cb);
 
     // info textfield
 
@@ -770,11 +728,11 @@ void ui_update_layout(float w, float h)
 
 void ui_update_dragger()
 {
-    view_t* filelist = view_get_subview(ui.view_base, "filelisttable");
-    r2_t    df       = ui.left_dragger->frame.local;
-    df.x             = filelist->frame.global.x + filelist->frame.global.w;
-    df.y             = filelist->frame.global.y + filelist->frame.global.h;
-    view_set_frame(ui.left_dragger, df);
+    /* view_t* filelist = view_get_subview(ui.view_base, "filelisttable"); */
+    /* r2_t    df       = ui.left_dragger->frame.local; */
+    /* df.x             = filelist->frame.global.x + filelist->frame.global.w; */
+    /* df.y             = filelist->frame.global.y + filelist->frame.global.h; */
+    /* view_set_frame(ui.left_dragger, df); */
 }
 
 void ui_describe()

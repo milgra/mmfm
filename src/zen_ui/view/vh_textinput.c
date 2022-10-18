@@ -15,13 +15,13 @@ enum vh_textinput_event_id
     VH_TEXTINPUT_DEACTIVATE
 };
 
-typedef struct _vh_textinput_event
+typedef struct _vh_textinput_event_t
 {
     enum vh_textinput_event_id id;
     vh_textinput_t*            vh;
     char*                      text;
     view_t*                    view;
-} vh_textinput_event;
+} vh_textinput_event_t;
 
 struct _vh_textinput_t
 {
@@ -37,10 +37,10 @@ struct _vh_textinput_t
 
     int mouse_out_deact;
 
-    void (*on_event)(vh_textinput_event);
+    void (*on_event)(vh_textinput_event_t);
 };
 
-void vh_textinput_add(view_t* view, char* text, char* phtext, textstyle_t textstyle, void (*on_event)(vh_textinput_event));
+void vh_textinput_add(view_t* view, char* text, char* phtext, textstyle_t textstyle, void (*on_event)(vh_textinput_event_t));
 
 char* vh_textinput_get_text(view_t* view);
 void  vh_textinput_set_text(view_t* view, char* text);
@@ -286,7 +286,7 @@ void vh_textinput_activate(view_t* view, char state)
     vh_textinput_upd(view);
 }
 
-void vh_textinput_on_anim(vh_anim_event event)
+void vh_textinput_on_anim(vh_anim_event_t event)
 {
     view_t* tiview = event.userdata;
 
@@ -307,7 +307,7 @@ void vh_textinput_evt(view_t* view, ev_t ev)
 
 	vh_textinput_activate(view, 1);
 
-	vh_textinput_event event = {.id = VH_TEXTINPUT_ACTIVATE, .vh = data, .text = data->text, .view = view};
+	vh_textinput_event_t event = {.id = VH_TEXTINPUT_ACTIVATE, .vh = data, .text = data->text, .view = view};
 	if (data->on_event) (*data->on_event)(event);
     }
     else if (ev.type == EV_MDOWN_OUT)
@@ -322,7 +322,7 @@ void vh_textinput_evt(view_t* view, ev_t ev)
 		ev.y > frame.y + frame.h)
 	    {
 		vh_textinput_activate(view, 0);
-		vh_textinput_event event = {.id = VH_TEXTINPUT_DEACTIVATE, .vh = data, .text = data->text, .view = view};
+		vh_textinput_event_t event = {.id = VH_TEXTINPUT_DEACTIVATE, .vh = data, .text = data->text, .view = view};
 		if (data->on_event) (*data->on_event)(event);
 	    }
 	}
@@ -348,7 +348,7 @@ void vh_textinput_evt(view_t* view, ev_t ev)
 
 	vh_textinput_upd(view);
 
-	vh_textinput_event event = {.id = VH_TEXTINPUT_TEXT, .vh = data, .text = data->text, .view = view};
+	vh_textinput_event_t event = {.id = VH_TEXTINPUT_TEXT, .vh = data, .text = data->text, .view = view};
 	if (data->on_event) (*data->on_event)(event);
     }
     else if (ev.type == EV_KDOWN)
@@ -387,19 +387,19 @@ void vh_textinput_evt(view_t* view, ev_t ev)
 
 	    vh_textinput_upd(view);
 
-	    vh_textinput_event event = {.id = VH_TEXTINPUT_TEXT, .vh = data, .text = data->text, .view = view};
+	    vh_textinput_event_t event = {.id = VH_TEXTINPUT_TEXT, .vh = data, .text = data->text, .view = view};
 	    if (data->on_event) (*data->on_event)(event);
 	}
 	if (ev.keycode == SDLK_RETURN)
 	{
-	    vh_textinput_event event = {.id = VH_TEXTINPUT_RETURN, .vh = data, .text = data->text, .view = view};
+	    vh_textinput_event_t event = {.id = VH_TEXTINPUT_RETURN, .vh = data, .text = data->text, .view = view};
 	    if (data->on_event) (*data->on_event)(event);
 	}
 	if (ev.keycode == SDLK_ESCAPE)
 	{
 	    vh_textinput_activate(view, 0);
 
-	    vh_textinput_event event = {.id = VH_TEXTINPUT_DEACTIVATE, .vh = data, .text = data->text, .view = view};
+	    vh_textinput_event_t event = {.id = VH_TEXTINPUT_DEACTIVATE, .vh = data, .text = data->text, .view = view};
 	    if (data->on_event) (*data->on_event)(event);
 	}
     }
@@ -423,7 +423,7 @@ void vh_textinput_desc(void* p, int level)
     printf("vh_textinput");
 }
 
-void vh_textinput_add(view_t* view, char* text, char* phtext, textstyle_t textstyle, void (*on_event)(vh_textinput_event))
+void vh_textinput_add(view_t* view, char* text, char* phtext, textstyle_t textstyle, void (*on_event)(vh_textinput_event_t))
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 
@@ -567,7 +567,7 @@ void vh_textinput_set_text(view_t* view, char* text)
 
     vh_textinput_upd(view);
 
-    vh_textinput_event event = {.id = VH_TEXTINPUT_TEXT, .vh = data, .text = data->text, .view = view};
+    vh_textinput_event_t event = {.id = VH_TEXTINPUT_TEXT, .vh = data, .text = data->text, .view = view};
     if (data->on_event) (*data->on_event)(event);
 }
 

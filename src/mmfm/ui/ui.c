@@ -109,7 +109,7 @@ void ui_show_progress(char* progress)
     tg_text_set(ui.view_infotf, progress, ui.progress_style);
 }
 
-void on_files_event(ui_table_event event)
+void on_files_event(ui_table_event_t event)
 {
     if (event.id == UI_TABLE_EVENT_FIELDS_UPDATE)
     {
@@ -191,6 +191,7 @@ void on_files_event(ui_table_event event)
     }
     else if (event.id == UI_TABLE_EVENT_KEY)
     {
+	printf("KEY EVENT\n");
 	if (event.ev.keycode == SDLK_DOWN || event.ev.keycode == SDLK_UP)
 	{
 	    int32_t index = event.selected_index;
@@ -224,7 +225,7 @@ void on_files_event(ui_table_event event)
     }
 }
 
-void on_clipboard_event(ui_table_event event)
+void on_clipboard_event(ui_table_event_t event)
 {
     if (event.id == UI_TABLE_EVENT_FIELDS_UPDATE)
     {
@@ -283,16 +284,16 @@ void on_clipboard_event(ui_table_event event)
     }
 }
 
-void on_fileinfo_event(ui_table_event event)
+void on_fileinfo_event(ui_table_event_t event)
 {
 }
 
-void ui_on_key_down(vh_key_event event)
+void ui_on_key_down(vh_key_event_t event)
 {
     // ev_t* ev = (ev_t*) data;
 }
 
-void ui_on_btn_event(vh_button_event event)
+void ui_on_btn_event(vh_button_event_t event)
 {
     // ev_t* ev = (ev_t*) data;
     view_t* btnview = event.view;
@@ -332,7 +333,7 @@ void ui_on_btn_event(vh_button_event event)
     }
 }
 
-void ui_on_touch_event(vh_touch_event event)
+void ui_on_touch_event(vh_touch_event_t event)
 {
     if (event.view == ui.left_dragger)
     {
@@ -343,7 +344,7 @@ void ui_on_touch_event(vh_touch_event event)
 	vh_drag_drag(ui.view_drag, ui.prev_dragger);
     }
 }
-void ui_on_drag(vh_drag_event event)
+void ui_on_drag(vh_drag_event_t event)
 {
     if (event.dragged_view == ui.left_dragger)
     {
@@ -484,8 +485,8 @@ void ui_init(float width, float height)
 	tg_text_set(preview, "PREVIEW", ts);
 	/* ts.backcolor = 0x252525FF; */
 
-	tg_scaledimg_add(previewcont, 300, 300);
-	view_set_frame(previewcont, (r2_t){0, 0, 300, 300});
+	tg_scaledimg_add(previewcont, 30, 30);
+	view_set_frame(previewcont, (r2_t){0, 0, 30, 30});
 	previewcont->style.margin = INT_MAX;
 
 	vh_cv_body_attach(previewbody, NULL);

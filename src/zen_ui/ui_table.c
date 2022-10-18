@@ -20,7 +20,7 @@ enum ui_table_event_id
     UI_TABLE_EVENT_FIELD_SELECT
 };
 
-typedef struct _ui_table_event
+typedef struct _ui_table_event_t
 {
     enum ui_table_event_id id;
     ui_table_t*            table;
@@ -30,7 +30,7 @@ typedef struct _ui_table_event
     int32_t                selected_index;
     view_t*                rowview;
     ev_t                   ev;
-} ui_table_event;
+} ui_table_event_t;
 
 struct _ui_table_t
 {
@@ -45,7 +45,7 @@ struct _ui_table_t
     view_t*     evnt_v;
     view_t*     scrl_v;
     textstyle_t textstyle;
-    void (*on_event)(ui_table_event event);
+    void (*on_event)(ui_table_event_t event);
 };
 
 ui_table_t* ui_table_create(
@@ -55,7 +55,7 @@ ui_table_t* ui_table_create(
     view_t* evnt,
     view_t* head,
     vec_t*  fields,
-    void (*on_event)(ui_table_event event));
+    void (*on_event)(ui_table_event_t event));
 
 void ui_table_select(
     ui_table_t* table,
@@ -127,7 +127,7 @@ void ui_table_head_resize(view_t* hview, int index, int size, void* userdata)
     }
     else
     {
-	ui_table_event event = {.table = uit, .id = UI_TABLE_EVENT_FIELDS_UPDATE, .fields = uit->fields};
+	ui_table_event_t event = {.table = uit, .id = UI_TABLE_EVENT_FIELDS_UPDATE, .fields = uit->fields};
 	(*uit->on_event)(event);
     }
 }
@@ -139,8 +139,8 @@ void ui_table_head_reorder(view_t* hview, int ind1, int ind2, void* userdata)
     if (ind1 == -1)
     {
 	// self click, dispatch event
-	char*          field = uit->fields->data[ind2 * 2];
-	ui_table_event event = {.id = UI_TABLE_EVENT_FIELD_SELECT, .field = field};
+	char*            field = uit->fields->data[ind2 * 2];
+	ui_table_event_t event = {.id = UI_TABLE_EVENT_FIELD_SELECT, .field = field};
 	(*uit->on_event)(event);
     }
     else
@@ -174,7 +174,7 @@ void ui_table_head_reorder(view_t* hview, int ind1, int ind2, void* userdata)
 
 	ui_table_head_align(uit, -1, 0);
 
-	ui_table_event event = {.table = uit, .id = UI_TABLE_EVENT_FIELDS_UPDATE, .fields = uit->fields};
+	ui_table_event_t event = {.table = uit, .id = UI_TABLE_EVENT_FIELDS_UPDATE, .fields = uit->fields};
 	(*uit->on_event)(event);
     }
 }
@@ -322,7 +322,7 @@ void ui_table_item_recycle(
     VADD(uit->cache, item_v);
 }
 
-void ui_table_evnt_event(vh_tbl_evnt_event event)
+void ui_table_evnt_event(vh_tbl_evnt_event_t event)
 {
     ui_table_t* uit = (ui_table_t*) event.userdata;
 
@@ -362,32 +362,32 @@ void ui_table_evnt_event(vh_tbl_evnt_event event)
 	    view_invalidate_texture(event.rowview);
 	}
 
-	ui_table_event tevent = {.table = uit, .id = UI_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
-    if (event.id == VH_TBL_EVENT_CONTEXT)
+    else if (event.id == VH_TBL_EVENT_CONTEXT)
     {
-	ui_table_event tevent = {.table = uit, .id = UI_TABLE_EVENT_CONTEXT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_CONTEXT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
-    if (event.id == VH_TBL_EVENT_OPEN)
+    else if (event.id == VH_TBL_EVENT_OPEN)
     {
-	ui_table_event tevent = {.table = uit, .id = UI_TABLE_EVENT_OPEN, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_OPEN, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
-    if (event.id == VH_TBL_EVENT_DRAG)
+    else if (event.id == VH_TBL_EVENT_DRAG)
     {
-	ui_table_event tevent = {.table = uit, .id = UI_TABLE_EVENT_DRAG, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_DRAG, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
-    if (event.id == VH_TBL_EVENT_DROP)
+    else if (event.id == VH_TBL_EVENT_DROP)
     {
-	ui_table_event tevent = {.table = uit, .id = UI_TABLE_EVENT_DROP, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_DROP, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
-    if (event.id == VH_TBL_EVENT_KEY)
+    else if (event.id == VH_TBL_EVENT_KEY)
     {
-	ui_table_event tevent = {.table = uit, .id = UI_TABLE_EVENT_DROP, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview, .ev = event.ev};
+	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_KEY, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview, .ev = event.ev};
 	(*uit->on_event)(tevent);
     }
 }
@@ -424,7 +424,7 @@ ui_table_t* ui_table_create(
     view_t* evnt,
     view_t* head,
     vec_t*  fields,
-    void (*on_event)(ui_table_event event))
+    void (*on_event)(ui_table_event_t event))
 {
     assert(id != NULL);
     assert(body != NULL);
@@ -551,7 +551,7 @@ void ui_table_select(
 	}
     }
 
-    ui_table_event event = {.table = uit, .id = UI_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = index, .rowview = NULL};
+    ui_table_event_t event = {.table = uit, .id = UI_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = index, .rowview = NULL};
     (*uit->on_event)(event);
 }
 

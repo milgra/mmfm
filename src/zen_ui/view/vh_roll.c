@@ -12,20 +12,20 @@ enum vh_roll_event_id
 
 typedef struct _vh_roll_t vh_roll_t;
 
-typedef struct _vh_roll_event
+typedef struct _vh_roll_event_t
 {
     enum vh_roll_event_id id;
     vh_roll_t*            vh;
     view_t*               view;
-} vh_roll_event;
+} vh_roll_event_t;
 
 typedef struct _vh_roll_t
 {
     char active;
-    void (*on_event)(vh_roll_event);
+    void (*on_event)(vh_roll_event_t);
 } vh_roll_t;
 
-void vh_roll_add(view_t* view, void (*on_event)(vh_roll_event));
+void vh_roll_add(view_t* view, void (*on_event)(vh_roll_event_t));
 
 #endif
 
@@ -47,7 +47,7 @@ void vh_roll_evt(view_t* view, ev_t ev)
 	    {
 		vh->active = 1;
 
-		vh_roll_event event = {.id = VH_ROLL_IN, .view = view, .vh = vh};
+		vh_roll_event_t event = {.id = VH_ROLL_IN, .view = view, .vh = vh};
 		if (vh->on_event) (*vh->on_event)(event);
 	    }
 	}
@@ -64,8 +64,8 @@ void vh_roll_evt(view_t* view, ev_t ev)
 		ev.y < frame.y ||
 		ev.y > frame.y + frame.h)
 	    {
-		vh->active          = 0;
-		vh_roll_event event = {.id = VH_ROLL_OUT, .view = view, .vh = vh};
+		vh->active            = 0;
+		vh_roll_event_t event = {.id = VH_ROLL_OUT, .view = view, .vh = vh};
 		if (vh->on_event) (*vh->on_event)(event);
 	    }
 	}
@@ -81,7 +81,7 @@ void vh_roll_desc(void* p, int level)
     printf("vh_roll");
 }
 
-void vh_roll_add(view_t* view, void (*on_event)(vh_roll_event))
+void vh_roll_add(view_t* view, void (*on_event)(vh_roll_event_t))
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 

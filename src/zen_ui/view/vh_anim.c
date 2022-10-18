@@ -23,7 +23,7 @@ typedef struct _vh_anim_event_t
     enum vh_anim_event_id id;
     view_t*               view;
     void*                 userdata;
-} vh_anim_event;
+} vh_anim_event_t;
 
 typedef struct _vh_anim_t
 {
@@ -50,7 +50,7 @@ typedef struct _vh_anim_t
     int fsteps;
 
     void* userdata;
-    void (*on_event)(vh_anim_event event);
+    void (*on_event)(vh_anim_event_t event);
 } vh_anim_t;
 
 void vh_anim_frame(view_t* view, r2_t sf, r2_t ef, int steps, animtype_t type);
@@ -61,7 +61,7 @@ void vh_anim_region(view_t* view, r2_t sr, r2_t er, int steps, animtype_t type);
 
 void vh_anim_finish(view_t* view);
 
-void vh_anim_add(view_t* view, void (*on_event)(vh_anim_event), void* userdata);
+void vh_anim_add(view_t* view, void (*on_event)(vh_anim_event_t), void* userdata);
 
 #endif
 
@@ -111,8 +111,8 @@ void vh_anim_evt(view_t* view, ev_t ev)
 
 		if (vh->fstep == vh->fsteps)
 		{
-		    vh->anim_frame      = 0;
-		    vh_anim_event event = {.id = VH_ANIM_END, .view = view, .userdata = vh->userdata};
+		    vh->anim_frame        = 0;
+		    vh_anim_event_t event = {.id = VH_ANIM_END, .view = view, .userdata = vh->userdata};
 		    if (vh->on_event) (*vh->on_event)(event);
 		}
 	    }
@@ -154,8 +154,8 @@ void vh_anim_evt(view_t* view, ev_t ev)
 
 		if (vh->rstep == vh->rsteps)
 		{
-		    vh->anim_region     = 0;
-		    vh_anim_event event = {.id = VH_ANIM_END, .view = view, .userdata = vh->userdata};
+		    vh->anim_region       = 0;
+		    vh_anim_event_t event = {.id = VH_ANIM_END, .view = view, .userdata = vh->userdata};
 		    if (vh->on_event) (*vh->on_event)(event);
 		}
 	    }
@@ -190,8 +190,8 @@ void vh_anim_evt(view_t* view, ev_t ev)
 
 		if (vh->astep == vh->asteps)
 		{
-		    vh->anim_alpha      = 0;
-		    vh_anim_event event = {.id = VH_ANIM_END, .view = view, .userdata = vh->userdata};
+		    vh->anim_alpha        = 0;
+		    vh_anim_event_t event = {.id = VH_ANIM_END, .view = view, .userdata = vh->userdata};
 		    if (vh->on_event) (*vh->on_event)(event);
 		}
 	    }
@@ -263,7 +263,7 @@ void vh_anim_desc(void* p, int level)
     printf("vh_anim");
 }
 
-void vh_anim_add(view_t* view, void (*on_event)(vh_anim_event), void* userdata)
+void vh_anim_add(view_t* view, void (*on_event)(vh_anim_event_t), void* userdata)
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 

@@ -5,12 +5,21 @@
 #include "zc_map.c"
 #include "zc_vector.c"
 
-bm_rgba_t* coder_load_image(const char* path);
-void       coder_load_image_into(const char* path, bm_rgba_t* bitmap);
-int        coder_load_cover_into(const char* path, bm_rgba_t* bitmap);
-int        coder_load_metadata_into(const char* path, map_t* map);
-int        coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* data, vec_t* drop);
-int        coder_write_png(char* path, bm_rgba_t* bm);
+typedef enum _coder_media_type_t
+{
+    CODER_MEDIA_TYPE_VIDEO,
+    CODER_MEDIA_TYPE_AUDIO,
+    CODER_MEDIA_TYPE_IMAGE,
+    CODER_MEDIA_TYPE_OTHER
+} coder_media_type_t;
+
+bm_rgba_t*         coder_load_image(const char* path);
+void               coder_load_image_into(const char* path, bm_rgba_t* bitmap);
+int                coder_load_cover_into(const char* path, bm_rgba_t* bitmap);
+int                coder_load_metadata_into(const char* path, map_t* map);
+coder_media_type_t coder_get_type(const char* path);
+int                coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* data, vec_t* drop);
+int                coder_write_png(char* path, bm_rgba_t* bm);
 
 #endif
 
@@ -386,6 +395,112 @@ int coder_load_metadata_into(const char* path, map_t* map)
     avformat_free_context(pFormatCtx); // FREE 0
 
     return retv;
+}
+
+coder_media_type_t coder_get_type(const char* path)
+{
+    printf("coder get type %s\n", path);
+    assert(path != NULL);
+
+    coder_media_type_t type = CODER_MEDIA_TYPE_OTHER;
+    int                retv = 0;
+
+    AVFormatContext* pFormatCtx  = avformat_alloc_context(); // FREE 0
+    AVDictionary*    format_opts = NULL;
+
+    av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
+
+    // open the specified path
+    if (avformat_open_input(&pFormatCtx, path, NULL, &format_opts) == 0) // CLOSE 0
+    {
+	if (pFormatCtx)
+	{
+	    /* const AVOutputFormat* format = av_guess_format(NULL, path, NULL); */
+
+	    /* if (format && format->mime_type) */
+	    /* { */
+	    /* 	printf("mime type %s\n", format->mime_type); */
+
+	    retv = 0;
+
+	    av_dict_set(&format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
+
+	    AVDictionaryEntry* tag = NULL;
+
+	    while ((tag = av_dict_get(pFormatCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+	    {
+		char* value = cstr_new_cstring(tag->value); // REL 0
+		/* char* key   = cstr_new_format(100, "%s/%s", "meta", tag->key); // REL 1 */
+		/* MPUT(map, tag->key, value); */
+
+		/* printf("%s : %s\n", tag->key, value); */
+		/* REL(key);   // REL 0 */
+		REL(value); // REL 1
+	    }
+
+	    // Retrieve stream information
+	    retv = avformat_find_stream_info(pFormatCtx, NULL);
+
+	    if (retv >= 0)
+	    {
+		int dur = pFormatCtx->duration / 1000000;
+		/* printf("duration %i\n", dur); */
+		if (dur <= 0) type = CODER_MEDIA_TYPE_IMAGE;
+	    }
+	    else
+	    {
+		/* printf("coder_get_metadata no stream information found!!!\n"); */
+	    }
+
+	    for (unsigned i = 0; i < pFormatCtx->nb_streams; i++)
+	    {
+		AVCodecParameters* param = pFormatCtx->streams[i]->codecpar;
+		const AVCodec*     codec = avcodec_find_encoder(pFormatCtx->streams[i]->codecpar->codec_id);
+		if (codec)
+		{
+		    if (param->codec_type == AVMEDIA_TYPE_AUDIO)
+		    {
+			/* printf("audio stream\n"); */
+			/* printf("channels %i\n", param->ch_layout.nb_channels); */
+			/* printf("bitrate %i\n", param->bit_rate); */
+			/* printf("samplerate %i\n", param->sample_rate); */
+
+			if (type == CODER_MEDIA_TYPE_OTHER) type = CODER_MEDIA_TYPE_AUDIO;
+		    }
+		    else if (param->codec_type == AVMEDIA_TYPE_VIDEO)
+		    {
+			/* printf("video stream\n"); */
+			/* printf("channels %i\n", param->ch_layout.nb_channels); */
+			/* printf("bitrate %i\n", param->bit_rate); */
+			/* printf("samplerate %i\n", param->sample_rate); */
+
+			if (type != CODER_MEDIA_TYPE_IMAGE) type = CODER_MEDIA_TYPE_VIDEO;
+		    }
+		}
+	    }
+	    /* } */
+	    /* else */
+	    /* { */
+	    /* 	printf("cannot guess format for %s\n", path); */
+	    /* } */
+	}
+	else
+	{
+	    /* zc_log_info("coder : skpping %s, no media context present", path); */
+	}
+
+	avformat_close_input(&pFormatCtx); // CLOSE 0
+    }
+    else
+    {
+	/* zc_log_info("coder : skipping %s, probably not a media file", path); */
+    }
+
+    if (format_opts) av_dict_free(&format_opts);
+
+    avformat_free_context(pFormatCtx); // FREE 0
+
+    return type;
 }
 
 int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* changed, vec_t* drop)

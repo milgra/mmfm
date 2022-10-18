@@ -12,21 +12,21 @@ enum vh_drag_event_id
 
 typedef struct _vh_drag_t vh_drag_t;
 
-typedef struct _vh_drag_event
+typedef struct _vh_drag_event_t
 {
     enum vh_drag_event_id id;
     vh_drag_t*            vh;
     view_t*               view;
     view_t*               dragged_view;
-} vh_drag_event;
+} vh_drag_event_t;
 
 struct _vh_drag_t
 {
-    void (*on_event)(vh_drag_event);
+    void (*on_event)(vh_drag_event_t);
     view_t* dragged_view;
 };
 
-void vh_drag_attach(view_t* view, void (*on_event)(vh_drag_event));
+void vh_drag_attach(view_t* view, void (*on_event)(vh_drag_event_t));
 void vh_drag_drag(view_t* view, view_t* item);
 
 #endif
@@ -48,7 +48,7 @@ void vh_drag_evt(view_t* view, ev_t ev)
 	    frame.y    = ev.y - frame.h / 2;
 	    view_set_frame(vh->dragged_view, frame);
 
-	    vh_drag_event event = {.id = VH_DRAG_MOVE, .vh = vh, .view = view, .dragged_view = vh->dragged_view};
+	    vh_drag_event_t event = {.id = VH_DRAG_MOVE, .vh = vh, .view = view, .dragged_view = vh->dragged_view};
 	    if (vh->on_event) (*vh->on_event)(event);
 	}
     }
@@ -58,7 +58,7 @@ void vh_drag_evt(view_t* view, ev_t ev)
 
 	if (vh->dragged_view)
 	{
-	    vh_drag_event event = {.id = VH_DRAG_DROP, .vh = vh, .view = view, .dragged_view = vh->dragged_view};
+	    vh_drag_event_t event = {.id = VH_DRAG_DROP, .vh = vh, .view = view, .dragged_view = vh->dragged_view};
 	    if (vh->on_event) (*vh->on_event)(event);
 
 	    REL(vh->dragged_view);
@@ -78,7 +78,7 @@ void vh_drag_desc(void* p, int level)
 {
 }
 
-void vh_drag_attach(view_t* view, void (*on_event)(vh_drag_event))
+void vh_drag_attach(view_t* view, void (*on_event)(vh_drag_event_t))
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 

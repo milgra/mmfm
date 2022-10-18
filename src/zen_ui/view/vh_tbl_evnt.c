@@ -17,10 +17,10 @@ enum vh_tbl_evnt_event_id
     VH_TBL_EVENT_KEY
 };
 
-typedef struct _vh_tbl_evnt_t     vh_tbl_evnt_t;
-typedef struct _vh_tbl_evnt_event vh_tbl_evnt_event;
+typedef struct _vh_tbl_evnt_t       vh_tbl_evnt_t;
+typedef struct _vh_tbl_evnt_event_t vh_tbl_evnt_event_t;
 
-struct _vh_tbl_evnt_event
+struct _vh_tbl_evnt_event_t
 {
     enum vh_tbl_evnt_event_id id;
     view_t*                   view;
@@ -42,7 +42,7 @@ struct _vh_tbl_evnt_t
     int     selected_index;
     float   sx;
     float   sy;
-    void (*on_event)(vh_tbl_evnt_event event);
+    void (*on_event)(vh_tbl_evnt_event_t event);
 };
 
 void vh_tbl_evnt_attach(
@@ -50,7 +50,7 @@ void vh_tbl_evnt_attach(
     view_t* tbody_view,
     view_t* tscrl_view,
     view_t* thead_view,
-    void (*on_event)(vh_tbl_evnt_event event),
+    void (*on_event)(vh_tbl_evnt_event_t event),
     void* userdata);
 
 #endif
@@ -148,7 +148,7 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 	}
 	if (vh->selected_item && ev.drag)
 	{
-	    vh_tbl_evnt_event event = {.id = VH_TBL_EVENT_DRAG, .view = view, .rowview = vh->selected_item, .index = 0, .ev = ev, .userdata = vh->userdata};
+	    vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_DRAG, .view = view, .rowview = vh->selected_item, .index = 0, .ev = ev, .userdata = vh->userdata};
 	    if (vh->on_event) (*vh->on_event)(event);
 
 	    vh->selected_item = NULL;
@@ -195,18 +195,18 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 		    {
 			if (ev.button == 1)
 			{
-			    vh_tbl_evnt_event event = {.id = VH_TBL_EVENT_SELECT, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
+			    vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_SELECT, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
 			    if (vh->on_event) (*vh->on_event)(event);
 			}
 			else if (ev.button == 3)
 			{
-			    vh_tbl_evnt_event event = {.id = VH_TBL_EVENT_CONTEXT, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
+			    vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_CONTEXT, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
 			    if (vh->on_event) (*vh->on_event)(event);
 			}
 		    }
 		    else
 		    {
-			vh_tbl_evnt_event event = {.id = VH_TBL_EVENT_OPEN, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
+			vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_OPEN, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
 			if (vh->on_event) (*vh->on_event)(event);
 		    }
 		    break;
@@ -236,7 +236,7 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
 		    }
 		}
 
-		vh_tbl_evnt_event event = {.id = VH_TBL_EVENT_DROP, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
+		vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_DROP, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
 		if (vh->on_event) (*vh->on_event)(event);
 	    }
 	}
@@ -244,7 +244,7 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
     }
     else if (ev.type == EV_KDOWN)
     {
-	vh_tbl_evnt_event event = {.id = VH_TBL_EVENT_KEY, .view = view, .rowview = vh->selected_item, .index = 0, .ev = ev, .userdata = vh->userdata};
+	vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_KEY, .view = view, .rowview = vh->selected_item, .index = 0, .ev = ev, .userdata = vh->userdata};
 	if (vh->on_event) (*vh->on_event)(event);
     }
 }
@@ -263,7 +263,7 @@ void vh_tbl_evnt_attach(
     view_t* tbody_view,
     view_t* tscrl_view,
     view_t* thead_view,
-    void (*on_event)(vh_tbl_evnt_event event),
+    void (*on_event)(vh_tbl_evnt_event_t event),
     void* userdata)
 {
     assert(view->handler == NULL && view->handler_data == NULL);

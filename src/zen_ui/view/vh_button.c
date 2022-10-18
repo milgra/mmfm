@@ -22,16 +22,16 @@ enum vh_button_event_id
     VH_BUTTON_EVENT
 };
 
-typedef struct _vh_button_event
+typedef struct _vh_button_event_t
 {
     enum vh_button_event_id id;
     vh_button_t*            vh;
     view_t*                 view;
-} vh_button_event;
+} vh_button_event_t;
 
 struct _vh_button_t
 {
-    void (*on_event)(vh_button_event);
+    void (*on_event)(vh_button_event_t);
     vh_button_type_t  type;
     vh_button_state_t state;
 
@@ -40,7 +40,7 @@ struct _vh_button_t
     view_t* onview;
 };
 
-void vh_button_add(view_t* view, vh_button_type_t type, void (*on_event)(vh_button_event));
+void vh_button_add(view_t* view, vh_button_type_t type, void (*on_event)(vh_button_event_t));
 void vh_button_set_state(view_t* view, vh_button_state_t state);
 
 #endif
@@ -50,7 +50,7 @@ void vh_button_set_state(view_t* view, vh_button_state_t state);
 #include "vh_anim.c"
 #include "zc_log.c"
 
-void vh_button_on_anim(vh_anim_event event)
+void vh_button_on_anim(vh_anim_event_t event)
 {
     view_t*      btnview = (view_t*) event.userdata;
     vh_button_t* vh      = btnview->handler_data;
@@ -120,14 +120,14 @@ void vh_button_evt(view_t* view, ev_t ev)
 		if (vh->onview) vh_anim_alpha(vh->onview, 1.0, 0.0, 10, AT_LINEAR);
 	    }
 
-	    vh_button_event event = {.id = VH_BUTTON_EVENT, .view = view};
+	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view};
 	    if (vh->on_event) (*vh->on_event)(event);
 	}
 	else
 	{
 	    vh->state = VH_BUTTON_UP;
 
-	    vh_button_event event = {.id = VH_BUTTON_EVENT, .view = view};
+	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view};
 	    if (vh->on_event) (*vh->on_event)(event);
 
 	    /* if (vh->offview) vh_anim_alpha(vh->offview, 1.0, 0.0, 10, AT_LINEAR); */
@@ -163,7 +163,7 @@ void vh_button_desc(void* p, int level)
     printf("vh_button");
 }
 
-void vh_button_add(view_t* view, vh_button_type_t type, void (*on_event)(vh_button_event))
+void vh_button_add(view_t* view, vh_button_type_t type, void (*on_event)(vh_button_event_t))
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 

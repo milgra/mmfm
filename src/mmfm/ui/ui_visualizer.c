@@ -15,6 +15,7 @@ void ui_visualizer_show_pdf(char* path);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "coder.c"
 #include "mediaplayer.c"
 #include "pdf.c"
 #include "vh_anim.c"
@@ -91,7 +92,18 @@ void ui_visualizer_open(char* path)
     }
     else
     {
-	uiv.vs = mp_open(path, ui_visualizer_on_mp_event);
+	coder_media_type_t type = coder_get_type(path);
+
+	if (type == CODER_MEDIA_TYPE_VIDEO || type == CODER_MEDIA_TYPE_AUDIO) uiv.vs = mp_open(path, ui_visualizer_on_mp_event);
+	else if (type == CODER_MEDIA_TYPE_IMAGE)
+	{
+	    bm_rgba_t* image = coder_load_image(path);
+
+	    vh_cv_body_set_content_size(uiv.visubody, image->w, image->h);
+
+	    ui_visualizer_show_image(image);
+	    REL(image);
+	}
     }
 }
 

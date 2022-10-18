@@ -109,6 +109,13 @@
     blocks: no;
 }
 
+#sidebaricon {
+    width: 30px;
+    height: 30px;
+    background-image: url("sidebar.png");
+    blocks: no;
+}
+
 #clipboardicon {
     width: 30px;
     height: 30px;

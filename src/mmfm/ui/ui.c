@@ -222,9 +222,11 @@ void on_files_event(ui_table_event_t event)
 	    zc_time(NULL);
 	    fm_list(path, files);
 	    zc_time("file list");
+
 	    vec_reset(ui.file_list_data);
 	    map_values(files, ui.file_list_data);
 	    vec_sort(ui.file_list_data, ui_comp_entry);
+
 	    ui_table_set_data(ui.filelisttable, ui.file_list_data);
 	    REL(files);
 
@@ -256,6 +258,11 @@ void on_files_event(ui_table_event_t event)
 	    if (event.ev.keycode == SDLK_UP) index -= 1;
 
 	    ui_table_select(event.table, index);
+
+	    map_t* info = event.selected_items->data[0];
+	    char*  path = MGET(info, "file/path");
+
+	    ui_open(path);
 	}
 	else if (event.ev.keycode == SDLK_RETURN)
 	{

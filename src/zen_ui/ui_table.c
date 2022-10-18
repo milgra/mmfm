@@ -494,6 +494,8 @@ void ui_table_set_data(
     if (uit->items) REL(uit->items);
     uit->items = RET(data);
 
+    uit->selected_index = 0;
+
     vec_reset(uit->selected_items);
     if (uit->selected_index < uit->items->length)
     {

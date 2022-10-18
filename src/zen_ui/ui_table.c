@@ -387,7 +387,7 @@ void ui_table_evnt_event(vh_tbl_evnt_event_t event)
     }
     else if (event.id == VH_TBL_EVENT_KEY)
     {
-	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_KEY, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview, .ev = event.ev};
+	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_KEY, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
 	(*uit->on_event)(tevent);
     }
 }
@@ -513,18 +513,33 @@ void ui_table_select(
     ui_table_t* uit,
     int32_t     index)
 {
+    vh_tbl_body_t* bvh = uit->body_v->handler_data;
+
     uit->selected_index = index;
     if (uit->selected_index < 0) uit->selected_index = 0;
     if (uit->selected_index > uit->items->length - 1) uit->selected_index = uit->items->length - 1;
 
-    vh_tbl_body_t* bvh = uit->body_v->handler_data;
     if (bvh->bot_index <= uit->selected_index)
     {
-	vh_tbl_body_vjump(uit->body_v, uit->selected_index);
+	vh_tbl_body_vjump(uit->body_v, uit->selected_index + 1, 0);
+
+	if (bvh->tail_index == bvh->bot_index)
+	{
+	    // check if bottom item is out of bounds
+	    view_t* lastitem = vec_tail(bvh->items);
+	    r2_t    iframe   = lastitem->frame.local;
+	    r2_t    vframe   = uit->body_v->frame.local;
+
+	    if (iframe.y + iframe.h > vframe.h)
+	    {
+		vh_tbl_body_move(uit->body_v, 0, iframe.y + iframe.h - vframe.h);
+	    }
+	}
     }
+
     if (uit->selected_index <= bvh->top_index)
     {
-	vh_tbl_body_vjump(uit->body_v, uit->selected_index);
+	vh_tbl_body_vjump(uit->body_v, uit->selected_index - 1, 1);
     }
 
     vec_reset(uit->selected_items);
@@ -533,10 +548,10 @@ void ui_table_select(
 
     /* color item */
 
-    for (int index = 0; index < bvh->items->length; index++)
+    for (int i = 0; i < bvh->items->length; i++)
     {
-	int     realindex = bvh->head_index + index;
-	view_t* item      = bvh->items->data[index];
+	int     realindex = bvh->head_index + i;
+	view_t* item      = bvh->items->data[i];
 
 	if (item->style.background_color == 0x006600FF)
 	{
@@ -551,8 +566,8 @@ void ui_table_select(
 	}
     }
 
-    ui_table_event_t event = {.table = uit, .id = UI_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = index, .rowview = NULL};
-    (*uit->on_event)(event);
+    /* ui_table_event_t event = {.table = uit, .id = UI_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = index, .rowview = NULL}; */
+    /* (*uit->on_event)(event); */
 }
 
 vec_t* ui_table_get_fields(ui_table_t* uit)

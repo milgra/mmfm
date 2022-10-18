@@ -248,13 +248,13 @@ void on_files_event(ui_table_event_t event)
     }
     else if (event.id == UI_TABLE_EVENT_KEY)
     {
-	printf("KEY EVENT\n");
 	if (event.ev.keycode == SDLK_DOWN || event.ev.keycode == SDLK_UP)
 	{
 	    int32_t index = event.selected_index;
 
 	    if (event.ev.keycode == SDLK_DOWN) index += 1;
 	    if (event.ev.keycode == SDLK_UP) index -= 1;
+
 	    ui_table_select(event.table, index);
 	}
 	else if (event.ev.keycode == SDLK_RETURN)

@@ -130,6 +130,14 @@ void ui_open(char* path)
 	ui.ms = NULL;
     }
 
+    vh_cv_body_set_content_size(ui.visubody, 100, 100);
+
+    if (ui.visuvideo->texture.bitmap != NULL)
+    {
+	gfx_rect(ui.visuvideo->texture.bitmap, 0, 0, 100, 100, 0x00000000, 1);
+	ui.visuvideo->texture.changed = 1;
+    }
+
     if (strstr(path, ".pdf") != NULL)
     {
 	bm_rgba_t* pdfbmp = pdf_render(path);
@@ -153,15 +161,18 @@ void ui_open(char* path)
 	{
 	    bm_rgba_t* image = coder_load_image(path);
 
-	    vh_cv_body_set_content_size(ui.visubody, image->w, image->h);
-
-	    if (ui.visuvideo->texture.bitmap != NULL)
+	    if (image)
 	    {
-		gfx_insert(ui.visuvideo->texture.bitmap, image, 0, 0);
-		ui.visuvideo->texture.changed = 1;
-	    }
+		vh_cv_body_set_content_size(ui.visubody, image->w, image->h);
 
-	    REL(image);
+		if (ui.visuvideo->texture.bitmap != NULL)
+		{
+		    gfx_insert(ui.visuvideo->texture.bitmap, image, 0, 0);
+		    ui.visuvideo->texture.changed = 1;
+		}
+
+		REL(image);
+	    }
 	}
     }
 }
@@ -178,8 +189,9 @@ void on_files_event(ui_table_event_t event)
 
 	map_t* info = event.selected_items->data[0];
 	char*  path = MGET(info, "file/path");
+	char*  type = MGET(info, "file/type");
 
-	ui_open(path);
+	if (strcmp(type, "directory") != 0) ui_open(path);
 
 	// ask fore detailed info if needed
 
@@ -261,8 +273,9 @@ void on_files_event(ui_table_event_t event)
 
 	    map_t* info = event.selected_items->data[0];
 	    char*  path = MGET(info, "file/path");
+	    char*  type = MGET(info, "file/type");
 
-	    ui_open(path);
+	    if (strcmp(type, "directory") != 0) ui_open(path);
 	}
 	else if (event.ev.keycode == SDLK_RETURN)
 	{
@@ -319,8 +332,9 @@ void on_clipboard_event(ui_table_event_t event)
 	// REL!!!
 
 	char* path = MGET(info, "path");
+	char* type = MGET(info, "file/type");
 
-	ui_open(path);
+	if (strcmp(type, "directory") != 0) ui_open(path);
     }
     else if (event.id == UI_TABLE_EVENT_DROP)
     {
@@ -799,8 +813,10 @@ void ui_update_player()
 {
     if (ui.ms)
     {
-	double rem;
+	double rem = 0.01;
 	mp_video_refresh(ui.ms, &rem, ui.visuvideo->texture.bitmap);
+	// mp_audio_refresh(ui.ms, ui.visuvideo->texture.bitmap, ui.visuvideo->texture.bitmap);
+
 	ui.visuvideo->texture.changed = 1;
     }
 }

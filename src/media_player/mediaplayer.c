@@ -341,7 +341,7 @@ int mp_video_decode_thread(void* arg)
 		    if (frame->pts != AV_NOPTS_VALUE)
 		    {
 			double diff = dpts - mp_get_master_clock(ms);
-			if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD &&
+			if (!isnan(diff) && fabs(diff) > AV_NOSYNC_THRESHOLD &&
 			    ms->viddec.pkt_serial == ms->vidclk.serial &&
 			    ms->vidpq.nb_packets)
 			{

@@ -87,7 +87,7 @@ bm_rgba_t* coder_load_image(const char* path)
 		    pitch[0] = bitmap->w * 4;
 		    sws_scale(img_convert_ctx, (const uint8_t* const*) frame->data, frame->linesize, 0, frame->height, scaledpixels, pitch);
 
-		    gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0xFF0000FF, 0);
+		    gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x00000000, 0);
 
 		    gfx_insert_rgba(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 
@@ -159,7 +159,7 @@ void coder_load_image_into(const char* path, bm_rgba_t* bitmap)
 		    pitch[0] = bitmap->w * 4;
 		    sws_scale(img_convert_ctx, (const uint8_t* const*) frame->data, frame->linesize, 0, frame->height, scaledpixels, pitch);
 
-		    gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0xFF0000FF, 0);
+		    gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x000000FF, 0);
 
 		    gfx_insert_rgba(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 

@@ -4,7 +4,6 @@
 #include "ui.c"
 #include "ui_compositor.c"
 #include "ui_manager.c"
-#include "ui_visualizer.c"
 #include "wm_connector.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
@@ -49,7 +48,7 @@ void update(ev_t ev)
 {
     if (ev.type == EV_TIME)
     {
-	ui_visualizer_update_video();
+	ui_update_player();
 
 	if (mmfm.replay)
 	{

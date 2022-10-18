@@ -12,6 +12,7 @@ void ui_render_without_cursor(uint32_t time);
 void ui_save_screenshot(uint32_t time, char hide_cursor);
 void ui_update_layout(float w, float h);
 void ui_describe();
+void ui_update_player();
 
 #endif
 
@@ -21,6 +22,8 @@ void ui_describe();
 #include "coder.c"
 #include "config.c"
 #include "filemanager.c"
+#include "mediaplayer.c"
+#include "pdf.c"
 #include "tg_css.c"
 #include "tg_scaledimg.c"
 #include "tg_text.c"
@@ -28,7 +31,6 @@ void ui_describe();
 #include "ui_manager.c"
 #include "ui_table.c"
 #include "ui_util.c"
-#include "ui_visualizer.c"
 #include "vh_button.c"
 #include "vh_cv_body.c"
 #include "vh_cv_evnt.c"
@@ -52,8 +54,9 @@ struct _ui_t
 {
     view_t* view_base;
     view_t* view_drag; // drag overlay
-    view_t* view_doc;  //  file drag icon
+    view_t* view_doc;  // file drag icon
     view_t* cursor;    // replay cursor
+
     view_t* view_infotf;
     view_t* view_maingap;
 
@@ -73,12 +76,17 @@ struct _ui_t
     vec_t* clip_list_data;
     vec_t* drag_data;
 
+    view_t* visubody;
+    view_t* visuvideo;
+
     ui_table_t* cliptable;
     ui_table_t* filelisttable;
     ui_table_t* fileinfotable;
 
     textstyle_t background_style;
     textstyle_t progress_style;
+
+    MediaState_t* ms;
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -109,6 +117,55 @@ void ui_show_progress(char* progress)
     tg_text_set(ui.view_infotf, progress, ui.progress_style);
 }
 
+void ui_on_mp_event(ms_event_t event)
+{
+    vh_cv_body_set_content_size(ui.visubody, (int) event.rect.x, (int) event.rect.y);
+}
+
+void ui_open(char* path)
+{
+    if (ui.ms)
+    {
+	mp_close(ui.ms);
+	ui.ms = NULL;
+    }
+
+    if (strstr(path, ".pdf") != NULL)
+    {
+	bm_rgba_t* pdfbmp = pdf_render(path);
+
+	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
+
+	if (ui.visuvideo->texture.bitmap != NULL)
+	{
+	    gfx_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+	    ui.visuvideo->texture.changed = 1;
+	}
+
+	REL(pdfbmp);
+    }
+    else
+    {
+	coder_media_type_t type = coder_get_type(path);
+
+	if (type == CODER_MEDIA_TYPE_VIDEO || type == CODER_MEDIA_TYPE_AUDIO) ui.ms = mp_open(path, ui_on_mp_event);
+	else if (type == CODER_MEDIA_TYPE_IMAGE)
+	{
+	    bm_rgba_t* image = coder_load_image(path);
+
+	    vh_cv_body_set_content_size(ui.visubody, image->w, image->h);
+
+	    if (ui.visuvideo->texture.bitmap != NULL)
+	    {
+		gfx_insert(ui.visuvideo->texture.bitmap, image, 0, 0);
+		ui.visuvideo->texture.changed = 1;
+	    }
+
+	    REL(image);
+	}
+    }
+}
+
 void on_files_event(ui_table_event_t event)
 {
     if (event.id == UI_TABLE_EVENT_FIELDS_UPDATE)
@@ -122,7 +179,7 @@ void on_files_event(ui_table_event_t event)
 	map_t* info = event.selected_items->data[0];
 	char*  path = MGET(info, "file/path");
 
-	ui_visualizer_open(path);
+	ui_open(path);
 
 	// ask fore detailed info if needed
 
@@ -256,15 +313,7 @@ void on_clipboard_event(ui_table_event_t event)
 
 	char* path = MGET(info, "path");
 
-	if (path)
-	{
-	    zc_log_debug("SELECTED %s", path);
-
-	    if (strstr(path, ".pdf") != NULL)
-	    {
-		ui_visualizer_show_pdf(path);
-	    }
-	}
+	ui_open(path);
     }
     else if (event.id == UI_TABLE_EVENT_DROP)
     {
@@ -290,12 +339,10 @@ void on_fileinfo_event(ui_table_event_t event)
 
 void ui_on_key_down(vh_key_event_t event)
 {
-    // ev_t* ev = (ev_t*) data;
 }
 
 void ui_on_btn_event(vh_button_event_t event)
 {
-    // ev_t* ev = (ev_t*) data;
     view_t* btnview = event.view;
 
     if (btnview == ui.exit_btn) wm_close();
@@ -344,6 +391,7 @@ void ui_on_touch_event(vh_touch_event_t event)
 	vh_drag_drag(ui.view_drag, ui.prev_dragger);
     }
 }
+
 void ui_on_drag(vh_drag_event_t event)
 {
     if (event.dragged_view == ui.left_dragger)
@@ -411,23 +459,6 @@ void ui_save_screenshot(uint32_t time, char hide_cursor)
     }
 }
 
-void ui_create_views(float width, float height)
-{
-    // generate views from descriptors
-
-    vec_t* view_list = VNEW();
-    viewgen_html_parse(config_get("html_path"), view_list);
-    viewgen_css_apply(view_list, config_get("css_path"), config_get("res_path"));
-    viewgen_type_apply(view_list);
-    ui.view_base = RET(vec_head(view_list));
-    REL(view_list);
-
-    // initial layout of views
-
-    view_set_frame(ui.view_base, (r2_t){0.0, 0.0, (float) width, (float) height});
-    ui_manager_add(ui.view_base);
-}
-
 int ui_comp_text(void* left, void* right)
 {
     char* la = left;
@@ -440,20 +471,38 @@ void ui_init(float width, float height)
 {
     text_init();                    // DESTROY 0
     ui_manager_init(width, height); // DESTROY 1
-    ui_create_views(width, height);
 
-    // setup key events
+    /* generate views from descriptors */
 
-    vh_key_add(ui.view_base, ui_on_key_down); // listen on ui.view_base for shortcuts
+    vec_t* view_list = VNEW();
 
-    // setup drag layer
+    viewgen_html_parse(config_get("html_path"), view_list);
+    viewgen_css_apply(view_list, config_get("css_path"), config_get("res_path"));
+    viewgen_type_apply(view_list);
+
+    ui.view_base = RET(vec_head(view_list));
+
+    REL(view_list);
+
+    /* initial layout of views */
+
+    view_set_frame(ui.view_base, (r2_t){0.0, 0.0, (float) width, (float) height});
+    ui_manager_add(ui.view_base);
+
+    /* listen for keys and shortcuts */
+
+    vh_key_add(ui.view_base, ui_on_key_down);
+    ui.view_base->needs_key = 1;
+
+    /* setup drag layer */
 
     ui.view_drag = view_get_subview(ui.view_base, "draglayer");
     vh_drag_attach(ui.view_drag, ui_on_drag);
 
     /* setup visualizer */
 
-    ui_visualizer_attach(ui.view_base); // DETACH 8
+    ui.visuvideo = view_get_subview(ui.view_base, "previewcont");
+    ui.visubody  = view_get_subview(ui.view_base, "previewbody");
 
     /* tables */
 
@@ -481,9 +530,7 @@ void ui_init(float width, float height)
     if (preview)
     {
 	tg_text_add(preview);
-	/* ts.backcolor = 0x343434FF; */
 	tg_text_set(preview, "PREVIEW", ts);
-	/* ts.backcolor = 0x252525FF; */
 
 	tg_scaledimg_add(previewcont, 30, 30);
 	view_set_frame(previewcont, (r2_t){0, 0, 30, 30});
@@ -670,16 +717,16 @@ void ui_init(float width, float height)
 
 void ui_destroy()
 {
-    ui_visualizer_detach();
+    if (ui.ms)
+    {
+	mp_close(ui.ms);
+	ui.ms = NULL;
+    }
 
     ui_manager_remove(ui.view_base);
 
     REL(ui.cliplistbox);
     REL(ui.fileinfobox);
-
-    // TODO create a heap based textstyle object to make this easier
-    REL(ui.progress_style.font);
-    REL(ui.background_style.font);
 
     REL(ui.view_base);
     REL(ui.fileinfotable);
@@ -724,7 +771,7 @@ void ui_update_layout(float w, float h)
     }
     view_layout(ui.view_base);
 
-    view_describe(ui.view_base, 0);
+    /* view_describe(ui.view_base, 0); */
 }
 
 void ui_update_dragger()
@@ -739,6 +786,16 @@ void ui_update_dragger()
 void ui_describe()
 {
     view_describe(ui.view_base, 0);
+}
+
+void ui_update_player()
+{
+    if (ui.ms)
+    {
+	double rem;
+	mp_video_refresh(ui.ms, &rem, ui.visuvideo->texture.bitmap);
+	ui.visuvideo->texture.changed = 1;
+    }
 }
 
 #endif

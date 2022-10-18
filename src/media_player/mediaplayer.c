@@ -44,19 +44,19 @@ enum av_sync_type_t
     AV_SYNC_EXTERNAL_CLOCK, /* synchronize to an external clock */
 };
 
-typedef struct MediaState MediaState;
+typedef struct MediaState_t MediaState_t;
 
 enum ms_event_id
 {
     MS_EVENT_SIZE
 };
 
-typedef struct _ms_event
+typedef struct _ms_event_t
 {
     enum ms_event_id id;
-    MediaState*      ms;
+    MediaState_t*    ms;
     v2_t             rect;
-} ms_event;
+} ms_event_t;
 
 typedef struct AudioParams
 {
@@ -67,9 +67,9 @@ typedef struct AudioParams
     int                 bytes_per_sec;
 } AudioParams;
 
-struct MediaState
+struct MediaState_t
 {
-    void (*on_event)(ms_event);
+    void (*on_event)(ms_event_t);
     float               duration;
     int                 finished; // playing reached end
     enum av_sync_type_t av_sync_type;
@@ -169,18 +169,18 @@ struct MediaState
     int visutype;
 };
 
-MediaState* mp_open(char* path, void (*on_event)(ms_event event));
-void        mp_play(MediaState* ms);
-void        mp_pause(MediaState* ms);
-void        mp_close(MediaState* ms);
-void        mp_mute(MediaState* ms);
-void        mp_unmute(MediaState* ms);
-void        mp_set_volume(MediaState* ms, float volume);
-void        mp_set_position(MediaState* ms, float ratio);
-void        mp_set_visutype(MediaState* ms, int visutype);
-void        mp_video_refresh(MediaState* opaque, double* remaining_time, bm_rgba_t* bm);
-void        mp_audio_refresh(MediaState* opaque, bm_rgba_t* bml, bm_rgba_t* bmr);
-double      mp_get_master_clock(MediaState* ms);
+MediaState_t* mp_open(char* path, void (*on_event)(ms_event_t event));
+void          mp_play(MediaState_t* ms);
+void          mp_pause(MediaState_t* ms);
+void          mp_close(MediaState_t* ms);
+void          mp_mute(MediaState_t* ms);
+void          mp_unmute(MediaState_t* ms);
+void          mp_set_volume(MediaState_t* ms, float volume);
+void          mp_set_position(MediaState_t* ms, float ratio);
+void          mp_set_visutype(MediaState_t* ms, int visutype);
+void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, bm_rgba_t* bm);
+void          mp_audio_refresh(MediaState_t* opaque, bm_rgba_t* bml, bm_rgba_t* bmr);
+double        mp_get_master_clock(MediaState_t* ms);
 
 #endif
 
@@ -222,7 +222,7 @@ static SDL_AudioDeviceID audio_dev;
 
 // timing related
 
-static int mp_get_master_sync_type(MediaState* ms)
+static int mp_get_master_sync_type(MediaState_t* ms)
 {
     if (ms->av_sync_type == AV_SYNC_VIDEO_MASTER)
     {
@@ -244,7 +244,7 @@ static int mp_get_master_sync_type(MediaState* ms)
     }
 }
 
-double mp_get_master_clock(MediaState* ms)
+double mp_get_master_clock(MediaState_t* ms)
 {
     double val;
 
@@ -273,7 +273,7 @@ void mp_sync_clock_to_slave(Clock* c, Clock* slave)
 
 // stream related
 
-void mp_stream_seek(MediaState* ms, int64_t pos, int64_t rel, int by_bytes)
+void mp_stream_seek(MediaState_t* ms, int64_t pos, int64_t rel, int by_bytes)
 {
     if (!ms->seek_req)
     {
@@ -286,7 +286,7 @@ void mp_stream_seek(MediaState* ms, int64_t pos, int64_t rel, int by_bytes)
     }
 }
 
-void mp_stream_toggle_pause(MediaState* ms)
+void mp_stream_toggle_pause(MediaState_t* ms)
 {
     if (ms->paused)
     {
@@ -301,7 +301,7 @@ void mp_stream_toggle_pause(MediaState* ms)
     ms->paused = ms->audclk.paused = ms->vidclk.paused = ms->extclk.paused = !ms->paused;
 }
 
-void mp_step_to_next_frame(MediaState* ms)
+void mp_step_to_next_frame(MediaState_t* ms)
 {
     /* if the stream is paused unpause it, then step */
     if (ms->paused) mp_stream_toggle_pause(ms);
@@ -312,9 +312,9 @@ int mp_video_decode_thread(void* arg)
 {
     zc_log_debug("Video decoder thread started.");
 
-    MediaState* ms    = arg;
-    AVFrame*    frame = av_frame_alloc();
-    int         ret   = -1;
+    MediaState_t* ms    = arg;
+    AVFrame*      frame = av_frame_alloc();
+    int           ret   = -1;
 
     double     pts;
     double     duration;
@@ -383,10 +383,10 @@ int mp_video_decode_thread(void* arg)
 		    // set_default_window_size(qframe->width, qframe->height, qframe->sar);
 		    if (ms->wth != frame->width || ms->hth != frame->height)
 		    {
-			ms->wth        = frame->width;
-			ms->hth        = frame->height;
-			v2_t     rect  = (v2_t){ms->wth, ms->hth};
-			ms_event event = {.id = MS_EVENT_SIZE, .ms = ms, .rect = rect};
+			ms->wth          = frame->width;
+			ms->hth          = frame->height;
+			v2_t       rect  = (v2_t){ms->wth, ms->hth};
+			ms_event_t event = {.id = MS_EVENT_SIZE, .ms = ms, .rect = rect};
 			if (ms->on_event) (*ms->on_event)(event);
 		    }
 
@@ -419,7 +419,7 @@ int mp_video_decode_thread(void* arg)
 
 /* return the wanted number of samples to get better sync if sync_type is video
  * or external master clock */
-static int mp_synchronize_audio(MediaState* is, int nb_samples)
+static int mp_synchronize_audio(MediaState_t* is, int nb_samples)
 {
     int wanted_nb_samples = nb_samples;
 
@@ -473,7 +473,7 @@ static int mp_synchronize_audio(MediaState* is, int nb_samples)
  * stored in is->audio_buf, with size in bytes given by the return
  * value.
  */
-int mp_audio_decode_frame(MediaState* is)
+int mp_audio_decode_frame(MediaState_t* is)
 {
     int              data_size, resampled_data_size;
     av_unused double audio_clock0;
@@ -574,7 +574,7 @@ int mp_audio_decode_frame(MediaState* is)
 }
 
 /* copy samples for viewing in editor window */
-static void update_sample_display(MediaState* is, short* samples, int samples_size)
+static void update_sample_display(MediaState_t* is, short* samples, int samples_size)
 {
     int size, len;
 
@@ -596,8 +596,8 @@ static void update_sample_display(MediaState* is, short* samples, int samples_si
 /* prepare a new audio buffer */
 static void mp_sdl_audio_callback(void* opaque, Uint8* stream, int len)
 {
-    MediaState* ms = opaque;
-    int         audio_size, len1;
+    MediaState_t* ms = opaque;
+    int           audio_size, len1;
 
     ms->audio_callback_time = av_gettime_relative();
 
@@ -754,9 +754,9 @@ int mp_audio_decode_thread(void* arg)
 {
     zc_log_debug("Audio decoder thread started.");
 
-    MediaState* is    = arg;
-    AVFrame*    frame = av_frame_alloc();
-    int         ret   = 0;
+    MediaState_t* is    = arg;
+    AVFrame*      frame = av_frame_alloc();
+    int           ret   = 0;
 
     if (frame)
     {
@@ -799,7 +799,7 @@ int mp_audio_decode_thread(void* arg)
     return ret;
 }
 
-int mp_stream_open(MediaState* ms, int stream_index)
+int mp_stream_open(MediaState_t* ms, int stream_index)
 {
     zc_log_debug("Opening stream %i", stream_index);
 
@@ -949,7 +949,7 @@ int mp_stream_open(MediaState* ms, int stream_index)
     return ret;
 }
 
-void mp_stream_close(MediaState* ms, int stream_index)
+void mp_stream_close(MediaState_t* ms, int stream_index)
 {
     AVFormatContext*   format = ms->format;
     AVCodecParameters* codecpar;
@@ -1018,7 +1018,7 @@ void mp_stream_close(MediaState* ms, int stream_index)
 
 int mp_decode_interrupt_cb(void* ctx)
 {
-    MediaState* ms = ctx;
+    MediaState_t* ms = ctx;
     return ms->abort_request;
 }
 
@@ -1035,10 +1035,10 @@ int mp_read_thread(void* arg)
 {
     zc_log_debug("Read thread started.");
 
-    MediaState* ms = arg;
-    int         videost;
-    int         audiost;
-    SDL_mutex*  wait_mutex = SDL_CreateMutex();
+    MediaState_t* ms = arg;
+    int           videost;
+    int           audiost;
+    SDL_mutex*    wait_mutex = SDL_CreateMutex();
 
     if (wait_mutex)
     {
@@ -1288,11 +1288,11 @@ int mp_read_thread(void* arg)
 
 /* entry point, opens/plays media under path */
 
-MediaState* mp_open(char* path, void (*on_event)(ms_event event))
+MediaState_t* mp_open(char* path, void (*on_event)(ms_event_t event))
 {
     zc_log_debug("mp_open %s", path);
 
-    MediaState* ms = av_mallocz(sizeof(MediaState));
+    MediaState_t* ms = av_mallocz(sizeof(MediaState_t));
 
     if (ms)
     {
@@ -1338,7 +1338,7 @@ MediaState* mp_open(char* path, void (*on_event)(ms_event event))
 
 /* end playing */
 
-void mp_close(MediaState* ms)
+void mp_close(MediaState_t* ms)
 {
     zc_log_debug("mp_close %s", ms->filename);
 
@@ -1365,32 +1365,32 @@ void mp_close(MediaState* ms)
     av_free(ms);
 }
 
-void mp_play(MediaState* ms)
+void mp_play(MediaState_t* ms)
 {
     if (ms->paused) mp_stream_toggle_pause(ms);
 }
 
-void mp_pause(MediaState* ms)
+void mp_pause(MediaState_t* ms)
 {
     if (!ms->paused) mp_stream_toggle_pause(ms);
 }
 
-void mp_mute(MediaState* ms)
+void mp_mute(MediaState_t* ms)
 {
     if (ms) ms->muted = 1;
 }
 
-void mp_unmute(MediaState* ms)
+void mp_unmute(MediaState_t* ms)
 {
     if (ms) ms->muted = 0;
 }
 
-void mp_set_volume(MediaState* ms, float ratio)
+void mp_set_volume(MediaState_t* ms, float ratio)
 {
     ms->audio_volume = (int) ((float) SDL_MIX_MAXVOLUME * ratio);
 }
 
-void mp_set_position(MediaState* ms, float ratio)
+void mp_set_position(MediaState_t* ms, float ratio)
 {
     int newpos = (int) ms->duration * ratio;
     int diff   = (int) mp_get_master_clock(ms) - newpos;
@@ -1400,20 +1400,20 @@ void mp_set_position(MediaState* ms, float ratio)
     mp_stream_seek(ms, (int64_t) (newpos * AV_TIME_BASE), (int64_t) (diff * AV_TIME_BASE), 0);
 }
 
-void mp_set_visutype(MediaState* ms, int visutype)
+void mp_set_visutype(MediaState_t* ms, int visutype)
 {
     ms->visutype = visutype;
 }
 
 // display related
 
-void update_video_pts(MediaState* ms, double pts, int64_t pos, int serial)
+void update_video_pts(MediaState_t* ms, double pts, int64_t pos, int serial)
 {
     /* update current video pts */
     clock_set(&ms->vidclk, pts, serial);
     mp_sync_clock_to_slave(&ms->extclk, &ms->vidclk);
 }
-double compute_target_delay(double delay, MediaState* ms)
+double compute_target_delay(double delay, MediaState_t* ms)
 {
     double sync_threshold, diff = 0;
 
@@ -1444,7 +1444,7 @@ double compute_target_delay(double delay, MediaState* ms)
     return delay;
 }
 
-double vp_duration(MediaState* ms, Frame* vp, Frame* nextvp)
+double vp_duration(MediaState_t* ms, Frame* vp, Frame* nextvp)
 {
     if (vp->serial == nextvp->serial)
     {
@@ -1506,7 +1506,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
     return ret;
 }
 
-void video_image_display(MediaState* ms, bm_rgba_t* bm)
+void video_image_display(MediaState_t* ms, bm_rgba_t* bm)
 {
     Frame* vp;
     // Frame*   sp = NULL;
@@ -1526,13 +1526,13 @@ void video_image_display(MediaState* ms, bm_rgba_t* bm)
 }
 
 /* display the current picture, if any */
-void video_display(MediaState* ms, bm_rgba_t* bm)
+void video_display(MediaState_t* ms, bm_rgba_t* bm)
 {
     if (ms->vidst) video_image_display(ms, bm);
 }
 
 /* called to display each frame */
-void mp_video_refresh(MediaState* ms, double* remaining_time, bm_rgba_t* bm)
+void mp_video_refresh(MediaState_t* ms, double* remaining_time, bm_rgba_t* bm)
 {
     double time;
 
@@ -1621,7 +1621,7 @@ static inline int compute_mod(int a, int b)
     return a < 0 ? a % b + b : a % b;
 }
 
-void mp_audio_refresh(MediaState* ms, bm_rgba_t* bml, bm_rgba_t* bmr)
+void mp_audio_refresh(MediaState_t* ms, bm_rgba_t* bml, bm_rgba_t* bmr)
 {
     int     i, i_start, x, y1, y2, y, ys, delay, n, nb_display_channels;
     int     ch, channels, h, h2;

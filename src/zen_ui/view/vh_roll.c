@@ -19,11 +19,11 @@ typedef struct _vh_roll_event_t
     view_t*               view;
 } vh_roll_event_t;
 
-typedef struct _vh_roll_t
+struct _vh_roll_t
 {
     char active;
     void (*on_event)(vh_roll_event_t);
-} vh_roll_t;
+};
 
 void vh_roll_add(view_t* view, void (*on_event)(vh_roll_event_t));
 

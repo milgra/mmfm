@@ -63,6 +63,7 @@ struct _ui_t
 
     view_t* cliplistbox;
     view_t* fileinfobox;
+    view_t* sidebar;
 
     view_t* exit_btn;
     view_t* full_btn;
@@ -471,15 +472,14 @@ void ui_on_btn_event(vh_button_event_t event)
     if (btnview == ui.sidebar_btn)
     {
 	view_t* top = view_get_subview(ui.view_base, "top_container");
-	if (ui.cliplistbox->parent) view_remove_from_parent(ui.cliplistbox);
 
-	if (ui.fileinfobox->parent)
+	if (ui.sidebar->parent)
 	{
-	    view_remove_from_parent(ui.fileinfobox);
+	    view_remove_from_parent(ui.sidebar);
 	}
 	else
 	{
-	    view_add_subview(top, ui.fileinfobox);
+	    view_add_subview(top, ui.sidebar);
 	}
 	view_layout(top);
     }
@@ -956,8 +956,8 @@ void ui_init(float width, float height)
     ui.cliplistbox = RET(view_get_subview(ui.view_base, "cliplistbox"));
     ui.fileinfobox = RET(view_get_subview(ui.view_base, "fileinfobox"));
 
-    view_remove_from_parent(ui.cliplistbox);
-    view_remove_from_parent(ui.fileinfobox);
+    ui.sidebar = RET(view_get_subview(ui.view_base, "sidebar"));
+    view_remove_from_parent(ui.sidebar);
 
     // show texture map for debug
 
@@ -996,6 +996,7 @@ void ui_destroy()
 
     REL(ui.settingspopupcont);
     REL(ui.contextpopupcont);
+    REL(ui.sidebar);
 
     ui_manager_destroy(); // DESTROY 1
 

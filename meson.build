@@ -162,6 +162,12 @@ install_data('res/html/main.html', install_dir : pkg_datadir / 'html' )
 install_data('res/html/main.css', install_dir : pkg_datadir / 'html' )
 install_data('res/img/close.png', install_dir : pkg_datadir / 'img' )
 install_data('res/img/max.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/next.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/pause.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/play.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/prev.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/settings.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/sidebar.png', install_dir : pkg_datadir / 'img' )
 
 executable(
   'mmfm',

@@ -89,8 +89,10 @@ struct _ui_t
     ui_table_t* filelisttable;
     ui_table_t* fileinfotable;
     ui_table_t* settingstable;
+    ui_table_t* contexttable;
 
     view_t* settingspopupcont;
+    view_t* contextpopupcont;
 
     textstyle_t background_style;
     textstyle_t progress_style;
@@ -317,6 +319,23 @@ void on_files_event(ui_table_event_t event)
 	    }
 	}
     }
+    else if (event.id == UI_TABLE_EVENT_CONTEXT)
+    {
+	if (ui.contextpopupcont->parent == NULL)
+	{
+	    if (event.rowview)
+	    {
+		view_t* contextpopup = ui.contextpopupcont->views->data[0];
+		r2_t    iframe       = contextpopup->frame.global;
+		iframe.x             = event.ev.x;
+		iframe.y             = event.ev.y;
+		view_set_frame(contextpopup, iframe);
+
+		view_add_subview(ui.view_base, ui.contextpopupcont);
+		// view_layout(ui.view_base);
+	    }
+	}
+    }
 }
 
 void on_clipboard_event(ui_table_event_t event)
@@ -378,6 +397,33 @@ void on_fileinfo_event(ui_table_event_t event)
 
 void on_settingslist_event(ui_table_event_t event)
 {
+}
+
+void on_contextlist_event(ui_table_event_t event)
+{
+    if (event.id == UI_TABLE_EVENT_SELECT)
+    {
+	/* if (event.selected_index == 1) */
+	/* { */
+	/*     if (ui.songtable->selected_items->length > 0) */
+	/*     { */
+	/* 	map_t* song = ui.songtable->selected_items->data[0]; */
+	/* 	lib_remove_entry(song); */
+	/* 	fm_delete_file(config_get("lib_path"), song); */
+	/* 	lib_write(config_get("lib_path")); */
+	/* 	ui_update_songlist(); */
+	/*     } */
+	/* } */
+	view_remove_from_parent(ui.contextpopupcont);
+    }
+}
+
+void ui_on_touch(vh_touch_event_t event)
+{
+    if (strcmp(event.view->id, "contextpopupcont") == 0)
+    {
+	view_remove_from_parent(ui.contextpopupcont);
+    }
 }
 
 void ui_toggle_pause()
@@ -854,6 +900,47 @@ void ui_init(float width, float height)
 
     view_remove_from_parent(ui.settingspopupcont);
 
+    /* context list */
+
+    view_t* contextpopupcont = view_get_subview(ui.view_base, "contextpopupcont");
+    view_t* contextpopup     = view_get_subview(ui.view_base, "contextpopup");
+    view_t* contextlist      = view_get_subview(ui.view_base, "contexttable");
+    view_t* contextlistevt   = view_get_subview(ui.view_base, "contextlistevt");
+
+    contextpopup->blocks_touch  = 1;
+    contextpopup->blocks_scroll = 1;
+
+    ui.contextpopupcont = RET(contextpopupcont);
+
+    fields = VNEW();
+
+    VADDR(fields, cstr_new_cstring("value"));
+    VADDR(fields, num_new_int(200));
+
+    ui.contexttable = ui_table_create(
+	"contexttable",
+	contextlist,
+	NULL,
+	contextlistevt,
+	NULL,
+	fields,
+	on_contextlist_event);
+
+    REL(fields);
+
+    items = VNEW();
+
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Copy to clipboard")}));
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Rename")}));
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Delete")}));
+
+    ui_table_set_data(ui.contexttable, items);
+    REL(items);
+
+    vh_touch_add(ui.contextpopupcont, ui_on_touch);
+
+    view_remove_from_parent(ui.contextpopupcont);
+
     // info textfield
 
     ui.view_infotf = view_get_subview(ui.view_base, "infotf");
@@ -902,9 +989,13 @@ void ui_destroy()
     REL(ui.filelisttable);
     REL(ui.cliptable);
     REL(ui.settingstable);
+    REL(ui.contexttable);
 
     REL(ui.file_list_data);
     REL(ui.clip_list_data);
+
+    REL(ui.settingspopupcont);
+    REL(ui.contextpopupcont);
 
     ui_manager_destroy(); // DESTROY 1
 

@@ -91,6 +91,8 @@ bm_rgba_t* coder_load_image(const char* path)
 
 		    gfx_insert_rgba(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 
+		    free(scaledpixels[0]);
+
 		    sws_freeContext(img_convert_ctx); // FREE 4
 
 		    success = 1;

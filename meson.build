@@ -85,6 +85,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/mmfm/pdf.c',
 	       'src/mmfm/utils/bm_rgba_util.c',
 	       'src/mmfm/utils/cstr_util.c',
+	       'src/mmfm/utils/map_util.c',
 
 	       'src/zen_core/zc_bm_rgba.c',
 	       'src/zen_core/zc_channel.c',

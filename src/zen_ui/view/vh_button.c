@@ -120,14 +120,14 @@ void vh_button_evt(view_t* view, ev_t ev)
 		if (vh->onview) vh_anim_alpha(vh->onview, 1.0, 0.0, 10, AT_LINEAR);
 	    }
 
-	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view};
+	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view, .vh = vh};
 	    if (vh->on_event) (*vh->on_event)(event);
 	}
 	else
 	{
 	    vh->state = VH_BUTTON_UP;
 
-	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view};
+	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view, .vh = vh};
 	    if (vh->on_event) (*vh->on_event)(event);
 
 	    /* if (vh->offview) vh_anim_alpha(vh->offview, 1.0, 0.0, 10, AT_LINEAR); */

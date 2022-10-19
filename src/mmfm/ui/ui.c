@@ -22,6 +22,7 @@ void ui_update_player();
 #include "coder.c"
 #include "config.c"
 #include "filemanager.c"
+#include "map_util.c"
 #include "mediaplayer.c"
 #include "pdf.c"
 #include "tg_css.c"
@@ -66,7 +67,12 @@ struct _ui_t
     view_t* exit_btn;
     view_t* full_btn;
     view_t* clip_btn;
-    view_t* prop_btn;
+    view_t* sidebar_btn;
+
+    view_t* prev_btn;
+    view_t* next_btn;
+    view_t* play_btn;
+    view_t* settings_btn;
 
     view_t* main_bottom;
     view_t* left_dragger;
@@ -82,11 +88,16 @@ struct _ui_t
     ui_table_t* cliptable;
     ui_table_t* filelisttable;
     ui_table_t* fileinfotable;
+    ui_table_t* settingstable;
+
+    view_t* settingspopupcont;
 
     textstyle_t background_style;
     textstyle_t progress_style;
 
     MediaState_t* ms;
+
+    int autoplay;
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -156,7 +167,10 @@ void ui_open(char* path)
     {
 	coder_media_type_t type = coder_get_type(path);
 
-	if (type == CODER_MEDIA_TYPE_VIDEO || type == CODER_MEDIA_TYPE_AUDIO) ui.ms = mp_open(path, ui_on_mp_event);
+	if (type == CODER_MEDIA_TYPE_VIDEO || type == CODER_MEDIA_TYPE_AUDIO)
+	{
+	    ui.ms = mp_open(path, ui_on_mp_event);
+	}
 	else if (type == CODER_MEDIA_TYPE_IMAGE)
 	{
 	    bm_rgba_t* image = coder_load_image(path);
@@ -177,6 +191,33 @@ void ui_open(char* path)
     }
 }
 
+void ui_show_info(map_t* info)
+{
+    if (!MGET(info, "file/mime")) fm_detail(info); // request more info if file not yet detailed
+
+    vec_t* keys = VNEW(); // REL L0
+    map_keys(info, keys);
+    vec_sort(keys, ((int (*)(void*, void*)) strcmp));
+
+    vec_t* items = VNEW(); // REL L1
+    for (int index = 0; index < keys->length; index++)
+    {
+	char*  key = keys->data[index];
+	map_t* map = MNEW();
+	MPUT(map, "key", key);
+	MPUT(map, "value", MGET(info, key));
+	VADDR(items, map);
+    }
+
+    REL(keys); // REL L0
+
+    ui_table_set_data(ui.fileinfotable, items);
+
+    ui_show_progress("File info/data loaded");
+
+    REL(items); // REL L1
+}
+
 void on_files_event(ui_table_event_t event)
 {
     if (event.id == UI_TABLE_EVENT_FIELDS_UPDATE)
@@ -192,32 +233,7 @@ void on_files_event(ui_table_event_t event)
 	char*  type = MGET(info, "file/type");
 
 	if (strcmp(type, "directory") != 0) ui_open(path);
-
-	// ask fore detailed info if needed
-
-	if (!MGET(info, "file/mime")) fm_detail(info);
-
-	vec_t* keys = VNEW(); // REL L0
-	map_keys(info, keys);
-	vec_sort(keys, ((int (*)(void*, void*)) strcmp));
-
-	vec_t* items = VNEW(); // REL L1
-	for (int index = 0; index < keys->length; index++)
-	{
-	    char*  key = keys->data[index];
-	    map_t* map = MNEW();
-	    MPUT(map, "key", key);
-	    MPUT(map, "value", MGET(info, key));
-	    VADDR(items, map);
-	}
-
-	REL(keys); // REL L0
-
-	ui_table_set_data(ui.fileinfotable, items);
-
-	ui_show_progress("File info/data loaded");
-
-	REL(items); // REL L1
+	ui_show_info(info);
     }
     else if (event.id == UI_TABLE_EVENT_OPEN)
     {
@@ -276,6 +292,7 @@ void on_files_event(ui_table_event_t event)
 	    char*  type = MGET(info, "file/type");
 
 	    if (strcmp(type, "directory") != 0) ui_open(path);
+	    ui_show_info(info);
 	}
 	else if (event.ev.keycode == SDLK_RETURN)
 	{
@@ -335,6 +352,7 @@ void on_clipboard_event(ui_table_event_t event)
 	char* type = MGET(info, "file/type");
 
 	if (strcmp(type, "directory") != 0) ui_open(path);
+	ui_show_info(info);
     }
     else if (event.id == UI_TABLE_EVENT_DROP)
     {
@@ -358,8 +376,28 @@ void on_fileinfo_event(ui_table_event_t event)
 {
 }
 
+void on_settingslist_event(ui_table_event_t event)
+{
+}
+
+void ui_toggle_pause()
+{
+    if (ui.ms)
+    {
+	if (!ui.ms->paused)
+	{
+	    mp_pause(ui.ms);
+	}
+	else
+	{
+	    mp_play(ui.ms);
+	}
+    }
+}
+
 void ui_on_key_down(vh_key_event_t event)
 {
+    if (event.ev.keycode == SDLK_SPACE) ui_toggle_pause();
 }
 
 void ui_on_btn_event(vh_button_event_t event)
@@ -384,7 +422,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	}
 	view_layout(top);
     }
-    if (btnview == ui.prop_btn)
+    if (btnview == ui.sidebar_btn)
     {
 	view_t* top = view_get_subview(ui.view_base, "top_container");
 	if (ui.cliplistbox->parent) view_remove_from_parent(ui.cliplistbox);
@@ -398,6 +436,59 @@ void ui_on_btn_event(vh_button_event_t event)
 	    view_add_subview(top, ui.fileinfobox);
 	}
 	view_layout(top);
+    }
+    if (btnview == ui.prev_btn)
+    {
+	int32_t index = ui.filelisttable->selected_index - 1;
+
+	ui_table_select(ui.filelisttable, index);
+
+	map_t* info = ui.filelisttable->selected_items->data[0];
+	char*  path = MGET(info, "file/path");
+	char*  type = MGET(info, "file/type");
+
+	if (strcmp(type, "directory") != 0) ui_open(path);
+	ui_show_info(info);
+    }
+    if (btnview == ui.next_btn)
+    {
+	int32_t index = ui.filelisttable->selected_index + 1;
+
+	ui_table_select(ui.filelisttable, index);
+
+	map_t* info = ui.filelisttable->selected_items->data[0];
+	char*  path = MGET(info, "file/path");
+	char*  type = MGET(info, "file/type");
+
+	if (strcmp(type, "directory") != 0) ui_open(path);
+	ui_show_info(info);
+    }
+    if (btnview == ui.play_btn)
+    {
+	if (event.vh->state == VH_BUTTON_DOWN)
+	{
+	    ui.autoplay = 0;
+	    if (ui.ms) mp_pause(ui.ms);
+	}
+	else
+	{
+	    ui.autoplay = 1;
+	    if (ui.ms) mp_play(ui.ms);
+	}
+
+	// pause or play current
+    }
+    if (btnview == ui.settings_btn)
+    {
+	if (!ui.settingspopupcont->parent)
+	{
+	    view_add_subview(ui.view_base, ui.settingspopupcont);
+	    view_layout(ui.view_base);
+	}
+    }
+    if (strcmp(event.view->id, "settingsclosebtn") == 0)
+    {
+	view_remove_from_parent(ui.settingspopupcont);
     }
 }
 
@@ -492,6 +583,8 @@ void ui_init(float width, float height)
 {
     text_init();                    // DESTROY 0
     ui_manager_init(width, height); // DESTROY 1
+
+    ui.autoplay = 1;
 
     /* generate views from descriptors */
 
@@ -692,8 +785,23 @@ void ui_init(float width, float height)
     /* ui.clip_btn = view_get_subview(ui.view_base, "show_clipboard_btn"); */
     /* vh_button_add(ui.clip_btn, VH_BUTTON_NORMAL, btn_cb); */
 
-    ui.prop_btn = view_get_subview(ui.view_base, "show_properties_btn");
-    vh_button_add(ui.prop_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
+    ui.sidebar_btn = view_get_subview(ui.view_base, "show_properties_btn");
+    vh_button_add(ui.sidebar_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
+
+    ui.play_btn = view_get_subview(ui.view_base, "playbtn");
+    vh_button_add(ui.play_btn, VH_BUTTON_TOGGLE, ui_on_btn_event);
+
+    ui.next_btn = view_get_subview(ui.view_base, "nextbtn");
+    vh_button_add(ui.next_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
+
+    ui.prev_btn = view_get_subview(ui.view_base, "prevbtn");
+    vh_button_add(ui.prev_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
+
+    ui.settings_btn = view_get_subview(ui.view_base, "settingsbtn");
+    vh_button_add(ui.settings_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
+
+    view_t* settingsclosebtn = view_get_subview(ui.view_base, "settingsclosebtn");
+    vh_button_add(settingsclosebtn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
     // get main bottom for layout change
 
@@ -705,6 +813,46 @@ void ui_init(float width, float height)
 	ui.left_dragger->blocks_touch = 1;
 	vh_touch_add(ui.left_dragger, ui_on_touch_event);
     }
+
+    /* settings list */
+
+    view_t* settingspopupcont = view_get_subview(ui.view_base, "settingspopupcont");
+    view_t* settingspopup     = view_get_subview(ui.view_base, "settingspopup");
+    view_t* settingslist      = view_get_subview(ui.view_base, "settingstable");
+    view_t* settingslistevt   = view_get_subview(ui.view_base, "settingslistevt");
+
+    settingspopup->blocks_touch  = 1;
+    settingspopup->blocks_scroll = 1;
+
+    ui.settingspopupcont = RET(settingspopupcont);
+
+    fields = VNEW();
+
+    VADDR(fields, cstr_new_cstring("value"));
+    VADDR(fields, num_new_int(510));
+
+    ui.settingstable = ui_table_create(
+	"settingstable",
+	settingslist,
+	NULL,
+	settingslistevt,
+	NULL,
+	fields,
+	on_settingslist_event);
+
+    REL(fields);
+
+    vec_t* items = VNEW();
+
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "MultiMedia File Manager v%s beta by Milan Toth", MMFM_VERSION)}));
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "Free and Open Source Software")}));
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "")}));
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "Donate on Paypal")}));
+
+    ui_table_set_data(ui.settingstable, items);
+    REL(items);
+
+    view_remove_from_parent(ui.settingspopupcont);
 
     // info textfield
 
@@ -753,6 +901,7 @@ void ui_destroy()
     REL(ui.fileinfotable);
     REL(ui.filelisttable);
     REL(ui.cliptable);
+    REL(ui.settingstable);
 
     REL(ui.file_list_data);
     REL(ui.clip_list_data);
@@ -816,6 +965,13 @@ void ui_update_player()
 	double rem = 0.01;
 	mp_video_refresh(ui.ms, &rem, ui.visuvideo->texture.bitmap);
 	// mp_audio_refresh(ui.ms, ui.visuvideo->texture.bitmap, ui.visuvideo->texture.bitmap);
+
+	if (ui.autoplay == 0 && !ui.ms->paused)
+	{
+	    double time = roundf(mp_get_master_clock(ui.ms) * 10.0) / 10.0;
+
+	    if (time > 0.1) mp_pause(ui.ms);
+	}
 
 	ui.visuvideo->texture.changed = 1;
     }

@@ -252,3 +252,45 @@
     font-family: "Terminus (TTF):style=Bold";
     line-height: 40>px;
 }
+
+#inputbck {
+    width: 500px;
+    height: 30px;
+    background-color: #DEDEDEFF;
+    border-radius: 4px;
+    box-shadow: 5px #0000000A;
+}
+
+#inputarea {
+    background-color: #00000033;
+}
+
+#inputtf {
+    width: 100%;
+    height: 100%;
+    blocks: no;
+    color: #232323FF;
+    font-size: 16px;
+    text-align: left;
+    font-family: "Terminus (TTF):style=Bold";
+    margin-left: 5px;
+}
+
+#inputclearbtn {
+    width: 30px;
+    height: 30px;
+}
+
+#inputbar {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+.closeiconblack {
+    width: 30px;
+    height: 30px;
+    background-image: url("closeblack.png");
+    blocks: no;
+}

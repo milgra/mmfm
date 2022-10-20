@@ -38,6 +38,7 @@ void ui_update_player();
 #include "vh_cv_scrl.c"
 #include "vh_drag.c"
 #include "vh_key.c"
+#include "vh_textinput.c"
 #include "vh_touch.c"
 #include "view_layout.c"
 #include "viewgen_css.c"
@@ -86,6 +87,10 @@ struct _ui_t
     view_t* visubody;
     view_t* visuvideo;
 
+    view_t* inputarea;
+    view_t* inputbck;
+    view_t* inputtf;
+
     ui_table_t* cliptable;
     ui_table_t* filelisttable;
     ui_table_t* fileinfotable;
@@ -97,10 +102,12 @@ struct _ui_t
 
     textstyle_t background_style;
     textstyle_t progress_style;
+    textstyle_t inputts;
 
     MediaState_t* ms;
 
-    int autoplay;
+    int   autoplay;
+    char* current_folder;
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -221,6 +228,43 @@ void ui_show_info(map_t* info)
     REL(items); // REL L1
 }
 
+void ui_load_folder(char* folder)
+{
+    printf("load folder %s\n", folder);
+    if (folder) RET(folder); // avoid freeing up if the same pointer is passed to us
+    if (ui.current_folder) REL(ui.current_folder);
+    if (folder)
+    {
+	ui.current_folder = folder;
+
+	map_t* files = MNEW(); // REL 0
+	zc_time(NULL);
+	fm_list(folder, files);
+	zc_time("file list");
+
+	vec_reset(ui.file_list_data);
+	map_values(files, ui.file_list_data);
+	vec_sort(ui.file_list_data, ui_comp_entry);
+
+	ui_table_set_data(ui.filelisttable, ui.file_list_data);
+	REL(files);
+
+	ui_show_progress("Directory loaded");
+    }
+    else printf("EMPTY FOLDER\n");
+}
+
+void ui_delete_selected()
+{
+    if (ui.filelisttable->selected_items->length > 0)
+    {
+	map_t* file = ui.filelisttable->selected_items->data[0];
+	char*  path = MGET(file, "file/path");
+	fm_delete(path);
+	ui_load_folder(ui.current_folder);
+    }
+}
+
 void on_files_event(ui_table_event_t event)
 {
     if (event.id == UI_TABLE_EVENT_FIELDS_UPDATE)
@@ -247,22 +291,7 @@ void on_files_event(ui_table_event_t event)
 	char* type = MGET(info, "file/type");
 	char* path = MGET(info, "file/path");
 
-	if (strcmp(type, "directory") == 0)
-	{
-	    map_t* files = MNEW(); // REL 0
-	    zc_time(NULL);
-	    fm_list(path, files);
-	    zc_time("file list");
-
-	    vec_reset(ui.file_list_data);
-	    map_values(files, ui.file_list_data);
-	    vec_sort(ui.file_list_data, ui_comp_entry);
-
-	    ui_table_set_data(ui.filelisttable, ui.file_list_data);
-	    REL(files);
-
-	    ui_show_progress("Directory loaded");
-	}
+	if (strcmp(type, "directory") == 0) ui_load_folder(path);
     }
     else if (event.id == UI_TABLE_EVENT_DRAG)
     {
@@ -304,20 +333,7 @@ void on_files_event(ui_table_event_t event)
 	    char* type = MGET(info, "file/type");
 	    char* path = MGET(info, "file/path");
 
-	    if (strcmp(type, "directory") == 0)
-	    {
-		map_t* files = MNEW(); // REL 0
-		zc_time(NULL);
-		fm_list(path, files);
-		zc_time("file list");
-		vec_reset(ui.file_list_data);
-		map_values(files, ui.file_list_data);
-		vec_sort(ui.file_list_data, ui_comp_entry);
-		ui_table_set_data(ui.filelisttable, ui.file_list_data);
-		REL(files);
-
-		ui_show_progress("Directory loaded");
-	    }
+	    if (strcmp(type, "directory") == 0) ui_load_folder(path);
 	}
     }
     else if (event.id == UI_TABLE_EVENT_CONTEXT)
@@ -351,6 +367,8 @@ void on_clipboard_event(ui_table_event_t event)
 
 	map_t* info = event.selected_items->data[0];
 
+	mem_describe(info, 0);
+
 	vec_t* keys = VNEW();
 	map_keys(info, keys);
 
@@ -366,9 +384,7 @@ void on_clipboard_event(ui_table_event_t event)
 
 	ui_table_set_data(ui.fileinfotable, items);
 
-	// REL!!!
-
-	char* path = MGET(info, "path");
+	char* path = MGET(info, "file/path");
 	char* type = MGET(info, "file/type");
 
 	if (strcmp(type, "directory") != 0) ui_open(path);
@@ -404,17 +420,15 @@ void on_contextlist_event(ui_table_event_t event)
 {
     if (event.id == UI_TABLE_EVENT_SELECT)
     {
-	/* if (event.selected_index == 1) */
-	/* { */
-	/*     if (ui.songtable->selected_items->length > 0) */
-	/*     { */
-	/* 	map_t* song = ui.songtable->selected_items->data[0]; */
-	/* 	lib_remove_entry(song); */
-	/* 	fm_delete_file(config_get("lib_path"), song); */
-	/* 	lib_write(config_get("lib_path")); */
-	/* 	ui_update_songlist(); */
-	/*     } */
-	/* } */
+	if (event.selected_index == 0)
+	{
+	    vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
+	    ui_table_set_data(ui.cliptable, ui.clip_list_data);
+	}
+	else if (event.selected_index == 2)
+	{
+	    ui_delete_selected();
+	}
 	view_remove_from_parent(ui.contextpopupcont);
     }
 }
@@ -429,13 +443,18 @@ void ui_on_touch(vh_touch_event_t event)
 
 void ui_toggle_pause()
 {
+    ui.autoplay = 1 - ui.autoplay;
+
+    vh_button_set_state(ui.play_btn, ui.autoplay ? VH_BUTTON_UP : VH_BUTTON_DOWN);
+
     if (ui.ms)
     {
-	if (!ui.ms->paused)
+	if (ui.autoplay == 0 && !ui.ms->paused)
 	{
 	    mp_pause(ui.ms);
 	}
-	else
+
+	if (ui.autoplay == 1 && ui.ms->paused)
 	{
 	    mp_play(ui.ms);
 	}
@@ -445,6 +464,16 @@ void ui_toggle_pause()
 void ui_on_key_down(vh_key_event_t event)
 {
     if (event.ev.keycode == SDLK_SPACE) ui_toggle_pause();
+    if (event.ev.keycode == SDLK_DELETE) ui_delete_selected();
+    if (event.ev.keycode == SDLK_c && event.ev.ctrl_down)
+    {
+	vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
+	ui_table_set_data(ui.cliptable, ui.clip_list_data);
+    }
+    if (event.ev.keycode == SDLK_v && event.ev.ctrl_down)
+    {
+	// show paste menu
+    }
 }
 
 void ui_on_btn_event(vh_button_event_t event)
@@ -476,11 +505,15 @@ void ui_on_btn_event(vh_button_event_t event)
 	if (ui.sidebar->parent)
 	{
 	    view_remove_from_parent(ui.sidebar);
+	    config_set_bool("sidebar_visible", 0);
 	}
 	else
 	{
 	    view_add_subview(top, ui.sidebar);
+	    config_set_bool("sidebar_visible", 1);
 	}
+
+	config_write(config_get("cfg_path"));
 	view_layout(top);
     }
     if (btnview == ui.prev_btn)
@@ -521,8 +554,6 @@ void ui_on_btn_event(vh_button_event_t event)
 	    ui.autoplay = 1;
 	    if (ui.ms) mp_play(ui.ms);
 	}
-
-	// pause or play current
     }
     if (btnview == ui.settings_btn)
     {
@@ -547,6 +578,20 @@ void ui_on_touch_event(vh_touch_event_t event)
     if (event.view == ui.prev_dragger)
     {
 	vh_drag_drag(ui.view_drag, ui.prev_dragger);
+    }
+}
+
+void ui_cancel_input()
+{
+    view_remove_subview(ui.view_base, ui.inputarea);
+}
+
+void ui_on_text_event(vh_textinput_event_t event)
+{
+    if (strcmp(event.view->id, "inputtf") == 0)
+    {
+	if (event.id == VH_TEXTINPUT_DEACTIVATE) ui_cancel_input();
+	if (event.id == VH_TEXTINPUT_RETURN) {}
     }
 }
 
@@ -653,6 +698,7 @@ void ui_init(float width, float height)
 
     vh_key_add(ui.view_base, ui_on_key_down);
     ui.view_base->needs_key = 1;
+    ui_manager_activate(ui.view_base);
 
     /* setup drag layer */
 
@@ -809,17 +855,6 @@ void ui_init(float width, float height)
 
     REL(fields);
 
-    // fill up files table
-
-    map_t* files = MNEW(); // REL 0
-    fm_list(config_get("top_path"), files);
-    map_values(files, ui.file_list_data);
-    REL(files);
-
-    vec_sort(ui.file_list_data, ui_comp_entry);
-
-    ui_table_set_data(ui.filelisttable, ui.file_list_data);
-
     /* close button */
 
     ui.exit_btn = view_get_subview(ui.view_base, "app_close_btn");
@@ -949,6 +984,23 @@ void ui_init(float width, float height)
     ui.progress_style = ui_util_gen_textstyle(ui.view_infotf);
     ui_show_progress("Directory loaded");
 
+    /* input popup */
+
+    ui.inputarea = RET(view_get_subview(ui.view_base, "inputarea"));
+    ui.inputbck  = view_get_subview(ui.view_base, "inputbck");
+    ui.inputtf   = view_get_subview(ui.view_base, "inputtf");
+    ui.inputts   = ui_util_gen_textstyle(ui.inputtf);
+
+    ui.inputbck->blocks_touch   = 1;
+    ui.inputarea->blocks_touch  = 1;
+    ui.inputarea->blocks_scroll = 1;
+
+    vh_textinput_add(ui.inputtf, "Generic input", "", ui.inputts, ui_on_text_event);
+
+    vh_touch_add(ui.inputarea, ui_on_touch);
+
+    view_remove_from_parent(ui.inputarea);
+
     // main gap
 
     ui.view_maingap = view_get_subview(ui.view_base, "main_gap");
@@ -957,7 +1009,12 @@ void ui_init(float width, float height)
     ui.fileinfobox = RET(view_get_subview(ui.view_base, "fileinfobox"));
 
     ui.sidebar = RET(view_get_subview(ui.view_base, "sidebar"));
-    view_remove_from_parent(ui.sidebar);
+
+    if (config_get_bool("sidebar_visible") == 0) view_remove_from_parent(ui.sidebar);
+
+    // fill up files table
+
+    ui_load_folder(config_get("top_path"));
 
     // show texture map for debug
 
@@ -997,6 +1054,8 @@ void ui_destroy()
     REL(ui.settingspopupcont);
     REL(ui.contextpopupcont);
     REL(ui.sidebar);
+
+    REL(ui.inputarea);
 
     ui_manager_destroy(); // DESTROY 1
 

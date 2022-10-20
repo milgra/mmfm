@@ -328,6 +328,8 @@ void ui_table_evnt_event(vh_tbl_evnt_event_t event)
 
     if (event.id == VH_TBL_EVENT_SELECT)
     {
+	uit->selected_index = event.index;
+
 	map_t* data = uit->items->data[event.index];
 
 	uint32_t pos = vec_index_of_data(uit->selected_items, data);
@@ -367,6 +369,36 @@ void ui_table_evnt_event(vh_tbl_evnt_event_t event)
     }
     else if (event.id == VH_TBL_EVENT_CONTEXT)
     {
+	uit->selected_index = event.index;
+
+	map_t* data = uit->items->data[event.index];
+
+	uint32_t pos = vec_index_of_data(uit->selected_items, data);
+
+	if (pos == UINT32_MAX)
+	{
+	    // reset selected if control is not down
+	    if (!event.ev.ctrl_down)
+	    {
+		vec_reset(uit->selected_items);
+		vh_tbl_body_t* bvh = uit->body_v->handler_data;
+
+		for (int index = 0; index < bvh->items->length; index++)
+		{
+		    view_t* item = bvh->items->data[index];
+		    if (item->style.background_color == 0x006600FF)
+		    {
+			item->style.background_color = 0x000000FF;
+			view_invalidate_texture(item);
+		    }
+		}
+	    }
+
+	    VADD(uit->selected_items, data);
+	    event.rowview->style.background_color = 0x006600FF;
+	    view_invalidate_texture(event.rowview);
+	}
+
 	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_CONTEXT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview, .ev = event.ev};
 	(*uit->on_event)(tevent);
     }

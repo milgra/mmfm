@@ -11,6 +11,7 @@ Multimedie File Manager was made for SwayOS.
 - Super detailed file info - extracts all info available via stat and file commands
 - Beautiful and smooth UX experience
 - Activity bar and human-readable database for transparent operation
+- Super lightweight (no QT/GTK )
 
 Read the user guide for further information : [Open User Guide](doc/USER.md)
 

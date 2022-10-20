@@ -8,7 +8,7 @@
 
 #include "wm_event.c"
 
-void wm_loop(void (*init)(int, int), void (*update)(ev_t), void (*render)(uint32_t), void (*destroy)(), char* frame);
+void wm_loop(void (*init)(int, int), void (*update)(ev_t), void (*render)(uint32_t), void (*destroy)(), char* frame, char* title);
 void wm_close();
 void wm_destroy();
 void wm_toggle_fullscreen();
@@ -26,7 +26,7 @@ void wm_toggle_fullscreen();
 char        wm_quit = 0;
 SDL_Window* wm_window;
 
-void wm_loop(void (*init)(int, int), void (*update)(ev_t), void (*render)(uint32_t), void (*destroy)(), char* frame)
+void wm_loop(void (*init)(int, int), void (*update)(ev_t), void (*render)(uint32_t), void (*destroy)(), char* frame, char* title)
 {
     SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
 
@@ -57,7 +57,7 @@ void wm_loop(void (*init)(int, int), void (*update)(ev_t), void (*render)(uint32
 	    height     = atoi(next + 1);
 	}
 
-	wm_window = SDL_CreateWindow("Zen Music", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height,
+	wm_window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height,
 				     SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE); // DESTROY 0
 
 	if (wm_window == NULL)
@@ -167,6 +167,8 @@ void wm_loop(void (*init)(int, int), void (*update)(ev_t), void (*render)(uint32
 			}
 			else if (event.type == SDL_KEYDOWN)
 			{
+			    ev.ctrl_down  = SDL_GetModState() & KMOD_CTRL;
+			    ev.shift_down = SDL_GetModState() & KMOD_SHIFT;
 			    // printf("Scancode: 0x%02X", event.key.keysym.scancode);
 			    // printf(", Name: %s\n", SDL_GetKeyName(event.key.keysym.sym));
 			    ev.type    = EV_KDOWN;
@@ -175,6 +177,8 @@ void wm_loop(void (*init)(int, int), void (*update)(ev_t), void (*render)(uint32
 			}
 			else if (event.type == SDL_KEYUP)
 			{
+			    ev.ctrl_down  = SDL_GetModState() & KMOD_CTRL;
+			    ev.shift_down = SDL_GetModState() & KMOD_SHIFT;
 			    // printf("Scancode: 0x%02X", event.key.keysym.scancode);
 			    // printf(", Name: %s\n", SDL_GetKeyName(event.key.keysym.sym));
 			    ev.type    = EV_KUP;

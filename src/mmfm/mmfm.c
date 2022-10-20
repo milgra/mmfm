@@ -106,7 +106,17 @@ int main(int argc, char* argv[])
     zc_log_level_info();
     zc_time(NULL);
 
-    printf("MultiMedia File Manager v" MMFM_VERSION " by Milan Toth ( www.milgra.com )\n");
+    printf("MultiMedia File Manager v" MMFM_VERSION
+	   " by Milan Toth ( www.milgra.com )\n"
+	   "If you like this app try :\n"
+	   "- Visual Music Player (github.com/milgra/vmp)\n"
+	   "- Wayland Control Panel ( github.com/milgra/wcp )\n"
+	   "- Sway Overview ( github.com/milgra/sov )\n"
+	   "- SwayOS (swayos.github.io)\n"
+	   "Games :\n"
+	   "- Brawl (github.com/milgra/brawl)\n"
+	   "- Cortex ( github.com/milgra/cortex )\n"
+	   "- Termite (github.com/milgra/termite)\n\n");
 
     const char* usage =
 	"Usage: sov [options]\n"
@@ -191,8 +201,11 @@ int main(int argc, char* argv[])
 
     config_init(); // DESTROY 0
 
+    // set defaults before overwriting those with saved vales
+
     config_set("dark_mode", "false");
     config_set("res_path", res_path);
+    config_set_bool("sidebar_visible", 1);
 
     // read config, it overwrites defaults if exists
 
@@ -212,7 +225,7 @@ int main(int argc, char* argv[])
 
     zc_time("config parsing");
 
-    wm_loop(init, update, render, destroy, frm_par);
+    wm_loop(init, update, render, destroy, frm_par, "mmfm");
 
     config_destroy(); // DESTROY 0
 

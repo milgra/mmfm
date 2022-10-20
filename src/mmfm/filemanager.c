@@ -7,7 +7,7 @@
 #include <ftw.h>
 
 int  fm_create(char* file_path, mode_t mode);
-void fm_delete(char* fmpath, map_t* en);
+void fm_delete(char* path);
 int  fm_rename(char* old, char* new, char* new_dirs);
 int  fm_exists(char* path);
 void fm_list(char* fmpath, map_t* db);
@@ -71,20 +71,24 @@ int fm_create(char* file_path, mode_t mode)
     return 0;
 }
 
-void fm_delete(char* fm_path, map_t* entry)
+int fm_remove_cb(const char* fpath, const struct stat* sb, int typeflag, struct FTW* ftwbuf)
 {
-    assert(fm_path != NULL);
+    int rv = remove(fpath);
 
-    char* rel_path  = MGET(entry, "file/path");
-    char* file_path = cstr_new_format(PATH_MAX + NAME_MAX, "%s/%s", fm_path, rel_path); // REL 0
+    zc_log_debug("removing %s\n", fpath);
+    if (rv)
+	perror(fpath);
 
-    int error = remove(file_path);
+    return rv;
+}
+
+void fm_delete(char* path)
+{
+    int error = nftw(path, fm_remove_cb, 64, FTW_DEPTH | FTW_PHYS);
     if (error)
-	zc_log_error("fm : cannot remove file %s : %s", file_path, strerror(errno));
+	zc_log_error("fm : cannot remove path %s : %s", path, strerror(errno));
     else
-	zc_log_error("fm : file %s removed.", file_path);
-
-    REL(file_path); // REL 0
+	zc_log_debug("fm : path %s removed.", path);
 }
 
 int fm_rename(char* old_path, char* new_path, char* new_dirs)
@@ -227,10 +231,10 @@ void fm_detail(map_t* file)
     /* printf("FILE\n"); */
     /* mem_describe(file, 0); */
 
-    struct group* grp;
-    grp = getgrgid(atoi(gid));
+    /* struct group* grp; */
+    /* grp = getgrgid(atoi(gid)); */
 
-    MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name));
+    /* MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name)); */
 
     // get mime type with file command
 

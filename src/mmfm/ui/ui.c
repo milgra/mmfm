@@ -3,6 +3,12 @@
 
 #include "view.c"
 
+typedef enum _ui_inputmode ui_inputmode;
+enum _ui_inputmode
+{
+    UI_IM_RENAME
+};
+
 void ui_init(float width, float height);
 void ui_destroy();
 void ui_add_cursor();
@@ -106,8 +112,12 @@ struct _ui_t
 
     MediaState_t* ms;
 
-    int   autoplay;
-    char* current_folder;
+    int          autoplay;
+    char*        current_folder;
+    ui_inputmode inputmode;
+    view_t*      rowview_for_context_menu;
+    map_t*       edited_file;
+
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -342,6 +352,8 @@ void on_files_event(ui_table_event_t event)
 	{
 	    if (event.rowview)
 	    {
+		ui.rowview_for_context_menu = event.rowview;
+
 		view_t* contextpopup = ui.contextpopupcont->views->data[0];
 		r2_t    iframe       = contextpopup->frame.global;
 		iframe.x             = event.ev.x;
@@ -425,17 +437,62 @@ void on_contextlist_event(ui_table_event_t event)
 	    vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
 	    ui_table_set_data(ui.cliptable, ui.clip_list_data);
 	}
+	else if (event.selected_index == 1)
+	{
+	    if (event.rowview)
+	    {
+		view_remove_from_parent(ui.contextpopupcont);
+
+		// show value in input textfield
+		map_t* info = ui.filelisttable->selected_items->data[0];
+
+		ui.inputmode = UI_IM_RENAME;
+
+		r2_t rframe = ui.rowview_for_context_menu->frame.global;
+		r2_t iframe = ui.inputbck->frame.global;
+		iframe.x    = rframe.x;
+		iframe.y    = rframe.y - 5;
+		view_set_frame(ui.inputbck, iframe);
+
+		view_add_subview(ui.view_base, ui.inputarea);
+
+		view_layout(ui.view_base);
+
+		ui_manager_activate(ui.inputtf);
+		vh_textinput_activate(ui.inputtf, 1);
+
+		ui.edited_file = info;
+
+		char* value = MGET(info, "file/basename");
+		if (!value) value = "";
+
+		if (value)
+		{
+		    vh_textinput_set_text(ui.inputtf, value);
+		}
+	    }
+	}
 	else if (event.selected_index == 2)
 	{
+	    view_remove_from_parent(ui.contextpopupcont);
+
 	    ui_delete_selected();
 	}
-	view_remove_from_parent(ui.contextpopupcont);
     }
+}
+
+void ui_cancel_input()
+{
+    view_remove_subview(ui.view_base, ui.inputarea);
 }
 
 void ui_on_touch(vh_touch_event_t event)
 {
-    if (strcmp(event.view->id, "contextpopupcont") == 0)
+    if (strcmp(event.view->id, "inputarea") == 0)
+    {
+	ui_cancel_input();
+    }
+    else if (strcmp(event.view->id, "contextpopupcont") == 0)
     {
 	view_remove_from_parent(ui.contextpopupcont);
     }
@@ -463,6 +520,7 @@ void ui_toggle_pause()
 
 void ui_on_key_down(vh_key_event_t event)
 {
+
     if (event.ev.keycode == SDLK_SPACE) ui_toggle_pause();
     if (event.ev.keycode == SDLK_DELETE) ui_delete_selected();
     if (event.ev.keycode == SDLK_c && event.ev.ctrl_down)
@@ -581,17 +639,28 @@ void ui_on_touch_event(vh_touch_event_t event)
     }
 }
 
-void ui_cancel_input()
-{
-    view_remove_subview(ui.view_base, ui.inputarea);
-}
-
 void ui_on_text_event(vh_textinput_event_t event)
 {
     if (strcmp(event.view->id, "inputtf") == 0)
     {
 	if (event.id == VH_TEXTINPUT_DEACTIVATE) ui_cancel_input();
-	if (event.id == VH_TEXTINPUT_RETURN) {}
+	if (event.id == VH_TEXTINPUT_RETURN)
+	{
+	    ui_cancel_input();
+
+	    if (ui.edited_file)
+	    {
+
+		char* parent = MGET(ui.edited_file, "file/parent");
+
+		char* oldpath = MGET(ui.edited_file, "file/path");
+		char* newpath = path_new_append(parent, event.text);
+
+		fm_rename(oldpath, newpath, NULL);
+
+		ui_load_folder(ui.current_folder);
+	    }
+	}
     }
 }
 

@@ -95,7 +95,8 @@ int fm_rename(char* old_path, char* new_path, char* new_dirs)
 {
     zc_log_info("fm : renaming %s to %s", old_path, new_path);
 
-    int error = fm_create(new_dirs, 0777);
+    int error = 0;
+    if (new_dirs) error = fm_create(new_dirs, 0777);
 
     if (error == 0)
     {

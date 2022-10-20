@@ -447,6 +447,7 @@ void vh_textinput_add(view_t* view, char* text, char* phtext, textstyle_t textst
 
     view->needs_key  = 1; // backspace event
     view->needs_text = 1; // unicode text event
+    view->blocks_key = 1;
 
     view->handler      = vh_textinput_evt;
     view->handler_data = data;

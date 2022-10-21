@@ -430,20 +430,13 @@ void on_settingslist_event(ui_table_event_t event)
 
 void on_contextlist_event(ui_table_event_t event)
 {
+    view_remove_from_parent(ui.contextpopupcont);
     if (event.id == UI_TABLE_EVENT_SELECT)
     {
-	if (event.selected_index == 0)
-	{
-	    vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
-	    ui_table_set_data(ui.cliptable, ui.clip_list_data);
-	}
-	else if (event.selected_index == 1)
+	if (event.selected_index == 0) // rename
 	{
 	    if (event.rowview)
 	    {
-		view_remove_from_parent(ui.contextpopupcont);
-
-		// show value in input textfield
 		map_t* info = ui.filelisttable->selected_items->data[0];
 
 		ui.inputmode = UI_IM_RENAME;
@@ -472,11 +465,25 @@ void on_contextlist_event(ui_table_event_t event)
 		}
 	    }
 	}
-	else if (event.selected_index == 2)
+	else if (event.selected_index == 1) // delete
 	{
-	    view_remove_from_parent(ui.contextpopupcont);
-
 	    ui_delete_selected();
+	}
+	else if (event.selected_index == 2) // send to cb
+	{
+	    vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
+	    ui_table_set_data(ui.cliptable, ui.clip_list_data);
+	}
+	else if (event.selected_index == 3) // paste using copy
+	{
+	}
+	else if (event.selected_index == 4) // paste using move
+	{
+	}
+	else if (event.selected_index == 5) // reset clipboard
+	{
+	    vec_reset(ui.clip_list_data);
+	    ui_table_set_data(ui.cliptable, ui.clip_list_data);
 	}
     }
 }
@@ -657,6 +664,8 @@ void ui_on_text_event(vh_textinput_event_t event)
 		char* newpath = path_new_append(parent, event.text);
 
 		fm_rename(oldpath, newpath, NULL);
+
+		REL(newpath);
 
 		ui_load_folder(ui.current_folder);
 	    }
@@ -1034,9 +1043,12 @@ void ui_init(float width, float height)
 
     items = VNEW();
 
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Copy to clipboard")}));
     VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Rename")}));
     VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Delete")}));
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Send to clipboard")}));
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Paste using copy")}));
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Paste using move")}));
+    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Reset clipboard")}));
 
     ui_table_set_data(ui.contexttable, items);
     REL(items);

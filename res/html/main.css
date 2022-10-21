@@ -214,7 +214,7 @@
 
 #contextpopup {
     width: 200px;
-    height: 160px;
+    height: 220px;
     margin: auto;
 }
 
@@ -247,10 +247,10 @@
 .contexttablebody {
     color: #DEDEDEFF;
     overflow: hidden;
-    text-align: center;
+    text-align: left;
     font-size: 16px;
     font-family: "Terminus (TTF):style=Bold";
-    line-height: 40>px;
+    line-height: 30>px;
 }
 
 #inputbck {

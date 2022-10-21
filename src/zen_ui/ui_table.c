@@ -395,8 +395,12 @@ void ui_table_evnt_event(vh_tbl_evnt_event_t event)
 	    }
 
 	    VADD(uit->selected_items, data);
-	    event.rowview->style.background_color = 0x006600FF;
-	    view_invalidate_texture(event.rowview);
+
+	    if (event.rowview)
+	    {
+		event.rowview->style.background_color = 0x006600FF;
+		view_invalidate_texture(event.rowview);
+	    }
 	}
 
 	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_CONTEXT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview, .ev = event.ev};

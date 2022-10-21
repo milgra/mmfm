@@ -4,7 +4,7 @@
 #include "ui.c"
 #include "ui_compositor.c"
 #include "ui_manager.c"
-#include "wm_connector.c"
+#include "wl_connector.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_map.c"
@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <xkbcommon/xkbcommon.h>
 
 struct
 {
@@ -24,10 +25,10 @@ struct
     char record;
 } mmfm = {0};
 
-void init(int width, int height)
+void init(int width, int height, float scale)
 {
     zc_time(NULL);
-    ui_init(width, height); // DESTROY 3
+    ui_init(width, height, scale); // DESTROY 3
     zc_time("ui init");
 
     if (mmfm.record)
@@ -46,6 +47,7 @@ void init(int width, int height)
 
 void update(ev_t ev)
 {
+    /* printf("UPDATE %i %i %i\n", ev.type, ev.w, ev.h); */
     if (ev.type == EV_TIME)
     {
 	ui_update_player();
@@ -59,7 +61,7 @@ void update(ev_t ev)
 		ui_manager_event(*recev);
 		ui_update_cursor((r2_t){recev->x, recev->y, 10, 10});
 
-		if (recev->type == EV_KDOWN && recev->keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay);
+		if (recev->type == EV_KDOWN && recev->keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
 	    }
 	}
     }
@@ -68,7 +70,7 @@ void update(ev_t ev)
 	if (mmfm.record)
 	{
 	    evrec_record(ev);
-	    if (ev.type == EV_KDOWN && ev.keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay);
+	    if (ev.type == EV_KDOWN && ev.keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
 	}
     }
 
@@ -78,18 +80,25 @@ void update(ev_t ev)
     }
 
     // in case of replay only send time events
-    if (!mmfm.replay || ev.type == EV_TIME) ui_manager_event(ev);
+    if (!mmfm.replay || ev.type == EV_TIME)
+    {
+	ui_manager_event(ev);
+    }
 
     if (ev.type == EV_RESIZE)
     {
 	ui_update_dragger();
 	// ui_describe();
     }
+    wl_connector_draw();
 }
 
-void render(uint32_t time)
+void render(uint32_t time, uint32_t index, bm_rgba_t* bm)
 {
-    ui_manager_render(time);
+    /* printf("RENDER\n"); */
+    zc_time(NULL);
+    ui_manager_render(time, bm);
+    zc_time("render");
 }
 
 void destroy()
@@ -225,7 +234,13 @@ int main(int argc, char* argv[])
 
     zc_time("config parsing");
 
-    wm_loop(init, update, render, destroy, frm_par, "mmfm");
+    int width  = 1300;
+    int height = 900;
+    int margin = 0;
+
+    wl_connector_init(width, height, margin, init, update, render, destroy);
+
+    /* wm_loop(init, update, render, destroy, frm_par, "mmfm"); */
 
     config_destroy(); // DESTROY 0
 

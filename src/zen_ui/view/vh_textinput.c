@@ -5,6 +5,18 @@
 #include "wm_event.c"
 #include "zc_text.c"
 
+#ifndef SDLK_BACKSPACE
+    #define SDLK_BACKSPACE 0
+#endif
+
+#ifndef SDLK_RETURN
+    #define SDLK_RETURN 0
+#endif
+
+#ifndef SDLK_ESCAPE
+    #define SDLK_ESCAPE 0
+#endif
+
 typedef struct _vh_textinput_t vh_textinput_t;
 
 enum vh_textinput_event_id
@@ -51,7 +63,6 @@ void  vh_textinput_activate(view_t* view, char state);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "SDL.h"
 #include "tg_css.c"
 #include "tg_text.c"
 #include "utf8.h"

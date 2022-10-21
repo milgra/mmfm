@@ -157,6 +157,7 @@ struct _view_t
 
     char* id;        /* identifier for handling view */
     char* class;     /* css class(es) */
+    char*    script; /* script */
     char*    type;   /* html type (button,checkbox) */
     vec_t*   views;  /* subviews */
     view_t*  parent; /* parent view */
@@ -175,6 +176,7 @@ struct _view_t
 view_t* view_new(char* id, r2_t frame);
 void    view_set_type(view_t* view, char* type);
 void    view_set_class(view_t* view, char* class);
+void    view_set_script(view_t* view, char* script);
 void    view_add_subview(view_t* view, view_t* subview);
 void    view_remove_subview(view_t* view, view_t* subview);
 void    view_insert_subview(view_t* view, view_t* subview, uint32_t index);
@@ -228,6 +230,7 @@ void view_del(void* pointer)
     if (view->texture.bitmap) REL(view->texture.bitmap); // not all views has texture
     if (view->class) REL(view->class);
     if (view->type) REL(view->type);
+    if (view->script) REL(view->script);
 
     REL(view->id);
     REL(view->views);
@@ -282,6 +285,12 @@ void view_set_class(view_t* view, char* class)
 {
     if (view->class) REL(view->class);
     if (class) view->class = RET(class);
+}
+
+void view_set_script(view_t* view, char* script)
+{
+    if (view->script) REL(view->script);
+    if (script) view->script = RET(script);
 }
 
 void view_set_masked(view_t* view, char masked)
@@ -500,6 +509,7 @@ void view_set_style(view_t* view, vstyle_t style)
 
 void view_gen_texture(view_t* view)
 {
+    printf("view gen texture %s\n", view->id);
     if (view->tex_gen) (*view->tex_gen)(view);
 }
 
@@ -534,7 +544,7 @@ void view_describe(void* pointer, int level)
 	printf("%s", arrow);
     }
 
-    printf("%s [x:%.0f y:%.0f w:%.0f h:%.0f tx:%i eh:%i tg:%i rc:%zu]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->texture.page, view->handler != NULL, view->tex_gen != NULL, mem_retaincount(view));
+    printf("%s [x:%i y:%i w:%i h:%i tx:%i eh:%i tg:%i rc:%zu]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->texture.page, view->handler != NULL, view->tex_gen != NULL, mem_retaincount(view));
 
     for (int i = 0; i < view->views->length; i++) view_describe(view->views->data[i], level + 1);
 }

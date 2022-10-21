@@ -8,6 +8,7 @@ project(
 
 cc = meson.get_compiler('c')
 
+png = cc.find_library('png',static:false)
 freetype = cc.find_library('freetype',static:false)
 math = cc.find_library('m',static:false)
 z = cc.find_library('z',static:false)
@@ -30,6 +31,8 @@ avformat = cc.find_library('avformat',static:false)
 avfilter = cc.find_library('avfilter',static:false)
 swresample = cc.find_library('swresample',static:false)
 
+xkbcommon = dependency('xkbcommon')
+
 # for ffmpeg
 va = cc.find_library('va',static:false)
 x11 = cc.find_library('X11',static:false)
@@ -41,7 +44,42 @@ lvdpau = cc.find_library('vdpau',static:false)
 mupdf = cc.find_library('mupdf')
 mupdfthird = cc.find_library('mupdf-third')
 
-mmfm_dependencies = [rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau]
+wayland_client      = dependency('wayland-client')
+wayland_protos      = dependency('wayland-protocols')
+wayland_scanner_dep = dependency('wayland-scanner')
+wayland_scanner     = find_program(
+  wayland_scanner_dep.get_pkgconfig_variable('wayland_scanner')
+)
+
+wl_protocol_dir = wayland_protos.get_pkgconfig_variable('pkgdatadir')
+
+protocols = [
+  [wl_protocol_dir, 'stable/xdg-shell/xdg-shell.xml'],
+  [wl_protocol_dir, 'unstable/xdg-output/xdg-output-unstable-v1.xml'],
+  'wlr-layer-shell-unstable-v1.xml'
+]
+
+protos_src = []
+protos_headers = []
+
+foreach p : protocols
+  xml = join_paths(p)
+  protos_src += custom_target(
+    xml.underscorify() + '_client_c',
+    input: xml,
+    output: '@BASENAME@-protocol.c',
+    command: [wayland_scanner, 'public-code', '@INPUT@', '@OUTPUT@'],
+  )
+  protos_headers += custom_target(
+    xml.underscorify() + '_client_h',
+    input: xml,
+    output: '@BASENAME@-client-protocol.h',
+    command: [wayland_scanner, 'client-header', '@INPUT@', '@OUTPUT@'],
+  )
+endforeach
+
+
+mmfm_dependencies = [wayland_client,png,rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau,xkbcommon]
 
 mmfm_version = '"@0@"'.format(meson.project_version())
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
@@ -83,6 +121,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/mmfm/mmfm.c',
 	       'src/mmfm/fontconfig.c',
 	       'src/mmfm/pdf.c',
+	       'src/mmfm/wl_connector.c',
 	       'src/mmfm/utils/bm_rgba_util.c',
 	       'src/mmfm/utils/cstr_util.c',
 	       'src/mmfm/utils/map_util.c',
@@ -118,7 +157,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/media_player/mediaplayer.c',
 
 	       'src/zen_wm/wm_connector.c',
-	       'src/zen_wm/wm_event.c',
+	       'src/mmfm/wm_event.c',
 
 	       'src/zen_ui/gl/gl_connector.c',
 	       'src/zen_ui/gl/gl_floatbuffer.c',
@@ -135,6 +174,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/zen_ui/view/vh_key.c',
 	       'src/zen_ui/view/vh_knob.c',
 	       'src/zen_ui/view/vh_roll.c',
+	       'src/zen_ui/view/vh_slider.c',
 	       'src/zen_ui/view/vh_textinput.c',
 	       'src/zen_ui/view/vh_touch.c',
 	       'src/zen_ui/view/vh_cv_body.c',
@@ -155,7 +195,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/zen_ui/ui_manager.c',
 	       'src/zen_ui/ui_texmap.c',
 	       'src/zen_ui/ui_table.c',
-	       'src/zen_ui/ui_util.c']
+	       'src/zen_ui/ui_util.c'] + protos_src + protos_headers
 
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
 install_data('res/html/main.html', install_dir : pkg_datadir / 'html' )

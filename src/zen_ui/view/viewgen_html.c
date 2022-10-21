@@ -54,6 +54,15 @@ void viewgen_html_parse(char* htmlpath, vec_t* views)
 		REL(type); // REL 2
 	    }
 
+	    if (t.script.len > 0)
+	    {
+		// store html stype
+		char* script = CAL(sizeof(char) * t.script.len + 1, NULL, cstr_describe); // REL 2
+		memcpy(script, html + t.script.pos + 1, t.script.len);
+		view_set_script(view, script);
+		REL(script); // REL 2
+	    }
+
 	    VADD(views, view);
 
 	    REL(id);   // REL 0

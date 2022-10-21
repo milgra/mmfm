@@ -9,14 +9,14 @@ enum _ui_inputmode
     UI_IM_RENAME
 };
 
-void ui_init(float width, float height);
+void ui_init(int width, int height, float scale);
 void ui_destroy();
 void ui_add_cursor();
 void ui_update_cursor(r2_t frame);
 void ui_update_dragger();
-void ui_render_without_cursor(uint32_t time);
-void ui_save_screenshot(uint32_t time, char hide_cursor);
-void ui_update_layout(float w, float h);
+void ui_render_without_cursor(uint32_t time, bm_rgba_t* bm);
+void ui_save_screenshot(uint32_t time, char hide_cursor, bm_rgba_t* bm);
+void ui_update_layout(int w, int h);
 void ui_describe();
 void ui_update_player();
 
@@ -545,6 +545,8 @@ void ui_on_btn_event(vh_button_event_t event)
 {
     view_t* btnview = event.view;
 
+    printf("BUTTON EVENT\n");
+
     if (btnview == ui.exit_btn) wm_close();
     if (btnview == ui.full_btn) wm_toggle_fullscreen();
 
@@ -703,14 +705,14 @@ void ui_update_cursor(r2_t frame)
     view_set_frame(ui.cursor, frame);
 }
 
-void ui_render_without_cursor(uint32_t time)
+void ui_render_without_cursor(uint32_t time, bm_rgba_t* bm)
 {
     ui_manager_remove(ui.cursor);
-    ui_manager_render(time);
+    ui_manager_render(time, bm);
     ui_manager_add_to_top(ui.cursor);
 }
 
-void ui_save_screenshot(uint32_t time, char hide_cursor)
+void ui_save_screenshot(uint32_t time, char hide_cursor, bm_rgba_t* bm)
 {
     if (config_get("lib_path"))
     {
@@ -721,7 +723,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor)
 
 	// remove cursor for screenshot to remain identical
 
-	if (hide_cursor) ui_render_without_cursor(time);
+	if (hide_cursor) ui_render_without_cursor(time, bm);
 
 	ui_compositor_render_to_bmp(screen);
 
@@ -748,7 +750,7 @@ int ui_comp_text(void* left, void* right)
     return strcmp(la, ra);
 }
 
-void ui_init(float width, float height)
+void ui_init(int width, int height, float scale)
 {
     text_init();                    // DESTROY 0
     ui_manager_init(width, height); // DESTROY 1
@@ -760,8 +762,8 @@ void ui_init(float width, float height)
     vec_t* view_list = VNEW();
 
     viewgen_html_parse(config_get("html_path"), view_list);
-    viewgen_css_apply(view_list, config_get("css_path"), config_get("res_path"));
-    viewgen_type_apply(view_list);
+    viewgen_css_apply(view_list, config_get("css_path"), config_get("res_path"), 1.0);
+    viewgen_type_apply(view_list, NULL, NULL); // TODO use btn and slider event
 
     ui.view_base = RET(vec_head(view_list));
 
@@ -1143,8 +1145,9 @@ void ui_destroy()
     text_destroy(); // DESTROY 0
 }
 
-void ui_update_layout(float w, float h)
+void ui_update_layout(int w, int h)
 {
+    printf("UPDATE LAYOUT %i %i\n", w, h);
     if (w > h)
     {
 	ui.main_bottom->style.flexdir = FD_ROW;
@@ -1171,8 +1174,7 @@ void ui_update_layout(float w, float h)
 	    ui.view_maingap->style.width = 0;
 	}
     }
-    view_layout(ui.view_base);
-
+    /* view_layout(ui.view_base); */
     /* view_describe(ui.view_base, 0); */
 }
 

@@ -24,7 +24,6 @@ void tg_scaledimg_set_content_size(view_t* view, int w, int h);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "coder.c"
 #include "zc_cstring.c"
 #include "zc_draw.c"
 #include "zc_log.c"

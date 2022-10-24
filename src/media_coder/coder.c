@@ -1,7 +1,7 @@
 #ifndef coder_h
 #define coder_h
 
-#include "zc_bm_rgba.c"
+#include "zc_bm_argb.c"
 #include "zc_map.c"
 #include "zc_vector.c"
 
@@ -13,13 +13,13 @@ typedef enum _coder_media_type_t
     CODER_MEDIA_TYPE_OTHER
 } coder_media_type_t;
 
-bm_rgba_t*         coder_load_image(const char* path);
-void               coder_load_image_into(const char* path, bm_rgba_t* bitmap);
-int                coder_load_cover_into(const char* path, bm_rgba_t* bitmap);
+bm_argb_t*         coder_load_image(const char* path);
+void               coder_load_image_into(const char* path, bm_argb_t* bitmap);
+int                coder_load_cover_into(const char* path, bm_argb_t* bitmap);
 int                coder_load_metadata_into(const char* path, map_t* map);
 coder_media_type_t coder_get_type(const char* path);
 int                coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* data, vec_t* drop);
-int                coder_write_png(char* path, bm_rgba_t* bm);
+int                coder_write_png(char* path, bm_argb_t* bm);
 
 #endif
 
@@ -36,9 +36,9 @@ int                coder_write_png(char* path, bm_rgba_t* bm);
 #include "zc_path.c"
 #include <limits.h>
 
-bm_rgba_t* coder_load_image(const char* path)
+bm_argb_t* coder_load_image(const char* path)
 {
-    bm_rgba_t* bitmap  = NULL;
+    bm_argb_t* bitmap  = NULL;
     int        success = 0;
 
     AVFormatContext* src_ctx = avformat_alloc_context(); // FREE 0
@@ -76,7 +76,7 @@ bm_rgba_t* coder_load_image(const char* path)
 
 		if (img_convert_ctx != NULL)
 		{
-		    bitmap = bm_rgba_new(frame->width, frame->height); // REL 0
+		    bitmap = bm_argb_new(frame->width, frame->height); // REL 0
 
 		    uint8_t* scaledpixels[1];
 		    scaledpixels[0] = malloc(bitmap->w * bitmap->h * 4);
@@ -89,7 +89,7 @@ bm_rgba_t* coder_load_image(const char* path)
 
 		    gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x00000000, 0);
 
-		    gfx_insert_rgba(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
+		    gfx_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 
 		    free(scaledpixels[0]);
 
@@ -114,7 +114,7 @@ bm_rgba_t* coder_load_image(const char* path)
     return bitmap;
 }
 
-void coder_load_image_into(const char* path, bm_rgba_t* bitmap)
+void coder_load_image_into(const char* path, bm_argb_t* bitmap)
 {
     AVFormatContext* src_ctx = avformat_alloc_context(); // FREE 0
 
@@ -147,7 +147,7 @@ void coder_load_image_into(const char* path, bm_rgba_t* bitmap)
 
 		static unsigned sws_flags = SWS_BICUBIC;
 
-		struct SwsContext* img_convert_ctx = sws_getContext(frame->width, frame->height, frame->format, bitmap->w, bitmap->h, AV_PIX_FMT_RGBA, sws_flags, NULL, NULL,
+		struct SwsContext* img_convert_ctx = sws_getContext(frame->width, frame->height, frame->format, bitmap->w, bitmap->h, AV_PIX_FMT_ARGB, sws_flags, NULL, NULL,
 								    NULL); // FREE 4
 
 		if (img_convert_ctx != NULL)
@@ -163,7 +163,7 @@ void coder_load_image_into(const char* path, bm_rgba_t* bitmap)
 
 		    gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x000000FF, 0);
 
-		    gfx_insert_rgba(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
+		    gfx_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 
 		    free(scaledpixels[0]);
 		    sws_freeContext(img_convert_ctx); // FREE 4
@@ -184,7 +184,7 @@ void coder_load_image_into(const char* path, bm_rgba_t* bitmap)
     avformat_free_context(src_ctx); // FREE 0
 }
 
-int coder_load_cover_into(const char* path, bm_rgba_t* bitmap)
+int coder_load_cover_into(const char* path, bm_argb_t* bitmap)
 {
     assert(path != NULL);
 
@@ -201,7 +201,7 @@ int coder_load_cover_into(const char* path, bm_rgba_t* bitmap)
 	printf("avformat_open_input() failed");
     }
 
-    // bm_rgba_t* result = NULL;
+    // bm_argb_t* result = NULL;
 
     // find the first attached picture, if available
     for (i = 0; i < src_ctx->nb_streams; i++)
@@ -229,7 +229,7 @@ int coder_load_cover_into(const char* path, bm_rgba_t* bitmap)
 
 	    static unsigned sws_flags = SWS_BICUBIC;
 
-	    struct SwsContext* img_convert_ctx = sws_getContext(frame->width, frame->height, frame->format, bitmap->w, bitmap->h, AV_PIX_FMT_RGBA, sws_flags, NULL, NULL,
+	    struct SwsContext* img_convert_ctx = sws_getContext(frame->width, frame->height, frame->format, bitmap->w, bitmap->h, AV_PIX_FMT_ARGB, sws_flags, NULL, NULL,
 								NULL); // FREE 3
 
 	    if (img_convert_ctx != NULL)
@@ -247,7 +247,7 @@ int coder_load_cover_into(const char* path, bm_rgba_t* bitmap)
 
 		if (bitmap)
 		{
-		    gfx_insert_rgba(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
+		    gfx_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 		}
 
 		sws_freeContext(img_convert_ctx); // FREE 3
@@ -834,7 +834,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 	return -1;
 }
 
-int coder_write_png(char* path, bm_rgba_t* bm)
+int coder_write_png(char* path, bm_argb_t* bm)
 {
     int            success = 0;
     const AVCodec* codec   = avcodec_find_encoder(AV_CODEC_ID_PNG);

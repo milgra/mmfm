@@ -67,6 +67,7 @@ void  vh_textinput_activate(view_t* view, char state);
 #include "tg_text.c"
 #include "utf8.h"
 #include "vh_anim.c"
+#include "zc_bm_argb.c"
 #include "zc_cstring.c"
 #include "zc_draw.c"
 #include "zc_vector.c"
@@ -147,7 +148,7 @@ void vh_textinput_upd(view_t* view)
 
 		    if (f.w == 0 || f.h == 0)
 		    {
-			bm_rgba_t* texture = bm_rgba_new(g.w, g.h); // REL 0
+			bm_argb_t* texture = bm_argb_new(g.w, g.h); // REL 0
 
 			text_render_glyph(g, data->style, texture);
 

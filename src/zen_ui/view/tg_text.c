@@ -24,7 +24,7 @@ char* tg_text_get(view_t* view);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "tg_css.c"
-#include "zc_bm_rgba.c"
+#include "zc_bm_argb.c"
 #include "zc_cstring.c"
 #include "zc_draw.c"
 
@@ -35,7 +35,7 @@ void tg_text_gen(view_t* view)
     tg_text_t* gen = view->tex_gen_data;
     if (view->frame.local.w > 0 && view->frame.local.h > 0)
     {
-	bm_rgba_t*  fontmap = bm_rgba_new((int) view->frame.local.w, (int) view->frame.local.h); // REL 0
+	bm_argb_t*  fontmap = bm_argb_new((int) view->frame.local.w, (int) view->frame.local.h); // REL 0
 	textstyle_t style   = gen->style;
 
 	if (strlen(gen->text) > 0)
@@ -46,6 +46,8 @@ void tg_text_gen(view_t* view)
 	{
 	    gfx_rect(fontmap, 0, 0, fontmap->w, fontmap->h, style.backcolor, 0);
 	}
+
+	view->texture.transparent = 1;
 
 	view_set_texture_bmp(view, fontmap);
 

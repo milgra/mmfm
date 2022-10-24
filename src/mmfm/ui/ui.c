@@ -14,8 +14,8 @@ void ui_destroy();
 void ui_add_cursor();
 void ui_update_cursor(r2_t frame);
 void ui_update_dragger();
-void ui_render_without_cursor(uint32_t time, bm_rgba_t* bm);
-void ui_save_screenshot(uint32_t time, char hide_cursor, bm_rgba_t* bm);
+void ui_render_without_cursor(uint32_t time, bm_argb_t* bm);
+void ui_save_screenshot(uint32_t time, char hide_cursor, bm_argb_t* bm);
 void ui_update_layout(int w, int h);
 void ui_describe();
 void ui_update_player();
@@ -24,7 +24,6 @@ void ui_update_player();
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "bm_rgba_util.c"
 #include "coder.c"
 #include "config.c"
 #include "filemanager.c"
@@ -171,7 +170,7 @@ void ui_open(char* path)
 
     if (strstr(path, ".pdf") != NULL)
     {
-	bm_rgba_t* pdfbmp = pdf_render(path);
+	bm_argb_t* pdfbmp = pdf_render(path);
 
 	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
 
@@ -193,7 +192,7 @@ void ui_open(char* path)
 	}
 	else if (type == CODER_MEDIA_TYPE_IMAGE)
 	{
-	    bm_rgba_t* image = coder_load_image(path);
+	    bm_argb_t* image = coder_load_image(path);
 
 	    if (image)
 	    {
@@ -705,41 +704,41 @@ void ui_update_cursor(r2_t frame)
     view_set_frame(ui.cursor, frame);
 }
 
-void ui_render_without_cursor(uint32_t time, bm_rgba_t* bm)
+void ui_render_without_cursor(uint32_t time, bm_argb_t* bm)
 {
     ui_manager_remove(ui.cursor);
     ui_manager_render(time, bm);
     ui_manager_add_to_top(ui.cursor);
 }
 
-void ui_save_screenshot(uint32_t time, char hide_cursor, bm_rgba_t* bm)
+void ui_save_screenshot(uint32_t time, char hide_cursor, bm_argb_t* bm)
 {
-    if (config_get("lib_path"))
-    {
-	static int cnt    = 0;
-	view_t*    root   = ui_manager_get_root();
-	r2_t       frame  = root->frame.local;
-	bm_rgba_t* screen = bm_rgba_new(frame.w, frame.h); // REL 0
+    /* if (config_get("lib_path")) */
+    /* { */
+    /* 	static int cnt    = 0; */
+    /* 	view_t*    root   = ui_manager_get_root(); */
+    /* 	r2_t       frame  = root->frame.local; */
+    /* 	bm_argb_t* screen = bm_argb_new(frame.w, frame.h); // REL 0 */
 
-	// remove cursor for screenshot to remain identical
+    /* 	// remove cursor for screenshot to remain identical */
 
-	if (hide_cursor) ui_render_without_cursor(time, bm);
+    /* 	if (hide_cursor) ui_render_without_cursor(time, bm); */
 
-	ui_compositor_render_to_bmp(screen);
+    /* 	ui_compositor_render_to_bmp(screen); */
 
-	char*      name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1
-	char*      path    = path_new_append(config_get("lib_path"), name);    // REL 2
-	bm_rgba_t* flipped = bm_rgba_new_flip_y(screen);                       // REL 3
+    /* 	char*      name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1 */
+    /* 	char*      path    = path_new_append(config_get("lib_path"), name);    // REL 2 */
+    /* 	bm_argb_t* flipped = bm_argb_new_flip_y(screen);                       // REL 3 */
 
-	coder_write_png(path, flipped);
+    /* 	coder_write_png(path, flipped); */
 
-	REL(flipped); // REL 3
-	REL(name);    // REL 2
-	REL(path);    // REL 1
-	REL(screen);  // REL 0
+    /* 	REL(flipped); // REL 3 */
+    /* 	REL(name);    // REL 2 */
+    /* 	REL(path);    // REL 1 */
+    /* 	REL(screen);  // REL 0 */
 
-	if (hide_cursor) ui_update_cursor(frame); // full screen cursor to indicate screenshot, next step will reset it
-    }
+    /* 	if (hide_cursor) ui_update_cursor(frame); // full screen cursor to indicate screenshot, next step will reset it */
+    /* } */
 }
 
 int ui_comp_text(void* left, void* right)

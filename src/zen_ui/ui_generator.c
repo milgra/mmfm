@@ -9,10 +9,11 @@
 #define ui_generator_h
 
 #include "view.c"
+#include "zc_bm_argb.c"
 
 int      ui_generator_init(int, int);
 void     ui_generator_destroy();
-void     ui_generator_render(uint32_t, bm_rgba_t* bm);
+void     ui_generator_render(uint32_t, bm_argb_t* bm);
 void     ui_generator_use(vec_t* views);
 void     ui_generator_resize(int width, int height);
 uint32_t ui_generate_create_texture();
@@ -97,7 +98,7 @@ void ui_generator_resize(int width, int height)
     }
 }
 
-void ui_generator_render(uint32_t time, bm_rgba_t* bm)
+void ui_generator_render(uint32_t time, bm_argb_t* bm)
 {
     int reset_texmap = 0;
 
@@ -157,7 +158,10 @@ void ui_generator_render(uint32_t time, bm_rgba_t* bm)
 
 	if (view->texture.bitmap)
 	{
-	    gfx_blend_bitmap(bm, view->texture.bitmap, view->frame.global.x, view->frame.global.y);
+	    /* if (view->texture.transparent) */
+	    /* 	bm_argb_blend(bm, view->texture.bitmap, view->frame.global.x, view->frame.global.y); */
+	    /* else */
+	    bm_argb_insert(bm, view->texture.bitmap, view->frame.global.x, view->frame.global.y);
 	}
     }
 

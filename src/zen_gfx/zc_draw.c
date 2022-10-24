@@ -1,29 +1,30 @@
 #ifndef zc_graphics_h
 #define zc_graphics_h
 
-#include "zc_bm_rgba.c"
+#include "zc_bm_argb.c"
 #include <math.h>
 #include <stdint.h>
 
-void gfx_circle(bm_rgba_t* bitmap, float cx, float cy, float r, float edge, uint32_t c);
-void gfx_arc(bm_rgba_t* bitmap, float cx, float cy, float r, float edge, uint32_t c, float as, float ae);
-void gfx_rounded_rect(bm_rgba_t* bitmap, int x, int y, int w, int h, int r, float edge, uint32_t c1, uint32_t c2);
-void gfx_tile(bm_rgba_t* bitmap);
-void gfx_arc_grad(bm_rgba_t* bm, float cx, float cy, float d1, float d2, float a1, float a2, uint32_t c1, uint32_t c2);
-void gfx_grad_v(bm_rgba_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32_t c2);
-void gfx_grad_h(bm_rgba_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32_t c2);
-void gfx_rect(bm_rgba_t* bm, int sx, int sy, int w, int h, uint32_t color,
+void gfx_circle(bm_argb_t* bitmap, float cx, float cy, float r, float edge, uint32_t c);
+void gfx_arc(bm_argb_t* bitmap, float cx, float cy, float r, float edge, uint32_t c, float as, float ae);
+void gfx_rounded_rect(bm_argb_t* bitmap, int x, int y, int w, int h, int r, float edge, uint32_t c1, uint32_t c2);
+void gfx_tile(bm_argb_t* bitmap);
+void gfx_arc_grad(bm_argb_t* bm, float cx, float cy, float d1, float d2, float a1, float a2, uint32_t c1, uint32_t c2);
+void gfx_grad_v(bm_argb_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32_t c2);
+void gfx_grad_h(bm_argb_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32_t c2);
+void gfx_rect(bm_argb_t* bm, int sx, int sy, int w, int h, uint32_t color,
 	      char la); // leave alpha channel untouched
-void gfx_blend_rgba(bm_rgba_t* bm, int nx, int ny, bm_rgba_t* nbm);
-void gfx_insert(bm_rgba_t* base, bm_rgba_t* src, int sx, int sy);
-void gfx_insert_rgba(bm_rgba_t* base, uint8_t* src, int w, int h, int sx, int sy);
-void gfx_insert_rgb(bm_rgba_t* base, uint8_t* src, int w, int h, int sx, int sy);
-void gfx_blend_8(bm_rgba_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata, int nw, int nh);
-void gfx_blend_8_1(bm_rgba_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata, int nw, int nh);
-void gfx_blend_pixel(bm_rgba_t* bm, int x, int y, uint32_t color);
-void gfx_blend_bitmap(bm_rgba_t* bm, bm_rgba_t* sbm, int sx, int sy);
-void gfx_blend_rgba1(bm_rgba_t* base, uint8_t* src, int w, int h, int sx, int sy);
-void gfx_scale(bm_rgba_t* srcbmp, bm_rgba_t* dstbmp);
+void gfx_blend_argb(bm_argb_t* bm, int nx, int ny, bm_argb_t* nbm);
+void gfx_insert(bm_argb_t* base, bm_argb_t* src, int sx, int sy);
+void gfx_insert_argb(bm_argb_t* base, uint8_t* src, int w, int h, int sx, int sy);
+void gfx_insert_rgb(bm_argb_t* base, uint8_t* src, int w, int h, int sx, int sy);
+void gfx_blend_8(bm_argb_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata, int nw, int nh);
+void gfx_blend_8_1(bm_argb_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata, int nw, int nh);
+void gfx_blend_pixel(bm_argb_t* bm, int x, int y, uint32_t color);
+void gfx_blend_bitmap(bm_argb_t* bm, bm_argb_t* sbm, int sx, int sy);
+void gfx_blend_argb1(bm_argb_t* base, uint8_t* src, int w, int h, int sx, int sy);
+void gfx_scale(bm_argb_t* srcbmp, bm_argb_t* dstbmp);
+void gfx_insert_bitmap(bm_argb_t* base, bm_argb_t* src, int sx, int sy);
 
 #endif
 
@@ -31,7 +32,7 @@ void gfx_scale(bm_rgba_t* srcbmp, bm_rgba_t* dstbmp);
 
 #include <string.h>
 
-void gfx_circle(bm_rgba_t* bitmap, float cx, float cy, float r, float edge, uint32_t c)
+void gfx_circle(bm_argb_t* bitmap, float cx, float cy, float r, float edge, uint32_t c)
 {
     float m = r;
     for (int x = 0; x < bitmap->w; x++)
@@ -64,7 +65,7 @@ void gfx_circle(bm_rgba_t* bitmap, float cx, float cy, float r, float edge, uint
     }
 }
 
-void gfx_arc(bm_rgba_t* bitmap, float cx, float cy, float r, float edge, uint32_t c, float as, float ae)
+void gfx_arc(bm_argb_t* bitmap, float cx, float cy, float r, float edge, uint32_t c, float as, float ae)
 {
     float m = r;
     for (int x = 0; x < bitmap->w; x++)
@@ -96,7 +97,7 @@ void gfx_arc(bm_rgba_t* bitmap, float cx, float cy, float r, float edge, uint32_
 }
 
 void gfx_arc_grad(
-    bm_rgba_t* bm,
+    bm_argb_t* bm,
     float      cx, // center x
     float      cy, // center y
     float      d1, // distance 1
@@ -169,7 +170,7 @@ void gfx_arc_grad(
 }
 
 // tiled bitmap, mainly for testing opengl rendering
-void gfx_tile(bm_rgba_t* bitmap)
+void gfx_tile(bm_argb_t* bitmap)
 {
     for (int col = 0; col < bitmap->w; col++)
     {
@@ -181,7 +182,7 @@ void gfx_tile(bm_rgba_t* bitmap)
     }
 }
 
-void gfx_grad_h(bm_rgba_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32_t c2)
+void gfx_grad_h(bm_argb_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32_t c2)
 {
     int r1 = (c1 >> 24) & 0xFF;
     int g1 = (c1 >> 16) & 0xFF;
@@ -224,7 +225,7 @@ void gfx_grad_h(bm_rgba_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32
     }
 }
 
-void gfx_grad_v(bm_rgba_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32_t c2)
+void gfx_grad_v(bm_argb_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32_t c2)
 {
     int r1 = (c1 >> 24) & 0xFF;
     int g1 = (c1 >> 16) & 0xFF;
@@ -267,7 +268,7 @@ void gfx_grad_v(bm_rgba_t* bm, int sx, int sy, int w, int h, uint32_t c1, uint32
     }
 }
 
-void gfx_rounded_rect(bm_rgba_t* bitmap, int x, int y, int w, int h, int r, float edge, uint32_t c1, uint32_t c2)
+void gfx_rounded_rect(bm_argb_t* bitmap, int x, int y, int w, int h, int r, float edge, uint32_t c1, uint32_t c2)
 {
     float e = edge;
 
@@ -298,7 +299,7 @@ void gfx_rounded_rect(bm_rgba_t* bitmap, int x, int y, int w, int h, int r, floa
     gfx_rect(bitmap, x + e + r, y + e, w - 2 * e - 2 * r, h - 2 * e, c1, 0);
 }
 
-void gfx_rect(bm_rgba_t* bm, int sx, int sy, int w, int h, uint32_t color,
+void gfx_rect(bm_argb_t* bm, int sx, int sy, int w, int h, uint32_t color,
 	      char la) // leave alpha channel untouched
 {
     int ex = sx + w;
@@ -329,7 +330,7 @@ void gfx_rect(bm_rgba_t* bm, int sx, int sy, int w, int h, uint32_t color,
     }
 }
 
-void gfx_blend_rgba(bm_rgba_t* bm, int nx, int ny, bm_rgba_t* nbm)
+void gfx_blend_argb(bm_argb_t* bm, int nx, int ny, bm_argb_t* nbm)
 {
     int ex = nx + nbm->w;
     if (ex > bm->w) ex = bm->w;
@@ -379,7 +380,7 @@ void gfx_blend_rgba(bm_rgba_t* bm, int nx, int ny, bm_rgba_t* nbm)
     }
 }
 
-void gfx_blend_rgba1(bm_rgba_t* base, uint8_t* src, int w, int h, int sx, int sy)
+void gfx_blend_argb1(bm_argb_t* base, uint8_t* src, int w, int h, int sx, int sy)
 {
     int bx = sx + w;
     if (bx > base->w) bx = base->w;
@@ -425,7 +426,7 @@ void gfx_blend_rgba1(bm_rgba_t* base, uint8_t* src, int w, int h, int sx, int sy
     }
 }
 
-void gfx_insert(bm_rgba_t* base, bm_rgba_t* src, int sx, int sy)
+void gfx_insert(bm_argb_t* base, bm_argb_t* src, int sx, int sy)
 {
     int bx = sx + src->w;
     if (bx > base->w) bx = base->w;
@@ -458,7 +459,7 @@ void gfx_insert(bm_rgba_t* base, bm_rgba_t* src, int sx, int sy)
     }
 }
 
-void gfx_insert_rgb(bm_rgba_t* base, uint8_t* src, int w, int h, int sx, int sy)
+void gfx_insert_rgb(bm_argb_t* base, uint8_t* src, int w, int h, int sx, int sy)
 {
     int bx = sx + w;
     if (bx > base->w) bx = base->w;
@@ -489,7 +490,7 @@ void gfx_insert_rgb(bm_rgba_t* base, uint8_t* src, int w, int h, int sx, int sy)
     }
 }
 
-void gfx_insert_rgba(bm_rgba_t* base, uint8_t* src, int w, int h, int sx, int sy)
+void gfx_insert_argb(bm_argb_t* base, uint8_t* src, int w, int h, int sx, int sy)
 {
     int bx = sx + w;
     if (bx > base->w) bx = base->w;
@@ -522,7 +523,35 @@ void gfx_insert_rgba(bm_rgba_t* base, uint8_t* src, int w, int h, int sx, int sy
     }
 }
 
-void gfx_blend_pixel(bm_rgba_t* bm, int x, int y, uint32_t color)
+void gfx_insert_bitmap(bm_argb_t* base, bm_argb_t* src, int sx, int sy)
+{
+    if (sx < 0) sx = 0;
+    if (sy < 0) sy = 0;
+    if (sx >= base->w) return;
+    if (sy >= base->h) return;
+
+    int ex = sx + src->w;
+    int ey = sy + src->h;
+
+    if (ex >= base->w) ex = base->w;
+    if (ey >= base->h) ey = base->h;
+
+    uint32_t* b = (uint32_t*) base->data;
+    uint32_t* s = (uint32_t*) src->data;
+    uint32_t  l = (ex - sx) * 4; // length
+
+    b += (sy * base->w) + sx;
+
+    for (int y = sy; y < ey; y++)
+    {
+	memcpy(b, s, l);
+
+	b += base->w;
+	s += src->w;
+    }
+}
+
+void gfx_blend_pixel(bm_argb_t* bm, int x, int y, uint32_t color)
 {
     // TODO this shouldn't return, it should do a partial blend
     if (x > bm->w) return;
@@ -559,7 +588,7 @@ void gfx_blend_pixel(bm_rgba_t* bm, int x, int y, uint32_t color)
     data[i + 3] = (uint8_t) (a & 0xFF);
 }
 
-void gfx_blend_bitmap(bm_rgba_t* bm, bm_rgba_t* sbm, int sx, int sy)
+void gfx_blend_bitmap(bm_argb_t* bm, bm_argb_t* sbm, int sx, int sy)
 {
     // TODO this shouldn't return, it should do a partial blend
     if (sx + sbm->w > bm->w) return;
@@ -618,7 +647,7 @@ void gfx_blend_bitmap(bm_rgba_t* bm, bm_rgba_t* sbm, int sx, int sy)
     }
 }
 
-void gfx_blend_8(bm_rgba_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata, int nw, int nh)
+void gfx_blend_8(bm_argb_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata, int nw, int nh)
 {
     int ex = nx + nw;
     if (ex > bm->w - 2) ex = bm->w - 2;
@@ -668,7 +697,7 @@ void gfx_blend_8(bm_rgba_t* bm, int nx, int ny, uint32_t color, unsigned char* n
     }
 }
 
-void gfx_blend_8_1(bm_rgba_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata, int nw, int nh)
+void gfx_blend_8_1(bm_argb_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata, int nw, int nh)
 {
     int ex = nx + nw;
     if (ex > bm->w) ex = bm->w;
@@ -751,7 +780,7 @@ void putpixel(image_t* image, unsigned int x, unsigned int y, uint32_t color)
     image->pixels[(y * image->w) + x] = color;
 }
 
-void gfx_scale(bm_rgba_t* srcbmp, bm_rgba_t* dstbmp)
+void gfx_scale(bm_argb_t* srcbmp, bm_argb_t* dstbmp)
 {
     image_t srci =
 	{

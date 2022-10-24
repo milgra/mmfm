@@ -127,6 +127,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/mmfm/utils/map_util.c',
 
 	       'src/zen_core/zc_bm_rgba.c',
+	       'src/zen_core/zc_bm_argb.c',
 	       'src/zen_core/zc_channel.c',
 	       'src/zen_core/zc_cstring.c',
 	       'src/zen_core/zc_path.c',

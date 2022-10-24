@@ -2,7 +2,7 @@
 #define view_h
 
 #include "wm_event.c"
-#include "zc_bm_rgba.c"
+#include "zc_bm_argb.c"
 #include "zc_util2.c"
 #include "zc_vec2.c"
 #include "zc_vector.c"
@@ -118,10 +118,11 @@ typedef struct _texture_t
     float     alpha;
     char      resizable; /* if view is resized initiate texture re-rendering */
 
+    char transparent;
     // internal texture
 
     texst_t    state;         /* render state of texture */
-    bm_rgba_t* bitmap;        /* texture bitmap */
+    bm_argb_t* bitmap;        /* texture bitmap */
     char       changed;       /* texture is changed */
     char       alpha_changed; /* alpha channel is changed */
 
@@ -192,7 +193,7 @@ void    view_set_frame(view_t* view, r2_t frame);
 void    view_set_region(view_t* view, r2_t frame);
 void    view_set_style(view_t* view, vstyle_t style);
 void    view_set_block_touch(view_t* view, char block, char recursive);
-void    view_set_texture_bmp(view_t* view, bm_rgba_t* tex);
+void    view_set_texture_bmp(view_t* view, bm_argb_t* tex);
 void    view_set_texture_page(view_t* view, uint32_t page);
 void    view_set_texture_type(view_t* view, textype_t type);
 void    view_set_texture_alpha(view_t* view, float alpha, char recur);
@@ -464,7 +465,7 @@ void view_set_block_touch(view_t* view, char block, char recursive)
     }
 }
 
-void view_set_texture_bmp(view_t* view, bm_rgba_t* bitmap)
+void view_set_texture_bmp(view_t* view, bm_argb_t* bitmap)
 {
     if (view->texture.bitmap) REL(view->texture.bitmap);
     view->texture.bitmap  = RET(bitmap);
@@ -544,7 +545,7 @@ void view_describe(void* pointer, int level)
 	printf("%s", arrow);
     }
 
-    printf("%s [x:%i y:%i w:%i h:%i tx:%i eh:%i tg:%i rc:%zu]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->texture.page, view->handler != NULL, view->tex_gen != NULL, mem_retaincount(view));
+    printf("%s [x:%.2f y:%.2f w:%.2f h:%.2f tx:%i eh:%i tg:%i rc:%zu]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->texture.page, view->handler != NULL, view->tex_gen != NULL, mem_retaincount(view));
 
     for (int i = 0; i < view->views->length; i++) view_describe(view->views->data[i], level + 1);
 }

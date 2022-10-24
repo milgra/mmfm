@@ -2,7 +2,7 @@
 #define text_h
 
 #include "zc_text.c"
-#include "zc_bm_rgba.c"
+#include "zc_bm_argb.c"
 #include <linux/limits.h>
 #include <stdint.h>
 
@@ -71,13 +71,13 @@ void text_break_glyphs(glyph_t* glyphs, int count, textstyle_t style, int wth, i
 
 void text_align_glyphs(glyph_t* glyphs, int count, textstyle_t style, int w, int h);
 
-void text_render_glyph(glyph_t g, textstyle_t style, bm_rgba_t* bitmap);
+void text_render_glyph(glyph_t g, textstyle_t style, bm_argb_t* bitmap);
 
-void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_rgba_t* bitmap);
+void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_argb_t* bitmap);
 
 void text_layout(glyph_t* glyphs, int count, textstyle_t style, int wth, int hth, int* nwth, int* nhth);
 
-void text_render(char* text, textstyle_t style, bm_rgba_t* bitmap);
+void text_render(char* text, textstyle_t style, bm_argb_t* bitmap);
 
 void text_measure(char* text, textstyle_t style, int w, int h, int* nw, int* nh);
 
@@ -431,7 +431,7 @@ void text_shift_glyphs(glyph_t* glyphs, int count, textstyle_t style)
     }
 }
 
-void text_render_glyph(glyph_t g, textstyle_t style, bm_rgba_t* bitmap)
+void text_render_glyph(glyph_t g, textstyle_t style, bm_argb_t* bitmap)
 {
     if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
@@ -490,7 +490,7 @@ void text_render_glyph(glyph_t g, textstyle_t style, bm_rgba_t* bitmap)
     }
 }
 
-void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_rgba_t* bitmap)
+void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_argb_t* bitmap)
 {
     if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
@@ -579,7 +579,7 @@ void text_layout(glyph_t* glyphs, int count, textstyle_t style, int wth, int hth
     text_shift_glyphs(glyphs, count, style);
 }
 
-void text_render(char* text, textstyle_t style, bm_rgba_t* bitmap)
+void text_render(char* text, textstyle_t style, bm_argb_t* bitmap)
 {
     const void*  part   = text;
     size_t       count  = utf8len(text);

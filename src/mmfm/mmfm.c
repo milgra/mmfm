@@ -93,12 +93,10 @@ void update(ev_t ev)
     wl_connector_draw();
 }
 
-void render(uint32_t time, uint32_t index, bm_rgba_t* bm)
+void render(uint32_t time, uint32_t index, bm_argb_t* bm)
 {
     /* printf("RENDER\n"); */
-    zc_time(NULL);
     ui_manager_render(time, bm);
-    zc_time("render");
 }
 
 void destroy()

@@ -7,8 +7,8 @@
 typedef struct _tg_knob_t
 {
     float      angle;
-    bm_rgba_t* back;
-    bm_rgba_t* fore;
+    bm_argb_t* back;
+    bm_argb_t* fore;
 } tg_knob_t;
 
 void tg_knob_add(view_t* view);
@@ -28,9 +28,9 @@ void tg_knob_gen(view_t* view)
     {
 	if (view->texture.bitmap == NULL && view->frame.local.w > 0 && view->frame.local.h > 0)
 	{
-	    bm_rgba_t* bmp = bm_rgba_new(view->frame.local.w, view->frame.local.h); // REL 0
-	    tg->back       = bm_rgba_new(view->frame.local.w, view->frame.local.h); // REL 1
-	    tg->fore       = bm_rgba_new(view->frame.local.w, view->frame.local.h); // REL 2
+	    bm_argb_t* bmp = bm_argb_new(view->frame.local.w, view->frame.local.h); // REL 0
+	    tg->back       = bm_argb_new(view->frame.local.w, view->frame.local.h); // REL 1
+	    tg->fore       = bm_argb_new(view->frame.local.w, view->frame.local.h); // REL 2
 
 	    uint32_t basecol   = 0x454545FF;
 	    uint32_t outercol  = 0x343434FF;
@@ -76,7 +76,7 @@ void tg_knob_gen(view_t* view)
 	    gfx_arc_grad(view->texture.bitmap, (view->frame.local.w - 1.0) / 2.0, (view->frame.local.h - 1.0) / 2.0, 27.0, 35.0, 0, tg->angle, 0x999999FF, 0x999999FF);
 	}
 
-	gfx_blend_rgba(view->texture.bitmap, 0, 0, tg->fore);
+	gfx_blend_argb(view->texture.bitmap, 0, 0, tg->fore);
 	view->texture.changed = 1;
 	view->texture.state   = TS_READY;
     }

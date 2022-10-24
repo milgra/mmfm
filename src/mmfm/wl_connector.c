@@ -2,33 +2,14 @@
 #define wl_connector_h
 
 #include "wm_event.c"
-#include "zc_bm_rgba.c"
-#include <stdint.h>
-
-void wl_connector_init(
-    int w,
-    int h,
-    int m,
-    void (*init)(int w, int h, float scale),
-    void (*update)(ev_t),
-    void (*render)(uint32_t time, uint32_t index, bm_rgba_t* bm),
-    void (*destroy)());
-
-void wl_connector_draw();
-void wl_hide();
-
-void wl_connector_create_buffer();
-
-#endif
-
-#if __INCLUDE_LEVEL__ == 0
-
+#include "zc_bm_argb.c"
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <limits.h>
 #include <poll.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,12 +23,27 @@ void wl_connector_create_buffer();
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
-#include "zc_bm_rgba.c"
+#include "zc_bm_argb.c"
 #include "zc_draw.c"
 #include "zc_log.c"
 #include "zc_memory.c"
+#include "zc_time.c"
 
 #define MAX_MONITOR_NAME_LEN 255
+
+enum wl_event_id_t
+{
+    WL_EVENT_OUTPUT_ADDED,
+    WL_EVENT_OUTPUT_REMOVED,
+    WL_EVENT_OUTPUT_CHANGED
+};
+
+typedef struct _wl_event_t wl_event_t;
+struct _wl_event_t
+{
+    enum wl_event_id_t   id;
+    struct monitor_info* monitors[16];
+};
 
 struct monitor_info
 {
@@ -64,6 +60,27 @@ struct monitor_info
     struct zxdg_output_v1*  xdg_output;
     struct wl_output*       wl_output;
 };
+
+void wl_connector_init(
+    int w,
+    int h,
+    int m,
+    void (*init)(int w, int h, float scale),
+    /* void (*event)(wl_event_t event), */
+    void (*update)(ev_t),
+    void (*render)(uint32_t time, uint32_t index, bm_argb_t* bm),
+    void (*destroy)());
+
+void wl_connector_draw();
+void wl_hide();
+
+void wl_connector_create_layer();
+void wl_connector_create_window();
+void wl_connector_create_eglwindow();
+
+#endif
+
+#if __INCLUDE_LEVEL__ == 0
 
 struct keyboard_info
 {
@@ -101,7 +118,7 @@ struct wlc_t
 
     // window state
 
-    bm_rgba_t* bitmap;
+    bm_argb_t bitmap;
 
     int  win_width;
     int  win_height;
@@ -111,7 +128,7 @@ struct wlc_t
 
     void (*init)(int w, int h, float scale);
     void (*update)(ev_t);
-    void (*render)(uint32_t time, uint32_t index, bm_rgba_t* bm);
+    void (*render)(uint32_t time, uint32_t index, bm_argb_t* bm);
     void (*destroy)();
 
     struct xdg_surface*  xdg_surface;
@@ -119,6 +136,8 @@ struct wlc_t
     struct xdg_toplevel* xdg_toplevel;
 
 } wlc = {0};
+
+void wl_connector_create_buffer();
 
 /* ***WL OUTPUT EVENTS*** */
 
@@ -274,16 +293,22 @@ void wl_connector_pointer_handle_motion(void* data, struct wl_pointer* wl_pointe
 
     if (drag) (*wlc.update)(event);
 }
+
+uint lasttouch = 0;
 void wl_connector_pointer_handle_button(void* data, struct wl_pointer* wl_pointer, uint serial, uint time, uint button, uint state)
 {
-    zc_log_debug("pointer handle button %u state %u", button, state);
+    zc_log_debug("pointer handle button %u state %u time %u", button, state, time);
 
     ev_t event = {.x = px, .y = py, .button = button == 272 ? 1 : 3};
 
     if (state)
     {
-	event.type = EV_MDOWN;
-	drag       = 1;
+	uint delay = time - lasttouch;
+	lasttouch  = time;
+
+	event.dclick = delay < 300;
+	event.type   = EV_MDOWN;
+	drag         = 1;
     }
     else
     {
@@ -339,6 +364,9 @@ struct wl_pointer_listener pointer_listener =
 
 static const struct wl_callback_listener wl_surface_frame_listener;
 
+static uint32_t lasttime  = 0;
+static uint32_t lastcount = 0;
+
 static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t time)
 {
     /* zc_log_debug("*************************wl surface frame done %u", time); */
@@ -348,6 +376,15 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
     /* Request another frame */
     cb = wl_surface_frame(wlc.surface);
     wl_callback_add_listener(cb, &wl_surface_frame_listener, NULL);
+
+    if (time - lasttime > 1000)
+    {
+	printf("FRAME PER SEC : %u\n", lastcount);
+	lastcount = 0;
+	lasttime  = time;
+    }
+
+    lastcount++;
 
     ev_t event = {
 	.type = EV_TIME,
@@ -732,13 +769,11 @@ void wl_connector_create_buffer(int width, int height)
 	// delete old buffer and bitmap
 	wl_buffer_destroy(wlc.buffer);
 	munmap(wlc.shm_data, wlc.shm_size);
-	REL(wlc.bitmap);
+	wlc.bitmap.data = NULL;
     }
 
     int stride = width * 4;
     int size   = stride * height;
-
-    wlc.bitmap = bm_rgba_new(width, height);
 
     int fd = wl_connector_shm_create();
     if (fd < 0)
@@ -748,6 +783,11 @@ void wl_connector_create_buffer(int width, int height)
     }
 
     wlc.shm_data = wl_connector_shm_alloc(fd, size);
+
+    wlc.bitmap.w    = width;
+    wlc.bitmap.h    = height;
+    wlc.bitmap.size = size;
+    wlc.bitmap.data = wlc.shm_data;
 
     if (wlc.shm_data == MAP_FAILED)
     {
@@ -772,19 +812,20 @@ void wl_connector_draw()
 {
     if (wlc.visible)
     {
-	uint8_t* argb = wlc.shm_data;
+	memset(wlc.bitmap.data, 0, wlc.bitmap.size);
+	/* gfx_rect(wlc.bitmap, 0, 0, wlc.win_width, wlc.win_height, 0xFF0000FF, 0); */
 
-	gfx_rect(wlc.bitmap, 0, 0, wlc.win_width, wlc.win_height, 0xFF0000FF, 0);
+	(*wlc.render)(0, 0, &wlc.bitmap);
 
-	(*wlc.render)(0, 0, wlc.bitmap);
-
-	for (int i = 0; i < wlc.bitmap->size; i += 4)
-	{
-	    argb[i]     = wlc.bitmap->data[i + 2];
-	    argb[i + 1] = wlc.bitmap->data[i + 1];
-	    argb[i + 2] = wlc.bitmap->data[i];
-	    argb[i + 3] = wlc.bitmap->data[i + 3];
-	}
+	/* zc_time(NULL); */
+	/* for (int i = 0; i < wlc.bitmap->size; i += 4) */
+	/* { */
+	/*     argb[i]     = wlc.bitmap->data[i + 2]; */
+	/*     argb[i + 1] = wlc.bitmap->data[i + 1]; */
+	/*     argb[i + 2] = wlc.bitmap->data[i]; */
+	/*     argb[i + 3] = wlc.bitmap->data[i + 3]; */
+	/* } */
+	/* zc_time("ARGB"); */
 
 	wl_surface_attach(wlc.surface, wlc.buffer, 0, 0);
 	/* zwlr_layer_surface_v1_set_keyboard_interactivity(wlc.layer_surface, true); */
@@ -864,7 +905,7 @@ void wl_connector_init(
     int margin,
     void (*init)(int w, int h, float scale),
     void (*update)(ev_t),
-    void (*render)(uint32_t time, uint32_t index, bm_rgba_t* bm),
+    void (*render)(uint32_t time, uint32_t index, bm_argb_t* bm),
     void (*destroy)())
 {
     zc_log_debug("init %i %i", w, h);
@@ -1021,7 +1062,7 @@ void wl_connector_init(
 
 	    wl_buffer_destroy(wlc.buffer);
 	    munmap(wlc.shm_data, wlc.shm_size);
-	    REL(wlc.bitmap);
+	    wlc.bitmap.data = NULL;
 
 	    wl_display_disconnect(wlc.display);
 	}

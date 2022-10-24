@@ -8,10 +8,10 @@
 typedef struct _r2_t r2_t;
 struct _r2_t
 {
-    int x;
-    int y;
-    int w;
-    int h;
+    float x;
+    float y;
+    float w;
+    float h;
 };
 
 typedef struct _r2i_t r2i_t;

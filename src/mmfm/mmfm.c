@@ -21,13 +21,16 @@
 
 struct
 {
-    char replay;
-    char record;
+    char              replay;
+    char              record;
+    struct wl_window* window;
 } mmfm = {0};
 
 void init(wl_event_t event)
 {
     struct monitor_info* monitor = event.monitors[0];
+
+    mmfm.window = wl_connector_create_window("MMFM", 1200, 600);
 
     zc_time(NULL);
     ui_init(monitor->logical_width, monitor->logical_height, monitor->scale); // DESTROY 3
@@ -45,8 +48,6 @@ void init(wl_event_t event)
     }
 
     ui_update_layout(monitor->logical_width, monitor->logical_height);
-
-    wl_connector_create_window("MMFM");
 }
 
 void event(wl_event_t event)
@@ -98,7 +99,8 @@ void update(ev_t ev)
 	ui_update_dragger();
 	// ui_describe();
     }
-    wl_connector_draw();
+
+    wl_connector_draw_window(mmfm.window);
 }
 
 void render(uint32_t time, uint32_t index, bm_argb_t* bm)
@@ -238,13 +240,7 @@ int main(int argc, char* argv[])
     if (rec_path) config_set("rec_path", rec_path);
     if (rep_path) config_set("rep_path", rep_path);
 
-    zc_time("config parsing");
-
-    int width  = 1300;
-    int height = 900;
-    int margin = 0;
-
-    wl_connector_init(width, height, margin, init, event, update, render, destroy);
+    wl_connector_init(init, event, update, render, destroy);
 
     /* wm_loop(init, update, render, destroy, frm_par, "mmfm"); */
 

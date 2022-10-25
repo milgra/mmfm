@@ -25,10 +25,12 @@ struct
     char record;
 } mmfm = {0};
 
-void init(int width, int height, float scale)
+void init(wl_event_t event)
 {
+    struct monitor_info* monitor = event.monitors[0];
+
     zc_time(NULL);
-    ui_init(width, height, scale); // DESTROY 3
+    ui_init(monitor->logical_width, monitor->logical_height, monitor->scale); // DESTROY 3
     zc_time("ui init");
 
     if (mmfm.record)
@@ -42,7 +44,13 @@ void init(int width, int height, float scale)
 	ui_add_cursor();
     }
 
-    ui_update_layout(width, height);
+    ui_update_layout(monitor->logical_width, monitor->logical_height);
+
+    wl_connector_create_window("MMFM");
+}
+
+void event(wl_event_t event)
+{
 }
 
 void update(ev_t ev)
@@ -236,7 +244,7 @@ int main(int argc, char* argv[])
     int height = 900;
     int margin = 0;
 
-    wl_connector_init(width, height, margin, init, update, render, destroy);
+    wl_connector_init(width, height, margin, init, event, update, render, destroy);
 
     /* wm_loop(init, update, render, destroy, frm_par, "mmfm"); */
 

@@ -510,7 +510,6 @@ void view_set_style(view_t* view, vstyle_t style)
 
 void view_gen_texture(view_t* view)
 {
-    printf("view gen texture %s\n", view->id);
     if (view->tex_gen) (*view->tex_gen)(view);
 }
 

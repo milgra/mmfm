@@ -38,13 +38,6 @@ enum wl_event_id_t
     WL_EVENT_OUTPUT_CHANGED
 };
 
-typedef struct _wl_event_t wl_event_t;
-struct _wl_event_t
-{
-    enum wl_event_id_t   id;
-    struct monitor_info* monitors[16];
-};
-
 struct monitor_info
 {
     int32_t physical_width;
@@ -61,12 +54,43 @@ struct monitor_info
     struct wl_output*       wl_output;
 };
 
+struct window_info
+{
+    struct xdg_surface*  xdg_surface;  // window surface
+    struct xdg_toplevel* xdg_toplevel; // window info
+    struct wl_surface*   surface;      // wl surface for window
+    struct wl_buffer*    buffer;       // wl buffer for surface
+    void*                shm_data;     // active bufferdata
+    int                  shm_size;     // active bufferdata size
+    bm_argb_t            bitmap;
+};
+
+struct layer_info
+{
+    struct zwlr_layer_shell_v1*   layer_shell;   // active layer shell
+    struct zwlr_layer_surface_v1* layer_surface; // active layer surface
+
+    struct wl_surface* surface;  // wl surface for window
+    struct wl_buffer*  buffer;   // wl buffer for surface
+    void*              shm_data; // active bufferdata
+    int                shm_size; // active bufferdata size
+    bm_argb_t          bitmap;
+};
+
+typedef struct _wl_event_t wl_event_t;
+struct _wl_event_t
+{
+    enum wl_event_id_t    id;
+    struct monitor_info** monitors;
+    int                   monitor_count;
+};
+
 void wl_connector_init(
     int w,
     int h,
     int m,
-    void (*init)(int w, int h, float scale),
-    /* void (*event)(wl_event_t event), */
+    void (*init)(wl_event_t event),
+    void (*event)(wl_event_t event),
     void (*update)(ev_t),
     void (*render)(uint32_t time, uint32_t index, bm_argb_t* bm),
     void (*destroy)());
@@ -74,9 +98,13 @@ void wl_connector_init(
 void wl_connector_draw();
 void wl_hide();
 
-void wl_connector_create_layer();
-void wl_connector_create_window();
-void wl_connector_create_eglwindow();
+void                wl_connector_create_layer();
+struct window_info* wl_connector_create_window(char* title);
+void                wl_connector_create_eglwindow();
+
+void wl_connector_delete_layer();
+void wl_connector_delete_window();
+void wl_connector_delete_eglwindow();
 
 #endif
 
@@ -99,11 +127,7 @@ struct wlc_t
     struct wl_pointer*    pointer;    // active pointer for seat
     struct wl_seat*       seat;       // active seat
 
-    struct wl_surface* surface;  // surface for window
-    struct wl_buffer*  buffer;   // buffer for surface
-    struct wl_shm*     shm;      // active shared memory buffer
-    void*              shm_data; // active bufferdata
-    int                shm_size;
+    struct wl_shm* shm; // active shared memory buffer
 
     struct zxdg_output_manager_v1* xdg_output_manager; // active xdg output manager
     struct zwlr_layer_shell_v1*    layer_shell;        // active layer shell
@@ -111,29 +135,27 @@ struct wlc_t
 
     // outputs
 
-    int                  monitor_count;
-    struct monitor_info* monitors[16];
-    struct monitor_info* monitor;
-    struct keyboard_info keyboard;
+    int                   monitor_count;
+    struct monitor_info** monitors;
+    struct monitor_info*  monitor;
+    struct keyboard_info  keyboard;
+
+    struct window_info** windows;
 
     // window state
-
-    bm_argb_t bitmap;
 
     int  win_width;
     int  win_height;
     int  win_margin;
     bool running;
-    int  visible;
 
-    void (*init)(int w, int h, float scale);
+    void (*init)(wl_event_t event);
+    void (*event)(wl_event_t event);
     void (*update)(ev_t);
     void (*render)(uint32_t time, uint32_t index, bm_argb_t* bm);
     void (*destroy)();
 
-    struct xdg_surface*  xdg_surface;
-    struct xdg_wm_base*  xdg_wm_base;
-    struct xdg_toplevel* xdg_toplevel;
+    struct xdg_wm_base* xdg_wm_base;
 
 } wlc = {0};
 
@@ -370,12 +392,14 @@ static uint32_t lastcount = 0;
 static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t time)
 {
     /* zc_log_debug("*************************wl surface frame done %u", time); */
+
+    struct window_info* info = data;
     /* Destroy this callback */
     wl_callback_destroy(cb);
 
     /* Request another frame */
-    cb = wl_surface_frame(wlc.surface);
-    wl_callback_add_listener(cb, &wl_surface_frame_listener, NULL);
+    cb = wl_surface_frame(info->surface);
+    wl_callback_add_listener(cb, &wl_surface_frame_listener, info);
 
     if (time - lasttime > 1000)
     {
@@ -413,95 +437,6 @@ static void xdg_wm_base_ping(void* data, struct xdg_wm_base* xdg_wm_base, uint32
 static const struct xdg_wm_base_listener xdg_wm_base_listener = {
     .ping = xdg_wm_base_ping,
 };
-
-/* xdg surface events */
-
-static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, uint32_t serial)
-{
-    zc_log_debug("xdg surface configure");
-
-    xdg_surface_ack_configure(xdg_surface, serial);
-
-    if (wlc.buffer == NULL)
-    {
-	/* struct wl_buffer* buffer = draw_frame(state); */
-
-	double  ratio  = wlc.monitor->scale;
-	int32_t width  = round_to_int(wlc.win_width * ratio);
-	int32_t height = round_to_int(wlc.win_height * ratio);
-
-	wlc.win_width      = width;
-	wlc.win_height     = height;
-	wlc.monitor->ratio = ratio;
-
-	wl_connector_create_buffer(width, height);
-
-	wl_surface_attach(wlc.surface, wlc.buffer, 0, 0);
-	wl_surface_commit(wlc.surface);
-
-	// init
-	(*wlc.init)(width, height, ratio);
-
-	ev_t event = {.type = EV_WINDOW_SHOW};
-	(*wlc.update)(event);
-    }
-}
-
-static const struct xdg_surface_listener xdg_surface_listener = {
-    .configure = xdg_surface_configure,
-};
-
-/* xdg toplevel events */
-
-void xdg_toplevel_configure(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height, struct wl_array* states)
-{
-    zc_log_debug("xdg toplevel configure w %i h %i", width, height);
-
-    if (width > 0 && height > 0 && width != wlc.win_width && height != wlc.win_height)
-    {
-	zc_log_debug("RESIZE %i %i", width, height);
-	double  ratio   = wlc.monitor->scale;
-	int32_t nwidth  = round_to_int(width * ratio);
-	int32_t nheight = round_to_int(height * ratio);
-
-	wlc.win_width      = nwidth;
-	wlc.win_height     = nheight;
-	wlc.monitor->ratio = ratio;
-
-	wl_connector_create_buffer(nwidth, nheight);
-
-	wl_surface_attach(wlc.surface, wlc.buffer, 0, 0);
-	wl_surface_commit(wlc.surface);
-
-	ev_t event = {
-	    .type = EV_RESIZE,
-	    .w    = nwidth,
-	    .h    = nheight};
-
-	(*wlc.update)(event);
-    }
-}
-
-void xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel)
-{
-    zc_log_debug("xdg toplevel close");
-}
-
-void xdg_toplevel_configure_bounds(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height)
-{
-    zc_log_debug("xdg toplevel configure bounds w %i h %i", width, height);
-}
-
-void xdg_toplevel_wm_capabilities(void* data, struct xdg_toplevel* xdg_toplevel, struct wl_array* capabilities)
-{
-    zc_log_debug("xdg toplevel wm capabilities");
-}
-
-static const struct xdg_toplevel_listener xdg_toplevel_listener = {
-    .configure        = xdg_toplevel_configure,
-    .close            = xdg_toplevel_close,
-    .configure_bounds = xdg_toplevel_configure_bounds,
-    .wm_capabilities  = xdg_toplevel_wm_capabilities};
 
 static void keyboard_keymap(void* data, struct wl_keyboard* wl_keyboard, uint32_t format, int32_t fd, uint32_t size)
 {
@@ -760,16 +695,16 @@ static void wl_connector_buffer_release(void* data, struct wl_buffer* wl_buffer)
 static const struct wl_buffer_listener buffer_listener = {
     .release = wl_connector_buffer_release};
 
-void wl_connector_create_buffer(int width, int height)
+void wl_connector_create_buffer(struct window_info* info, int width, int height)
 {
     zc_log_debug("create buffer %i %i", width, height);
 
-    if (wlc.buffer)
+    if (info->buffer)
     {
 	// delete old buffer and bitmap
-	wl_buffer_destroy(wlc.buffer);
-	munmap(wlc.shm_data, wlc.shm_size);
-	wlc.bitmap.data = NULL;
+	wl_buffer_destroy(info->buffer);
+	munmap(info->shm_data, info->shm_size);
+	info->bitmap.data = NULL;
     }
 
     int stride = width * 4;
@@ -782,14 +717,14 @@ void wl_connector_create_buffer(int width, int height)
 	return;
     }
 
-    wlc.shm_data = wl_connector_shm_alloc(fd, size);
+    info->shm_data = wl_connector_shm_alloc(fd, size);
 
-    wlc.bitmap.w    = width;
-    wlc.bitmap.h    = height;
-    wlc.bitmap.size = size;
-    wlc.bitmap.data = wlc.shm_data;
+    info->bitmap.w    = width;
+    info->bitmap.h    = height;
+    info->bitmap.size = size;
+    info->bitmap.data = info->shm_data;
 
-    if (wlc.shm_data == MAP_FAILED)
+    if (info->shm_data == MAP_FAILED)
     {
 	zc_log_error("mmap failed: %m");
 	close(fd);
@@ -801,8 +736,8 @@ void wl_connector_create_buffer(int width, int height)
 
     wl_shm_pool_destroy(pool);
 
-    wlc.buffer   = buffer;
-    wlc.shm_size = size;
+    info->buffer   = buffer;
+    info->shm_size = size;
 
     wl_buffer_add_listener(buffer, &buffer_listener, NULL);
     zc_log_debug("buffer listener added");
@@ -810,28 +745,27 @@ void wl_connector_create_buffer(int width, int height)
 
 void wl_connector_draw()
 {
-    if (wlc.visible)
-    {
-	memset(wlc.bitmap.data, 0, wlc.bitmap.size);
-	/* gfx_rect(wlc.bitmap, 0, 0, wlc.win_width, wlc.win_height, 0xFF0000FF, 0); */
+    struct window_info* info = wlc.windows[0];
 
-	(*wlc.render)(0, 0, &wlc.bitmap);
+    memset(info->bitmap.data, 0, info->bitmap.size);
+    /* gfx_rect(wlc.bitmap, 0, 0, wlc.win_width, wlc.win_height, 0xFF0000FF, 0); */
 
-	/* zc_time(NULL); */
-	/* for (int i = 0; i < wlc.bitmap->size; i += 4) */
-	/* { */
-	/*     argb[i]     = wlc.bitmap->data[i + 2]; */
-	/*     argb[i + 1] = wlc.bitmap->data[i + 1]; */
-	/*     argb[i + 2] = wlc.bitmap->data[i]; */
-	/*     argb[i + 3] = wlc.bitmap->data[i + 3]; */
-	/* } */
-	/* zc_time("ARGB"); */
+    (*wlc.render)(0, 0, &info->bitmap);
 
-	wl_surface_attach(wlc.surface, wlc.buffer, 0, 0);
-	/* zwlr_layer_surface_v1_set_keyboard_interactivity(wlc.layer_surface, true); */
-	wl_surface_damage(wlc.surface, 0, 0, wlc.win_width, wlc.win_height);
-	wl_surface_commit(wlc.surface);
-    }
+    /* zc_time(NULL); */
+    /* for (int i = 0; i < wlc.bitmap->size; i += 4) */
+    /* { */
+    /*     argb[i]     = wlc.bitmap->data[i + 2]; */
+    /*     argb[i + 1] = wlc.bitmap->data[i + 1]; */
+    /*     argb[i + 2] = wlc.bitmap->data[i]; */
+    /*     argb[i + 3] = wlc.bitmap->data[i + 3]; */
+    /* } */
+    /* zc_time("ARGB"); */
+
+    wl_surface_attach(info->surface, info->buffer, 0, 0);
+    /* zwlr_layer_surface_v1_set_keyboard_interactivity(wlc.layer_surface, true); */
+    wl_surface_damage(info->surface, 0, 0, wlc.win_width, wlc.win_height);
+    wl_surface_commit(info->surface);
 }
 
 /* Layer surface listener */
@@ -868,42 +802,12 @@ bool wl_parse_input(const char* input_buffer, unsigned long* state)
 	return false;
 }
 
-void wl_show()
-{
-    if (!wlc.visible)
-    {
-	wlc.visible     = 1;
-	wlc.surface     = wl_compositor_create_surface(wlc.compositor);
-	wlc.xdg_surface = xdg_wm_base_get_xdg_surface(wlc.xdg_wm_base, wlc.surface);
-	xdg_surface_add_listener(wlc.xdg_surface, &xdg_surface_listener, NULL);
-	wlc.xdg_toplevel = xdg_surface_get_toplevel(wlc.xdg_surface);
-	xdg_toplevel_add_listener(wlc.xdg_toplevel, &xdg_toplevel_listener, NULL);
-	xdg_toplevel_set_title(wlc.xdg_toplevel, "TITLE");
-	wl_surface_commit(wlc.surface);
-    }
-}
-
-void wl_hide()
-{
-    if (wlc.visible)
-    {
-	zwlr_layer_surface_v1_destroy(wlc.layer_surface);
-	wl_surface_destroy(wlc.surface);
-
-	wlc.surface       = NULL;
-	wlc.layer_surface = NULL;
-
-	wl_display_roundtrip(wlc.display);
-
-	wlc.visible = 0;
-    }
-}
-
 void wl_connector_init(
     int w,
     int h,
     int margin,
-    void (*init)(int w, int h, float scale),
+    void (*init)(wl_event_t event),
+    void (*event)(wl_event_t event),
     void (*update)(ev_t),
     void (*render)(uint32_t time, uint32_t index, bm_argb_t* bm),
     void (*destroy)())
@@ -913,12 +817,18 @@ void wl_connector_init(
     wlc.win_width  = w;
     wlc.win_height = h;
     wlc.win_margin = margin;
-    wlc.init       = init;
-    wlc.render     = render;
-    wlc.update     = update;
-    wlc.destroy    = destroy;
+
+    wlc.monitors = CAL(sizeof(struct monitor_info) * 16, NULL, NULL);
+    wlc.windows  = CAL(sizeof(struct window_info) * 16, NULL, NULL);
+
+    wlc.init    = init;
+    wlc.event   = event;
+    wlc.render  = render;
+    wlc.update  = update;
+    wlc.destroy = destroy;
 
     wlc.display = wl_display_connect(NULL);
+
     if (wlc.display)
     {
 	zc_log_debug("display connected");
@@ -930,18 +840,22 @@ void wl_connector_init(
 
 	// first roundtrip triggers global events
 	wl_display_roundtrip(wlc.display);
+	zc_log_debug("ROUNDTRIP 1");
 
 	// second roundtrip triggers events attached in global events
 	wl_display_roundtrip(wlc.display);
+	zc_log_debug("ROUNDTRIP 2");
 
 	if (wlc.compositor)
 	{
+
+	    struct _wl_event_t event = {.id = WL_EVENT_OUTPUT_ADDED, .monitors = wlc.monitors, .monitor_count = wlc.monitor_count};
+
+	    (*wlc.init)(event);
+
 	    wlc.monitor = wlc.monitors[0];
 
-	    wl_show();
-
-	    struct wl_callback* cb = wl_surface_frame(wlc.surface);
-	    wl_callback_add_listener(cb, &wl_surface_frame_listener, NULL);
+	    /* wl_show(); */
 
 	    while (wl_display_dispatch(wlc.display))
 	    {
@@ -1060,9 +974,9 @@ void wl_connector_init(
 
 	    /* destroy buffer */
 
-	    wl_buffer_destroy(wlc.buffer);
-	    munmap(wlc.shm_data, wlc.shm_size);
-	    wlc.bitmap.data = NULL;
+	    /* wl_buffer_destroy(wlc.buffer); */
+	    /* munmap(wlc.shm_data, wlc.shm_size); */
+	    /* wlc.bitmap.data = NULL; */
 
 	    wl_display_disconnect(wlc.display);
 	}
@@ -1073,4 +987,165 @@ void wl_connector_init(
     (*wlc.destroy)();
 }
 
+/* xdg toplevel events */
+
+void xdg_toplevel_configure(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height, struct wl_array* states)
+{
+    zc_log_debug("xdg toplevel configure w %i h %i", width, height);
+
+    struct window_info* info = data;
+
+    if (width > 0 && height > 0 && width != wlc.win_width && height != wlc.win_height)
+    {
+	double  ratio   = wlc.monitor->scale;
+	int32_t nwidth  = round_to_int(width * ratio);
+	int32_t nheight = round_to_int(height * ratio);
+
+	wlc.win_width      = nwidth;
+	wlc.win_height     = nheight;
+	wlc.monitor->ratio = ratio;
+
+	wl_connector_create_buffer(info, nwidth, nheight);
+
+	wl_surface_attach(info->surface, info->buffer, 0, 0);
+	wl_surface_commit(info->surface);
+
+	ev_t event = {
+	    .type = EV_RESIZE,
+	    .w    = nwidth,
+	    .h    = nheight};
+
+	(*wlc.update)(event);
+    }
+}
+
+void xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel)
+{
+    zc_log_debug("xdg toplevel close");
+}
+
+void xdg_toplevel_configure_bounds(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height)
+{
+    zc_log_debug("xdg toplevel configure bounds w %i h %i", width, height);
+}
+
+void xdg_toplevel_wm_capabilities(void* data, struct xdg_toplevel* xdg_toplevel, struct wl_array* capabilities)
+{
+    zc_log_debug("xdg toplevel wm capabilities");
+}
+
+static const struct xdg_toplevel_listener xdg_toplevel_listener = {
+    .configure        = xdg_toplevel_configure,
+    .close            = xdg_toplevel_close,
+    .configure_bounds = xdg_toplevel_configure_bounds,
+    .wm_capabilities  = xdg_toplevel_wm_capabilities};
+
+/* xdg surface events */
+
+static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, uint32_t serial)
+{
+    zc_log_debug("xdg surface configure");
+
+    struct window_info* info = data;
+
+    xdg_surface_ack_configure(xdg_surface, serial);
+
+    /* handle dimension change */
+
+    if (info->buffer == NULL)
+    {
+	/* struct wl_buffer* buffer = draw_frame(state); */
+
+	double  ratio  = wlc.monitor->scale;
+	int32_t width  = round_to_int(wlc.win_width * ratio);
+	int32_t height = round_to_int(wlc.win_height * ratio);
+
+	wlc.win_width      = width;
+	wlc.win_height     = height;
+	wlc.monitor->ratio = ratio;
+
+	wl_connector_create_buffer(info, width, height);
+
+	wl_surface_attach(info->surface, info->buffer, 0, 0);
+	wl_surface_commit(info->surface);
+
+	// init
+	/* (*wlc.init)(width, height, ratio); */
+
+	ev_t event = {.type = EV_WINDOW_SHOW};
+	(*wlc.update)(event);
+    }
+}
+
+static const struct xdg_surface_listener xdg_surface_listener = {
+    .configure = xdg_surface_configure,
+};
+
+/* wl surface events */
+
+static void wl_surface_enter(void* userData, struct wl_surface* surface, struct wl_output* output)
+{
+    zc_log_debug("wl surface enter");
+    struct window_info* info = userData;
+    // wl_output_get_user_data(output);
+
+    for (int index = 0; index < wlc.monitor_count; index++)
+    {
+	struct monitor_info* info = wlc.monitors[index];
+
+	if (info->wl_output == output)
+	{
+	    zc_log_debug("output name %s", info->name);
+	}
+    }
+}
+
+static void wl_surface_leave(void* userData, struct wl_surface* surface, struct wl_output* output)
+{
+    struct window_info* info = userData;
+    zc_log_debug("wl surface leave");
+}
+
+static const struct wl_surface_listener wl_surface_listener = {
+    .enter = wl_surface_enter,
+    .leave = wl_surface_leave,
+};
+
+/* creates xdg surface and toplevel */
+
+struct window_info* wl_connector_create_window(char* title)
+{
+    struct window_info* info = CAL(sizeof(struct window_info), NULL, NULL);
+
+    wlc.windows[0] = info;
+
+    info->surface = wl_compositor_create_surface(wlc.compositor);
+    wl_surface_add_listener(info->surface, &wl_surface_listener, info);
+
+    info->xdg_surface = xdg_wm_base_get_xdg_surface(wlc.xdg_wm_base, info->surface);
+    xdg_surface_add_listener(info->xdg_surface, &xdg_surface_listener, info);
+
+    info->xdg_toplevel = xdg_surface_get_toplevel(info->xdg_surface);
+    xdg_toplevel_add_listener(info->xdg_toplevel, &xdg_toplevel_listener, info);
+
+    xdg_toplevel_set_title(info->xdg_toplevel, title);
+
+    wl_display_roundtrip(wlc.display);
+
+    wl_surface_commit(info->surface);
+
+    struct wl_callback* cb = wl_surface_frame(info->surface);
+    wl_callback_add_listener(cb, &wl_surface_frame_listener, info);
+
+    return info;
+}
+
+void wl_connector_delete_window(struct window_info* info)
+{
+    xdg_surface_destroy(info->xdg_surface);
+    wl_surface_destroy(info->surface);
+    xdg_toplevel_destroy(info->xdg_toplevel);
+
+    wl_display_roundtrip(wlc.display);
+}
 #endif

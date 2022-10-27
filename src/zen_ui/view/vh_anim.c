@@ -29,11 +29,11 @@ typedef struct _vh_anim_t
 {
     animtype_t type;
 
-    r2_t sf; // starting frame
-    r2_t ef; // ending frame
+    vr_t sf; // starting frame
+    vr_t ef; // ending frame
 
-    r2_t sr; // starting region
-    r2_t er; // ending region
+    vr_t sr; // starting region
+    vr_t er; // ending region
 
     float sa; // starting alpha
     float ea; // ending alpha
@@ -53,11 +53,11 @@ typedef struct _vh_anim_t
     void (*on_event)(vh_anim_event_t event);
 } vh_anim_t;
 
-void vh_anim_frame(view_t* view, r2_t sf, r2_t ef, int steps, animtype_t type);
+void vh_anim_frame(view_t* view, vr_t sf, vr_t ef, int steps, animtype_t type);
 
 void vh_anim_alpha(view_t* view, float sa, float ea, int steps, animtype_t type);
 
-void vh_anim_region(view_t* view, r2_t sr, r2_t er, int steps, animtype_t type);
+void vh_anim_region(view_t* view, vr_t sr, vr_t er, int steps, animtype_t type);
 
 void vh_anim_finish(view_t* view);
 
@@ -79,9 +79,9 @@ void vh_anim_evt(view_t* view, ev_t ev)
 	{
 	    if (vh->fstep < vh->fsteps)
 	    {
-		r2_t sf = vh->sf;
-		r2_t cf = sf;
-		r2_t ef = vh->ef;
+		vr_t sf = vh->sf;
+		vr_t cf = sf;
+		vr_t ef = vh->ef;
 
 		if (vh->type == AT_LINEAR)
 		{
@@ -122,9 +122,9 @@ void vh_anim_evt(view_t* view, ev_t ev)
 	{
 	    if (vh->rstep < vh->rsteps)
 	    {
-		r2_t sr = vh->sr;
-		r2_t cr = sr;
-		r2_t er = vh->er;
+		vr_t sr = vh->sr;
+		vr_t cr = sr;
+		vr_t er = vh->er;
 
 		if (vh->type == AT_LINEAR)
 		{
@@ -199,7 +199,7 @@ void vh_anim_evt(view_t* view, ev_t ev)
     }
 }
 
-void vh_anim_frame(view_t* view, r2_t sf, r2_t ef, int steps, animtype_t type)
+void vh_anim_frame(view_t* view, vr_t sf, vr_t ef, int steps, animtype_t type)
 {
     vh_anim_t* vh = view->handler_data;
     if (vh->fstep == vh->fsteps)
@@ -213,7 +213,7 @@ void vh_anim_frame(view_t* view, r2_t sf, r2_t ef, int steps, animtype_t type)
     }
 }
 
-void vh_anim_region(view_t* view, r2_t sr, r2_t er, int steps, animtype_t type)
+void vh_anim_region(view_t* view, vr_t sr, vr_t er, int steps, animtype_t type)
 {
     vh_anim_t* vh = view->handler_data;
     if (vh->rstep == vh->rsteps)

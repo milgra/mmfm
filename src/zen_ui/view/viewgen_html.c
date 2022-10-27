@@ -27,7 +27,7 @@ void viewgen_html_parse(char* htmlpath, vec_t* views)
 	    // extract id
 	    char* id = CAL(sizeof(char) * t.id.len + 1, NULL, cstr_describe); // REL 0
 	    memcpy(id, html + t.id.pos + 1, t.id.len);
-	    view_t* view = view_new(id, (r2_t){0}); // REL 1
+	    view_t* view = view_new(id, (vr_t){0}); // REL 1
 
 	    if (t.level > 0)
 	    {
@@ -73,7 +73,7 @@ void viewgen_html_parse(char* htmlpath, vec_t* views)
 	    static int divcnt = 0;
 	    char*      divid  = cstr_new_format(10, "div%i", divcnt++);
 	    // idless view, probably </div>
-	    view_t* view = view_new(divid, (r2_t){0});
+	    view_t* view = view_new(divid, (vr_t){0});
 	    VADD(views, view);
 	    REL(view);
 	    REL(divid);

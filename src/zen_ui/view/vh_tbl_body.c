@@ -112,7 +112,7 @@ void vh_tbl_body_move(
 	 index++)
     {
 	view_t* iview = vh->items->data[index];
-	r2_t    frame = iview->frame.local;
+	vr_t    frame = iview->frame.local;
 
 	frame.x = vh->head_xpos;
 	frame.y += dy;
@@ -137,7 +137,7 @@ void vh_tbl_body_move(
 	    {
 		VADD(vh->items, item);
 		view_add_subview(view, item);
-		view_set_frame(item, (r2_t){vh->head_xpos, 0, item->frame.local.w, item->frame.local.h});
+		view_set_frame(item, (vr_t){vh->head_xpos, 0, item->frame.local.w, item->frame.local.h});
 		REL(item);
 	    }
 	    else
@@ -166,7 +166,7 @@ void vh_tbl_body_move(
 		    vec_ins(vh->items, item, 0);
 		    view_insert_subview(view, item, 0);
 
-		    view_set_frame(item, (r2_t){vh->head_xpos, head->frame.local.y - item->frame.local.h, item->frame.local.w, item->frame.local.h});
+		    view_set_frame(item, (vr_t){vh->head_xpos, head->frame.local.y - item->frame.local.h, item->frame.local.w, item->frame.local.h});
 
 		    REL(item);
 		}
@@ -199,7 +199,7 @@ void vh_tbl_body_move(
 		    VADD(vh->items, item);
 		    view_add_subview(view, item);
 
-		    view_set_frame(item, (r2_t){vh->head_xpos, tail->frame.local.y + tail->frame.local.h, item->frame.local.w, item->frame.local.h});
+		    view_set_frame(item, (vr_t){vh->head_xpos, tail->frame.local.y + tail->frame.local.h, item->frame.local.w, item->frame.local.h});
 
 		    REL(item);
 		}
@@ -247,7 +247,7 @@ void vh_tbl_body_move(
 	 index++)
     {
 	view_t* iview = vh->items->data[index];
-	r2_t    frame = iview->frame.local;
+	vr_t    frame = iview->frame.local;
 
 	if (frame.y < 0) vh->top_index = vh->head_index + index;
 	if (frame.y < view->frame.local.h) vh->bot_index = vh->head_index + index;
@@ -289,7 +289,7 @@ void vh_tbl_body_hjump(
 	 index++)
     {
 	view_t* iview = vh->items->data[index];
-	r2_t    frame = iview->frame.local;
+	vr_t    frame = iview->frame.local;
 	frame.x       = vh->head_xpos;
 	view_set_frame(iview, frame);
     }

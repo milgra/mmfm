@@ -56,7 +56,7 @@ void view_layout(view_t* view)
     for (int i = 0; i < view->views->length; i++)
     {
 	view_t* v     = view->views->data[i];
-	r2_t    frame = v->frame.local;
+	vr_t    frame = v->frame.local;
 
 	if (v->style.margin == INT_MAX)
 	{

@@ -91,7 +91,7 @@ void vh_cv_body_set_content_size(
     vh->cw = cw;
     vh->ch = ch;
 
-    r2_t lf = view->frame.local; // local frame
+    vr_t lf = view->frame.local; // local frame
 
     float cr = (float) ch / (float) cw; // content aspect ratio
 
@@ -111,7 +111,7 @@ void vh_cv_body_set_content_size(
 	vh->scale = (float) nh / ch;
     }
 
-    r2_t frame = vh->content->frame.local;
+    vr_t frame = vh->content->frame.local;
     frame.x    = (lf.w - nw) / 2.0;
     frame.y    = (lf.h - nh) / 2.0;
     frame.w    = nw;
@@ -130,7 +130,7 @@ void vh_cv_body_move(
 {
     vh_cv_body_t* vh = view->handler_data;
 
-    r2_t frame = vh->content->frame.local;
+    vr_t frame = vh->content->frame.local;
     frame.x += dx;
     frame.y += dy;
     view_set_frame(vh->content, frame);
@@ -144,8 +144,8 @@ void vh_cv_body_zoom(
 {
     vh_cv_body_t* vh = view->handler_data;
 
-    r2_t gf = vh->content->frame.global;
-    r2_t lf = vh->content->frame.local;
+    vr_t gf = vh->content->frame.global;
+    vr_t lf = vh->content->frame.local;
 
     /* partial width and height from mouse position */
 

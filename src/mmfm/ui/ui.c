@@ -12,7 +12,7 @@ enum _ui_inputmode
 void ui_init(int width, int height, float scale);
 void ui_destroy();
 void ui_add_cursor();
-void ui_update_cursor(r2_t frame);
+void ui_update_cursor(vr_t frame);
 void ui_update_dragger();
 void ui_render_without_cursor(uint32_t time, bm_argb_t* bm);
 void ui_save_screenshot(uint32_t time, char hide_cursor, bm_argb_t* bm);
@@ -33,7 +33,6 @@ void ui_update_player();
 #include "tg_css.c"
 #include "tg_scaledimg.c"
 #include "tg_text.c"
-#include "ui_compositor.c"
 #include "ui_manager.c"
 #include "ui_table.c"
 #include "ui_util.c"
@@ -304,7 +303,7 @@ void on_files_event(ui_table_event_t event)
     }
     else if (event.id == UI_TABLE_EVENT_DRAG)
     {
-	view_t* docview                 = view_new("dragged_view", ((r2_t){.x = 0, .y = 0, .w = 50, .h = 50}));
+	view_t* docview                 = view_new("dragged_view", ((vr_t){.x = 0, .y = 0, .w = 50, .h = 50}));
 	char*   imagepath               = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
 	docview->style.background_image = imagepath;
 	tg_css_add(docview);
@@ -354,7 +353,7 @@ void on_files_event(ui_table_event_t event)
 		ui.rowview_for_context_menu = event.rowview;
 
 		view_t* contextpopup = ui.contextpopupcont->views->data[0];
-		r2_t    iframe       = contextpopup->frame.global;
+		vr_t    iframe       = contextpopup->frame.global;
 		iframe.x             = event.ev.x;
 		iframe.y             = event.ev.y;
 		view_set_frame(contextpopup, iframe);
@@ -440,8 +439,8 @@ void on_contextlist_event(ui_table_event_t event)
 
 		ui.inputmode = UI_IM_RENAME;
 
-		r2_t rframe = ui.rowview_for_context_menu->frame.global;
-		r2_t iframe = ui.inputbck->frame.global;
+		vr_t rframe = ui.rowview_for_context_menu->frame.global;
+		vr_t iframe = ui.inputbck->frame.global;
 		iframe.x    = rframe.x;
 		iframe.y    = rframe.y - 5;
 		view_set_frame(ui.inputbck, iframe);
@@ -691,15 +690,15 @@ void ui_on_drag(vh_drag_event_t event)
 
 void ui_add_cursor()
 {
-    ui.cursor                         = view_new("ui.cursor", ((r2_t){10, 10, 10, 10}));
+    ui.cursor                         = view_new("ui.cursor", ((vr_t){10, 10, 10, 10}));
     ui.cursor->exclude                = 0;
     ui.cursor->style.background_color = 0xFF000099;
     ui.cursor->needs_touch            = 0;
     tg_css_add(ui.cursor);
-    ui_manager_add_to_top(ui.cursor);
+    /* ui_manager_add_to_top(ui.cursor); */
 }
 
-void ui_update_cursor(r2_t frame)
+void ui_update_cursor(vr_t frame)
 {
     view_set_frame(ui.cursor, frame);
 }
@@ -708,7 +707,7 @@ void ui_render_without_cursor(uint32_t time, bm_argb_t* bm)
 {
     ui_manager_remove(ui.cursor);
     ui_manager_render(time, bm);
-    ui_manager_add_to_top(ui.cursor);
+    /* ui_manager_add_to_top(ui.cursor); */
 }
 
 void ui_save_screenshot(uint32_t time, char hide_cursor, bm_argb_t* bm)
@@ -717,7 +716,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor, bm_argb_t* bm)
     /* { */
     /* 	static int cnt    = 0; */
     /* 	view_t*    root   = ui_manager_get_root(); */
-    /* 	r2_t       frame  = root->frame.local; */
+    /* 	vr_t       frame  = root->frame.local; */
     /* 	bm_argb_t* screen = bm_argb_new(frame.w, frame.h); // REL 0 */
 
     /* 	// remove cursor for screenshot to remain identical */
@@ -770,7 +769,7 @@ void ui_init(int width, int height, float scale)
 
     /* initial layout of views */
 
-    view_set_frame(ui.view_base, (r2_t){0.0, 0.0, (float) width, (float) height});
+    view_set_frame(ui.view_base, (vr_t){0.0, 0.0, (float) width, (float) height});
     ui_manager_add(ui.view_base);
 
     /* listen for keys and shortcuts */
@@ -818,7 +817,7 @@ void ui_init(int width, int height, float scale)
 	tg_text_set(preview, "PREVIEW", ts);
 
 	tg_scaledimg_add(previewcont, 30, 30);
-	view_set_frame(previewcont, (r2_t){0, 0, 30, 30});
+	view_set_frame(previewcont, (vr_t){0, 0, 30, 30});
 	previewcont->style.margin = INT_MAX;
 
 	vh_cv_body_attach(previewbody, NULL);
@@ -1100,7 +1099,7 @@ void ui_init(int width, int height, float scale)
 
     // show texture map for debug
 
-    /* view_t* texmap       = view_new("texmap", ((r2_t){0, 0, 150, 150})); */
+    /* view_t* texmap       = view_new("texmap", ((vr_t){0, 0, 150, 150})); */
     /* texmap->needs_touch  = 0; */
     /* texmap->exclude      = 0; */
     /* texmap->texture.full = 1; */
@@ -1146,7 +1145,6 @@ void ui_destroy()
 
 void ui_update_layout(int w, int h)
 {
-    printf("UPDATE LAYOUT %i %i\n", w, h);
     if (w > h)
     {
 	ui.main_bottom->style.flexdir = FD_ROW;
@@ -1180,7 +1178,7 @@ void ui_update_layout(int w, int h)
 void ui_update_dragger()
 {
     /* view_t* filelist = view_get_subview(ui.view_base, "filelisttable"); */
-    /* r2_t    df       = ui.left_dragger->frame.local; */
+    /* vr_t    df       = ui.left_dragger->frame.local; */
     /* df.x             = filelist->frame.global.x + filelist->frame.global.w; */
     /* df.y             = filelist->frame.global.y + filelist->frame.global.h; */
     /* view_set_frame(ui.left_dragger, df); */

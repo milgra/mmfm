@@ -41,7 +41,7 @@ struct _vh_textinput_t
     vec_t*  glyph_v;  // glpyh views
     view_t* cursor_v; // cursor view
     view_t* holder_v; // placeholder text view
-    r2_t    frame_s;  // starting frame for autosize minimal values
+    vr_t    frame_s;  // starting frame for autosize minimal values
 
     int         glyph_index;
     textstyle_t style;
@@ -93,7 +93,7 @@ glyph_t* vh_textinput_glyphs_from_string(char* text, size_t* count)
 void vh_textinput_upd(view_t* view)
 {
     vh_textinput_t* data  = view->handler_data;
-    r2_t            frame = view->frame.local;
+    vr_t            frame = view->frame.local;
 
     if (strlen(data->text) > 0)
     {
@@ -143,8 +143,8 @@ void vh_textinput_upd(view_t* view)
 
 		if (g.w > 0 && g.h > 0)
 		{
-		    r2_t f  = gv->frame.local;
-		    r2_t nf = (r2_t){g.x, g.y, g.w, g.h};
+		    vr_t f  = gv->frame.local;
+		    vr_t nf = (vr_t){g.x, g.y, g.w, g.h};
 
 		    if (f.w == 0 || f.h == 0)
 		    {
@@ -163,7 +163,7 @@ void vh_textinput_upd(view_t* view)
 			view_set_frame(gv, nf);
 
 			// open
-			r2_t sf = nf;
+			vr_t sf = nf;
 			sf.x    = 0.0;
 			sf.y    = 0.0;
 			nf.x    = 0.0;
@@ -176,12 +176,12 @@ void vh_textinput_upd(view_t* view)
 		    }
 		    else
 		    {
-			r2_t rf = nf;
+			vr_t rf = nf;
 			rf.x    = 0;
 			rf.y    = 0;
 			view_set_region(gv, rf);
 
-			if (!r2_equals(rf, gv->frame.region))
+			if (!vr_equals(rf, gv->frame.region))
 			{
 			    vh_anim_finish(gv);
 			    vh_anim_frame(gv, gv->frame.local, nf, 10, AT_EASE);
@@ -198,7 +198,7 @@ void vh_textinput_upd(view_t* view)
 	glyph_t last = {0};
 	if (count > 0) last = glyphs[count - 1];
 
-	r2_t crsr_f = {0};
+	vr_t crsr_f = {0};
 	crsr_f.x    = last.x + last.w + 1;
 	crsr_f.y    = last.base_y - last.asc - last.desc / 2.0;
 	crsr_f.w    = 2;
@@ -222,7 +222,7 @@ void vh_textinput_upd(view_t* view)
 	int nh;
 	text_layout(&glyph, 1, data->style, frame.w, frame.h, &nw, &nh);
 
-	r2_t crsr_f = {0};
+	vr_t crsr_f = {0};
 	crsr_f.w    = 2;
 	crsr_f.h    = glyph.asc;
 
@@ -315,7 +315,7 @@ void vh_textinput_evt(view_t* view, ev_t ev)
     }
     else if (ev.type == EV_MDOWN)
     {
-	// r2_t frame = view->frame.global;
+	// vr_t frame = view->frame.global;
 
 	vh_textinput_activate(view, 1);
 
@@ -326,7 +326,7 @@ void vh_textinput_evt(view_t* view, ev_t ev)
     {
 	if (data->mouse_out_deact)
 	{
-	    r2_t frame = view->frame.global;
+	    vr_t frame = view->frame.global;
 
 	    if (ev.x < frame.x ||
 		ev.x > frame.x + frame.w ||
@@ -347,7 +347,7 @@ void vh_textinput_evt(view_t* view, ev_t ev)
 
 	char view_id[100];
 	snprintf(view_id, 100, "%sglyph%i", view->id, data->glyph_index++);
-	view_t* glyph_view = view_new(view_id, (r2_t){0, 0, 0, 0}); // REL 0
+	view_t* glyph_view = view_new(view_id, (vr_t){0, 0, 0, 0}); // REL 0
 
 	vh_anim_add(glyph_view, vh_textinput_on_anim, view);
 	glyph_view->texture.resizable = 0;
@@ -387,8 +387,8 @@ void vh_textinput_evt(view_t* view, ev_t ev)
 	    view_t* glyph_view = vec_tail(data->glyph_v);
 	    VREM(data->glyph_v, glyph_view);
 
-	    r2_t sf = glyph_view->frame.local;
-	    r2_t ef = sf;
+	    vr_t sf = glyph_view->frame.local;
+	    vr_t ef = sf;
 	    sf.x    = 0.0;
 	    sf.y    = 0.0;
 	    ef.x    = 0.0;
@@ -466,7 +466,7 @@ void vh_textinput_add(view_t* view, char* text, char* phtext, textstyle_t textst
 
     // cursor
 
-    data->cursor_v                         = view_new(id_c, (r2_t){50, 12, 2, 0}); // REL 4
+    data->cursor_v                         = view_new(id_c, (vr_t){50, 12, 2, 0}); // REL 4
     data->cursor_v->style.background_color = 0x666666FF;
 
     tg_css_add(data->cursor_v);
@@ -481,7 +481,7 @@ void vh_textinput_add(view_t* view, char* text, char* phtext, textstyle_t textst
     phts.align       = TA_CENTER;
     phts.textcolor   = 0x888888FF;
 
-    data->holder_v              = view_new(id_h, (r2_t){0, 0, view->frame.local.w, view->frame.local.h}); // REL 0
+    data->holder_v              = view_new(id_h, (vr_t){0, 0, view->frame.local.w, view->frame.local.h}); // REL 0
     data->holder_v->style.w_per = 1.0;
     data->holder_v->style.h_per = 1.0;
 
@@ -511,7 +511,7 @@ void vh_textinput_add(view_t* view, char* text, char* phtext, textstyle_t textst
 	    char view_id[100];
 	    snprintf(view_id, 100, "%s_glyph_%i", view->id, data->glyph_index++);
 
-	    view_t* glyph_view = view_new(view_id, (r2_t){0, 0, 0, 0}); // REL 0
+	    view_t* glyph_view = view_new(view_id, (vr_t){0, 0, 0, 0}); // REL 0
 	    vh_anim_add(glyph_view, vh_textinput_on_anim, view);
 
 	    VADD(data->glyph_v, glyph_view);
@@ -542,8 +542,8 @@ void vh_textinput_set_text(view_t* view, char* text)
 
 	view_remove_from_parent(gv);
 
-	/* r2_t sf = gv->frame.local; */
-	/* r2_t ef = sf; */
+	/* vr_t sf = gv->frame.local; */
+	/* vr_t ef = sf; */
 	/* sf.x    = 0.0; */
 	/* sf.y    = 0.0; */
 	/* ef.x    = 0.0; */
@@ -567,7 +567,7 @@ void vh_textinput_set_text(view_t* view, char* text)
 	{
 	    char view_id[100];
 	    snprintf(view_id, 100, "%sglyph%i", view->id, data->glyph_index++);
-	    view_t* glyph_view = view_new(view_id, (r2_t){0, 0, 0, 0}); // REL 1
+	    view_t* glyph_view = view_new(view_id, (vr_t){0, 0, 0, 0}); // REL 1
 	    vh_anim_add(glyph_view, vh_textinput_on_anim, view);
 
 	    VADD(data->glyph_v, glyph_view);

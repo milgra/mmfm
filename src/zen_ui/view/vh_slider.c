@@ -38,7 +38,7 @@ void vh_slider_evt(view_t* view, ev_t ev)
 	vh->ratio = dx / view->frame.global.w;
 
 	view_t* bar   = view->views->data[0];
-	r2_t    frame = bar->frame.local;
+	vr_t    frame = bar->frame.local;
 	frame.w       = dx;
 	view_set_frame(bar, frame);
 
@@ -56,7 +56,7 @@ void vh_slider_evt(view_t* view, ev_t ev)
 
 	vh->ratio     = ratio;
 	view_t* bar   = view->views->data[0];
-	r2_t    frame = bar->frame.local;
+	vr_t    frame = bar->frame.local;
 	frame.w       = view->frame.global.w * vh->ratio;
 	view_set_frame(bar, frame);
 
@@ -70,7 +70,7 @@ void vh_slider_set(view_t* view, float ratio)
     vh_slider_t* vh = view->handler_data;
     vh->ratio       = ratio;
     view_t* bar     = view->views->data[0];
-    r2_t    frame   = bar->frame.local;
+    vr_t    frame   = bar->frame.local;
     frame.w         = view->frame.global.w * vh->ratio;
     view_set_frame(bar, frame);
 }

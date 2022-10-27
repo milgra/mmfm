@@ -70,6 +70,8 @@ struct wl_window
     int new_scale;
     int new_width;
     int new_height;
+
+    struct wl_callback* frame_cb;
 };
 
 struct layer_info
@@ -290,8 +292,8 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
     wl_callback_destroy(cb);
 
     /* Request another frame */
-    cb = wl_surface_frame(info->surface);
-    wl_callback_add_listener(cb, &wl_surface_frame_listener, info);
+    info->frame_cb = wl_surface_frame(info->surface);
+    wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
 
     if (time - lasttime > 1000)
     {
@@ -455,8 +457,8 @@ struct wl_window* wl_connector_create_window(char* title, int width, int height)
 
     wl_surface_commit(info->surface);
 
-    struct wl_callback* cb = wl_surface_frame(info->surface);
-    wl_callback_add_listener(cb, &wl_surface_frame_listener, info);
+    info->frame_cb = wl_surface_frame(info->surface);
+    wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
 
     return info;
 }
@@ -505,10 +507,6 @@ void wl_connector_resize_window_buffer(struct wl_window* info)
 
 void wl_connector_draw_window(struct wl_window* info)
 {
-    memset(info->bitmap.data, 0, info->bitmap.size);
-
-    (*wlc.render)(0, 0, &info->bitmap);
-
     wl_surface_attach(info->surface, info->buffer, 0, 0);
     wl_surface_damage(info->surface, 0, 0, info->width, info->height);
     wl_surface_commit(info->surface);

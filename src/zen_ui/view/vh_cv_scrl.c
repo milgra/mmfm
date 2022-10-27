@@ -77,8 +77,8 @@ void vh_cv_scrl_update(view_t* view)
     vh_cv_scrl_t* vh  = view->handler_data;
     vh_cv_body_t* bvh = vh->tbody_view->handler_data;
 
-    r2_t vf = view->frame.local;
-    r2_t cf = bvh->content->frame.local;
+    vr_t vf = view->frame.local;
+    vr_t cf = bvh->content->frame.local;
 
     float pratio = cf.y / (vf.h - cf.h);
     float sratio = vf.h / cf.h;
@@ -94,7 +94,7 @@ void vh_cv_scrl_update(view_t* view)
 	    hth = 1.0;
 	}
 
-	r2_t frame = vh->vert_v->frame.local;
+	vr_t frame = vh->vert_v->frame.local;
 	frame.h += (hth - frame.h) / 2.0;
 	frame.y += (pos - frame.y) / 2.0;
 
@@ -115,7 +115,7 @@ void vh_cv_scrl_update(view_t* view)
 	    wth = 1.0;
 	}
 
-	r2_t frame = vh->hori_v->frame.local;
+	vr_t frame = vh->hori_v->frame.local;
 	frame.w += (wth - frame.w) / 2.0;
 	frame.x += (pos - frame.x) / 2.0;
 
@@ -177,7 +177,7 @@ void vh_cv_scrl_scroll_v(view_t* view, int y)
 
     /* 	    vh_cv_body_vjump(vh->tbody_view, topindex); */
 
-    /* 	    r2_t frame = vh->vert_v->frame.local; */
+    /* 	    vr_t frame = vh->vert_v->frame.local; */
     /* 	    frame.h    = view->frame.local.h * sratio; */
     /* 	    frame.y    = y; */
 
@@ -212,7 +212,7 @@ void vh_cv_scrl_scroll_h(view_t* view, int x)
     /* 	    vh_cv_body_hjump(vh->tbody_view, -dx); */
     /* 	    vh_cv_head_jump(vh->thead_view, -dx); */
 
-    /* 	    r2_t frame = vh->hori_v->frame.local; */
+    /* 	    vr_t frame = vh->hori_v->frame.local; */
     /* 	    frame.w    = view->frame.local.w * sratio; */
     /* 	    frame.x    = x; */
 

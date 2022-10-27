@@ -93,7 +93,7 @@ void ui_table_head_align(ui_table_t* uit, int fixed_index, int fixed_pos)
 	for (int ci = 0; ci < rowview->views->length; ci++)
 	{
 	    view_t* cellview = rowview->views->data[ci];
-	    r2_t    frame    = cellview->frame.local;
+	    vr_t    frame    = cellview->frame.local;
 	    num_t*  sizep    = uit->fields->data[ci * 2 + 1];
 	    frame.x          = ci == fixed_index ? (float) fixed_pos : wth;
 	    frame.w          = (float) sizep->intv;
@@ -101,7 +101,7 @@ void ui_table_head_align(ui_table_t* uit, int fixed_index, int fixed_pos)
 	    wth += frame.w + 2;
 	}
 
-	r2_t frame = rowview->frame.local;
+	vr_t frame = rowview->frame.local;
 	frame.w    = wth;
 	view_set_frame(rowview, frame);
     }
@@ -186,7 +186,7 @@ view_t* ui_table_head_create(
     ui_table_t* uit = (ui_table_t*) userdata;
 
     char*   headid   = cstr_new_format(100, "%s_header", uit->id); // REL 0
-    view_t* headview = view_new(headid, (r2_t){0, 0, 100, uit->textstyle.line_height});
+    view_t* headview = view_new(headid, (vr_t){0, 0, 100, uit->textstyle.line_height});
     REL(headid); // REL 0
 
     int         wth = 0;
@@ -197,7 +197,7 @@ view_t* ui_table_head_create(
 	char*   field    = uit->fields->data[i];
 	num_t*  size     = uit->fields->data[i + 1];
 	char*   cellid   = cstr_new_format(100, "%s_cell_%s", headview->id, field);      // REL 2
-	view_t* cellview = view_new(cellid, (r2_t){wth, 0, size->intv, ts.line_height}); // REL 3
+	view_t* cellview = view_new(cellid, (vr_t){wth, 0, size->intv, ts.line_height}); // REL 3
 
 	wth += size->intv + 2;
 
@@ -212,7 +212,7 @@ view_t* ui_table_head_create(
 	REL(cellview); // REL 3
     }
 
-    view_set_frame(headview, (r2_t){0, 0, wth, ts.line_height});
+    view_set_frame(headview, (vr_t){0, 0, wth, ts.line_height});
 
     return headview;
 }
@@ -242,7 +242,7 @@ view_t* ui_table_item_create(
 	    else
 	    {
 		char* rowid = cstr_new_format(100, "%s_rowitem_%i", uit->id, uit->cnt++); // REL 0
-		rowview     = view_new(rowid, (r2_t){0, 0, table_v->frame.local.w, ts.line_height});
+		rowview     = view_new(rowid, (vr_t){0, 0, table_v->frame.local.w, ts.line_height});
 		REL(rowid); // REL 0
 
 		tg_css_add(rowview);
@@ -255,7 +255,7 @@ view_t* ui_table_item_create(
 		    num_t* size  = uit->fields->data[i + 1];
 		    // char*   value    = MGET(data, field);
 		    char*   cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field);       // REL 2
-		    view_t* cellview = view_new(cellid, (r2_t){wth, 0, size->intv, ts.line_height}); // REL 3
+		    view_t* cellview = view_new(cellid, (vr_t){wth, 0, size->intv, ts.line_height}); // REL 3
 
 		    wth += size->intv + 2;
 
@@ -292,7 +292,7 @@ view_t* ui_table_item_create(
 		num_t*  size     = uit->fields->data[i + 1];
 		char*   value    = MGET(data, field);
 		view_t* cellview = rowview->views->data[i / 2];
-		r2_t    frame    = cellview->frame.local;
+		vr_t    frame    = cellview->frame.local;
 
 		frame.x = wth;
 		frame.w = size->intv;
@@ -306,7 +306,7 @@ view_t* ui_table_item_create(
 		else tg_text_set(cellview, "", ts); // reset old value
 	    }
 
-	    view_set_frame(rowview, (r2_t){0, 0, wth, ts.line_height});
+	    view_set_frame(rowview, (vr_t){0, 0, wth, ts.line_height});
 	}
     }
 
@@ -565,8 +565,8 @@ void ui_table_select(
 	{
 	    // check if bottom item is out of bounds
 	    view_t* lastitem = vec_tail(bvh->items);
-	    r2_t    iframe   = lastitem->frame.local;
-	    r2_t    vframe   = uit->body_v->frame.local;
+	    vr_t    iframe   = lastitem->frame.local;
+	    vr_t    vframe   = uit->body_v->frame.local;
 
 	    if (iframe.y + iframe.h > vframe.h)
 	    {

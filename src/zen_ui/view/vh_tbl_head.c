@@ -42,7 +42,7 @@ void vh_tbl_head_align(view_t* view)
     for (int index = 0; index < vh->head->views->length; index++)
     {
 	view_t* sv   = vh->head->views->data[index];
-	r2_t    svfl = sv->frame.local;
+	vr_t    svfl = sv->frame.local;
 	svfl.x       = pos;
 	pos += svfl.w + 2;
 	view_set_frame(sv, svfl);
@@ -61,7 +61,7 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 	    for (int index = 0; index < vh->head->views->length; index++)
 	    {
 		view_t* sv  = vh->head->views->data[index];
-		r2_t    svf = sv->frame.global;
+		vr_t    svf = sv->frame.global;
 		// inside
 		if (ev.x > svf.x + EDGE_DRAG_SIZE &&
 		    ev.x < svf.x + svf.w - EDGE_DRAG_SIZE)
@@ -98,7 +98,7 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 		    for (int index = 0; index < vh->head->views->length; index++)
 		    {
 			view_t* sv  = vh->head->views->data[index];
-			r2_t    svf = sv->frame.global;
+			vr_t    svf = sv->frame.global;
 			// inside
 			if (ev.x > svf.x && ev.x < svf.x + svf.w)
 			{
@@ -149,8 +149,8 @@ void vh_tbl_head_evt(view_t* view, ev_t ev)
 		if (vh->active < vh->head->views->length)
 		{
 		    view_t* sv   = vh->head->views->data[vh->active];
-		    r2_t    svfg = sv->frame.global;
-		    r2_t    svfl = sv->frame.local;
+		    vr_t    svfg = sv->frame.global;
+		    vr_t    svfl = sv->frame.local;
 
 		    if (vh->resize)
 		    {
@@ -177,7 +177,7 @@ void vh_tbl_head_move(
 {
     vh_tbl_head_t* vh = view->handler_data;
 
-    r2_t frame = vh->head->frame.local;
+    vr_t frame = vh->head->frame.local;
 
     frame.x += dx;
 
@@ -190,7 +190,7 @@ void vh_tbl_head_jump(
 {
     vh_tbl_head_t* vh = view->handler_data;
 
-    r2_t frame = vh->head->frame.local;
+    vr_t frame = vh->head->frame.local;
 
     frame.x = x;
 

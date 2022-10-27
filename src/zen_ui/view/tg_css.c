@@ -155,6 +155,9 @@ void tg_css_gen(view_t* view)
 	{
 	    uint32_t color = view->style.background_color;
 
+	    if ((color & 0xFF) < 0xFF || view->style.shadow_blur > 0 || view->style.border_radius > 0) view->texture.transparent = 1;
+	    else view->texture.transparent = 0;
+
 	    float w = view->frame.local.w + 2 * view->style.shadow_blur;
 	    float h = view->frame.local.h + 2 * view->style.shadow_blur;
 

@@ -2,7 +2,6 @@
 #include "evrecorder.c"
 #include "filemanager.c"
 #include "ui.c"
-#include "ui_compositor.c"
 #include "ui_manager.c"
 #include "wl_connector.c"
 #include "zc_cstring.c"
@@ -68,7 +67,7 @@ void update(ev_t ev)
 	    while ((recev = evrec_replay(ev.time)) != NULL)
 	    {
 		ui_manager_event(*recev);
-		ui_update_cursor((r2_t){recev->x, recev->y, 10, 10});
+		ui_update_cursor((vr_t){recev->x, recev->y, 10, 10});
 
 		if (recev->type == EV_KDOWN && recev->keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
 	    }
@@ -100,13 +99,29 @@ void update(ev_t ev)
 	// ui_describe();
     }
 
-    wl_connector_draw_window(mmfm.window);
+    if (ev.type == EV_TIME)
+    {
+	// clear buffer
+	memset(mmfm.window->bitmap.data, 0, mmfm.window->bitmap.size);
+
+	// frame callback from wl connector
+	vr_t dirty = ui_manager_update(0);
+
+	ui_manager_render(0, &mmfm.window->bitmap);
+
+	/* if (changed) */
+	/* { */
+	wl_connector_draw_window(mmfm.window);
+	/* } */
+    }
 }
 
 void render(uint32_t time, uint32_t index, bm_argb_t* bm)
 {
     /* printf("RENDER\n"); */
-    ui_manager_render(time, bm);
+    /* zc_time(NULL); */
+    /* int changed = ui_manager_render(time, bm); */
+    /* zc_time("render"); */
 }
 
 void destroy()

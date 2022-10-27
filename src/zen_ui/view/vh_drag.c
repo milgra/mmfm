@@ -43,7 +43,7 @@ void vh_drag_evt(view_t* view, ev_t ev)
 
 	if (vh->dragged_view)
 	{
-	    r2_t frame = vh->dragged_view->frame.local;
+	    vr_t frame = vh->dragged_view->frame.local;
 	    frame.x    = ev.x - frame.w / 2;
 	    frame.y    = ev.y - frame.h / 2;
 	    view_set_frame(vh->dragged_view, frame);

@@ -3,9 +3,17 @@
 
 #include "wm_event.c"
 #include "zc_bm_argb.c"
-#include "zc_util2.c"
-#include "zc_vec2.c"
 #include "zc_vector.c"
+#include <math.h>
+
+typedef struct _vr_t vr_t;
+struct _vr_t
+{
+    float x;
+    float y;
+    float w;
+    float h;
+};
 
 typedef enum _laypos_t // layout position
 {
@@ -134,9 +142,9 @@ typedef struct _texture_t
 
 typedef struct _frame_t
 {
-    r2_t local;  // local position
-    r2_t global; // global position
-    r2_t region; // region to show
+    vr_t local;  // local position
+    vr_t global; // global position
+    vr_t region; // region to show
     char pos_changed;
     char dim_changed;
     char reg_changed;
@@ -174,7 +182,10 @@ struct _view_t
     void* tex_gen_data;             /* data for texture generator */
 };
 
-view_t* view_new(char* id, r2_t frame);
+int  vr_equals(vr_t r1, vr_t r2);
+vr_t vr_add(vr_t r1, vr_t r2);
+
+view_t* view_new(char* id, vr_t frame);
 void    view_set_type(view_t* view, char* type);
 void    view_set_class(view_t* view, char* class);
 void    view_set_script(view_t* view, char* script);
@@ -189,8 +200,8 @@ void    view_coll_touched(view_t* view, ev_t ev, vec_t* queue);
 view_t* view_get_subview(view_t* view, char* id);
 void    view_gen_texture(view_t* view);
 void    view_set_masked(view_t* view, char masked);
-void    view_set_frame(view_t* view, r2_t frame);
-void    view_set_region(view_t* view, r2_t frame);
+void    view_set_frame(view_t* view, vr_t frame);
+void    view_set_region(view_t* view, vr_t frame);
 void    view_set_style(view_t* view, vstyle_t style);
 void    view_set_block_touch(view_t* view, char block, char recursive);
 void    view_set_texture_bmp(view_t* view, bm_argb_t* tex);
@@ -213,6 +224,32 @@ void view_calc_global(view_t* view);
 #include "zc_log.c"
 #include "zc_memory.c"
 #include <limits.h>
+
+int vr_equals(vr_t r1, vr_t r2)
+{
+    return (r1.x == r2.x && r1.y == r2.y && r1.w == r2.w && r1.h == r2.h);
+}
+
+vr_t vr_add(vr_t r1, vr_t r2)
+{
+    if (r1.w == 0 || r1.h == 0) return r2;
+    if (r2.w == 0 || r2.h == 0) return r1;
+
+    if (r2.x < r1.x)
+    {
+	r1.w = r1.x + r1.w - r2.x;
+	r1.x = r2.x;
+    }
+    if (r2.y < r1.y)
+    {
+	r1.h = r1.y + r1.h - r2.y;
+	r1.y = r2.y;
+    }
+    if (r2.x + r2.w > r1.w) r1.w = r2.x + r2.w - r1.x;
+    if (r2.y + r2.h > r1.h) r1.h = r2.y + r2.h - r1.y;
+
+    return r1;
+}
 
 int view_cnt = 0;
 
@@ -237,7 +274,7 @@ void view_del(void* pointer)
     REL(view->views);
 }
 
-view_t* view_new(char* id, r2_t frame)
+view_t* view_new(char* id, vr_t frame)
 {
     if (MGET(views.names, id))
     {
@@ -268,6 +305,11 @@ view_t* view_new(char* id, r2_t frame)
     view->style.right         = INT_MAX;
     view->style.bottom        = INT_MAX;
     view->style.shadow_color  = 0x00000033;
+
+    // starts with changed states
+
+    view->frame.dim_changed = 1;
+    view->frame.pos_changed = 1;
 
     // store and release
 
@@ -403,11 +445,11 @@ void view_evt(view_t* view, ev_t ev)
 
 void view_calc_global(view_t* view)
 {
-    r2_t frame_parent = {0};
+    vr_t frame_parent = {0};
     if (view->parent != NULL) frame_parent = view->parent->frame.global;
 
-    r2_t frame_global = view->frame.local;
-    r2_t old_global   = view->frame.global;
+    vr_t frame_global = view->frame.local;
+    vr_t old_global   = view->frame.global;
 
     frame_global.x = roundf(frame_parent.x) + roundf(frame_global.x);
     frame_global.y = roundf(frame_parent.y) + roundf(frame_global.y);
@@ -423,7 +465,7 @@ void view_calc_global(view_t* view)
     }
 }
 
-void view_set_frame(view_t* view, r2_t frame)
+void view_set_frame(view_t* view, vr_t frame)
 {
     // check if texture needs rerendering
 
@@ -445,7 +487,7 @@ void view_set_frame(view_t* view, r2_t frame)
     view_calc_global(view);
 }
 
-void view_set_region(view_t* view, r2_t region)
+void view_set_region(view_t* view, vr_t region)
 {
     view->frame.region      = region;
     view->frame.reg_changed = 1;

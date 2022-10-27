@@ -42,7 +42,7 @@ void vh_cv_evnt_evt(view_t* view, ev_t ev)
     if (ev.type == EV_TIME)
     {
 	vh_cv_body_t* bvh = vh->tbody_view->handler_data;
-	r2_t          cf  = bvh->content->frame.local;
+	vr_t          cf  = bvh->content->frame.local;
 
 	vh->sx *= 0.8;
 	vh->sy *= 0.8;

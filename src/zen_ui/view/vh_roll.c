@@ -36,7 +36,7 @@ void vh_roll_evt(view_t* view, ev_t ev)
     if (ev.type == EV_MMOVE)
     {
 	vh_roll_t* vh    = view->handler_data;
-	r2_t       frame = view->frame.global;
+	vr_t       frame = view->frame.global;
 
 	if (!vh->active)
 	{
@@ -55,7 +55,7 @@ void vh_roll_evt(view_t* view, ev_t ev)
     else if (ev.type == EV_MMOVE_OUT)
     {
 	vh_roll_t* vh    = view->handler_data;
-	r2_t       frame = view->frame.global;
+	vr_t       frame = view->frame.global;
 
 	if (vh->active)
 	{

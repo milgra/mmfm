@@ -38,6 +38,9 @@ void tg_text_gen(view_t* view)
 	bm_argb_t*  fontmap = bm_argb_new((int) view->frame.local.w, (int) view->frame.local.h); // REL 0
 	textstyle_t style   = gen->style;
 
+	if ((style.textcolor & 0xFF) < 0xFF || (style.backcolor & 0xFF) < 0xFF) view->texture.transparent = 1;
+	else view->texture.transparent = 0;
+
 	if (strlen(gen->text) > 0)
 	{
 	    text_render(gen->text, style, fontmap);
@@ -46,8 +49,6 @@ void tg_text_gen(view_t* view)
 	{
 	    gfx_rect(fontmap, 0, 0, fontmap->w, fontmap->h, style.backcolor, 0);
 	}
-
-	view->texture.transparent = 1;
 
 	view_set_texture_bmp(view, fontmap);
 

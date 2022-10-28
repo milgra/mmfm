@@ -1,26 +1,35 @@
-#ifndef ui_manager_h
-#define ui_manager_h
+#ifndef ku_window_h
+#define ku_window_h
 
+#include "ku_bitmap.c"
 #include "view.c"
 #include "wm_event.c"
-#include "zc_bm_argb.c"
 
-void    ui_manager_init(int width, int height);
-void    ui_manager_destroy();
-void    ui_manager_event(ev_t event);
-void    ui_manager_add(view_t* view);
-void    ui_manager_remove(view_t* view);
-void    ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty);
-void    ui_manager_activate(view_t* view);
-view_t* ui_manager_get_root();
-vr_t    ui_manager_update(uint32_t time);
-void    ui_manager_resize_to_root(view_t* view);
+typedef struct _ku_window_t ku_window_t;
+struct _ku_window_t
+{
+    view_t* root;
+    vec_t*  views;
+
+    vec_t* implqueue; // views selected by roll over
+    vec_t* explqueue; // views selected by click
+};
+
+ku_window_t* window_create(int width, int height);
+void         window_event(ku_window_t* window, ev_t event);
+void         window_add(ku_window_t* window, view_t* view);
+void         window_remove(ku_window_t* window, view_t* view);
+void         window_render(ku_window_t* window, uint32_t time, bm_t* bm, vr_t dirty);
+void         window_activate(ku_window_t* window, view_t* view);
+view_t*      window_get_root(ku_window_t* window);
+vr_t         window_update(ku_window_t* window, uint32_t time);
+void         window_resize_to_root(ku_window_t* window, view_t* view);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "view_layout.c"
+#include "ku_layout.c"
 #include "views.c"
 #include "zc_log.c"
 #include "zc_map.c"
@@ -28,62 +37,61 @@ void    ui_manager_resize_to_root(view_t* view);
 #include "zc_vec2.c"
 #include "zc_vector.c"
 
-struct _uim_t
+void window_del(void* p)
 {
-    view_t* root;
-    vec_t*  views;
+    ku_window_t* win = p;
 
-    vec_t* implqueue; // views selected by roll over
-    vec_t* explqueue; // views selected by click
-} uim = {0};
+    REL(win->root); // REL 0
+    REL(win->views);
+    REL(win->implqueue);
+    REL(win->explqueue);
 
-void ui_manager_init(int width, int height)
-{
-    views_init();
-
-    uim.root      = view_new("root", (vr_t){0, 0, width, height}); // REL 0
-    uim.views     = VNEW();
-    uim.implqueue = VNEW();
-    uim.explqueue = VNEW();
-}
-
-void ui_manager_destroy()
-{
-    REL(uim.root); // REL 0
-    REL(uim.views);
-    REL(uim.implqueue);
-    REL(uim.explqueue);
-
+    // TODO wont work with multiple instances
     views_destroy();
 }
 
-void ui_manager_event(ev_t ev)
+ku_window_t* window_create(int width, int height)
+{
+    // TODO wont work with multiple instance
+    views_init();
+
+    ku_window_t* win = CAL(sizeof(ku_window_t), window_del, NULL);
+
+    win->root      = view_new("root", (vr_t){0, 0, width, height}); // REL 0
+    win->views     = VNEW();
+    win->implqueue = VNEW();
+    win->explqueue = VNEW();
+
+    return win;
+}
+
+void window_event(ku_window_t* win, ev_t ev)
 {
     if (ev.type == EV_TIME)
     {
-	view_evt(uim.root, ev);
+	view_evt(win->root, ev);
     }
     else if (ev.type == EV_RESIZE)
     {
-	vr_t rf = uim.root->frame.local;
+	vr_t rf = win->root->frame.local;
 	if (rf.w != (float) ev.w ||
 	    rf.h != (float) ev.h)
 	{
-	    view_set_frame(uim.root, (vr_t){0.0, 0.0, (float) ev.w, (float) ev.h});
-	    view_layout(uim.root);
+	    view_set_frame(win->root, (vr_t){0.0, 0.0, (float) ev.w, (float) ev.h});
+	    ku_layout(win->root);
 #ifdef DEBUG
-	    view_describe(uim.root, 0);
+	    view_describe(win->root, 0);
 #endif
-	    view_evt(uim.root, ev);
+	    view_evt(win->root, ev);
 	}
     }
     else if (ev.type == EV_MMOVE)
     {
 	ev_t outev = ev;
 	outev.type = EV_MMOVE_OUT;
-	for (int i = uim.implqueue->length - 1; i > -1; i--)
+	for (int i = win->implqueue->length - 1; i > -1; i--)
 	{
-	    view_t* v = uim.implqueue->data[i];
+	    view_t* v = win->implqueue->data[i];
 	    if (v->needs_touch)
 	    {
 		if (ev.x > v->frame.global.x &&
@@ -100,12 +108,12 @@ void ui_manager_event(ev_t ev)
 	    }
 	}
 
-	vec_reset(uim.implqueue);
-	view_coll_touched(uim.root, ev, uim.implqueue);
+	vec_reset(win->implqueue);
+	view_coll_touched(win->root, ev, win->implqueue);
 
-	for (int i = uim.implqueue->length - 1; i > -1; i--)
+	for (int i = win->implqueue->length - 1; i > -1; i--)
 	{
-	    view_t* v = uim.implqueue->data[i];
+	    view_t* v = win->implqueue->data[i];
 	    if (v->needs_touch && v->parent)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
@@ -119,9 +127,9 @@ void ui_manager_event(ev_t ev)
 	if (ev.type == EV_MDOWN) outev.type = EV_MDOWN_OUT;
 	if (ev.type == EV_MUP) outev.type = EV_MUP_OUT;
 
-	for (int i = uim.explqueue->length - 1; i > -1; i--)
+	for (int i = win->explqueue->length - 1; i > -1; i--)
 	{
-	    view_t* v = uim.explqueue->data[i];
+	    view_t* v = win->explqueue->data[i];
 	    if (v->needs_touch)
 	    {
 		if (v->handler) (*v->handler)(v, outev);
@@ -131,13 +139,13 @@ void ui_manager_event(ev_t ev)
 
 	if (ev.type == EV_MDOWN)
 	{
-	    vec_reset(uim.explqueue);
-	    view_coll_touched(uim.root, ev, uim.explqueue);
+	    vec_reset(win->explqueue);
+	    view_coll_touched(win->root, ev, win->explqueue);
 	}
 
-	for (int i = uim.explqueue->length - 1; i > -1; i--)
+	for (int i = win->explqueue->length - 1; i > -1; i--)
 	{
-	    view_t* v = uim.explqueue->data[i];
+	    view_t* v = win->explqueue->data[i];
 	    if (v->needs_touch && v->parent)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
@@ -147,12 +155,12 @@ void ui_manager_event(ev_t ev)
     }
     else if (ev.type == EV_SCROLL)
     {
-	vec_reset(uim.implqueue);
-	view_coll_touched(uim.root, ev, uim.implqueue);
+	vec_reset(win->implqueue);
+	view_coll_touched(win->root, ev, win->implqueue);
 
-	for (int i = uim.implqueue->length - 1; i > -1; i--)
+	for (int i = win->implqueue->length - 1; i > -1; i--)
 	{
-	    view_t* v = uim.implqueue->data[i];
+	    view_t* v = win->implqueue->data[i];
 	    if (v->needs_touch && v->parent)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
@@ -162,9 +170,9 @@ void ui_manager_event(ev_t ev)
     }
     else if (ev.type == EV_KDOWN || ev.type == EV_KUP)
     {
-	for (int i = uim.explqueue->length - 1; i > -1; i--)
+	for (int i = win->explqueue->length - 1; i > -1; i--)
 	{
-	    view_t* v = uim.explqueue->data[i];
+	    view_t* v = win->explqueue->data[i];
 
 	    if (v->needs_key)
 	    {
@@ -175,9 +183,9 @@ void ui_manager_event(ev_t ev)
     }
     else if (ev.type == EV_TEXT)
     {
-	for (int i = uim.explqueue->length - 1; i > -1; i--)
+	for (int i = win->explqueue->length - 1; i > -1; i--)
 	{
-	    view_t* v = uim.explqueue->data[i];
+	    view_t* v = win->explqueue->data[i];
 	    if (v->needs_text)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
@@ -187,30 +195,30 @@ void ui_manager_event(ev_t ev)
     }
 }
 
-void ui_manager_add(view_t* view)
+void window_add(ku_window_t* win, view_t* view)
 {
-    view_add_subview(uim.root, view);
+    view_add_subview(win->root, view);
 
     // layout, window could be resized since
-    view_layout(uim.root);
+    ku_layout(win->root);
 }
 
-void ui_manager_remove(view_t* view)
+void window_remove(ku_window_t* win, view_t* view)
 {
     view_remove_from_parent(view);
 }
 
-void ui_manager_activate(view_t* view)
+void window_activate(ku_window_t* win, view_t* view)
 {
-    vec_add_unique_data(uim.explqueue, view);
+    vec_add_unique_data(win->explqueue, view);
 }
 
-void ui_manager_collect(view_t* view, vec_t* views)
+void window_collect(ku_window_t* win, view_t* view, vec_t* views)
 {
     if (!view->exclude) VADD(views, view);
     if (view->style.unmask == 1) view->style.unmask = 0; // reset unmasking
     vec_t* vec = view->views;
-    for (int i = 0; i < vec->length; i++) ui_manager_collect(vec->data[i], views);
+    for (int i = 0; i < vec->length; i++) window_collect(win, vec->data[i], views);
     if (view->style.masked)
     {
 	view_t* last       = views->data[views->length - 1];
@@ -218,21 +226,21 @@ void ui_manager_collect(view_t* view, vec_t* views)
     }
 }
 
-vr_t ui_manager_update(uint32_t time)
+vr_t window_update(ku_window_t* win, uint32_t time)
 {
     vr_t result = {0};
 
     if (views.arrange == 1)
     {
-	vec_reset(uim.views);
-	ui_manager_collect(uim.root, uim.views);
+	vec_reset(win->views);
+	window_collect(win, win->root, win->views);
 
 	views.arrange = 0;
     }
 
-    for (int i = 0; i < uim.views->length; i++)
+    for (int i = 0; i < win->views->length; i++)
     {
-	view_t* view = uim.views->data[i];
+	view_t* view = win->views->data[i];
 
 	/* react to changes */
 
@@ -268,7 +276,7 @@ vr_t ui_manager_update(uint32_t time)
     return result;
 }
 
-void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
+void window_render(ku_window_t* win, uint32_t time, bm_t* bm, vr_t dirty)
 {
     static vr_t masks[32] = {0};
     static int  maski     = 0;
@@ -277,9 +285,9 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
 
     /* draw view into bitmap */
 
-    for (int i = 0; i < uim.views->length; i++)
+    for (int i = 0; i < win->views->length; i++)
     {
-	view_t* view = uim.views->data[i];
+	view_t* view = win->views->data[i];
 
 	if (view->style.masked)
 	{
@@ -293,7 +301,7 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
 	{
 	    if (view->texture.transparent == 0 || i == 0)
 	    {
-		bm_argb_insert(
+		bm_insert(
 		    bm,
 		    view->texture.bitmap,
 		    view->frame.global.x - view->style.shadow_blur,
@@ -307,7 +315,7 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
 	    {
 		if (view->texture.alpha == 1.0)
 		{
-		    bm_argb_blend(
+		    bm_blend(
 			bm,
 			view->texture.bitmap,
 			view->frame.global.x - view->style.shadow_blur,
@@ -319,7 +327,7 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
 		}
 		else
 		{
-		    bm_argb_blend_with_alpha_mask(
+		    bm_blend_with_alpha_mask(
 			bm,
 			view->texture.bitmap,
 			view->frame.global.x - view->style.shadow_blur,
@@ -341,17 +349,17 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
     }
 }
 
-view_t* ui_manager_get_root()
+view_t* window_get_root(ku_window_t* win)
 {
-    return uim.root;
+    return win->root;
 }
 
-void ui_manager_resize_to_root(view_t* view)
+void window_resize_to_root(ku_window_t* win, view_t* view)
 {
-    vr_t f = uim.root->frame.local;
+    vr_t f = win->root->frame.local;
 
     view_set_frame(view, (vr_t){0.0, 0.0, (float) f.w, (float) f.h});
-    view_layout(view);
+    ku_layout(view);
 }
 
 #endif

@@ -1,8 +1,8 @@
 #ifndef wl_connector_h
 #define wl_connector_h
 
+#include "ku_bitmap.c"
 #include "wm_event.c"
-#include "zc_bm_argb.c"
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -23,8 +23,6 @@
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
-#include "zc_bm_argb.c"
-#include "zc_draw.c"
 #include "zc_log.c"
 #include "zc_memory.c"
 #include "zc_time.c"
@@ -62,7 +60,7 @@ struct wl_window
     struct wl_buffer*    buffer;       // wl buffer for surface
     void*                shm_data;     // active bufferdata
     int                  shm_size;     // active bufferdata size
-    bm_argb_t            bitmap;
+    bm_t                 bitmap;
 
     int scale;
     int width;
@@ -83,7 +81,7 @@ struct layer_info
     struct wl_buffer*  buffer;   // wl buffer for surface
     void*              shm_data; // active bufferdata
     int                shm_size; // active bufferdata size
-    bm_argb_t          bitmap;
+    bm_t               bitmap;
 };
 
 typedef struct _wl_event_t wl_event_t;
@@ -98,7 +96,7 @@ void wl_connector_init(
     void (*init)(wl_event_t event),
     void (*event)(wl_event_t event),
     void (*update)(ev_t),
-    void (*render)(uint32_t time, uint32_t index, bm_argb_t* bm),
+    void (*render)(uint32_t time, uint32_t index, bm_t* bm),
     void (*destroy)());
 
 void wl_connector_draw();
@@ -155,7 +153,7 @@ struct wlc_t
     void (*init)(wl_event_t event);
     void (*event)(wl_event_t event);
     void (*update)(ev_t);
-    void (*render)(uint32_t time, uint32_t index, bm_argb_t* bm);
+    void (*render)(uint32_t time, uint32_t index, bm_t* bm);
     void (*destroy)();
 
     struct xdg_wm_base* xdg_wm_base;
@@ -940,7 +938,7 @@ void wl_connector_init(
     void (*init)(wl_event_t event),
     void (*event)(wl_event_t event),
     void (*update)(ev_t),
-    void (*render)(uint32_t time, uint32_t index, bm_argb_t* bm),
+    void (*render)(uint32_t time, uint32_t index, bm_t* bm),
     void (*destroy)())
 {
     wlc.monitors = CAL(sizeof(struct monitor_info) * 16, NULL, NULL);

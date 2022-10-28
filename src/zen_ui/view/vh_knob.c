@@ -9,8 +9,8 @@ void vh_knob_add(view_t* view, void (*ratio_changed)(view_t* view, float ratio))
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "ku_draw.c"
 #include "tg_knob.c"
-#include "zc_draw.c"
 #include <stdio.h>
 
 typedef struct _vh_knob_t

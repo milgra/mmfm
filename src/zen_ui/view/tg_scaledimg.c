@@ -6,8 +6,8 @@
 #ifndef texgen_scaledimg_h
 #define texgen_scaledimg_h
 
+#include "ku_bitmap.c"
 #include "view.c"
-#include "zc_bm_argb.c"
 
 typedef struct _tg_scaledimg_t
 {
@@ -23,20 +23,20 @@ void tg_scaledimg_set_content_size(view_t* view, int w, int h);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "ku_draw.c"
 #include "zc_cstring.c"
-#include "zc_draw.c"
 #include "zc_log.c"
 
 void tg_scaledimg_gen(view_t* view)
 {
     tg_scaledimg_t* gen = view->tex_gen_data;
-    bm_argb_t*      bm  = view->texture.bitmap;
+    bm_t*           bm  = view->texture.bitmap;
 
     if (bm == NULL ||
 	bm->w != (int) gen->w ||
 	bm->h != (int) gen->h)
     {
-	bm = bm_argb_new(gen->w, gen->h); // REL 0
+	bm = bm_new(gen->w, gen->h); // REL 0
 
 	gfx_rect(bm, 0, 0, bm->w, bm->h, 0x00000000, 0);
 

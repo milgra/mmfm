@@ -1,19 +1,19 @@
-#ifndef bm_argb_util_h
-#define bm_argb_util_h
+#ifndef bm_util_h
+#define bm_util_h
 
-#include "zc_bm_argb.c"
+#include "ku_bitmap.c"
 #include <string.h>
 
-bm_argb_t* bm_argb_new_flip_y(bm_argb_t* bm);
-void       bm_argb_write(bm_argb_t* bm, char* path);
+bm_t* bm_new_flip_y(bm_t* bm);
+void  bm_write(bm_t* bm, char* path);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-bm_argb_t* bm_argb_new_flip_y(bm_argb_t* bm)
+bm_t* bm_new_flip_y(bm_t* bm)
 {
-    bm_argb_t* tmp = bm_argb_new(bm->w, bm->h);
+    bm_t* tmp = bm_new(bm->w, bm->h);
     for (int y = 0; y < bm->h; y++)
     {
 	int src_y = bm->h - y - 1;
@@ -22,7 +22,7 @@ bm_argb_t* bm_argb_new_flip_y(bm_argb_t* bm)
     return tmp;
 }
 
-void bm_argb_write(bm_argb_t* bm, char* path)
+void bm_write(bm_t* bm, char* path)
 {
     int w = bm->w;
     int h = bm->h;

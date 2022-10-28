@@ -1,8 +1,8 @@
 #ifndef ui_util_h
 #define ui_util_h
 
+#include "ku_text.c"
 #include "view.c"
-#include "zc_text.c"
 
 textstyle_t ui_util_gen_textstyle(view_t* view);
 
@@ -10,7 +10,7 @@ textstyle_t ui_util_gen_textstyle(view_t* view);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "fontconfig.c"
+#include "ku_fontconfig.c"
 #include "zc_log.c"
 #include <limits.h>
 

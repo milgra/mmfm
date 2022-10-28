@@ -15,6 +15,8 @@
 #include "clock.c"
 #include "decoder.c"
 #include "framequeue.c"
+#include "ku_bitmap.c"
+#include "ku_draw.c"
 #include "libavcodec/avcodec.h"
 #include "libavcodec/avfft.h"
 #include "libavformat/avformat.h"
@@ -25,8 +27,6 @@
 #include "libswresample/swresample.h"
 #include "libswscale/swscale.h"
 #include "packetqueue.c"
-#include "zc_bm_argb.c"
-#include "zc_draw.c"
 #include "zc_log.c"
 #include "zc_vec2.c"
 #include <SDL.h>
@@ -178,8 +178,8 @@ void          mp_unmute(MediaState_t* ms);
 void          mp_set_volume(MediaState_t* ms, float volume);
 void          mp_set_position(MediaState_t* ms, float ratio);
 void          mp_set_visutype(MediaState_t* ms, int visutype);
-void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, bm_argb_t* bm);
-void          mp_audio_refresh(MediaState_t* opaque, bm_argb_t* bml, bm_argb_t* bmr);
+void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, bm_t* bm);
+void          mp_audio_refresh(MediaState_t* opaque, bm_t* bml, bm_t* bmr);
 double        mp_get_master_clock(MediaState_t* ms);
 
 #endif
@@ -1462,7 +1462,7 @@ double vp_duration(MediaState_t* ms, Frame* vp, Frame* nextvp)
 
 unsigned sws_flags = SWS_BICUBIC;
 
-int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_convert_ctx, bm_argb_t* bm)
+int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_convert_ctx, bm_t* bm)
 {
     int ret = 0;
 
@@ -1506,7 +1506,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
     return ret;
 }
 
-void video_image_display(MediaState_t* ms, bm_argb_t* bm)
+void video_image_display(MediaState_t* ms, bm_t* bm)
 {
     Frame* vp;
     // Frame*   sp = NULL;
@@ -1526,13 +1526,13 @@ void video_image_display(MediaState_t* ms, bm_argb_t* bm)
 }
 
 /* display the current picture, if any */
-void video_display(MediaState_t* ms, bm_argb_t* bm)
+void video_display(MediaState_t* ms, bm_t* bm)
 {
     if (ms->vidst) video_image_display(ms, bm);
 }
 
 /* called to display each frame */
-void mp_video_refresh(MediaState_t* ms, double* remaining_time, bm_argb_t* bm)
+void mp_video_refresh(MediaState_t* ms, double* remaining_time, bm_t* bm)
 {
     double time;
 
@@ -1621,7 +1621,7 @@ static inline int compute_mod(int a, int b)
     return a < 0 ? a % b + b : a % b;
 }
 
-void mp_audio_refresh(MediaState_t* ms, bm_argb_t* bml, bm_argb_t* bmr)
+void mp_audio_refresh(MediaState_t* ms, bm_t* bml, bm_t* bmr)
 {
     int     i, i_start, x, y1, y2, y, ys, delay, n, nb_display_channels;
     int     ch, channels, h, h2;
@@ -1712,7 +1712,7 @@ void mp_audio_refresh(MediaState_t* ms, bm_argb_t* bml, bm_argb_t* bmr)
 	    i  = i_start + ch;
 	    y1 = ytop + (h / 2); /* position of center line */
 
-	    bm_argb_t* bitmap = ch == 0 ? bml : bmr;
+	    bm_t* bitmap = ch == 0 ? bml : bmr;
 
 	    int prevy = -1;
 	    for (x = 0; x < width; x++)

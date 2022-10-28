@@ -10,7 +10,7 @@ void viewgen_html_parse(char* htmlpath, vec_t* views);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "cstr_util.c"
-#include "html.c"
+#include "ku_html.c"
 #include "view.c"
 
 void viewgen_html_parse(char* htmlpath, vec_t* views)

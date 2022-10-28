@@ -1,8 +1,7 @@
 #ifndef text_h
 #define text_h
 
-#include "zc_text.c"
-#include "zc_bm_argb.c"
+#include "ku_bitmap.c"
 #include <linux/limits.h>
 #include <stdint.h>
 
@@ -64,34 +63,23 @@ typedef struct _glyph_t
 } glyph_t;
 
 void text_init();
-
 void text_destroy();
-
 void text_break_glyphs(glyph_t* glyphs, int count, textstyle_t style, int wth, int hth, int* nwth, int* nhth);
-
 void text_align_glyphs(glyph_t* glyphs, int count, textstyle_t style, int w, int h);
-
-void text_render_glyph(glyph_t g, textstyle_t style, bm_argb_t* bitmap);
-
-void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_argb_t* bitmap);
-
+void text_render_glyph(glyph_t g, textstyle_t style, bm_t* bitmap);
+void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_t* bitmap);
 void text_layout(glyph_t* glyphs, int count, textstyle_t style, int wth, int hth, int* nwth, int* nhth);
-
-void text_render(char* text, textstyle_t style, bm_argb_t* bitmap);
-
+void text_render(char* text, textstyle_t style, bm_t* bitmap);
 void text_measure(char* text, textstyle_t style, int w, int h, int* nw, int* nh);
-
 void text_describe_style(textstyle_t style);
-
 void text_describe_glyphs(glyph_t* glyphs, int count);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_draw.c"
+#include "ku_draw.c"
 #include "zc_map.c"
-#include "zc_text.c"
 #include "zc_wrapper.c"
 #include <stdio.h>
 #include <stdlib.h>
@@ -431,7 +419,7 @@ void text_shift_glyphs(glyph_t* glyphs, int count, textstyle_t style)
     }
 }
 
-void text_render_glyph(glyph_t g, textstyle_t style, bm_argb_t* bitmap)
+void text_render_glyph(glyph_t g, textstyle_t style, bm_t* bitmap)
 {
     if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
@@ -490,7 +478,7 @@ void text_render_glyph(glyph_t g, textstyle_t style, bm_argb_t* bitmap)
     }
 }
 
-void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_argb_t* bitmap)
+void text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, bm_t* bitmap)
 {
     if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
@@ -579,7 +567,7 @@ void text_layout(glyph_t* glyphs, int count, textstyle_t style, int wth, int hth
     text_shift_glyphs(glyphs, count, style);
 }
 
-void text_render(char* text, textstyle_t style, bm_argb_t* bitmap)
+void text_render(char* text, textstyle_t style, bm_t* bitmap)
 {
     const void*  part   = text;
     size_t       count  = utf8len(text);

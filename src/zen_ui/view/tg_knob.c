@@ -6,9 +6,9 @@
 
 typedef struct _tg_knob_t
 {
-    float      angle;
-    bm_argb_t* back;
-    bm_argb_t* fore;
+    float angle;
+    bm_t* back;
+    bm_t* fore;
 } tg_knob_t;
 
 void tg_knob_add(view_t* view);
@@ -18,7 +18,7 @@ void tg_knob_set_angle(view_t* view, float angle);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_draw.c"
+#include "ku_draw.c"
 
 void tg_knob_gen(view_t* view)
 {
@@ -28,9 +28,9 @@ void tg_knob_gen(view_t* view)
     {
 	if (view->texture.bitmap == NULL && view->frame.local.w > 0 && view->frame.local.h > 0)
 	{
-	    bm_argb_t* bmp = bm_argb_new(view->frame.local.w, view->frame.local.h); // REL 0
-	    tg->back       = bm_argb_new(view->frame.local.w, view->frame.local.h); // REL 1
-	    tg->fore       = bm_argb_new(view->frame.local.w, view->frame.local.h); // REL 2
+	    bm_t* bmp = bm_new(view->frame.local.w, view->frame.local.h); // REL 0
+	    tg->back  = bm_new(view->frame.local.w, view->frame.local.h); // REL 1
+	    tg->fore  = bm_new(view->frame.local.w, view->frame.local.h); // REL 2
 
 	    uint32_t basecol   = 0x454545FF;
 	    uint32_t outercol  = 0x343434FF;

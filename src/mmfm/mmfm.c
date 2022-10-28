@@ -1,8 +1,8 @@
 #include "config.c"
 #include "evrecorder.c"
 #include "filemanager.c"
+#include "ku_window.c"
 #include "ui.c"
-#include "ui_manager.c"
 #include "wl_connector.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
@@ -24,6 +24,7 @@ struct
     char              record;
     struct wl_window* window;
     vr_t              dirty_prev;
+    ku_window_t*      kuwindow;
 } mmfm = {0};
 
 void init(wl_event_t event)
@@ -33,7 +34,10 @@ void init(wl_event_t event)
     mmfm.window = wl_connector_create_window("MMFM", 1200, 600);
 
     zc_time(NULL);
-    ui_init(monitor->logical_width, monitor->logical_height, monitor->scale); // DESTROY 3
+
+    mmfm.kuwindow = window_create(monitor->logical_width, monitor->logical_height);
+
+    ui_init(monitor->logical_width, monitor->logical_height, monitor->scale, mmfm.kuwindow); // DESTROY 3
     zc_time("ui init");
 
     if (mmfm.record)
@@ -67,7 +71,7 @@ void update(ev_t ev)
 	    ev_t* recev = NULL;
 	    while ((recev = evrec_replay(ev.time)) != NULL)
 	    {
-		ui_manager_event(*recev);
+		window_event(mmfm.kuwindow, *recev);
 		ui_update_cursor((vr_t){recev->x, recev->y, 10, 10});
 
 		if (recev->type == EV_KDOWN && recev->keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
@@ -91,7 +95,7 @@ void update(ev_t ev)
     // in case of replay only send time events
     if (!mmfm.replay || ev.type == EV_TIME)
     {
-	ui_manager_event(ev);
+	window_event(mmfm.kuwindow, ev);
     }
 
     if (ev.type == EV_RESIZE)
@@ -103,7 +107,7 @@ void update(ev_t ev)
     if (mmfm.window->frame_cb == NULL)
     {
 	// frame callback from wl connector
-	vr_t dirty = ui_manager_update(0);
+	vr_t dirty = window_update(mmfm.kuwindow, 0);
 
 	if (dirty.w > 0 && dirty.h > 0)
 	{
@@ -113,14 +117,14 @@ void update(ev_t ev)
 	    /* zc_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
 	    // clear out dirty rectangle
-	    /* bm_argb_cut(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
+	    /* bm_cut(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
 	    /* zc_time(NULL); */
 	    /* memset(mmfm.window->bitmap.data, 0, mmfm.window->bitmap.size); */
-	    ui_manager_render(0, &mmfm.window->bitmap, sum);
+	    window_render(mmfm.kuwindow, 0, &mmfm.window->bitmap, sum);
 	    /* zc_time("RENDER"); */
 
-	    /* bm_argb_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */
+	    /* bm_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */
 	    /* wl_connector_draw_window(mmfm.window, 0, 0, mmfm.window->width, mmfm.window->height); */
 	    /* nanosleep((const struct timespec[]){{0, 100000000L}}, NULL); */
 
@@ -131,11 +135,11 @@ void update(ev_t ev)
     }
 }
 
-void render(uint32_t time, uint32_t index, bm_argb_t* bm)
+void render(uint32_t time, uint32_t index, bm_t* bm)
 {
     /* printf("RENDER\n"); */
     /* zc_time(NULL); */
-    /* int changed = ui_manager_render(time, bm); */
+    /* int changed = window_render(mmfm.kuwindow,time, bm); */
     /* zc_time("render"); */
 }
 
@@ -145,6 +149,8 @@ void destroy()
     if (mmfm.record) evrec_destroy(); // DESTROY 4
 
     ui_destroy(); // DESTROY 3
+
+    REL(mmfm.kuwindow);
 }
 
 int main(int argc, char* argv[])

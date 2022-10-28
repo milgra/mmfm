@@ -1,9 +1,9 @@
-#ifndef view_layout_h
-#define view_layout_h
+#ifndef ku_layout_h
+#define ku_layout_h
 
 #include "view.c"
 
-void view_layout(view_t* view);
+void ku_layout(view_t* view);
 
 #endif
 
@@ -12,7 +12,7 @@ void view_layout(view_t* view);
 #include <limits.h>
 #include <math.h>
 
-void view_layout(view_t* view)
+void ku_layout(view_t* view)
 {
     float act_x = 0;
     float act_y = 0;
@@ -167,7 +167,7 @@ void view_layout(view_t* view)
     for (int i = 0; i < view->views->length; i++)
     {
 	view_t* v = view->views->data[i];
-	view_layout(v);
+	ku_layout(v);
     }
 }
 

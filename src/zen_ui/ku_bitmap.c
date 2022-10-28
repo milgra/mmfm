@@ -1,28 +1,47 @@
-#ifndef zc_bm_argb_h
-#define zc_bm_argb_h
+/* Kinetic UI bitmap */
+#ifndef ku_bitmap_h
+#define ku_bitmap_h
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct _bm_argb_t bm_argb_t;
-struct _bm_argb_t
+// TODO use this
+
+enum bm_format
+{
+    KU_BITMAP_ARGB,
+    KU_BITMAP_RGBA
+};
+
+typedef struct _bmr_t bmr_t;
+struct _bmr_t
+{
+    int x;
+    int y;
+    int z;
+    int w;
+};
+
+typedef struct _bm_t bm_t;
+struct _bm_t
 {
     int w;
     int h;
 
-    uint8_t* data;
-    uint32_t size;
+    uint8_t*       data;
+    uint32_t       size;
+    enum bm_format type;
 };
 
-bm_argb_t* bm_argb_new(int the_w, int the_h);
-bm_argb_t* bm_argb_new_clone(bm_argb_t* bm);
-void       bm_argb_reset(bm_argb_t* bm);
-void       bm_argb_describe(void* p, int level);
-void       bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh);
-void       bm_argb_blend(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh);
-void       bm_argb_blend_with_alpha_mask(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh, int mask);
-void       bm_argb_blend_rect(bm_argb_t* dst, int x, int y, int w, int h, uint32_t c);
+bm_t* bm_new(int the_w, int the_h);
+bm_t* bm_new_clone(bm_t* bm);
+void  bm_reset(bm_t* bm);
+void  bm_describe(void* p, int level);
+void  bm_insert(bm_t* dst, bm_t* src, int sx, int sy, int mx, int my, int mw, int mh);
+void  bm_blend(bm_t* dst, bm_t* src, int sx, int sy, int mx, int my, int mw, int mh);
+void  bm_blend_with_alpha_mask(bm_t* dst, bm_t* src, int sx, int sy, int mx, int my, int mw, int mh, int mask);
+void  bm_blend_rect(bm_t* dst, int x, int y, int w, int h, uint32_t c);
 
 #endif
 
@@ -32,86 +51,71 @@ void       bm_argb_blend_rect(bm_argb_t* dst, int x, int y, int w, int h, uint32
 #include <assert.h>
 #include <string.h>
 
-void bm_argb_describe_data(void* p, int level);
+#define BMMIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define BMMAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
-void bm_argb_del(void* pointer)
+void bm_describe_data(void* p, int level);
+
+void bm_del(void* pointer)
 {
-    bm_argb_t* bm = pointer;
+    bm_t* bm = pointer;
 
     if (bm->data != NULL) REL(bm->data); // REL 1
 }
 
-bm_argb_t* bm_argb_new(int the_w, int the_h)
+bm_t* bm_new(int the_w, int the_h)
 {
     assert(the_w > 0 && the_h > 0);
 
-    bm_argb_t* bm = CAL(sizeof(bm_argb_t), bm_argb_del, bm_argb_describe); // REL 0
+    bm_t* bm = CAL(sizeof(bm_t), bm_del, bm_describe); // REL 0
 
     bm->w = the_w;
     bm->h = the_h;
 
     bm->size = 4 * the_w * the_h;
-    bm->data = CAL(bm->size * sizeof(unsigned char), NULL, bm_argb_describe_data); // REL 1
+    bm->data = CAL(bm->size * sizeof(unsigned char), NULL, bm_describe_data); // REL 1
+    bm->type = KU_BITMAP_ARGB;
 
     return bm;
 }
 
-bm_argb_t* bm_argb_new_clone(bm_argb_t* the_bm)
+bm_t* bm_new_clone(bm_t* the_bm)
 {
-    bm_argb_t* bm = bm_argb_new(the_bm->w, the_bm->h);
+    bm_t* bm = bm_new(the_bm->w, the_bm->h);
     memcpy(bm->data, the_bm->data, the_bm->size);
     return bm;
 }
 
-void bm_argb_reset(bm_argb_t* bm)
+void bm_reset(bm_t* bm)
 {
     memset(bm->data, 0, bm->size);
 }
 
-struct bmr_t
+bmr_t bm_is(bmr_t l, bmr_t r)
 {
-    int x;
-    int y;
-    int z;
-    int w;
-};
-
-#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
-#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
-
-struct bmr_t bmr_is(struct bmr_t l, struct bmr_t r)
-{
-    struct bmr_t f = {0};
-    if (l.z < r.x || r.z < l.x || l.w < r.y || r.w < l.y)
+    bmr_t f = {0};
+    if (!(l.z < r.x || r.z < l.x || l.w < r.y || r.w < l.y))
     {
-    }
-    else
-    {
-	f.x = MAX(l.x, r.x);
-	f.y = MAX(l.y, r.y);
-	f.z = MIN(r.z, l.z);
-	f.w = MIN(r.w, l.w);
+	f.x = BMMAX(l.x, r.x);
+	f.y = BMMAX(l.y, r.y);
+	f.z = BMMIN(r.z, l.z);
+	f.w = BMMIN(r.w, l.w);
     }
 
     return f;
 }
 
-void bmr_desc(struct bmr_t r)
+void bm_insert(bm_t* dst, bm_t* src, int sx, int sy, int mx, int my, int mw, int mh)
 {
-    printf("%i %i %i %i\n", r.x, r.y, r.z, r.w);
-}
-
-void bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh)
-{
-    struct bmr_t dr = {0, 0, dst->w, dst->h};
-    struct bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
-    struct bmr_t mr = {mx, my, mx + mw, my + mh};
-    struct bmr_t f  = bmr_is(sr, mr);
+    bmr_t dr = {0, 0, dst->w, dst->h};
+    bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
+    bmr_t mr = {mx, my, mx + mw, my + mh};
+    bmr_t f  = bm_is(sr, mr);
 
     if (f.x == 0 && f.w == 0) return;
     if (f.y == 0 && f.z == 0) return;
 
-    f = bmr_is(f, dr);
+    f = bm_is(f, dr);
 
     int sox = f.x - sx; // src offset
     int soy = f.y - sy;
@@ -138,17 +142,17 @@ void bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int 
     }
 }
 
-void bm_argb_blend(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh)
+void bm_blend(bm_t* dst, bm_t* src, int sx, int sy, int mx, int my, int mw, int mh)
 {
-    struct bmr_t dr = {0, 0, dst->w, dst->h};
-    struct bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
-    struct bmr_t mr = {mx, my, mx + mw, my + mh};
-    struct bmr_t f  = bmr_is(sr, mr);
+    bmr_t dr = {0, 0, dst->w, dst->h};
+    bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
+    bmr_t mr = {mx, my, mx + mw, my + mh};
+    bmr_t f  = bm_is(sr, mr);
 
     if (f.x == 0 && f.w == 0) return;
     if (f.y == 0 && f.z == 0) return;
 
-    f = bmr_is(f, dr);
+    f = bm_is(f, dr);
 
     int sox = f.x - sx; // src offset
     int soy = f.y - sy;
@@ -204,39 +208,21 @@ void bm_argb_blend(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int m
 	d += dst->w;
 	s += src->w;
     }
-
-    /* // do compositing */
-    /* pixman_image_composite( */
-    /* 	PIXMAN_OP_OVER, */
-    /* 	src->image, */
-    /* 	NULL, */
-    /* 	dst->image, */
-    /* 	// src_x, src_y */
-    /* 	sox, */
-    /* 	soy, */
-    /* 	// mask_x, mask_y */
-    /* 	0, */
-    /* 	0, */
-    /* 	// dest_x, dest_y, width, height */
-    /* 	dox, */
-    /* 	doy, */
-    /* 	dst->w, */
-    /* 	dst->h); */
 }
 
-void bm_argb_blend_with_alpha_mask(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh, int mask)
+void bm_blend_with_alpha_mask(bm_t* dst, bm_t* src, int sx, int sy, int mx, int my, int mw, int mh, int mask)
 {
     if (mask == 255) return;
 
-    struct bmr_t dr = {0, 0, dst->w, dst->h};
-    struct bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
-    struct bmr_t mr = {mx, my, mx + mw, my + mh};
-    struct bmr_t f  = bmr_is(sr, mr);
+    bmr_t dr = {0, 0, dst->w, dst->h};
+    bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
+    bmr_t mr = {mx, my, mx + mw, my + mh};
+    bmr_t f  = bm_is(sr, mr);
 
     if (f.x == 0 && f.w == 0) return;
     if (f.y == 0 && f.z == 0) return;
 
-    f = bmr_is(f, dr);
+    f = bm_is(f, dr);
 
     int sox = f.x - sx; // src offset
     int soy = f.y - sy;
@@ -293,7 +279,7 @@ void bm_argb_blend_with_alpha_mask(bm_argb_t* dst, bm_argb_t* src, int sx, int s
     }
 }
 
-void bm_argb_blend_rect(bm_argb_t* dst, int x, int y, int w, int h, uint32_t c)
+void bm_blend_rect(bm_t* dst, int x, int y, int w, int h, uint32_t c)
 {
     if (x > dst->w) return;
     if (y > dst->h) return;
@@ -358,13 +344,13 @@ void bm_argb_blend_rect(bm_argb_t* dst, int x, int y, int w, int h, uint32_t c)
     }
 }
 
-void bm_argb_describe(void* p, int level)
+void bm_describe(void* p, int level)
 {
-    bm_argb_t* bm = p;
+    bm_t* bm = p;
     printf("width %i height %i size %u", bm->w, bm->h, bm->size);
 }
 
-void bm_argb_describe_data(void* p, int level)
+void bm_describe_data(void* p, int level)
 {
     printf("bm data\n");
 }

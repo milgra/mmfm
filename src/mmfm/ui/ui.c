@@ -1,6 +1,7 @@
 #ifndef ui_h
 #define ui_h
 
+#include "ku_window.c"
 #include "view.c"
 
 typedef enum _ui_inputmode ui_inputmode;
@@ -9,13 +10,13 @@ enum _ui_inputmode
     UI_IM_RENAME
 };
 
-void ui_init(int width, int height, float scale);
+void ui_init(int width, int height, float scale, ku_window_t* window);
 void ui_destroy();
 void ui_add_cursor();
 void ui_update_cursor(vr_t frame);
 void ui_update_dragger();
-void ui_render_without_cursor(uint32_t time, bm_argb_t* bm);
-void ui_save_screenshot(uint32_t time, char hide_cursor, bm_argb_t* bm);
+void ui_render_without_cursor(uint32_t time, bm_t* bm);
+void ui_save_screenshot(uint32_t time, char hide_cursor, bm_t* bm);
 void ui_update_layout(int w, int h);
 void ui_describe();
 void ui_update_player();
@@ -27,15 +28,15 @@ void ui_update_player();
 #include "coder.c"
 #include "config.c"
 #include "filemanager.c"
+#include "ku_layout.c"
+#include "ku_table.c"
+#include "ku_util.c"
 #include "map_util.c"
 #include "mediaplayer.c"
 #include "pdf.c"
 #include "tg_css.c"
 #include "tg_scaledimg.c"
 #include "tg_text.c"
-#include "ui_manager.c"
-#include "ui_table.c"
-#include "ui_util.c"
 #include "vh_button.c"
 #include "vh_cv_body.c"
 #include "vh_cv_evnt.c"
@@ -44,7 +45,6 @@ void ui_update_player();
 #include "vh_key.c"
 #include "vh_textinput.c"
 #include "vh_touch.c"
-#include "view_layout.c"
 #include "viewgen_css.c"
 #include "viewgen_html.c"
 #include "viewgen_type.c"
@@ -94,11 +94,11 @@ struct _ui_t
     view_t* inputbck;
     view_t* inputtf;
 
-    ui_table_t* cliptable;
-    ui_table_t* filelisttable;
-    ui_table_t* fileinfotable;
-    ui_table_t* settingstable;
-    ui_table_t* contexttable;
+    ku_table_t* cliptable;
+    ku_table_t* filelisttable;
+    ku_table_t* fileinfotable;
+    ku_table_t* settingstable;
+    ku_table_t* contexttable;
 
     view_t* settingspopupcont;
     view_t* contextpopupcont;
@@ -115,6 +115,7 @@ struct _ui_t
     view_t*      rowview_for_context_menu;
     map_t*       edited_file;
 
+    ku_window_t* window;
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -168,7 +169,7 @@ void ui_open(char* path)
 
     if (strstr(path, ".pdf") != NULL)
     {
-	bm_argb_t* pdfbmp = pdf_render(path);
+	bm_t* pdfbmp = pdf_render(path);
 
 	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
 
@@ -190,7 +191,7 @@ void ui_open(char* path)
 	}
 	else if (type == CODER_MEDIA_TYPE_IMAGE)
 	{
-	    bm_argb_t* image = coder_load_image(path);
+	    bm_t* image = coder_load_image(path);
 
 	    if (image)
 	    {
@@ -228,7 +229,7 @@ void ui_show_info(map_t* info)
 
     REL(keys); // REL L0
 
-    ui_table_set_data(ui.fileinfotable, items);
+    ku_table_set_data(ui.fileinfotable, items);
 
     ui_show_progress("File info/data loaded");
 
@@ -253,7 +254,7 @@ void ui_load_folder(char* folder)
 	map_values(files, ui.file_list_data);
 	vec_sort(ui.file_list_data, ui_comp_entry);
 
-	ui_table_set_data(ui.filelisttable, ui.file_list_data);
+	ku_table_set_data(ui.filelisttable, ui.file_list_data);
 	REL(files);
 
 	ui_show_progress("Directory loaded");
@@ -272,13 +273,13 @@ void ui_delete_selected()
     }
 }
 
-void on_files_event(ui_table_event_t event)
+void on_files_event(ku_table_event_t event)
 {
-    if (event.id == UI_TABLE_EVENT_FIELDS_UPDATE)
+    if (event.id == KU_TABLE_EVENT_FIELDS_UPDATE)
     {
 	zc_log_debug("fields update %s", event.table->id);
     }
-    else if (event.id == UI_TABLE_EVENT_SELECT)
+    else if (event.id == KU_TABLE_EVENT_SELECT)
     {
 	zc_log_debug("select %s", event.table->id);
 
@@ -289,7 +290,7 @@ void on_files_event(ui_table_event_t event)
 	if (strcmp(type, "directory") != 0) ui_open(path);
 	ui_show_info(info);
     }
-    else if (event.id == UI_TABLE_EVENT_OPEN)
+    else if (event.id == KU_TABLE_EVENT_OPEN)
     {
 	zc_log_debug("open %s", event.table->id);
 
@@ -300,7 +301,7 @@ void on_files_event(ui_table_event_t event)
 
 	if (strcmp(type, "directory") == 0) ui_load_folder(path);
     }
-    else if (event.id == UI_TABLE_EVENT_DRAG)
+    else if (event.id == KU_TABLE_EVENT_DRAG)
     {
 	view_t* docview                 = view_new("dragged_view", ((vr_t){.x = 0, .y = 0, .w = 50, .h = 50}));
 	char*   imagepath               = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
@@ -315,7 +316,7 @@ void on_files_event(ui_table_event_t event)
 	ui.drag_data = event.selected_items;
 	ui.view_doc  = docview;
     }
-    else if (event.id == UI_TABLE_EVENT_KEY)
+    else if (event.id == KU_TABLE_EVENT_KEY)
     {
 	if (event.ev.keycode == SDLK_DOWN || event.ev.keycode == SDLK_UP)
 	{
@@ -324,7 +325,7 @@ void on_files_event(ui_table_event_t event)
 	    if (event.ev.keycode == SDLK_DOWN) index += 1;
 	    if (event.ev.keycode == SDLK_UP) index -= 1;
 
-	    ui_table_select(event.table, index);
+	    ku_table_select(event.table, index);
 
 	    map_t* info = event.selected_items->data[0];
 	    char*  path = MGET(info, "file/path");
@@ -343,7 +344,7 @@ void on_files_event(ui_table_event_t event)
 	    if (strcmp(type, "directory") == 0) ui_load_folder(path);
 	}
     }
-    else if (event.id == UI_TABLE_EVENT_CONTEXT)
+    else if (event.id == KU_TABLE_EVENT_CONTEXT)
     {
 	if (ui.contextpopupcont->parent == NULL)
 	{
@@ -358,19 +359,19 @@ void on_files_event(ui_table_event_t event)
 		view_set_frame(contextpopup, iframe);
 
 		view_add_subview(ui.view_base, ui.contextpopupcont);
-		// view_layout(ui.view_base);
+		// ku_layout(ui.view_base);
 	    }
 	}
     }
 }
 
-void on_clipboard_event(ui_table_event_t event)
+void on_clipboard_event(ku_table_event_t event)
 {
-    if (event.id == UI_TABLE_EVENT_FIELDS_UPDATE)
+    if (event.id == KU_TABLE_EVENT_FIELDS_UPDATE)
     {
 	zc_log_debug("fields update %s", event.table->id);
     }
-    else if (event.id == UI_TABLE_EVENT_SELECT)
+    else if (event.id == KU_TABLE_EVENT_SELECT)
     {
 	zc_log_debug("select %s", event.table->id);
 
@@ -391,7 +392,7 @@ void on_clipboard_event(ui_table_event_t event)
 	    VADD(items, map);
 	}
 
-	ui_table_set_data(ui.fileinfotable, items);
+	ku_table_set_data(ui.fileinfotable, items);
 
 	char* path = MGET(info, "file/path");
 	char* type = MGET(info, "file/type");
@@ -399,7 +400,7 @@ void on_clipboard_event(ui_table_event_t event)
 	if (strcmp(type, "directory") != 0) ui_open(path);
 	ui_show_info(info);
     }
-    else if (event.id == UI_TABLE_EVENT_DROP)
+    else if (event.id == KU_TABLE_EVENT_DROP)
     {
 	if (ui.drag_data)
 	{
@@ -407,7 +408,7 @@ void on_clipboard_event(ui_table_event_t event)
 	    zc_log_debug("DROP %i %i", index, ui.drag_data->length);
 	    vec_add_in_vector(ui.clip_list_data, ui.drag_data);
 	    ui.drag_data = NULL;
-	    ui_table_set_data(ui.cliptable, ui.clip_list_data);
+	    ku_table_set_data(ui.cliptable, ui.clip_list_data);
 
 	    if (ui.view_doc)
 	    {
@@ -417,18 +418,18 @@ void on_clipboard_event(ui_table_event_t event)
     }
 }
 
-void on_fileinfo_event(ui_table_event_t event)
+void on_fileinfo_event(ku_table_event_t event)
 {
 }
 
-void on_settingslist_event(ui_table_event_t event)
+void on_settingslist_event(ku_table_event_t event)
 {
 }
 
-void on_contextlist_event(ui_table_event_t event)
+void on_contextlist_event(ku_table_event_t event)
 {
     view_remove_from_parent(ui.contextpopupcont);
-    if (event.id == UI_TABLE_EVENT_SELECT)
+    if (event.id == KU_TABLE_EVENT_SELECT)
     {
 	if (event.selected_index == 0) // rename
 	{
@@ -446,9 +447,9 @@ void on_contextlist_event(ui_table_event_t event)
 
 		view_add_subview(ui.view_base, ui.inputarea);
 
-		view_layout(ui.view_base);
+		ku_layout(ui.view_base);
 
-		ui_manager_activate(ui.inputtf);
+		window_activate(ui.window, ui.inputtf);
 		vh_textinput_activate(ui.inputtf, 1);
 
 		ui.edited_file = info;
@@ -469,7 +470,7 @@ void on_contextlist_event(ui_table_event_t event)
 	else if (event.selected_index == 2) // send to cb
 	{
 	    vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
-	    ui_table_set_data(ui.cliptable, ui.clip_list_data);
+	    ku_table_set_data(ui.cliptable, ui.clip_list_data);
 	}
 	else if (event.selected_index == 3) // paste using copy
 	{
@@ -480,7 +481,7 @@ void on_contextlist_event(ui_table_event_t event)
 	else if (event.selected_index == 5) // reset clipboard
 	{
 	    vec_reset(ui.clip_list_data);
-	    ui_table_set_data(ui.cliptable, ui.clip_list_data);
+	    ku_table_set_data(ui.cliptable, ui.clip_list_data);
 	}
     }
 }
@@ -530,7 +531,7 @@ void ui_on_key_down(vh_key_event_t event)
     if (event.ev.keycode == SDLK_c && event.ev.ctrl_down)
     {
 	vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
-	ui_table_set_data(ui.cliptable, ui.clip_list_data);
+	ku_table_set_data(ui.cliptable, ui.clip_list_data);
     }
     if (event.ev.keycode == SDLK_v && event.ev.ctrl_down)
     {
@@ -560,7 +561,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	{
 	    view_add_subview(top, ui.cliplistbox);
 	}
-	view_layout(top);
+	ku_layout(top);
     }
     if (btnview == ui.sidebar_btn)
     {
@@ -578,13 +579,13 @@ void ui_on_btn_event(vh_button_event_t event)
 	}
 
 	config_write(config_get("cfg_path"));
-	view_layout(top);
+	ku_layout(top);
     }
     if (btnview == ui.prev_btn)
     {
 	int32_t index = ui.filelisttable->selected_index - 1;
 
-	ui_table_select(ui.filelisttable, index);
+	ku_table_select(ui.filelisttable, index);
 
 	map_t* info = ui.filelisttable->selected_items->data[0];
 	char*  path = MGET(info, "file/path");
@@ -597,7 +598,7 @@ void ui_on_btn_event(vh_button_event_t event)
     {
 	int32_t index = ui.filelisttable->selected_index + 1;
 
-	ui_table_select(ui.filelisttable, index);
+	ku_table_select(ui.filelisttable, index);
 
 	map_t* info = ui.filelisttable->selected_items->data[0];
 	char*  path = MGET(info, "file/path");
@@ -624,7 +625,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	if (!ui.settingspopupcont->parent)
 	{
 	    view_add_subview(ui.view_base, ui.settingspopupcont);
-	    view_layout(ui.view_base);
+	    ku_layout(ui.view_base);
 	}
     }
     if (strcmp(event.view->id, "settingsclosebtn") == 0)
@@ -683,7 +684,7 @@ void ui_on_drag(vh_drag_event_t event)
 	cbox->style.height = lft->frame.global.h - event.dragged_view->frame.global.y + 28.0;
 	fbox->style.width  = top->frame.global.w - event.dragged_view->frame.global.x - 9;
 	zc_log_debug("height %i width %i", cbox->style.height, fbox->style.width);
-	view_layout(top);
+	ku_layout(top);
     }
 }
 
@@ -694,7 +695,7 @@ void ui_add_cursor()
     ui.cursor->style.background_color = 0xFF000099;
     ui.cursor->needs_touch            = 0;
     tg_css_add(ui.cursor);
-    /* ui_manager_add_to_top(ui.cursor); */
+    /* window_add_to_top(ui.window,ui.cursor); */
 }
 
 void ui_update_cursor(vr_t frame)
@@ -702,21 +703,21 @@ void ui_update_cursor(vr_t frame)
     view_set_frame(ui.cursor, frame);
 }
 
-void ui_render_without_cursor(uint32_t time, bm_argb_t* bm)
+void ui_render_without_cursor(uint32_t time, bm_t* bm)
 {
-    /* ui_manager_remove(ui.cursor); */
-    /* ui_manager_render(time, bm); */
-    /* ui_manager_add_to_top(ui.cursor); */
+    /* window_remove(ui.window,ui.cursor); */
+    /* window_render(ui.window,time, bm); */
+    /* window_add_to_top(ui.window,ui.cursor); */
 }
 
-void ui_save_screenshot(uint32_t time, char hide_cursor, bm_argb_t* bm)
+void ui_save_screenshot(uint32_t time, char hide_cursor, bm_t* bm)
 {
     /* if (config_get("lib_path")) */
     /* { */
     /* 	static int cnt    = 0; */
-    /* 	view_t*    root   = ui_manager_get_root(); */
+    /* 	view_t*    root   = window_get_root(ui.window); */
     /* 	vr_t       frame  = root->frame.local; */
-    /* 	bm_argb_t* screen = bm_argb_new(frame.w, frame.h); // REL 0 */
+    /* 	bm_t* screen = bm_new(frame.w, frame.h); // REL 0 */
 
     /* 	// remove cursor for screenshot to remain identical */
 
@@ -726,7 +727,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor, bm_argb_t* bm)
 
     /* 	char*      name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1 */
     /* 	char*      path    = path_new_append(config_get("lib_path"), name);    // REL 2 */
-    /* 	bm_argb_t* flipped = bm_argb_new_flip_y(screen);                       // REL 3 */
+    /* 	bm_t* flipped = bm_new_flip_y(screen);                       // REL 3 */
 
     /* 	coder_write_png(path, flipped); */
 
@@ -747,11 +748,11 @@ int ui_comp_text(void* left, void* right)
     return strcmp(la, ra);
 }
 
-void ui_init(int width, int height, float scale)
+void ui_init(int width, int height, float scale, ku_window_t* window)
 {
-    text_init();                    // DESTROY 0
-    ui_manager_init(width, height); // DESTROY 1
+    text_init(); // DESTROY 0
 
+    ui.window   = window;
     ui.autoplay = 1;
 
     /* generate views from descriptors */
@@ -769,13 +770,13 @@ void ui_init(int width, int height, float scale)
     /* initial layout of views */
 
     view_set_frame(ui.view_base, (vr_t){0.0, 0.0, (float) width, (float) height});
-    ui_manager_add(ui.view_base);
+    window_add(ui.window, ui.view_base);
 
     /* listen for keys and shortcuts */
 
     vh_key_add(ui.view_base, ui_on_key_down);
     ui.view_base->needs_key = 1;
-    ui_manager_activate(ui.view_base);
+    window_activate(ui.window, ui.view_base);
 
     /* setup drag layer */
 
@@ -844,7 +845,7 @@ void ui_init(int width, int height, float scale)
 	tg_text_add(fileinfo);
 	tg_text_set(fileinfo, "FILE INFO", ts);
 
-	ui.fileinfotable = ui_table_create(
+	ui.fileinfotable = ku_table_create(
 	    "fileinfotable",
 	    fileinfo,
 	    fileinfoscroll,
@@ -889,7 +890,7 @@ void ui_init(int width, int height, float scale)
     else
 	zc_log_debug("filelistbck not found");
 
-    ui.filelisttable = ui_table_create(
+    ui.filelisttable = ku_table_create(
 	"filelisttable",
 	filelist,
 	filelistscroll,
@@ -899,9 +900,9 @@ void ui_init(int width, int height, float scale)
 	on_files_event);
 
     ui.file_list_data = VNEW(); // REL S0
-    ui_table_set_data(ui.filelisttable, ui.file_list_data);
+    ku_table_set_data(ui.filelisttable, ui.file_list_data);
 
-    ui_manager_activate(filelistevt);
+    window_activate(ui.window, filelistevt);
 
     // clipboard table
 
@@ -915,7 +916,7 @@ void ui_init(int width, int height, float scale)
 	tg_text_add(cliplist);
 	tg_text_set(cliplist, "CLIPBOARD", ts);
 
-	ui.cliptable = ui_table_create(
+	ui.cliptable = ku_table_create(
 	    "cliptable",
 	    cliplist,
 	    cliplistscroll,
@@ -925,7 +926,7 @@ void ui_init(int width, int height, float scale)
 	    on_clipboard_event);
 
 	ui.clip_list_data = VNEW();
-	ui_table_set_data(ui.cliptable, ui.clip_list_data);
+	ku_table_set_data(ui.cliptable, ui.clip_list_data);
     }
     else
 	zc_log_debug("cliplistbck not found");
@@ -989,7 +990,7 @@ void ui_init(int width, int height, float scale)
     VADDR(fields, cstr_new_cstring("value"));
     VADDR(fields, num_new_int(510));
 
-    ui.settingstable = ui_table_create(
+    ui.settingstable = ku_table_create(
 	"settingstable",
 	settingslist,
 	NULL,
@@ -1007,7 +1008,7 @@ void ui_init(int width, int height, float scale)
     VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "")}));
     VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "Donate on Paypal")}));
 
-    ui_table_set_data(ui.settingstable, items);
+    ku_table_set_data(ui.settingstable, items);
     REL(items);
 
     view_remove_from_parent(ui.settingspopupcont);
@@ -1029,7 +1030,7 @@ void ui_init(int width, int height, float scale)
     VADDR(fields, cstr_new_cstring("value"));
     VADDR(fields, num_new_int(200));
 
-    ui.contexttable = ui_table_create(
+    ui.contexttable = ku_table_create(
 	"contexttable",
 	contextlist,
 	NULL,
@@ -1049,7 +1050,7 @@ void ui_init(int width, int height, float scale)
     VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Paste using move")}));
     VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Reset clipboard")}));
 
-    ui_table_set_data(ui.contexttable, items);
+    ku_table_set_data(ui.contexttable, items);
     REL(items);
 
     vh_touch_add(ui.contextpopupcont, ui_on_touch);
@@ -1105,7 +1106,7 @@ void ui_init(int width, int height, float scale)
     /* texmap->style.right  = 0; */
     /* texmap->style.top    = 0; */
 
-    /* ui_manager_add(texmap); */
+    /* window_add(ui.window,texmap); */
 }
 
 void ui_destroy()
@@ -1116,7 +1117,7 @@ void ui_destroy()
 	ui.ms = NULL;
     }
 
-    ui_manager_remove(ui.view_base);
+    window_remove(ui.window, ui.view_base);
 
     REL(ui.cliplistbox);
     REL(ui.fileinfobox);
@@ -1136,8 +1137,6 @@ void ui_destroy()
     REL(ui.sidebar);
 
     REL(ui.inputarea);
-
-    ui_manager_destroy(); // DESTROY 1
 
     text_destroy(); // DESTROY 0
 }
@@ -1170,7 +1169,7 @@ void ui_update_layout(int w, int h)
 	    ui.view_maingap->style.width = 0;
 	}
     }
-    /* view_layout(ui.view_base); */
+    /* ku_layout(ui.view_base); */
     /* view_describe(ui.view_base, 0); */
 }
 

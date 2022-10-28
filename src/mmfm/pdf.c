@@ -1,9 +1,9 @@
 #ifndef pdf_h
 #define pdf_h
 
-#include "zc_bm_argb.c"
+#include "ku_bitmap.c"
 
-bm_argb_t* pdf_render(char* filename);
+bm_t* pdf_render(char* filename);
 
 #endif
 
@@ -11,7 +11,7 @@ bm_argb_t* pdf_render(char* filename);
 
 #include <mupdf/fitz.h>
 
-bm_argb_t* pdf_render(char* filename)
+bm_t* pdf_render(char* filename)
 {
     char*        input;
     float        zoom, rotate;
@@ -99,8 +99,8 @@ bm_argb_t* pdf_render(char* filename)
     printf("w %d h %d s %td\n", pix->w, pix->h, pix->stride);
     printf("255\n");
 
-    bm_argb_t* res  = bm_argb_new(pix->w, pix->h);
-    uint8_t*   data = res->data;
+    bm_t*    res  = bm_new(pix->w, pix->h);
+    uint8_t* data = res->data;
 
     for (y = 0; y < pix->h; ++y)
     {

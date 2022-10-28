@@ -10,7 +10,7 @@ void viewgen_css_apply(vec_t* views, char* csspath, char* respath, float scale);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "css.c"
+#include "ku_css.c"
 #include "zc_log.c"
 #include <limits.h>
 

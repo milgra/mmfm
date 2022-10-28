@@ -6,14 +6,14 @@
 #ifndef texgen_css_h
 #define texgen_css_h
 
+#include "ku_bitmap.c"
 #include "view.c"
-#include "zc_bm_argb.c"
 
 typedef struct _tg_css_t
 {
-    char*      id;
-    char*      path;
-    bm_argb_t* bitmap;
+    char* id;
+    char* path;
+    bm_t* bitmap;
 } tg_bitmap_t;
 
 void tg_css_add(view_t* view);
@@ -22,8 +22,8 @@ void tg_css_add(view_t* view);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "ku_draw.c"
 #include "zc_cstring.c"
-#include "zc_draw.c"
 #include "zc_log.c"
 
 #define PNG_DEBUG 3
@@ -48,13 +48,13 @@ void tg_css_gen(view_t* view)
     {
 	if (view->style.background_image)
 	{
-	    bm_argb_t* bm = view->texture.bitmap;
+	    bm_t* bm = view->texture.bitmap;
 
 	    if (bm == NULL ||
 		bm->w != (int) view->frame.local.w ||
 		bm->h != (int) view->frame.local.h)
 	    {
-		bm = bm_argb_new((int) view->frame.local.w, (int) view->frame.local.h); // REL 0
+		bm = bm_new((int) view->frame.local.w, (int) view->frame.local.h); // REL 0
 		view_set_texture_bmp(view, bm);
 		REL(bm);
 	    }
@@ -65,7 +65,7 @@ void tg_css_gen(view_t* view)
 	    view->texture.changed = 0;
 	    view->texture.state   = TS_READY;
 
-	    /* bm_argb_t* bmap = coder_get_image(view->style.background_image); */
+	    /* bm_t* bmap = coder_get_image(view->style.background_image); */
 	    /* view_set_texture_bmp(view, bmap); */
 	    /* REL(bmap); */
 
@@ -124,7 +124,7 @@ void tg_css_gen(view_t* view)
 
 	    png_read_image(png_ptr, row_pointers);
 
-	    bm_argb_t* rawbm = bm_argb_new(width, height); // REL 0
+	    bm_t* rawbm = bm_new(width, height); // REL 0
 
 	    // copy to bmp
 	    for (y = 0; y < height; y++)
@@ -161,18 +161,18 @@ void tg_css_gen(view_t* view)
 	    float w = view->frame.local.w + 2 * view->style.shadow_blur;
 	    float h = view->frame.local.h + 2 * view->style.shadow_blur;
 
-	    bm_argb_t* bm = view->texture.bitmap;
+	    bm_t* bm = view->texture.bitmap;
 
 	    if (bm == NULL ||
 		bm->w != (int) w ||
 		bm->h != (int) h)
 	    {
-		bm = bm_argb_new((int) w, (int) h); // REL 0
+		bm = bm_new((int) w, (int) h); // REL 0
 		view_set_texture_bmp(view, bm);
 		REL(bm);
 	    }
 
-	    bm_argb_reset(bm);
+	    bm_reset(bm);
 
 	    gfx_rounded_rect(bm, 0, 0, w, h, view->style.border_radius, view->style.shadow_blur, color, view->style.shadow_color);
 

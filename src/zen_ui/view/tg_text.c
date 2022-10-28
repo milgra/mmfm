@@ -6,8 +6,8 @@
 #ifndef texgen_text_h
 #define texgen_text_h
 
+#include "ku_text.c"
 #include "view.c"
-#include "zc_text.c"
 
 typedef struct _tg_text_t
 {
@@ -23,10 +23,10 @@ char* tg_text_get(view_t* view);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "ku_bitmap.c"
+#include "ku_draw.c"
 #include "tg_css.c"
-#include "zc_bm_argb.c"
 #include "zc_cstring.c"
-#include "zc_draw.c"
 
 int tg_text_index = 0;
 
@@ -35,7 +35,7 @@ void tg_text_gen(view_t* view)
     tg_text_t* gen = view->tex_gen_data;
     if (view->frame.local.w > 0 && view->frame.local.h > 0)
     {
-	bm_argb_t*  fontmap = bm_argb_new((int) view->frame.local.w, (int) view->frame.local.h); // REL 0
+	bm_t*       fontmap = bm_new((int) view->frame.local.w, (int) view->frame.local.h); // REL 0
 	textstyle_t style   = gen->style;
 
 	if ((style.textcolor & 0xFF) < 0xFF || (style.backcolor & 0xFF) < 0xFF) view->texture.transparent = 1;

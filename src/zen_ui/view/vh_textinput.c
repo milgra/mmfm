@@ -1,9 +1,9 @@
 #ifndef vh_textinput_h
 #define vh_textinput_h
 
+#include "ku_text.c"
 #include "view.c"
 #include "wm_event.c"
-#include "zc_text.c"
 
 #ifndef SDLK_BACKSPACE
     #define SDLK_BACKSPACE 0
@@ -63,13 +63,13 @@ void  vh_textinput_activate(view_t* view, char state);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "ku_bitmap.c"
+#include "ku_draw.c"
 #include "tg_css.c"
 #include "tg_text.c"
 #include "utf8.h"
 #include "vh_anim.c"
-#include "zc_bm_argb.c"
 #include "zc_cstring.c"
-#include "zc_draw.c"
 #include "zc_vector.c"
 
 glyph_t* vh_textinput_glyphs_from_string(char* text, size_t* count)
@@ -148,7 +148,7 @@ void vh_textinput_upd(view_t* view)
 
 		    if (f.w == 0 || f.h == 0)
 		    {
-			bm_argb_t* texture = bm_argb_new(g.w, g.h); // REL 0
+			bm_t* texture = bm_new(g.w, g.h); // REL 0
 
 			text_render_glyph(g, data->style, texture);
 

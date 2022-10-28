@@ -1,38 +1,38 @@
-#ifndef ui_table_h
-#define ui_table_h
+#ifndef ku_table_h
+#define ku_table_h
 
+#include "ku_text.c"
 #include "view.c"
-#include "zc_text.c"
 #include "zc_vector.c"
 #include <stdint.h>
 
-typedef struct _ui_table_t ui_table_t;
+typedef struct _ku_table_t ku_table_t;
 
-enum ui_table_event_id
+enum ku_table_event_id
 {
-    UI_TABLE_EVENT_SELECT,
-    UI_TABLE_EVENT_OPEN,
-    UI_TABLE_EVENT_CONTEXT,
-    UI_TABLE_EVENT_DRAG,
-    UI_TABLE_EVENT_DROP,
-    UI_TABLE_EVENT_KEY,
-    UI_TABLE_EVENT_FIELDS_UPDATE,
-    UI_TABLE_EVENT_FIELD_SELECT
+    KU_TABLE_EVENT_SELECT,
+    KU_TABLE_EVENT_OPEN,
+    KU_TABLE_EVENT_CONTEXT,
+    KU_TABLE_EVENT_DRAG,
+    KU_TABLE_EVENT_DROP,
+    KU_TABLE_EVENT_KEY,
+    KU_TABLE_EVENT_FIELDS_UPDATE,
+    KU_TABLE_EVENT_FIELD_SELECT
 };
 
-typedef struct _ui_table_event_t
+typedef struct _ku_table_event_t
 {
-    enum ui_table_event_id id;
-    ui_table_t*            table;
+    enum ku_table_event_id id;
+    ku_table_t*            table;
     char*                  field;
     vec_t*                 fields;
     vec_t*                 selected_items;
     int32_t                selected_index;
     view_t*                rowview;
     ev_t                   ev;
-} ui_table_event_t;
+} ku_table_event_t;
 
-struct _ui_table_t
+struct _ku_table_t
 {
     char*       id;             // unique id for item generation
     uint32_t    cnt;            // item count for item generation
@@ -45,35 +45,35 @@ struct _ui_table_t
     view_t*     evnt_v;
     view_t*     scrl_v;
     textstyle_t textstyle;
-    void (*on_event)(ui_table_event_t event);
+    void (*on_event)(ku_table_event_t event);
 };
 
-ui_table_t* ui_table_create(
+ku_table_t* ku_table_create(
     char*   id,
     view_t* body,
     view_t* scrl,
     view_t* evnt,
     view_t* head,
     vec_t*  fields,
-    void (*on_event)(ui_table_event_t event));
+    void (*on_event)(ku_table_event_t event));
 
-void ui_table_select(
-    ui_table_t* table,
+void ku_table_select(
+    ku_table_t* table,
     int32_t     index);
 
-void ui_table_set_data(
-    ui_table_t* uit, vec_t* data);
+void ku_table_set_data(
+    ku_table_t* uit, vec_t* data);
 
-vec_t* ui_table_get_fields(ui_table_t* uit);
+vec_t* ku_table_get_fields(ku_table_t* uit);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
 #include "config.c"
+#include "ku_util.c"
 #include "tg_css.c"
 #include "tg_text.c"
-#include "ui_util.c"
 #include "vh_tbl_body.c"
 #include "vh_tbl_evnt.c"
 #include "vh_tbl_head.c"
@@ -83,7 +83,7 @@ vec_t* ui_table_get_fields(ui_table_t* uit);
 #include "zc_memory.c"
 #include "zc_number.c"
 
-void ui_table_head_align(ui_table_t* uit, int fixed_index, int fixed_pos)
+void ku_table_head_align(ku_table_t* uit, int fixed_index, int fixed_pos)
 {
     for (int ri = 0; ri < uit->body_v->views->length; ri++)
     {
@@ -107,40 +107,40 @@ void ui_table_head_align(ui_table_t* uit, int fixed_index, int fixed_pos)
     }
 }
 
-void ui_table_head_move(view_t* hview, int index, int pos, void* userdata)
+void ku_table_head_move(view_t* hview, int index, int pos, void* userdata)
 {
-    ui_table_t* uit = (ui_table_t*) userdata;
+    ku_table_t* uit = (ku_table_t*) userdata;
 
-    ui_table_head_align(uit, index, pos);
+    ku_table_head_align(uit, index, pos);
 }
 
-void ui_table_head_resize(view_t* hview, int index, int size, void* userdata)
+void ku_table_head_resize(view_t* hview, int index, int size, void* userdata)
 {
-    ui_table_t* uit = (ui_table_t*) userdata;
+    ku_table_t* uit = (ku_table_t*) userdata;
 
     if (index > -1)
     {
 	num_t* sizep = uit->fields->data[index * 2 + 1];
 	sizep->intv  = size;
 
-	ui_table_head_align(uit, -1, 0);
+	ku_table_head_align(uit, -1, 0);
     }
     else
     {
-	ui_table_event_t event = {.table = uit, .id = UI_TABLE_EVENT_FIELDS_UPDATE, .fields = uit->fields};
+	ku_table_event_t event = {.table = uit, .id = KU_TABLE_EVENT_FIELDS_UPDATE, .fields = uit->fields};
 	(*uit->on_event)(event);
     }
 }
 
-void ui_table_head_reorder(view_t* hview, int ind1, int ind2, void* userdata)
+void ku_table_head_reorder(view_t* hview, int ind1, int ind2, void* userdata)
 {
-    ui_table_t* uit = (ui_table_t*) userdata;
+    ku_table_t* uit = (ku_table_t*) userdata;
 
     if (ind1 == -1)
     {
 	// self click, dispatch event
 	char*            field = uit->fields->data[ind2 * 2];
-	ui_table_event_t event = {.id = UI_TABLE_EVENT_FIELD_SELECT, .field = field};
+	ku_table_event_t event = {.id = KU_TABLE_EVENT_FIELD_SELECT, .field = field};
 	(*uit->on_event)(event);
     }
     else
@@ -172,18 +172,18 @@ void ui_table_head_reorder(view_t* hview, int ind1, int ind2, void* userdata)
 	    REL(cell2);
 	}
 
-	ui_table_head_align(uit, -1, 0);
+	ku_table_head_align(uit, -1, 0);
 
-	ui_table_event_t event = {.table = uit, .id = UI_TABLE_EVENT_FIELDS_UPDATE, .fields = uit->fields};
+	ku_table_event_t event = {.table = uit, .id = KU_TABLE_EVENT_FIELDS_UPDATE, .fields = uit->fields};
 	(*uit->on_event)(event);
     }
 }
 
-view_t* ui_table_head_create(
+view_t* ku_table_head_create(
     view_t* head_v,
     void*   userdata)
 {
-    ui_table_t* uit = (ui_table_t*) userdata;
+    ku_table_t* uit = (ku_table_t*) userdata;
 
     char*   headid   = cstr_new_format(100, "%s_header", uit->id); // REL 0
     view_t* headview = view_new(headid, (vr_t){0, 0, 100, uit->textstyle.line_height});
@@ -217,12 +217,12 @@ view_t* ui_table_head_create(
     return headview;
 }
 
-view_t* ui_table_item_create(
+view_t* ku_table_item_create(
     view_t* table_v,
     int     index,
     void*   userdata)
 {
-    ui_table_t* uit = (ui_table_t*) userdata;
+    ku_table_t* uit = (ku_table_t*) userdata;
 
     view_t* rowview = NULL;
 
@@ -313,18 +313,18 @@ view_t* ui_table_item_create(
     return rowview;
 }
 
-void ui_table_item_recycle(
+void ku_table_item_recycle(
     view_t* table_v,
     view_t* item_v,
     void*   userdata)
 {
-    ui_table_t* uit = (ui_table_t*) userdata;
+    ku_table_t* uit = (ku_table_t*) userdata;
     VADD(uit->cache, item_v);
 }
 
-void ui_table_evnt_event(vh_tbl_evnt_event_t event)
+void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 {
-    ui_table_t* uit = (ui_table_t*) event.userdata;
+    ku_table_t* uit = (ku_table_t*) event.userdata;
 
     if (event.id == VH_TBL_EVENT_SELECT)
     {
@@ -364,7 +364,7 @@ void ui_table_evnt_event(vh_tbl_evnt_event_t event)
 	    view_invalidate_texture(event.rowview);
 	}
 
-	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_CONTEXT)
@@ -403,35 +403,35 @@ void ui_table_evnt_event(vh_tbl_evnt_event_t event)
 	    }
 	}
 
-	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_CONTEXT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview, .ev = event.ev};
+	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_CONTEXT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview, .ev = event.ev};
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_OPEN)
     {
-	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_OPEN, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_OPEN, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_DRAG)
     {
-	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_DRAG, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_DRAG, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_DROP)
     {
-	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_DROP, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_DROP, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_KEY)
     {
-	ui_table_event_t tevent = {.table = uit, .id = UI_TABLE_EVENT_KEY, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
+	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_KEY, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
 	(*uit->on_event)(tevent);
     }
 }
 
-void ui_table_del(
+void ku_table_del(
     void* p)
 {
-    ui_table_t* uit = p;
+    ku_table_t* uit = p;
 
     // remove items from view
     REL(uit->id);             // REL S0
@@ -446,26 +446,26 @@ void ui_table_del(
     if (uit->scrl_v) REL(uit->scrl_v);
 }
 
-void ui_table_desc(
+void ku_table_desc(
     void* p,
     int   level)
 {
-    printf("ui_table");
+    printf("ku_table");
 }
 
-ui_table_t* ui_table_create(
+ku_table_t* ku_table_create(
     char*   id, // id has to be unique
     view_t* body,
     view_t* scrl,
     view_t* evnt,
     view_t* head,
     vec_t*  fields,
-    void (*on_event)(ui_table_event_t event))
+    void (*on_event)(ku_table_event_t event))
 {
     assert(id != NULL);
     assert(body != NULL);
 
-    ui_table_t* uit     = CAL(sizeof(ui_table_t), ui_table_del, ui_table_desc);
+    ku_table_t* uit     = CAL(sizeof(ku_table_t), ku_table_del, ku_table_desc);
     uit->id             = cstr_new_cstring(id); // REL S0
     uit->cache          = VNEW();               // REL S1
     uit->fields         = RET(fields);          // REL S2
@@ -476,8 +476,8 @@ ui_table_t* ui_table_create(
 
     vh_tbl_body_attach(
 	body,
-	ui_table_item_create,
-	ui_table_item_recycle,
+	ku_table_item_create,
+	ku_table_item_recycle,
 	uit);
 
     uit->textstyle             = ui_util_gen_textstyle(body);
@@ -488,10 +488,10 @@ ui_table_t* ui_table_create(
     {
 	vh_tbl_head_attach(
 	    head,
-	    ui_table_head_create,
-	    ui_table_head_move,
-	    ui_table_head_resize,
-	    ui_table_head_reorder,
+	    ku_table_head_create,
+	    ku_table_head_move,
+	    ku_table_head_resize,
+	    ku_table_head_reorder,
 	    uit);
     }
 
@@ -514,7 +514,7 @@ ui_table_t* ui_table_create(
 	    body,
 	    scrl,
 	    head,
-	    ui_table_evnt_event,
+	    ku_table_evnt_event,
 	    uit);
     }
 
@@ -523,8 +523,8 @@ ui_table_t* ui_table_create(
 
 /* data items have to be maps containing the same keys */
 
-void ui_table_set_data(
-    ui_table_t* uit,
+void ku_table_set_data(
+    ku_table_t* uit,
     vec_t*      data)
 {
     if (uit->items) REL(uit->items);
@@ -547,8 +547,8 @@ void ui_table_set_data(
 
 /* select index */
 
-void ui_table_select(
-    ui_table_t* uit,
+void ku_table_select(
+    ku_table_t* uit,
     int32_t     index)
 {
     vh_tbl_body_t* bvh = uit->body_v->handler_data;
@@ -604,11 +604,11 @@ void ui_table_select(
 	}
     }
 
-    /* ui_table_event_t event = {.table = uit, .id = UI_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = index, .rowview = NULL}; */
+    /* ku_table_event_t event = {.table = uit, .id = KU_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = index, .rowview = NULL}; */
     /* (*uit->on_event)(event); */
 }
 
-vec_t* ui_table_get_fields(ui_table_t* uit)
+vec_t* ku_table_get_fields(ku_table_t* uit)
 {
     return uit->fields;
 }

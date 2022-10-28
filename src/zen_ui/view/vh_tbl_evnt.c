@@ -122,6 +122,8 @@ void vh_tbl_evnt_evt(view_t* view, ev_t ev)
     {
 	vh->sx -= ev.dx;
 	vh->sy += ev.dy;
+	// force timer event
+	vh->tbody_view->frame.dim_changed = 1;
     }
     else if (ev.type == EV_RESIZE)
     {

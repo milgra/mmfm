@@ -10,7 +10,7 @@ void    ui_manager_destroy();
 void    ui_manager_event(ev_t event);
 void    ui_manager_add(view_t* view);
 void    ui_manager_remove(view_t* view);
-void    ui_manager_render(uint32_t time, bm_argb_t* bm);
+void    ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty);
 void    ui_manager_activate(view_t* view);
 view_t* ui_manager_get_root();
 vr_t    ui_manager_update(uint32_t time);
@@ -35,10 +35,6 @@ struct _uim_t
 
     vec_t* implqueue; // views selected by roll over
     vec_t* explqueue; // views selected by click
-
-    vr_t dirty_rect;
-    vr_t dirty_rect_prev;
-
 } uim = {0};
 
 void ui_manager_init(int width, int height)
@@ -226,9 +222,6 @@ vr_t ui_manager_update(uint32_t time)
 {
     vr_t result = {0};
 
-    uim.dirty_rect.w = 0;
-    uim.dirty_rect.h = 0;
-
     if (views.arrange == 1)
     {
 	vec_reset(uim.views);
@@ -243,57 +236,39 @@ vr_t ui_manager_update(uint32_t time)
 
 	/* react to changes */
 
-	if (view->texture.type == TT_MANAGED && view->texture.state == TS_BLANK)
-	{
-	    view_gen_texture(view);
-	}
+	if (view->texture.type == TT_MANAGED && view->texture.state == TS_BLANK) view_gen_texture(view);
 
 	if (view->texture.changed)
 	{
-	    uim.dirty_rect = vr_add(uim.dirty_rect, view->frame.global);
-
+	    result                = vr_add(result, view->frame.global);
 	    view->texture.changed = 0;
 	}
-
-	if (view->frame.dim_changed)
+	else if (view->frame.dim_changed)
 	{
-	    uim.dirty_rect = vr_add(uim.dirty_rect, view->frame.global);
-
+	    result                  = vr_add(result, view->frame.global);
 	    view->frame.dim_changed = 0;
 	}
-
-	if (view->frame.pos_changed)
+	else if (view->frame.pos_changed)
 	{
-	    uim.dirty_rect = vr_add(uim.dirty_rect, view->frame.global);
-
+	    result                  = vr_add(result, view->frame.global);
 	    view->frame.pos_changed = 0;
 	}
-
-	if (view->frame.reg_changed)
+	else if (view->frame.reg_changed)
 	{
+	    result                  = vr_add(result, view->frame.global);
 	    view->frame.reg_changed = 0;
 	}
-
-	if (view->texture.alpha_changed)
+	else if (view->texture.alpha_changed)
 	{
+	    result                      = vr_add(result, view->frame.global);
 	    view->texture.alpha_changed = 0;
 	}
     }
 
-    // final dirty rect is the sum of the prev dirty rect and the actual dirty rect
-
-    if (uim.dirty_rect.w > 0 || uim.dirty_rect_prev.w > 0)
-    {
-	result = vr_add(uim.dirty_rect_prev, uim.dirty_rect);
-	printf("dirty %f %f %f %f\n", uim.dirty_rect.x, uim.dirty_rect.y, uim.dirty_rect.w, uim.dirty_rect.h);
-    }
-
-    uim.dirty_rect_prev = uim.dirty_rect;
-
     return result;
 }
 
-void ui_manager_render(uint32_t time, bm_argb_t* bm)
+void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
 {
     /* draw view into bitmap */
 
@@ -308,7 +283,11 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm)
 		    bm,
 		    view->texture.bitmap,
 		    view->frame.global.x - view->style.shadow_blur,
-		    view->frame.global.y - view->style.shadow_blur);
+		    view->frame.global.y - view->style.shadow_blur,
+		    (int) dirty.x,
+		    (int) dirty.y,
+		    (int) dirty.w,
+		    (int) dirty.h);
 	    else
 	    {
 		if (view->texture.alpha == 1.0)
@@ -316,13 +295,21 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm)
 			bm,
 			view->texture.bitmap,
 			view->frame.global.x - view->style.shadow_blur,
-			view->frame.global.y - view->style.shadow_blur);
+			view->frame.global.y - view->style.shadow_blur,
+			(int) dirty.x,
+			(int) dirty.y,
+			(int) dirty.w,
+			(int) dirty.h);
 		else
 		    bm_argb_blend_with_alpha_mask(
 			bm,
 			view->texture.bitmap,
 			view->frame.global.x - view->style.shadow_blur,
 			view->frame.global.y - view->style.shadow_blur,
+			(int) dirty.x,
+			(int) dirty.y,
+			(int) dirty.w,
+			(int) dirty.h,
 			(255 - (int) (view->texture.alpha * 255.0)));
 	    }
 	}

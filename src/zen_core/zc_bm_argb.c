@@ -19,9 +19,10 @@ bm_argb_t* bm_argb_new(int the_w, int the_h);
 bm_argb_t* bm_argb_new_clone(bm_argb_t* bm);
 void       bm_argb_reset(bm_argb_t* bm);
 void       bm_argb_describe(void* p, int level);
-void       bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy);
-void       bm_argb_blend(bm_argb_t* dst, bm_argb_t* src, int sx, int sy);
-void       bm_argb_blend_with_alpha_mask(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mask);
+void       bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh);
+void       bm_argb_blend(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh);
+void       bm_argb_blend_with_alpha_mask(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh, int mask);
+void       bm_argb_blend_rect(bm_argb_t* dst, int x, int y, int w, int h, uint32_t c);
 
 #endif
 
@@ -67,8 +68,40 @@ void bm_argb_reset(bm_argb_t* bm)
     memset(bm->data, 0, bm->size);
 }
 
-void bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy)
+struct bmr_t
 {
+    int x;
+    int y;
+    int z;
+    int w;
+};
+
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+
+/* struct bmr_t bmr_is(bmr_t l, bmr_t r) */
+/* { */
+/*     bmr_t f = {0}; */
+/*     if (l.z < r.x || r.z < l.x || l.w < r.y || r.w < l.y) */
+/*     { */
+/*     } */
+/*     else */
+/*     { */
+/* 	f.x = MAX(l.x, r.x); */
+/* 	f.y = MAX(l.y, r.y); */
+/* 	f.z = MIN(r.z, l.z) - f.x; */
+/* 	f.w = MIN(r.w, l.w) - f.y; */
+/*     } */
+/* } */
+
+void bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh)
+{
+    /* bmr_t dr = {0, 0, dst->w, dst->h}; */
+    /* bmr_t sr = {sx, sy, src->w, src->h_}; */
+    /* bmr_t mr = {mx, my, mw, mh}; */
+    /* bmr_t f = bmr_is(dr, sr); */
+    /* f       = bmr_is(f, mr); */
+
     if (sx > dst->w) return;
     if (sy > dst->h) return;
     if (sx + src->w < 0) return;
@@ -112,7 +145,7 @@ void bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy)
     }
 }
 
-void bm_argb_blend(bm_argb_t* dst, bm_argb_t* src, int sx, int sy)
+void bm_argb_blend(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh)
 {
     if (sx > dst->w) return;
     if (sy > dst->h) return;
@@ -206,11 +239,9 @@ void bm_argb_blend(bm_argb_t* dst, bm_argb_t* src, int sx, int sy)
     /* 	dst->h); */
 }
 
-void bm_argb_blend_with_alpha_mask(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mask)
+void bm_argb_blend_with_alpha_mask(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh, int mask)
 {
     if (mask == 255) return;
-
-    printf("mask %i\n", mask);
 
     if (sx > dst->w) return;
     if (sy > dst->h) return;
@@ -282,6 +313,71 @@ void bm_argb_blend_with_alpha_mask(bm_argb_t* dst, bm_argb_t* src, int sx, int s
 	}
 	d += dst->w;
 	s += src->w;
+    }
+}
+
+void bm_argb_blend_rect(bm_argb_t* dst, int x, int y, int w, int h, uint32_t c)
+{
+    if (x > dst->w) return;
+    if (y > dst->h) return;
+    if (x + w < 0) return;
+    if (y + h < 0) return;
+
+    int dox = x; // dst offset
+    int doy = y;
+
+    if (x < 0)
+    {
+	dox = 0;
+    }
+    if (y < 0)
+    {
+	doy = 0;
+    }
+
+    int dex = x + w; // dst endpoints
+    int dey = y + h;
+
+    if (dex >= dst->w) dex = dst->w;
+    if (dey >= dst->h) dey = dst->h;
+
+    uint32_t* d  = (uint32_t*) dst->data; // dest bytes
+    uint32_t* td = (uint32_t*) dst->data; // temporary dst bytes
+
+    d += (doy * dst->w) + dox;
+
+    for (int y = doy; y < dey; y++)
+    {
+	td = d;
+
+	for (int x = dox; x < dex; x++)
+	{
+	    static const int AMASK    = 0xFF000000;
+	    static const int RBMASK   = 0x00FF00FF;
+	    static const int GMASK    = 0x0000FF00;
+	    static const int AGMASK   = AMASK | GMASK;
+	    static const int ONEALPHA = 0x01000000;
+
+	    uint32_t dc = *td;
+	    uint32_t sc = c;
+	    int      sa = (sc & AMASK) >> 24;
+
+	    if (sa == 256)
+	    {
+		*td = sc; // dest color is source color
+	    }
+	    else if (sa > 0)
+	    {
+		unsigned int na = 255 - sa;
+		unsigned int rb = ((na * (dc & RBMASK)) + (sa * (sc & RBMASK))) >> 8;
+		unsigned int ag = (na * ((dc & AGMASK) >> 8)) + (sa * (ONEALPHA | ((sc & GMASK) >> 8)));
+		*td             = ((rb & RBMASK) | (ag & AGMASK));
+	    }
+	    // else dst remains the same
+
+	    td++;
+	}
+	d += dst->w;
     }
 }
 

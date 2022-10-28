@@ -102,7 +102,6 @@ void vh_tbl_body_move(
     vh_tbl_body_t* vh = view->handler_data;
 
     vh->full = 0;
-
     // repos items
 
     vh->head_xpos += dx;

@@ -235,20 +235,20 @@ vr_t vr_add(vr_t r1, vr_t r2)
     if (r1.w == 0 || r1.h == 0) return r2;
     if (r2.w == 0 || r2.h == 0) return r1;
 
-    if (r2.x < r1.x)
-    {
-	r1.w = r1.x + r1.w - r2.x;
-	r1.x = r2.x;
-    }
-    if (r2.y < r1.y)
-    {
-	r1.h = r1.y + r1.h - r2.y;
-	r1.y = r2.y;
-    }
-    if (r2.x + r2.w > r1.w) r1.w = r2.x + r2.w - r1.x;
-    if (r2.y + r2.h > r1.h) r1.h = r2.y + r2.h - r1.y;
+    vr_t res;
 
-    return r1;
+    res.x = r2.x < r1.x ? r2.x : r1.x;
+    res.y = r2.y < r1.y ? r2.y : r1.y;
+
+    float r1cx = r1.x + r1.w;
+    float r1cy = r1.y + r1.h;
+    float r2cx = r2.x + r2.w;
+    float r2cy = r2.y + r2.h;
+
+    res.w = r1cx < r2cx ? (r2cx - res.x) : (r1cx - res.x);
+    res.h = r1cy < r2cy ? (r2cy - res.y) : (r1cy - res.y);
+
+    return res;
 }
 
 int view_cnt = 0;
@@ -453,6 +453,8 @@ void view_calc_global(view_t* view)
 
     frame_global.x = roundf(frame_parent.x) + roundf(frame_global.x);
     frame_global.y = roundf(frame_parent.y) + roundf(frame_global.y);
+
+    // notify about pos change
 
     if (frame_global.x != old_global.x || frame_global.y != old_global.y) view->frame.pos_changed = 1;
 

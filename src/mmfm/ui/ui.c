@@ -48,7 +48,6 @@ void ui_update_player();
 #include "viewgen_css.c"
 #include "viewgen_html.c"
 #include "viewgen_type.c"
-#include "wm_connector.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_number.c"
@@ -545,8 +544,8 @@ void ui_on_btn_event(vh_button_event_t event)
 
     printf("BUTTON EVENT\n");
 
-    if (btnview == ui.exit_btn) wm_close();
-    if (btnview == ui.full_btn) wm_toggle_fullscreen();
+    /* if (btnview == ui.exit_btn) wm_close(); */
+    /* if (btnview == ui.full_btn) wm_toggle_fullscreen(); */
 
     if (btnview == ui.clip_btn)
     {
@@ -705,8 +704,8 @@ void ui_update_cursor(vr_t frame)
 
 void ui_render_without_cursor(uint32_t time, bm_argb_t* bm)
 {
-    ui_manager_remove(ui.cursor);
-    ui_manager_render(time, bm);
+    /* ui_manager_remove(ui.cursor); */
+    /* ui_manager_render(time, bm); */
     /* ui_manager_add_to_top(ui.cursor); */
 }
 

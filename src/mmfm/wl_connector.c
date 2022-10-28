@@ -105,7 +105,7 @@ void wl_connector_draw();
 void wl_hide();
 
 struct wl_window* wl_connector_create_window(char* title, int width, int height);
-void              wl_connector_draw_window(struct wl_window* info);
+void              wl_connector_draw_window(struct wl_window* info, int x, int y, int w, int h);
 void              wl_connector_delete_window();
 
 void wl_connector_create_layer();
@@ -291,9 +291,7 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
     /* Destroy this callback */
     wl_callback_destroy(cb);
 
-    /* Request another frame */
-    info->frame_cb = wl_surface_frame(info->surface);
-    wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+    info->frame_cb = NULL;
 
     if (time - lasttime > 1000)
     {
@@ -505,11 +503,19 @@ void wl_connector_resize_window_buffer(struct wl_window* info)
 
 /* update surface with bitmap data */
 
-void wl_connector_draw_window(struct wl_window* info)
+void wl_connector_draw_window(struct wl_window* info, int x, int y, int w, int h)
 {
-    wl_surface_attach(info->surface, info->buffer, 0, 0);
-    wl_surface_damage(info->surface, 0, 0, info->width, info->height);
-    wl_surface_commit(info->surface);
+    /* Request another frame */
+    if (info->frame_cb == NULL)
+    {
+	info->frame_cb = wl_surface_frame(info->surface);
+	wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+
+	wl_surface_attach(info->surface, info->buffer, 0, 0);
+	wl_surface_damage(info->surface, x, y, w, h);
+	wl_surface_commit(info->surface);
+    }
+    else printf("NO DRAW\n");
 }
 
 /* pointer listener */

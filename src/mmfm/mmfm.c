@@ -23,6 +23,7 @@ struct
     char              replay;
     char              record;
     struct wl_window* window;
+    vr_t              dirty_prev;
 } mmfm = {0};
 
 void init(wl_event_t event)
@@ -99,20 +100,32 @@ void update(ev_t ev)
 	// ui_describe();
     }
 
-    if (ev.type == EV_TIME)
+    if (mmfm.window->frame_cb == NULL)
     {
-	// clear buffer
-	memset(mmfm.window->bitmap.data, 0, mmfm.window->bitmap.size);
-
 	// frame callback from wl connector
 	vr_t dirty = ui_manager_update(0);
 
-	ui_manager_render(0, &mmfm.window->bitmap);
+	if (dirty.w > 0 && dirty.h > 0)
+	{
+	    /* zc_log_debug("drt %i %i %i %i", (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h); */
+	    /* zc_log_debug("drt prev %i %i %i %i", (int) mmfm.dirty_prev.x, (int) mmfm.dirty_prev.y, (int) mmfm.dirty_prev.w, (int) mmfm.dirty_prev.h); */
+	    vr_t sum = vr_add(dirty, mmfm.dirty_prev);
+	    /* zc_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
-	/* if (changed) */
-	/* { */
-	wl_connector_draw_window(mmfm.window);
-	/* } */
+	    // clear out dirty rectangle
+	    zc_time(NULL);
+	    /* memset(mmfm.window->bitmap.data, 0, mmfm.window->bitmap.size); */
+	    ui_manager_render(0, &mmfm.window->bitmap, sum);
+	    zc_time("RENDER");
+
+	    /* bm_argb_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */
+	    /* wl_connector_draw_window(mmfm.window, 0, 0, mmfm.window->width, mmfm.window->height); */
+	    /* nanosleep((const struct timespec[]){{0, 100000000L}}, NULL); */
+
+	    wl_connector_draw_window(mmfm.window, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
+
+	    mmfm.dirty_prev = dirty;
+	}
     }
 }
 

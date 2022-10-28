@@ -101,7 +101,6 @@ mmfm_inc = include_directories(
 	'src/zen_math',
 	'src/zen_gfx',
 	'src/zen_core',
-	'src/zen_wm',
 	'src/media_player',
 	'src/media_coder',
 	'src/zen_ui',
@@ -157,7 +156,6 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/media_player/clock.c',
 	       'src/media_player/mediaplayer.c',
 
-	       'src/zen_wm/wm_connector.c',
 	       'src/mmfm/wm_event.c',
 
 	       'src/zen_ui/gl/gl_connector.c',
@@ -192,7 +190,6 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/zen_ui/view/view_layout.c',
 	       'src/zen_ui/view/views.c',
 	       'src/zen_ui/ui_manager.c',
-	       'src/zen_ui/ui_texmap.c',
 	       'src/zen_ui/ui_table.c',
 	       'src/zen_ui/ui_util.c'] + protos_src + protos_headers
 

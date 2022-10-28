@@ -270,15 +270,29 @@ vr_t ui_manager_update(uint32_t time)
 
 void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
 {
+    static vr_t masks[32] = {0};
+    static int  maski     = 0;
+
+    masks[0] = dirty;
+
     /* draw view into bitmap */
 
     for (int i = 0; i < uim.views->length; i++)
     {
 	view_t* view = uim.views->data[i];
 
+	if (view->style.masked)
+	{
+	    dirty = vr_is(masks[maski], view->frame.global);
+	    maski++;
+	    masks[maski] = dirty;
+	    /* printf("%s masked, dirty %f %f %f %f\n", view->id, dirty.x, dirty.y, dirty.w, dirty.h); */
+	}
+
 	if (view->texture.bitmap)
 	{
 	    if (view->texture.transparent == 0 || i == 0)
+	    {
 		bm_argb_insert(
 		    bm,
 		    view->texture.bitmap,
@@ -288,9 +302,11 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
 		    (int) dirty.y,
 		    (int) dirty.w,
 		    (int) dirty.h);
+	    }
 	    else
 	    {
 		if (view->texture.alpha == 1.0)
+		{
 		    bm_argb_blend(
 			bm,
 			view->texture.bitmap,
@@ -300,7 +316,9 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
 			(int) dirty.y,
 			(int) dirty.w,
 			(int) dirty.h);
+		}
 		else
+		{
 		    bm_argb_blend_with_alpha_mask(
 			bm,
 			view->texture.bitmap,
@@ -311,7 +329,14 @@ void ui_manager_render(uint32_t time, bm_argb_t* bm, vr_t dirty)
 			(int) dirty.w,
 			(int) dirty.h,
 			(255 - (int) (view->texture.alpha * 255.0)));
+		}
 	    }
+	}
+
+	if (view->style.unmask)
+	{
+	    maski--;
+	    dirty = masks[maski];
 	}
     }
 }

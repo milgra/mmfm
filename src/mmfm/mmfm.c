@@ -113,10 +113,12 @@ void update(ev_t ev)
 	    /* zc_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
 	    // clear out dirty rectangle
-	    zc_time(NULL);
+	    /* bm_argb_cut(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
+
+	    /* zc_time(NULL); */
 	    /* memset(mmfm.window->bitmap.data, 0, mmfm.window->bitmap.size); */
 	    ui_manager_render(0, &mmfm.window->bitmap, sum);
-	    zc_time("RENDER");
+	    /* zc_time("RENDER"); */
 
 	    /* bm_argb_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */
 	    /* wl_connector_draw_window(mmfm.window, 0, 0, mmfm.window->width, mmfm.window->height); */

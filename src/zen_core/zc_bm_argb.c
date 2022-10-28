@@ -79,55 +79,48 @@ struct bmr_t
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
-/* struct bmr_t bmr_is(bmr_t l, bmr_t r) */
-/* { */
-/*     bmr_t f = {0}; */
-/*     if (l.z < r.x || r.z < l.x || l.w < r.y || r.w < l.y) */
-/*     { */
-/*     } */
-/*     else */
-/*     { */
-/* 	f.x = MAX(l.x, r.x); */
-/* 	f.y = MAX(l.y, r.y); */
-/* 	f.z = MIN(r.z, l.z) - f.x; */
-/* 	f.w = MIN(r.w, l.w) - f.y; */
-/*     } */
-/* } */
+struct bmr_t bmr_is(struct bmr_t l, struct bmr_t r)
+{
+    struct bmr_t f = {0};
+    if (l.z < r.x || r.z < l.x || l.w < r.y || r.w < l.y)
+    {
+    }
+    else
+    {
+	f.x = MAX(l.x, r.x);
+	f.y = MAX(l.y, r.y);
+	f.z = MIN(r.z, l.z);
+	f.w = MIN(r.w, l.w);
+    }
+
+    return f;
+}
+
+void bmr_desc(struct bmr_t r)
+{
+    printf("%i %i %i %i\n", r.x, r.y, r.z, r.w);
+}
 
 void bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh)
 {
-    /* bmr_t dr = {0, 0, dst->w, dst->h}; */
-    /* bmr_t sr = {sx, sy, src->w, src->h_}; */
-    /* bmr_t mr = {mx, my, mw, mh}; */
-    /* bmr_t f = bmr_is(dr, sr); */
-    /* f       = bmr_is(f, mr); */
+    struct bmr_t dr = {0, 0, dst->w, dst->h};
+    struct bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
+    struct bmr_t mr = {mx, my, mx + mw, my + mh};
+    struct bmr_t f  = bmr_is(sr, mr);
 
-    if (sx > dst->w) return;
-    if (sy > dst->h) return;
-    if (sx + src->w < 0) return;
-    if (sy + src->h < 0) return;
+    if (f.x == 0 && f.w == 0) return;
+    if (f.y == 0 && f.z == 0) return;
 
-    int sox = 0; // src offset
-    int soy = 0;
-    int dox = sx; // dst offset
-    int doy = sy;
+    f = bmr_is(f, dr);
 
-    if (sx < 0)
-    {
-	dox = 0;
-	sox = -sx;
-    }
-    if (sy < 0)
-    {
-	doy = 0;
-	soy = -sy;
-    }
+    int sox = f.x - sx; // src offset
+    int soy = f.y - sy;
 
-    int dex = sx + src->w; // dst endpoints
-    int dey = sy + src->h;
+    int dox = f.x; // dst offset
+    int doy = f.y;
 
-    if (dex >= dst->w) dex = dst->w;
-    if (dey >= dst->h) dey = dst->h;
+    int dex = f.z; // dst endpoints
+    int dey = f.w;
 
     uint32_t* d = (uint32_t*) dst->data;
     uint32_t* s = (uint32_t*) src->data;
@@ -147,32 +140,24 @@ void bm_argb_insert(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int 
 
 void bm_argb_blend(bm_argb_t* dst, bm_argb_t* src, int sx, int sy, int mx, int my, int mw, int mh)
 {
-    if (sx > dst->w) return;
-    if (sy > dst->h) return;
-    if (sx + src->w < 0) return;
-    if (sy + src->h < 0) return;
+    struct bmr_t dr = {0, 0, dst->w, dst->h};
+    struct bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
+    struct bmr_t mr = {mx, my, mx + mw, my + mh};
+    struct bmr_t f  = bmr_is(sr, mr);
 
-    int sox = 0; // src offset
-    int soy = 0;
-    int dox = sx; // dst offset
-    int doy = sy;
+    if (f.x == 0 && f.w == 0) return;
+    if (f.y == 0 && f.z == 0) return;
 
-    if (sx < 0)
-    {
-	dox = 0;
-	sox = -sx;
-    }
-    if (sy < 0)
-    {
-	doy = 0;
-	soy = -sy;
-    }
+    f = bmr_is(f, dr);
 
-    int dex = sx + src->w; // dst endpoints
-    int dey = sy + src->h;
+    int sox = f.x - sx; // src offset
+    int soy = f.y - sy;
 
-    if (dex >= dst->w) dex = dst->w;
-    if (dey >= dst->h) dey = dst->h;
+    int dox = f.x; // dst offset
+    int doy = f.y;
+
+    int dex = f.z; // dst endpoints
+    int dey = f.w;
 
     uint32_t* d  = (uint32_t*) dst->data; // dest bytes
     uint32_t* s  = (uint32_t*) src->data; // source byes
@@ -243,32 +228,24 @@ void bm_argb_blend_with_alpha_mask(bm_argb_t* dst, bm_argb_t* src, int sx, int s
 {
     if (mask == 255) return;
 
-    if (sx > dst->w) return;
-    if (sy > dst->h) return;
-    if (sx + src->w < 0) return;
-    if (sy + src->h < 0) return;
+    struct bmr_t dr = {0, 0, dst->w, dst->h};
+    struct bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
+    struct bmr_t mr = {mx, my, mx + mw, my + mh};
+    struct bmr_t f  = bmr_is(sr, mr);
 
-    int sox = 0; // src offset
-    int soy = 0;
-    int dox = sx; // dst offset
-    int doy = sy;
+    if (f.x == 0 && f.w == 0) return;
+    if (f.y == 0 && f.z == 0) return;
 
-    if (sx < 0)
-    {
-	dox = 0;
-	sox = -sx;
-    }
-    if (sy < 0)
-    {
-	doy = 0;
-	soy = -sy;
-    }
+    f = bmr_is(f, dr);
 
-    int dex = sx + src->w; // dst endpoints
-    int dey = sy + src->h;
+    int sox = f.x - sx; // src offset
+    int soy = f.y - sy;
 
-    if (dex >= dst->w) dex = dst->w;
-    if (dey >= dst->h) dey = dst->h;
+    int dox = f.x; // dst offset
+    int doy = f.y;
+
+    int dex = f.z; // dst endpoints
+    int dey = f.w;
 
     uint32_t* d  = (uint32_t*) dst->data; // dest bytes
     uint32_t* s  = (uint32_t*) src->data; // source byes

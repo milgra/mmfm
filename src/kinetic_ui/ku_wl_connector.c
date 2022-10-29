@@ -297,7 +297,7 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
 
     if (time - lasttime > 1000)
     {
-	printf("FRAME PER SEC : %u\n", lastcount);
+	/* printf("FRAME PER SEC : %u\n", lastcount); */
 	lastcount = 0;
 	lasttime  = time;
     }
@@ -549,7 +549,7 @@ void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer,
     px = event.x;
     py = event.y;
 
-    if (drag) (*wlc.update)(event);
+    (*wlc.update)(event);
 }
 
 uint lasttouch = 0;
@@ -580,11 +580,13 @@ void ku_wayland_pointer_handle_axis(void* data, struct wl_pointer* wl_pointer, u
 {
     /* zc_log_debug("pointer handle axis %u %i", axis, value); */
     ku_event_t event =
-	{.type = KU_EVENT_SCROLL,
-	 .x    = px,
-	 .y    = py,
-	 .dx   = axis == 1 ? (float) value / 100.0 : 0,
-	 .dy   = axis == 0 ? (float) -value / 100.0 : 0};
+	{.type       = KU_EVENT_SCROLL,
+	 .x          = px,
+	 .y          = py,
+	 .dx         = axis == 1 ? (float) value / 100.0 : 0,
+	 .dy         = axis == 0 ? (float) -value / 100.0 : 0,
+	 .ctrl_down  = wlc.keyboard.control,
+	 .shift_down = wlc.keyboard.shift};
 
     (*wlc.update)(event);
 }

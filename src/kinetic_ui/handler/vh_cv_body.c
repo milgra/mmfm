@@ -118,8 +118,6 @@ void vh_cv_body_set_content_size(
     frame.h         = nh;
 
     ku_view_set_frame(vh->content, frame);
-
-    tg_scaledimg_set_content_size(vh->content, cw, ch);
     tg_scaledimg_gen(vh->content);
 }
 
@@ -176,6 +174,7 @@ void vh_cv_body_zoom(
     lf.h = nh;
 
     ku_view_set_frame(vh->content, lf);
+    tg_scaledimg_gen(vh->content);
 }
 
 void vh_cv_body_reset(

@@ -9,6 +9,7 @@
 #include "zc_map.c"
 #include "zc_path.c"
 #include "zc_time.c"
+#include <SDL.h>
 #include <getopt.h>
 #include <limits.h>
 #include <stdio.h>
@@ -28,6 +29,11 @@ struct
 
 void init(wl_event_t event)
 {
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) // QUIT 0
+    {
+	zc_log_error("SDL could not initialize! SDL_Error: %s", SDL_GetError());
+    }
+
     struct monitor_info* monitor = event.monitors[0];
 
     mmfm.window = ku_wayland_create_window("MMFM", 1200, 600);

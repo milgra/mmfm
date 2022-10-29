@@ -178,7 +178,7 @@ void          mp_unmute(MediaState_t* ms);
 void          mp_set_volume(MediaState_t* ms, float volume);
 void          mp_set_position(MediaState_t* ms, float ratio);
 void          mp_set_visutype(MediaState_t* ms, int visutype);
-void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, ku_bitmap_t* bm);
+void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, ku_bitmap_t* bm, int force);
 void          mp_audio_refresh(MediaState_t* opaque, ku_bitmap_t* bml, ku_bitmap_t* bmr);
 double        mp_get_master_clock(MediaState_t* ms);
 
@@ -216,8 +216,6 @@ static int framedrop = -1; // drop frames on slow cpu
 
 double                   rdftspeed1 = 0.02;
 uint8_t*                 scaledpixels[1];
-int                      scaledw = 0;
-int                      scaledh = 0;
 static SDL_AudioDeviceID audio_dev;
 
 // timing related
@@ -1460,45 +1458,22 @@ double vp_duration(MediaState_t* ms, Frame* vp, Frame* nextvp)
     }
 }
 
-unsigned sws_flags = SWS_BICUBIC;
+unsigned sws_flags = SWS_FAST_BILINEAR;
 
 int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_convert_ctx, ku_bitmap_t* bm)
 {
     int ret = 0;
 
-    /* zc_log_debug("upload texture frame %i %i bitmap %i %i", frame->width, frame->height, bm->w, bm->h); */
-
     if (frame->width > 0 && frame->height > 0)
     {
-	if (scaledw != bm->w || scaledh != bm->h)
-	{
-	    if (scaledw > 0 || scaledh > 0) free(scaledpixels[0]);
-
-	    scaledw = bm->w;
-	    scaledh = bm->h;
-
-	    scaledpixels[0] = malloc(bm->w * bm->h * 4);
-	}
-
-	*img_convert_ctx = sws_getCachedContext(*img_convert_ctx, frame->width, frame->height, frame->format, bm->w, bm->h, AV_PIX_FMT_BGR32, sws_flags, NULL, NULL, NULL);
+	*img_convert_ctx = sws_getCachedContext(*img_convert_ctx, frame->width, frame->height, frame->format, bm->w, bm->h, AV_PIX_FMT_RGB32, sws_flags, NULL, NULL, NULL);
 
 	if (*img_convert_ctx != NULL)
 	{
-	    // uint8_t* pixels[4];
+	    scaledpixels[0] = bm->data;
 	    int pitch[4];
-
 	    pitch[0] = bm->w * 4;
 	    sws_scale(*img_convert_ctx, (const uint8_t* const*) frame->data, frame->linesize, 0, frame->height, scaledpixels, pitch);
-
-	    if (bm)
-	    {
-
-		ku_draw_insert_rgb(bm, scaledpixels[0], bm->w, bm->h, 0, 0);
-	    }
-	    else
-	    {
-		// gl_upload_to_texture(index, 0, 0, w, h, scaledpixelsn[0]);
-	    }
 	}
     }
     else
@@ -1506,7 +1481,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
     return ret;
 }
 
-void video_image_display(MediaState_t* ms, ku_bitmap_t* bm)
+void video_image_display(MediaState_t* ms, ku_bitmap_t* bm, int force)
 {
     Frame* vp;
     // Frame*   sp = NULL;
@@ -1514,7 +1489,7 @@ void video_image_display(MediaState_t* ms, ku_bitmap_t* bm)
 
     vp = frame_queue_peek_last(&ms->vidfq);
 
-    if (!vp->uploaded)
+    if (!vp->uploaded || force)
     {
 	if (upload_texture(NULL, vp->frame, &ms->img_convert_ctx, bm) < 0)
 	{
@@ -1526,13 +1501,13 @@ void video_image_display(MediaState_t* ms, ku_bitmap_t* bm)
 }
 
 /* display the current picture, if any */
-void video_display(MediaState_t* ms, ku_bitmap_t* bm)
+void video_display(MediaState_t* ms, ku_bitmap_t* bm, int force)
 {
-    if (ms->vidst) video_image_display(ms, bm);
+    if (ms->vidst) video_image_display(ms, bm, force);
 }
 
 /* called to display each frame */
-void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm)
+void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm, int force)
 {
     double time;
 
@@ -1541,7 +1516,7 @@ void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm)
     time = av_gettime_relative() / 1000000.0;
     if (ms->force_refresh || ms->last_vis_time + rdftspeed1 < time)
     {
-	video_display(ms, bm);
+	video_display(ms, bm, force);
 	ms->last_vis_time = time;
     }
     *remaining_time = FFMIN(*remaining_time, ms->last_vis_time + rdftspeed1 - time);
@@ -1611,7 +1586,7 @@ void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm)
 	}
     display:
 	/* display picture */
-	if (ms->force_refresh && ms->vidfq.rindex_shown) video_display(ms, bm);
+	if (ms->force_refresh && ms->vidfq.rindex_shown) video_display(ms, bm, force);
     }
     ms->force_refresh = 0;
 }

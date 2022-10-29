@@ -7,6 +7,11 @@
 #include "vh_cv_body.c"
 #include "vh_cv_scrl.c"
 
+typedef struct _vh_cv_evnt_event_t
+{
+    int type;
+} vh_cv_evnt_event_t;
+
 typedef struct _vh_cv_evnt_t
 {
     ku_view_t* tbody_view;
@@ -19,13 +24,15 @@ typedef struct _vh_cv_evnt_t
     float      mx;
     float      my;
     float      z;
+    void (*on_event)(vh_cv_evnt_event_t event);
 } vh_cv_evnt_t;
 
 void vh_cv_evnt_attach(
     ku_view_t* view,
     ku_view_t* tbody_view,
     ku_view_t* tscrl_view,
-    void*      userdata);
+    void*      userdata,
+    void (*on_event)(vh_cv_evnt_event_t));
 
 #endif
 
@@ -98,6 +105,8 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
 	    vh->z *= 0.8;
 
 	    vh_cv_body_zoom(vh->tbody_view, vh->z, vh->mx, vh->my);
+	    vh_cv_evnt_event_t event = {0};
+	    if (vh->on_event) (*vh->on_event)(event);
 	}
 
 	if (vh->tscrl_view && vh->scroll_visible) vh_cv_scrl_update(vh->tscrl_view);
@@ -185,7 +194,8 @@ void vh_cv_evnt_attach(
     ku_view_t* view,
     ku_view_t* tbody_view,
     ku_view_t* tscrl_view,
-    void*      userdata)
+    void*      userdata,
+    void (*on_event)(vh_cv_evnt_event_t))
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 
@@ -193,6 +203,7 @@ void vh_cv_evnt_attach(
     vh->userdata     = userdata;
     vh->tbody_view   = tbody_view;
     vh->tscrl_view   = tscrl_view;
+    vh->on_event     = on_event;
 
     view->handler_data = vh;
     view->handler      = vh_cv_evnt_evt;

@@ -109,11 +109,13 @@ struct _ui_t
 
     MediaState_t* ms;
 
-    int          autoplay;
-    char*        current_folder;
-    ui_inputmode inputmode;
-    ku_view_t*   rowview_for_context_menu;
-    map_t*       edited_file;
+    int                autoplay;
+    char*              current_folder;
+    ui_inputmode       inputmode;
+    ku_view_t*         rowview_for_context_menu;
+    map_t*             edited_file;
+    coder_media_type_t current_type;
+    int                force_refresh;
 
     ku_window_t* window;
 } ui;
@@ -149,6 +151,8 @@ void ui_show_progress(char* progress)
 void ui_on_mp_event(ms_event_t event)
 {
     vh_cv_body_set_content_size(ui.visubody, (int) event.rect.x, (int) event.rect.y);
+    printf("ON MP EVENT\n");
+    ui.force_refresh = 1;
 }
 
 void ui_open(char* path)
@@ -185,27 +189,29 @@ void ui_open(char* path)
     {
 	coder_media_type_t type = coder_get_type(path);
 
-	if (type == CODER_MEDIA_TYPE_VIDEO || type == CODER_MEDIA_TYPE_AUDIO)
+	if (type == CODER_MEDIA_TYPE_VIDEO || type == CODER_MEDIA_TYPE_AUDIO || type == CODER_MEDIA_TYPE_IMAGE)
 	{
 	    ui.ms = mp_open(path, ui_on_mp_event);
 	}
-	else if (type == CODER_MEDIA_TYPE_IMAGE)
-	{
-	    ku_bitmap_t* image = coder_load_image(path);
 
-	    if (image)
-	    {
-		vh_cv_body_set_content_size(ui.visubody, image->w, image->h);
+	ui.current_type = type;
+	/* else if (type == CODER_MEDIA_TYPE_IMAGE) */
+	/* { */
+	/*     ku_bitmap_t* image = coder_load_image(path); */
 
-		if (ui.visuvideo->texture.bitmap != NULL)
-		{
-		    ku_draw_insert(ui.visuvideo->texture.bitmap, image, 0, 0);
-		    ui.visuvideo->texture.changed = 1;
-		}
+	/*     if (image) */
+	/*     { */
+	/* 	vh_cv_body_set_content_size(ui.visubody, image->w, image->h); */
 
-		REL(image);
-	    }
-	}
+	/* 	if (ui.visuvideo->texture.bitmap != NULL) */
+	/* 	{ */
+	/* 	    ku_draw_insert(ui.visuvideo->texture.bitmap, image, 0, 0); */
+	/* 	    ui.visuvideo->texture.changed = 1; */
+	/* 	} */
+
+	/* 	REL(image); */
+	/*     } */
+	/* } */
     }
 }
 
@@ -420,6 +426,13 @@ void on_clipboard_event(ku_table_event_t event)
 
 void on_fileinfo_event(ku_table_event_t event)
 {
+}
+
+void on_cv_event(vh_cv_evnt_event_t event)
+{
+    printf("ON CV EVENT\n");
+
+    ui.force_refresh = 1;
 }
 
 void on_settingslist_event(ku_table_event_t event)
@@ -821,7 +834,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
 	vh_cv_body_attach(previewbody, NULL);
 	vh_cv_scrl_attach(previewscrl, previewbody, NULL);
-	vh_cv_evnt_attach(previewevnt, previewbody, previewscrl, NULL);
+	vh_cv_evnt_attach(previewevnt, previewbody, previewscrl, NULL, on_cv_event);
     }
     else
 	zc_log_debug("preview not found");
@@ -1191,7 +1204,8 @@ void ui_update_player()
     if (ui.ms)
     {
 	double rem = 0.01;
-	mp_video_refresh(ui.ms, &rem, ui.visuvideo->texture.bitmap);
+	mp_video_refresh(ui.ms, &rem, ui.visuvideo->texture.bitmap, ui.force_refresh);
+	ui.force_refresh = 0;
 	// mp_audio_refresh(ui.ms, ui.visuvideo->texture.bitmap, ui.visuvideo->texture.bitmap);
 
 	if (ui.autoplay == 0 && !ui.ms->paused)

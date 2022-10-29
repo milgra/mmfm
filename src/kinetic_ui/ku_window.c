@@ -224,9 +224,10 @@ ku_rect_t ku_window_update(ku_window_t* win, uint32_t time)
 
     if (win->root->rearrange == 1)
     {
-	printf("ARRANGE\n");
 	vec_reset(win->views);
 	ku_window_rearrange(win, win->root, win->views);
+
+	result = ku_rect_add(result, win->root->frame.global);
 
 	win->root->rearrange = 0;
     }
@@ -234,8 +235,6 @@ ku_rect_t ku_window_update(ku_window_t* win, uint32_t time)
     for (int i = 0; i < win->views->length; i++)
     {
 	ku_view_t* view = win->views->data[i];
-
-	/* react to changes */
 
 	if (view->texture.type == TT_MANAGED && view->texture.state == TS_BLANK) ku_view_gen_texture(view);
 

@@ -25,26 +25,27 @@ typedef struct _ku_event_t
 {
     enum evtype type;
 
-    int x;
-    int y;
-    int w;
-    int h;
+    int x; // mouse coord x
+    int y; // mouse coord y
 
-    float dx;
-    float dy;
+    int drag;   // mouse drag
+    int button; // mouse button id
 
-    uint32_t time;
-    uint32_t dtime;
+    int ctrl_down;  // modifiers
+    int shift_down; // modifiers
 
-    char text[32];
-    int  drag;
+    float dx; // scroll x
+    float dy; // scroll y
 
-    int button;
-    int dclick;
-    int ctrl_down;
-    int shift_down;
+    int w; // resize width
+    int h; // resize height
 
-    int keycode;
+    uint32_t time; // event timestamp
+
+    char     text[8];
+    int      dclick;
+    uint32_t keycode;
+
 } ku_event_t;
 
 #endif

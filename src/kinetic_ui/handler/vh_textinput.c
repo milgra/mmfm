@@ -4,18 +4,7 @@
 #include "ku_event.c"
 #include "ku_text.c"
 #include "ku_view.c"
-
-#ifndef SDLK_BACKSPACE
-    #define SDLK_BACKSPACE 0
-#endif
-
-#ifndef SDLK_RETURN
-    #define SDLK_RETURN 0
-#endif
-
-#ifndef SDLK_ESCAPE
-    #define SDLK_ESCAPE 0
-#endif
+#include <xkbcommon/xkbcommon.h>
 
 typedef struct _vh_textinput_t vh_textinput_t;
 
@@ -365,7 +354,7 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_KDOWN)
     {
-	if (ev.keycode == SDLK_BACKSPACE && utf8len(data->text) > 0)
+	if (ev.keycode == XKB_KEY_BackSpace && utf8len(data->text) > 0)
 	{
 	    size_t count = utf8len(data->text);
 	    /* const void*  part  = data->text; */
@@ -402,12 +391,12 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
 	    vh_textinput_event_t event = {.id = VH_TEXTINPUT_TEXT, .vh = data, .text = data->text, .view = view};
 	    if (data->on_event) (*data->on_event)(event);
 	}
-	if (ev.keycode == SDLK_RETURN)
+	if (ev.keycode == XKB_KEY_Return)
 	{
 	    vh_textinput_event_t event = {.id = VH_TEXTINPUT_RETURN, .vh = data, .text = data->text, .view = view};
 	    if (data->on_event) (*data->on_event)(event);
 	}
-	if (ev.keycode == SDLK_ESCAPE)
+	if (ev.keycode == XKB_KEY_Escape)
 	{
 	    vh_textinput_activate(view, 0);
 

@@ -660,12 +660,30 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
     /* witch (sym) { */
     /* 	case XKB_KEY_KP_Enter: /\* fallthrough *\/ */
     /* 	case XKB_KEY_Return: */
+    /* zc_log_debug("keyboard key %i %s", key, buf); */
+
     char buf[8];
     if (xkb_keysym_to_utf8(sym, buf, 8))
     {
-    }
+	if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED)
+	{
+	    ku_event_t event = {
+		.keycode = sym,
+		.type    = KU_EVENT_TEXT,
+		.time    = time};
 
-    zc_log_debug("keyboard key %i %s", key, buf);
+	    memcpy(event.text, buf, 8);
+	    (*wlc.update)(event);
+	}
+    }
+    else
+    {
+	ku_event_t event = {
+	    .keycode = sym,
+	    .type    = key_state == WL_KEYBOARD_KEY_STATE_PRESSED ? KU_EVENT_KDOWN : KU_EVENT_KUP,
+	    .time    = time};
+	(*wlc.update)(event);
+    }
 
     /* wlc.on_keyevent(panel, key_state, sym, panel->keyboard.control, panel->keyboard.shift); */
 }

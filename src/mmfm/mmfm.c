@@ -9,7 +9,6 @@
 #include "zc_map.c"
 #include "zc_path.c"
 #include "zc_time.c"
-#include <SDL.h>
 #include <getopt.h>
 #include <limits.h>
 #include <stdio.h>
@@ -74,7 +73,7 @@ void update(ku_event_t ev)
 		ku_window_event(mmfm.kuwindow, *recev);
 		ui_update_cursor((ku_rect_t){recev->x, recev->y, 10, 10});
 
-		if (recev->type == KU_EVENT_KDOWN && recev->keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
+		if (recev->type == KU_EVENT_KDOWN && recev->keycode == XKB_KEY_Print) ui_save_screenshot(ev.time, mmfm.replay, NULL);
 	    }
 	}
     }
@@ -83,7 +82,7 @@ void update(ku_event_t ev)
 	if (mmfm.record)
 	{
 	    evrec_record(ev);
-	    if (ev.type == KU_EVENT_KDOWN && ev.keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
+	    if (ev.type == KU_EVENT_KDOWN && ev.keycode == XKB_KEY_Print) ui_save_screenshot(ev.time, mmfm.replay, NULL);
 	}
     }
 
@@ -225,10 +224,7 @@ int main(int argc, char* argv[])
     char cwd[PATH_MAX] = {"~"};
     getcwd(cwd, sizeof(cwd));
 
-    char* top_path = path_new_normalize(cwd, NULL); // REL 5
-    char* sdl_base = SDL_GetBasePath();
-    char* wrk_path = path_new_normalize(sdl_base, NULL); // REL 6
-    SDL_free(sdl_base);
+    char* wrk_path    = path_new_normalize(cwd, NULL);                                                                          // REL 5
     char* res_path    = res_par ? path_new_normalize(res_par, wrk_path) : cstr_new_cstring(PKG_DATADIR);                        // REL 7
     char* cfgdir_path = cfg_par ? path_new_normalize(cfg_par, wrk_path) : path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 8
     char* css_path    = path_new_append(res_path, "html/main.css");                                                             // REL 9
@@ -240,7 +236,6 @@ int main(int argc, char* argv[])
 
     // print path info to console
 
-    zc_log_debug("top path      : %s", top_path);
     zc_log_debug("working path  : %s", wrk_path);
     zc_log_debug("resource path : %s", res_path);
     zc_log_debug("config path   : %s", cfg_path);
@@ -266,7 +261,6 @@ int main(int argc, char* argv[])
 
     // init non-configurable defaults
 
-    config_set("top_path", top_path);
     config_set("wrk_path", wrk_path);
     config_set("cfg_path", cfg_path);
     config_set("per_path", per_path);
@@ -290,7 +284,6 @@ int main(int argc, char* argv[])
     if (rep_par) REL(rep_par); // REL 3
     if (frm_par) REL(frm_par); // REL 4
 
-    REL(top_path);    // REL 5
     REL(wrk_path);    // REL 6
     REL(res_path);    // REL 7
     REL(cfgdir_path); // REL 8

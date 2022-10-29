@@ -1,4 +1,11 @@
-/* Kinetic UI bitmap */
+/*
+  Kinetic UI bitmap
+  Stores bitmap data in a uint8_t array.
+  Can be ARGB and RGBA, it is ARGB currently because of Wayland.
+  Does highly efficient inserting/cutting and alpha blending ( couldn't make it faster with pixman )
+  Could be faster with SSE/MMX extensions.
+*/
+
 #ifndef ku_bitmap_h
 #define ku_bitmap_h
 
@@ -107,15 +114,15 @@ bmr_t ku_bitmap_is(bmr_t l, bmr_t r)
 
 void ku_bitmap_insert(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx, int my, int mw, int mh)
 {
-    bmr_t dr = {0, 0, dst->w, dst->h};
-    bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
-    bmr_t mr = {mx, my, mx + mw, my + mh};
-    bmr_t f  = ku_bitmap_is(sr, mr);
+    bmr_t dr = {0, 0, dst->w, dst->h};             // destination rectangle
+    bmr_t sr = {sx, sy, sx + src->w, sy + src->h}; // source rectangle
+    bmr_t mr = {mx, my, mx + mw, my + mh};         // mask rectangle
+    bmr_t f  = ku_bitmap_is(sr, mr);               // final source rectangle
 
     if (f.x == 0 && f.w == 0) return;
     if (f.y == 0 && f.z == 0) return;
 
-    f = ku_bitmap_is(f, dr);
+    f = ku_bitmap_is(f, dr); // cut off outer parts
 
     int sox = f.x - sx; // src offset
     int soy = f.y - sy;
@@ -144,15 +151,15 @@ void ku_bitmap_insert(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx
 
 void ku_bitmap_blend(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx, int my, int mw, int mh)
 {
-    bmr_t dr = {0, 0, dst->w, dst->h};
-    bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
-    bmr_t mr = {mx, my, mx + mw, my + mh};
-    bmr_t f  = ku_bitmap_is(sr, mr);
+    bmr_t dr = {0, 0, dst->w, dst->h};             // destination rectangle
+    bmr_t sr = {sx, sy, sx + src->w, sy + src->h}; // source rectangle
+    bmr_t mr = {mx, my, mx + mw, my + mh};         // mask rectangle
+    bmr_t f  = ku_bitmap_is(sr, mr);               // final source rectangle
 
     if (f.x == 0 && f.w == 0) return;
     if (f.y == 0 && f.z == 0) return;
 
-    f = ku_bitmap_is(f, dr);
+    f = ku_bitmap_is(f, dr); // cut off outer parts
 
     int sox = f.x - sx; // src offset
     int soy = f.y - sy;
@@ -214,15 +221,15 @@ void ku_bitmap_blend_with_alpha_mask(ku_bitmap_t* dst, ku_bitmap_t* src, int sx,
 {
     if (mask == 255) return;
 
-    bmr_t dr = {0, 0, dst->w, dst->h};
-    bmr_t sr = {sx, sy, sx + src->w, sy + src->h};
-    bmr_t mr = {mx, my, mx + mw, my + mh};
-    bmr_t f  = ku_bitmap_is(sr, mr);
+    bmr_t dr = {0, 0, dst->w, dst->h};             // destination rectangle
+    bmr_t sr = {sx, sy, sx + src->w, sy + src->h}; // source rectangle
+    bmr_t mr = {mx, my, mx + mw, my + mh};         // mask rectangle
+    bmr_t f  = ku_bitmap_is(sr, mr);               // final source rectangle
 
     if (f.x == 0 && f.w == 0) return;
     if (f.y == 0 && f.z == 0) return;
 
-    f = ku_bitmap_is(f, dr);
+    f = ku_bitmap_is(f, dr); // cut off outer parts
 
     int sox = f.x - sx; // src offset
     int soy = f.y - sy;

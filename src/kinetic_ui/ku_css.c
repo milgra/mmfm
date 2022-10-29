@@ -1,3 +1,8 @@
+/*
+  Kinetic UI CSS parser
+  Does pretty dumb parsing, error handling should be improved
+*/
+
 #ifndef ku_css_h
 #define ku_css_h
 

@@ -70,6 +70,8 @@ struct wl_window
     int new_height;
 
     struct wl_callback* frame_cb;
+
+    struct monitor_info* monitor;
 };
 
 struct layer_info
@@ -104,13 +106,13 @@ void wl_hide();
 
 struct wl_window* ku_wayland_create_window(char* title, int width, int height);
 void              ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h);
-void              ku_wayland_delete_window();
+void              ku_wayland_delete_window(struct wl_window* info);
 
 void ku_wayland_create_layer();
 void ku_wayland_delete_layer();
 
-void ku_wayland_create_eglwindow();
-void ku_wayland_delete_eglwindow();
+void ku_wayland_exit();
+void ku_wayland_toggle_fullscreen();
 
 #endif
 
@@ -159,6 +161,8 @@ struct wlc_t
     struct xdg_wm_base* xdg_wm_base;
 
 } wlc = {0};
+
+int ku_wayland_exit_flag = 0;
 
 void ku_wayland_create_buffer();
 void ku_wayland_resize_window_buffer(struct wl_window* info);
@@ -408,6 +412,7 @@ static void wl_surface_enter(void* userData, struct wl_surface* surface, struct 
 
 	    if (monitor->scale != info->scale)
 	    {
+		info->monitor   = monitor;
 		info->new_scale = monitor->scale;
 		ku_wayland_resize_window_buffer(info);
 	    }
@@ -654,38 +659,40 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
     enum wl_keyboard_key_state key_state = _key_state;
     xkb_keysym_t               sym       = xkb_state_key_get_one_sym(wlc.keyboard.xkb_state, key + 8);
 
-    /* if (state != WL_KEYBOARD_KEY_STATE_PRESSED) return; */
     /* switch (xkb_keysym_to_lower(sym)) */
-    /* XKB_KEY_a */
-    /* witch (sym) { */
-    /* 	case XKB_KEY_KP_Enter: /\* fallthrough *\/ */
-    /* 	case XKB_KEY_Return: */
-    /* zc_log_debug("keyboard key %i %s", key, buf); */
 
-    char buf[8];
-    if (xkb_keysym_to_utf8(sym, buf, 8))
+    if (!(sym == XKB_KEY_BackSpace ||
+	  sym == XKB_KEY_Escape ||
+	  sym == XKB_KEY_Return ||
+	  sym == XKB_KEY_Print))
     {
-	if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED)
+	char buf[8];
+	if (xkb_keysym_to_utf8(sym, buf, 8))
 	{
-	    ku_event_t event = {
-		.keycode = sym,
-		.type    = KU_EVENT_TEXT,
-		.time    = time};
+	    if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED)
+	    {
+		ku_event_t event = {
+		    .keycode    = sym,
+		    .type       = KU_EVENT_TEXT,
+		    .time       = time,
+		    .ctrl_down  = wlc.keyboard.control,
+		    .shift_down = wlc.keyboard.shift};
 
-	    memcpy(event.text, buf, 8);
-	    (*wlc.update)(event);
+		memcpy(event.text, buf, 8);
+		(*wlc.update)(event);
+	    }
 	}
     }
-    else
-    {
-	ku_event_t event = {
-	    .keycode = sym,
-	    .type    = key_state == WL_KEYBOARD_KEY_STATE_PRESSED ? KU_EVENT_KDOWN : KU_EVENT_KUP,
-	    .time    = time};
-	(*wlc.update)(event);
-    }
 
-    /* wlc.on_keyevent(panel, key_state, sym, panel->keyboard.control, panel->keyboard.shift); */
+    ku_event_t event = {
+	.keycode    = sym,
+	.type       = key_state == WL_KEYBOARD_KEY_STATE_PRESSED ? KU_EVENT_KDOWN : KU_EVENT_KUP,
+	.time       = time,
+	.ctrl_down  = wlc.keyboard.control,
+	.shift_down = wlc.keyboard.shift};
+    (*wlc.update)(event);
+
+    zc_log_debug("keyboard key %i", key);
 }
 
 static void keyboard_repeat_info(void* data, struct wl_keyboard* wl_keyboard, int32_t rate, int32_t delay)
@@ -992,6 +999,7 @@ void ku_wayland_init(
 	    while (wl_display_dispatch(wlc.display))
 	    {
 		/* This space deliberately left blank */
+		if (ku_wayland_exit_flag) break;
 	    }
 
 	    wl_display_disconnect(wlc.display);
@@ -1001,6 +1009,15 @@ void ku_wayland_init(
     else zc_log_debug("cannot open display");
 
     (*wlc.destroy)();
+}
+
+void ku_wayland_exit()
+{
+    ku_wayland_exit_flag = 1;
+}
+void ku_wayland_toggle_fullscreen(struct wl_window* window)
+{
+    xdg_toplevel_set_fullscreen(window->xdg_toplevel, NULL);
 }
 
 #endif

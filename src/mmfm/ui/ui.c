@@ -33,6 +33,7 @@ void ui_update_player();
 #include "ku_gen_type.c"
 #include "ku_table.c"
 #include "ku_util.c"
+#include "ku_wl_connector.c"
 #include "map_util.c"
 #include "mediaplayer.c"
 #include "pdf.c"
@@ -317,12 +318,12 @@ void on_files_event(ku_table_event_t event)
     }
     else if (event.id == KU_TABLE_EVENT_KEY)
     {
-	if (event.ev.keycode == SDLK_DOWN || event.ev.keycode == SDLK_UP)
+	if (event.ev.keycode == XKB_KEY_Down || event.ev.keycode == XKB_KEY_Up)
 	{
 	    int32_t index = event.selected_index;
 
-	    if (event.ev.keycode == SDLK_DOWN) index += 1;
-	    if (event.ev.keycode == SDLK_UP) index -= 1;
+	    if (event.ev.keycode == XKB_KEY_Down) index += 1;
+	    if (event.ev.keycode == XKB_KEY_Up) index -= 1;
 
 	    ku_table_select(event.table, index);
 
@@ -333,7 +334,7 @@ void on_files_event(ku_table_event_t event)
 	    if (strcmp(type, "directory") != 0) ui_open(path);
 	    ui_show_info(info);
 	}
-	else if (event.ev.keycode == SDLK_RETURN)
+	else if (event.ev.keycode == XKB_KEY_Return)
 	{
 	    map_t* info = event.selected_items->data[0];
 
@@ -524,14 +525,14 @@ void ui_toggle_pause()
 
 void ui_on_key_down(vh_key_event_t event)
 {
-    if (event.ev.keycode == SDLK_SPACE) ui_toggle_pause();
-    if (event.ev.keycode == SDLK_DELETE) ui_delete_selected();
-    if (event.ev.keycode == SDLK_c && event.ev.ctrl_down)
+    if (event.ev.keycode == XKB_KEY_space) ui_toggle_pause();
+    if (event.ev.keycode == XKB_KEY_Delete) ui_delete_selected();
+    if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
     {
 	vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
 	ku_table_set_data(ui.cliptable, ui.clip_list_data);
     }
-    if (event.ev.keycode == SDLK_v && event.ev.ctrl_down)
+    if (event.ev.keycode == XKB_KEY_v && event.ev.ctrl_down)
     {
 	// show paste menu
     }
@@ -543,8 +544,8 @@ void ui_on_btn_event(vh_button_event_t event)
 
     printf("BUTTON EVENT\n");
 
-    /* if (btnview == ui.exit_btn) wm_close(); */
-    /* if (btnview == ui.full_btn) wm_toggle_fullscreen(); */
+    if (btnview == ui.exit_btn) ku_wayland_exit();
+    if (btnview == ui.full_btn) ku_wayland_toggle_fullscreen(ui.window);
 
     if (btnview == ui.clip_btn)
     {

@@ -115,11 +115,10 @@ void update(ku_event_t ev)
 	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirty_prev);
 	    /* zc_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
-	    // clear out dirty rectangle
-	    /* ku_bitmap_cut(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
-
 	    /* zc_time(NULL); */
 	    /* memset(mmfm.window->bitmap.data, 0, mmfm.window->bitmap.size); */
+	    // clear out dirty rectangle
+	    /* ku_bitmap_cut(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 	    ku_window_render(mmfm.kuwindow, 0, &mmfm.window->bitmap, sum);
 	    /* zc_time("RENDER"); */
 

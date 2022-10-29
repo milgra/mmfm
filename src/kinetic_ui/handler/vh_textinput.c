@@ -59,6 +59,7 @@ void  vh_textinput_activate(ku_view_t* view, char state);
 #include "utf8.h"
 #include "vh_anim.c"
 #include "zc_cstring.c"
+#include "zc_log.c"
 #include "zc_vector.c"
 
 glyph_t* vh_textinput_glyphs_from_string(char* text, size_t* count)
@@ -354,8 +355,11 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_KDOWN)
     {
+	zc_log_debug("BACKSPACE %i", ev.keycode == XKB_KEY_BackSpace);
+
 	if (ev.keycode == XKB_KEY_BackSpace && utf8len(data->text) > 0)
 	{
+
 	    size_t count = utf8len(data->text);
 	    /* const void*  part  = data->text; */
 	    /* utf8_int32_t cp; */

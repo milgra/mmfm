@@ -45,10 +45,34 @@ ku_bitmap_t* ku_bitmap_new(int the_w, int the_h);
 ku_bitmap_t* ku_bitmap_new_clone(ku_bitmap_t* bm);
 void         ku_bitmap_reset(ku_bitmap_t* bm);
 void         ku_bitmap_describe(void* p, int level);
-void         ku_bitmap_insert(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx, int my, int mw, int mh);
-void         ku_bitmap_blend(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx, int my, int mw, int mh);
-void         ku_bitmap_blend_with_alpha_mask(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx, int my, int mw, int mh, int mask);
-void         ku_bitmap_blend_rect(ku_bitmap_t* dst, int x, int y, int w, int h, uint32_t c);
+bmr_t        ku_bitmap_is(bmr_t l, bmr_t r);
+
+void ku_bitmap_insert(
+    ku_bitmap_t* dst,
+    bmr_t        dstmsk,
+    ku_bitmap_t* src,
+    bmr_t        srcmsk,
+    int          sx,
+    int          sy);
+
+void ku_bitmap_blend(
+    ku_bitmap_t* dst,
+    bmr_t        dstmsk,
+    ku_bitmap_t* src,
+    bmr_t        srcmsk,
+    int          sx,
+    int          sy);
+
+void ku_bitmap_blend_with_alpha(
+    ku_bitmap_t* dst,
+    bmr_t        dstmsk,
+    ku_bitmap_t* src,
+    bmr_t        srcmsk,
+    int          sx,
+    int          sy,
+    int          alpha);
+
+void ku_bitmap_blend_rect(ku_bitmap_t* dst, int x, int y, int w, int h, uint32_t c);
 
 #endif
 
@@ -112,17 +136,23 @@ bmr_t ku_bitmap_is(bmr_t l, bmr_t r)
     return f;
 }
 
-void ku_bitmap_insert(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx, int my, int mw, int mh)
+void ku_bitmap_insert(
+    ku_bitmap_t* dst,
+    bmr_t        dstmsk,
+    ku_bitmap_t* src,
+    bmr_t        srcmsk,
+    int          sx,
+    int          sy)
 {
-    bmr_t dr = {0, 0, dst->w, dst->h};             // destination rectangle
-    bmr_t sr = {sx, sy, sx + src->w, sy + src->h}; // source rectangle
-    bmr_t mr = {mx, my, mx + mw, my + mh};         // mask rectangle
-    bmr_t f  = ku_bitmap_is(sr, mr);               // final source rectangle
+    srcmsk.x += sx;
+    srcmsk.z += sx;
+    srcmsk.y += sy;
+    srcmsk.w += sy;
+
+    bmr_t f = ku_bitmap_is(srcmsk, dstmsk); // final source rectangle
 
     if (f.x == 0 && f.w == 0) return;
     if (f.y == 0 && f.z == 0) return;
-
-    f = ku_bitmap_is(f, dr); // cut off outer parts
 
     int sox = f.x - sx; // src offset
     int soy = f.y - sy;
@@ -149,17 +179,23 @@ void ku_bitmap_insert(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx
     }
 }
 
-void ku_bitmap_blend(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx, int my, int mw, int mh)
+void ku_bitmap_blend(
+    ku_bitmap_t* dst,
+    bmr_t        dstmsk,
+    ku_bitmap_t* src,
+    bmr_t        srcmsk,
+    int          sx,
+    int          sy)
 {
-    bmr_t dr = {0, 0, dst->w, dst->h};             // destination rectangle
-    bmr_t sr = {sx, sy, sx + src->w, sy + src->h}; // source rectangle
-    bmr_t mr = {mx, my, mx + mw, my + mh};         // mask rectangle
-    bmr_t f  = ku_bitmap_is(sr, mr);               // final source rectangle
+    srcmsk.x += sx;
+    srcmsk.z += sx;
+    srcmsk.y += sy;
+    srcmsk.w += sy;
+
+    bmr_t f = ku_bitmap_is(srcmsk, dstmsk); // final source rectangle
 
     if (f.x == 0 && f.w == 0) return;
     if (f.y == 0 && f.z == 0) return;
-
-    f = ku_bitmap_is(f, dr); // cut off outer parts
 
     int sox = f.x - sx; // src offset
     int soy = f.y - sy;
@@ -217,19 +253,26 @@ void ku_bitmap_blend(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx,
     }
 }
 
-void ku_bitmap_blend_with_alpha_mask(ku_bitmap_t* dst, ku_bitmap_t* src, int sx, int sy, int mx, int my, int mw, int mh, int mask)
+void ku_bitmap_blend_with_alpha(
+    ku_bitmap_t* dst,
+    bmr_t        dstmsk,
+    ku_bitmap_t* src,
+    bmr_t        srcmsk,
+    int          sx,
+    int          sy,
+    int          alpha)
 {
-    if (mask == 255) return;
+    if (alpha == 255) return;
 
-    bmr_t dr = {0, 0, dst->w, dst->h};             // destination rectangle
-    bmr_t sr = {sx, sy, sx + src->w, sy + src->h}; // source rectangle
-    bmr_t mr = {mx, my, mx + mw, my + mh};         // mask rectangle
-    bmr_t f  = ku_bitmap_is(sr, mr);               // final source rectangle
+    srcmsk.x += sx;
+    srcmsk.z += sx;
+    srcmsk.y += sy;
+    srcmsk.w += sy;
+
+    bmr_t f = ku_bitmap_is(srcmsk, dstmsk); // final source rectangle
 
     if (f.x == 0 && f.w == 0) return;
     if (f.y == 0 && f.z == 0) return;
-
-    f = ku_bitmap_is(f, dr); // cut off outer parts
 
     int sox = f.x - sx; // src offset
     int soy = f.y - sy;
@@ -263,7 +306,7 @@ void ku_bitmap_blend_with_alpha_mask(ku_bitmap_t* dst, ku_bitmap_t* src, int sx,
 
 	    uint32_t dc = *td;
 	    uint32_t sc = *ts;
-	    int      sa = ((sc & AMASK) >> 24) - mask;
+	    int      sa = ((sc & AMASK) >> 24) - alpha;
 
 	    if (sa == 256)
 	    {

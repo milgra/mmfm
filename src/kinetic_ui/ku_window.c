@@ -293,27 +293,29 @@ void ku_window_render(ku_window_t* win, uint32_t time, ku_bitmap_t* bm, ku_rect_
 	if (view->texture.bitmap)
 	{
 	    ku_rect_t rect = view->frame.global;
+
+	    bmr_t dstmsk = ku_bitmap_is(
+		(bmr_t){(int) dirty.x, (int) dirty.y, (int) (dirty.x + dirty.w), (int) (dirty.y + dirty.h)},
+		(bmr_t){0, 0, bm->w, bm->h});
+	    bmr_t srcmsk = {0, 0, view->texture.bitmap->w, view->texture.bitmap->h};
+
 	    if (view->frame.region.w > 0 && view->frame.region.h > 0)
 	    {
-		rect.x += view->frame.region.x;
-		rect.y += view->frame.region.y;
-		rect.w = view->frame.region.w;
-		rect.h = view->frame.region.h;
-
-		printf("%s REGION %f %f %f %f\n", view->id, rect.x, rect.y, rect.w, rect.h);
+		srcmsk.x += view->frame.region.x;
+		srcmsk.y += view->frame.region.y;
+		srcmsk.z = srcmsk.x + view->frame.region.w;
+		srcmsk.w = srcmsk.y + view->frame.region.h;
 	    }
 
 	    if (view->texture.transparent == 0 || i == 0)
 	    {
 		ku_bitmap_insert(
 		    bm,
+		    dstmsk,
 		    view->texture.bitmap,
+		    srcmsk,
 		    rect.x - view->style.shadow_blur,
-		    rect.y - view->style.shadow_blur,
-		    (int) dirty.x,
-		    (int) dirty.y,
-		    (int) dirty.w,
-		    (int) dirty.h);
+		    rect.y - view->style.shadow_blur);
 	    }
 	    else
 	    {
@@ -321,25 +323,21 @@ void ku_window_render(ku_window_t* win, uint32_t time, ku_bitmap_t* bm, ku_rect_
 		{
 		    ku_bitmap_blend(
 			bm,
+			dstmsk,
 			view->texture.bitmap,
+			srcmsk,
 			rect.x - view->style.shadow_blur,
-			rect.y - view->style.shadow_blur,
-			(int) dirty.x,
-			(int) dirty.y,
-			(int) dirty.w,
-			(int) dirty.h);
+			rect.y - view->style.shadow_blur);
 		}
 		else
 		{
-		    ku_bitmap_blend_with_alpha_mask(
+		    ku_bitmap_blend_with_alpha(
 			bm,
+			dstmsk,
 			view->texture.bitmap,
+			srcmsk,
 			rect.x - view->style.shadow_blur,
 			rect.y - view->style.shadow_blur,
-			(int) dirty.x,
-			(int) dirty.y,
-			(int) dirty.w,
-			(int) dirty.h,
 			(255 - (int) (view->texture.alpha * 255.0)));
 		}
 	    }

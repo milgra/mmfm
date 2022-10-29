@@ -1,8 +1,8 @@
 #ifndef ui_h
 #define ui_h
 
+#include "ku_view.c"
 #include "ku_window.c"
-#include "view.c"
 
 typedef enum _ui_inputmode ui_inputmode;
 enum _ui_inputmode
@@ -13,10 +13,10 @@ enum _ui_inputmode
 void ui_init(int width, int height, float scale, ku_window_t* window);
 void ui_destroy();
 void ui_add_cursor();
-void ui_update_cursor(vr_t frame);
+void ui_update_cursor(ku_rect_t frame);
 void ui_update_dragger();
-void ui_render_without_cursor(uint32_t time, bm_t* bm);
-void ui_save_screenshot(uint32_t time, char hide_cursor, bm_t* bm);
+void ui_render_without_cursor(uint32_t time, ku_bitmap_t* bm);
+void ui_save_screenshot(uint32_t time, char hide_cursor, ku_bitmap_t* bm);
 void ui_update_layout(int w, int h);
 void ui_describe();
 void ui_update_player();
@@ -28,7 +28,9 @@ void ui_update_player();
 #include "coder.c"
 #include "config.c"
 #include "filemanager.c"
-#include "ku_layout.c"
+#include "ku_gen_css.c"
+#include "ku_gen_html.c"
+#include "ku_gen_type.c"
 #include "ku_table.c"
 #include "ku_util.c"
 #include "map_util.c"
@@ -45,9 +47,6 @@ void ui_update_player();
 #include "vh_key.c"
 #include "vh_textinput.c"
 #include "vh_touch.c"
-#include "viewgen_css.c"
-#include "viewgen_html.c"
-#include "viewgen_type.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_number.c"
@@ -57,42 +56,42 @@ void ui_update_player();
 
 struct _ui_t
 {
-    view_t* view_base;
-    view_t* view_drag; // drag overlay
-    view_t* view_doc;  // file drag icon
-    view_t* cursor;    // replay cursor
+    ku_view_t* view_base;
+    ku_view_t* view_drag; // drag overlay
+    ku_view_t* view_doc;  // file drag icon
+    ku_view_t* cursor;    // replay cursor
 
-    view_t* view_infotf;
-    view_t* view_maingap;
+    ku_view_t* view_infotf;
+    ku_view_t* view_maingap;
 
-    view_t* cliplistbox;
-    view_t* fileinfobox;
-    view_t* sidebar;
+    ku_view_t* cliplistbox;
+    ku_view_t* fileinfobox;
+    ku_view_t* sidebar;
 
-    view_t* exit_btn;
-    view_t* full_btn;
-    view_t* clip_btn;
-    view_t* sidebar_btn;
+    ku_view_t* exit_btn;
+    ku_view_t* full_btn;
+    ku_view_t* clip_btn;
+    ku_view_t* sidebar_btn;
 
-    view_t* prev_btn;
-    view_t* next_btn;
-    view_t* play_btn;
-    view_t* settings_btn;
+    ku_view_t* prev_btn;
+    ku_view_t* next_btn;
+    ku_view_t* play_btn;
+    ku_view_t* settings_btn;
 
-    view_t* main_bottom;
-    view_t* left_dragger;
-    view_t* prev_dragger;
+    ku_view_t* main_bottom;
+    ku_view_t* left_dragger;
+    ku_view_t* prev_dragger;
 
     vec_t* file_list_data;
     vec_t* clip_list_data;
     vec_t* drag_data;
 
-    view_t* visubody;
-    view_t* visuvideo;
+    ku_view_t* visubody;
+    ku_view_t* visuvideo;
 
-    view_t* inputarea;
-    view_t* inputbck;
-    view_t* inputtf;
+    ku_view_t* inputarea;
+    ku_view_t* inputbck;
+    ku_view_t* inputtf;
 
     ku_table_t* cliptable;
     ku_table_t* filelisttable;
@@ -100,8 +99,8 @@ struct _ui_t
     ku_table_t* settingstable;
     ku_table_t* contexttable;
 
-    view_t* settingspopupcont;
-    view_t* contextpopupcont;
+    ku_view_t* settingspopupcont;
+    ku_view_t* contextpopupcont;
 
     textstyle_t background_style;
     textstyle_t progress_style;
@@ -112,7 +111,7 @@ struct _ui_t
     int          autoplay;
     char*        current_folder;
     ui_inputmode inputmode;
-    view_t*      rowview_for_context_menu;
+    ku_view_t*   rowview_for_context_menu;
     map_t*       edited_file;
 
     ku_window_t* window;
@@ -163,19 +162,19 @@ void ui_open(char* path)
 
     if (ui.visuvideo->texture.bitmap != NULL)
     {
-	gfx_rect(ui.visuvideo->texture.bitmap, 0, 0, 100, 100, 0x00000000, 1);
+	ku_draw_rect(ui.visuvideo->texture.bitmap, 0, 0, 100, 100, 0x00000000, 1);
 	ui.visuvideo->texture.changed = 1;
     }
 
     if (strstr(path, ".pdf") != NULL)
     {
-	bm_t* pdfbmp = pdf_render(path);
+	ku_bitmap_t* pdfbmp = pdf_render(path);
 
 	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
 
 	if (ui.visuvideo->texture.bitmap != NULL)
 	{
-	    gfx_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+	    ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
 	    ui.visuvideo->texture.changed = 1;
 	}
 
@@ -191,7 +190,7 @@ void ui_open(char* path)
 	}
 	else if (type == CODER_MEDIA_TYPE_IMAGE)
 	{
-	    bm_t* image = coder_load_image(path);
+	    ku_bitmap_t* image = coder_load_image(path);
 
 	    if (image)
 	    {
@@ -199,7 +198,7 @@ void ui_open(char* path)
 
 		if (ui.visuvideo->texture.bitmap != NULL)
 		{
-		    gfx_insert(ui.visuvideo->texture.bitmap, image, 0, 0);
+		    ku_draw_insert(ui.visuvideo->texture.bitmap, image, 0, 0);
 		    ui.visuvideo->texture.changed = 1;
 		}
 
@@ -303,12 +302,12 @@ void on_files_event(ku_table_event_t event)
     }
     else if (event.id == KU_TABLE_EVENT_DRAG)
     {
-	view_t* docview                 = view_new("dragged_view", ((vr_t){.x = 0, .y = 0, .w = 50, .h = 50}));
-	char*   imagepath               = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
+	ku_view_t* docview              = ku_view_new("dragged_view", ((ku_rect_t){.x = 0, .y = 0, .w = 50, .h = 50}));
+	char*      imagepath            = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
 	docview->style.background_image = imagepath;
 	tg_css_add(docview);
 
-	view_insert_subview(ui.view_base, docview, ui.view_base->views->length - 2);
+	ku_view_insert_subview(ui.view_base, docview, ui.view_base->views->length - 2);
 
 	vh_drag_drag(ui.view_drag, docview);
 	REL(docview);
@@ -352,13 +351,13 @@ void on_files_event(ku_table_event_t event)
 	    {
 		ui.rowview_for_context_menu = event.rowview;
 
-		view_t* contextpopup = ui.contextpopupcont->views->data[0];
-		vr_t    iframe       = contextpopup->frame.global;
-		iframe.x             = event.ev.x;
-		iframe.y             = event.ev.y;
-		view_set_frame(contextpopup, iframe);
+		ku_view_t* contextpopup = ui.contextpopupcont->views->data[0];
+		ku_rect_t  iframe       = contextpopup->frame.global;
+		iframe.x                = event.ev.x;
+		iframe.y                = event.ev.y;
+		ku_view_set_frame(contextpopup, iframe);
 
-		view_add_subview(ui.view_base, ui.contextpopupcont);
+		ku_view_add_subview(ui.view_base, ui.contextpopupcont);
 		// ku_layout(ui.view_base);
 	    }
 	}
@@ -412,7 +411,7 @@ void on_clipboard_event(ku_table_event_t event)
 
 	    if (ui.view_doc)
 	    {
-		view_remove_from_parent(ui.view_doc);
+		ku_view_remove_from_parent(ui.view_doc);
 	    }
 	}
     }
@@ -428,7 +427,7 @@ void on_settingslist_event(ku_table_event_t event)
 
 void on_contextlist_event(ku_table_event_t event)
 {
-    view_remove_from_parent(ui.contextpopupcont);
+    ku_view_remove_from_parent(ui.contextpopupcont);
     if (event.id == KU_TABLE_EVENT_SELECT)
     {
 	if (event.selected_index == 0) // rename
@@ -439,17 +438,17 @@ void on_contextlist_event(ku_table_event_t event)
 
 		ui.inputmode = UI_IM_RENAME;
 
-		vr_t rframe = ui.rowview_for_context_menu->frame.global;
-		vr_t iframe = ui.inputbck->frame.global;
-		iframe.x    = rframe.x;
-		iframe.y    = rframe.y - 5;
-		view_set_frame(ui.inputbck, iframe);
+		ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
+		ku_rect_t iframe = ui.inputbck->frame.global;
+		iframe.x         = rframe.x;
+		iframe.y         = rframe.y - 5;
+		ku_view_set_frame(ui.inputbck, iframe);
 
-		view_add_subview(ui.view_base, ui.inputarea);
+		ku_view_add_subview(ui.view_base, ui.inputarea);
 
-		ku_layout(ui.view_base);
+		ku_view_layout(ui.view_base);
 
-		window_activate(ui.window, ui.inputtf);
+		ku_window_activate(ui.window, ui.inputtf);
 		vh_textinput_activate(ui.inputtf, 1);
 
 		ui.edited_file = info;
@@ -488,7 +487,7 @@ void on_contextlist_event(ku_table_event_t event)
 
 void ui_cancel_input()
 {
-    view_remove_subview(ui.view_base, ui.inputarea);
+    ku_view_remove_subview(ui.view_base, ui.inputarea);
 }
 
 void ui_on_touch(vh_touch_event_t event)
@@ -499,7 +498,7 @@ void ui_on_touch(vh_touch_event_t event)
     }
     else if (strcmp(event.view->id, "contextpopupcont") == 0)
     {
-	view_remove_from_parent(ui.contextpopupcont);
+	ku_view_remove_from_parent(ui.contextpopupcont);
     }
 }
 
@@ -525,7 +524,6 @@ void ui_toggle_pause()
 
 void ui_on_key_down(vh_key_event_t event)
 {
-
     if (event.ev.keycode == SDLK_SPACE) ui_toggle_pause();
     if (event.ev.keycode == SDLK_DELETE) ui_delete_selected();
     if (event.ev.keycode == SDLK_c && event.ev.ctrl_down)
@@ -541,7 +539,7 @@ void ui_on_key_down(vh_key_event_t event)
 
 void ui_on_btn_event(vh_button_event_t event)
 {
-    view_t* btnview = event.view;
+    ku_view_t* btnview = event.view;
 
     printf("BUTTON EVENT\n");
 
@@ -550,36 +548,36 @@ void ui_on_btn_event(vh_button_event_t event)
 
     if (btnview == ui.clip_btn)
     {
-	view_t* top = view_get_subview(ui.view_base, "top_container");
-	if (ui.fileinfobox->parent) view_remove_from_parent(ui.fileinfobox);
+	ku_view_t* top = ku_view_get_subview(ui.view_base, "top_container");
+	if (ui.fileinfobox->parent) ku_view_remove_from_parent(ui.fileinfobox);
 
 	if (ui.cliplistbox->parent)
 	{
-	    view_remove_from_parent(ui.cliplistbox);
+	    ku_view_remove_from_parent(ui.cliplistbox);
 	}
 	else
 	{
-	    view_add_subview(top, ui.cliplistbox);
+	    ku_view_add_subview(top, ui.cliplistbox);
 	}
-	ku_layout(top);
+	ku_view_layout(top);
     }
     if (btnview == ui.sidebar_btn)
     {
-	view_t* top = view_get_subview(ui.view_base, "top_container");
+	ku_view_t* top = ku_view_get_subview(ui.view_base, "top_container");
 
 	if (ui.sidebar->parent)
 	{
-	    view_remove_from_parent(ui.sidebar);
+	    ku_view_remove_from_parent(ui.sidebar);
 	    config_set_bool("sidebar_visible", 0);
 	}
 	else
 	{
-	    view_add_subview(top, ui.sidebar);
+	    ku_view_add_subview(top, ui.sidebar);
 	    config_set_bool("sidebar_visible", 1);
 	}
 
 	config_write(config_get("cfg_path"));
-	ku_layout(top);
+	ku_view_layout(top);
     }
     if (btnview == ui.prev_btn)
     {
@@ -624,13 +622,13 @@ void ui_on_btn_event(vh_button_event_t event)
     {
 	if (!ui.settingspopupcont->parent)
 	{
-	    view_add_subview(ui.view_base, ui.settingspopupcont);
-	    ku_layout(ui.view_base);
+	    ku_view_add_subview(ui.view_base, ui.settingspopupcont);
+	    ku_view_layout(ui.view_base);
 	}
     }
     if (strcmp(event.view->id, "settingsclosebtn") == 0)
     {
-	view_remove_from_parent(ui.settingspopupcont);
+	ku_view_remove_from_parent(ui.settingspopupcont);
     }
 }
 
@@ -677,47 +675,47 @@ void ui_on_drag(vh_drag_event_t event)
 {
     if (event.dragged_view == ui.left_dragger)
     {
-	view_t* cbox       = view_get_subview(ui.view_base, "cliplistbox");
-	view_t* fbox       = view_get_subview(ui.view_base, "fileinfobox");
-	view_t* lft        = view_get_subview(ui.view_base, "left_container");
-	view_t* top        = view_get_subview(ui.view_base, "top_container");
+	ku_view_t* cbox    = ku_view_get_subview(ui.view_base, "cliplistbox");
+	ku_view_t* fbox    = ku_view_get_subview(ui.view_base, "fileinfobox");
+	ku_view_t* lft     = ku_view_get_subview(ui.view_base, "left_container");
+	ku_view_t* top     = ku_view_get_subview(ui.view_base, "top_container");
 	cbox->style.height = lft->frame.global.h - event.dragged_view->frame.global.y + 28.0;
 	fbox->style.width  = top->frame.global.w - event.dragged_view->frame.global.x - 9;
 	zc_log_debug("height %i width %i", cbox->style.height, fbox->style.width);
-	ku_layout(top);
+	ku_view_layout(top);
     }
 }
 
 void ui_add_cursor()
 {
-    ui.cursor                         = view_new("ui.cursor", ((vr_t){10, 10, 10, 10}));
+    ui.cursor                         = ku_view_new("ui.cursor", ((ku_rect_t){10, 10, 10, 10}));
     ui.cursor->exclude                = 0;
     ui.cursor->style.background_color = 0xFF000099;
     ui.cursor->needs_touch            = 0;
     tg_css_add(ui.cursor);
-    /* window_add_to_top(ui.window,ui.cursor); */
+    /* ku_window_add_to_top(ui.window,ui.cursor); */
 }
 
-void ui_update_cursor(vr_t frame)
+void ui_update_cursor(ku_rect_t frame)
 {
-    view_set_frame(ui.cursor, frame);
+    ku_view_set_frame(ui.cursor, frame);
 }
 
-void ui_render_without_cursor(uint32_t time, bm_t* bm)
+void ui_render_without_cursor(uint32_t time, ku_bitmap_t* bm)
 {
-    /* window_remove(ui.window,ui.cursor); */
-    /* window_render(ui.window,time, bm); */
-    /* window_add_to_top(ui.window,ui.cursor); */
+    /* ku_window_remove(ui.window,ui.cursor); */
+    /* ku_window_render(ui.window,time, bm); */
+    /* ku_window_add_to_top(ui.window,ui.cursor); */
 }
 
-void ui_save_screenshot(uint32_t time, char hide_cursor, bm_t* bm)
+void ui_save_screenshot(uint32_t time, char hide_cursor, ku_bitmap_t* bm)
 {
     /* if (config_get("lib_path")) */
     /* { */
     /* 	static int cnt    = 0; */
-    /* 	view_t*    root   = window_get_root(ui.window); */
-    /* 	vr_t       frame  = root->frame.local; */
-    /* 	bm_t* screen = bm_new(frame.w, frame.h); // REL 0 */
+    /* 	ku_view_t*    root   = ku_window_get_root(ui.window); */
+    /* 	ku_rect_t       frame  = root->frame.local; */
+    /* 	ku_bitmap_t* screen = ku_bitmap_new(frame.w, frame.h); // REL 0 */
 
     /* 	// remove cursor for screenshot to remain identical */
 
@@ -727,7 +725,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor, bm_t* bm)
 
     /* 	char*      name    = cstr_new_format(20, "screenshot%.3i.png", cnt++); // REL 1 */
     /* 	char*      path    = path_new_append(config_get("lib_path"), name);    // REL 2 */
-    /* 	bm_t* flipped = bm_new_flip_y(screen);                       // REL 3 */
+    /* 	ku_bitmap_t* flipped = ku_bitmap_new_flip_y(screen);                       // REL 3 */
 
     /* 	coder_write_png(path, flipped); */
 
@@ -750,7 +748,7 @@ int ui_comp_text(void* left, void* right)
 
 void ui_init(int width, int height, float scale, ku_window_t* window)
 {
-    text_init(); // DESTROY 0
+    ku_text_init(); // DESTROY 0
 
     ui.window   = window;
     ui.autoplay = 1;
@@ -759,9 +757,9 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     vec_t* view_list = VNEW();
 
-    viewgen_html_parse(config_get("html_path"), view_list);
-    viewgen_css_apply(view_list, config_get("css_path"), config_get("res_path"), 1.0);
-    viewgen_type_apply(view_list, NULL, NULL); // TODO use btn and slider event
+    ku_gen_html_parse(config_get("html_path"), view_list);
+    ku_gen_css_apply(view_list, config_get("css_path"), config_get("res_path"), 1.0);
+    ku_gen_type_apply(view_list, NULL, NULL); // TODO use btn and slider event
 
     ui.view_base = RET(vec_head(view_list));
 
@@ -769,30 +767,30 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     /* initial layout of views */
 
-    view_set_frame(ui.view_base, (vr_t){0.0, 0.0, (float) width, (float) height});
-    window_add(ui.window, ui.view_base);
+    ku_view_set_frame(ui.view_base, (ku_rect_t){0.0, 0.0, (float) width, (float) height});
+    ku_window_add(ui.window, ui.view_base);
 
     /* listen for keys and shortcuts */
 
     vh_key_add(ui.view_base, ui_on_key_down);
     ui.view_base->needs_key = 1;
-    window_activate(ui.window, ui.view_base);
+    ku_window_activate(ui.window, ui.view_base);
 
     /* setup drag layer */
 
-    ui.view_drag = view_get_subview(ui.view_base, "draglayer");
+    ui.view_drag = ku_view_get_subview(ui.view_base, "draglayer");
     vh_drag_attach(ui.view_drag, ui_on_drag);
 
     /* setup visualizer */
 
-    ui.visuvideo = view_get_subview(ui.view_base, "previewcont");
-    ui.visubody  = view_get_subview(ui.view_base, "previewbody");
+    ui.visuvideo = ku_view_get_subview(ui.view_base, "previewcont");
+    ui.visubody  = ku_view_get_subview(ui.view_base, "previewbody");
 
     /* tables */
 
-    view_t* filelist = view_get_subview(ui.view_base, "filelisttable");
+    ku_view_t* filelist = ku_view_get_subview(ui.view_base, "filelisttable");
 
-    textstyle_t ts = ui_util_gen_textstyle(filelist);
+    textstyle_t ts = ku_util_gen_textstyle(filelist);
 
     ts.align        = TA_CENTER;
     ts.margin_right = 0;
@@ -805,11 +803,11 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     /* preview block */
 
-    view_t* preview     = view_get_subview(ui.view_base, "preview");
-    view_t* previewbody = view_get_subview(ui.view_base, "previewbody");
-    view_t* previewscrl = view_get_subview(ui.view_base, "previewscrl");
-    view_t* previewevnt = view_get_subview(ui.view_base, "previewevnt");
-    view_t* previewcont = view_get_subview(ui.view_base, "previewcont");
+    ku_view_t* preview     = ku_view_get_subview(ui.view_base, "preview");
+    ku_view_t* previewbody = ku_view_get_subview(ui.view_base, "previewbody");
+    ku_view_t* previewscrl = ku_view_get_subview(ui.view_base, "previewscrl");
+    ku_view_t* previewevnt = ku_view_get_subview(ui.view_base, "previewevnt");
+    ku_view_t* previewcont = ku_view_get_subview(ui.view_base, "previewcont");
 
     if (preview)
     {
@@ -817,7 +815,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 	tg_text_set(preview, "PREVIEW", ts);
 
 	tg_scaledimg_add(previewcont, 30, 30);
-	view_set_frame(previewcont, (vr_t){0, 0, 30, 30});
+	ku_view_set_frame(previewcont, (ku_rect_t){0, 0, 30, 30});
 	previewcont->style.margin = INT_MAX;
 
 	vh_cv_body_attach(previewbody, NULL);
@@ -835,10 +833,10 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, cstr_new_cstring("value"));
     VADDR(fields, num_new_int(400));
 
-    view_t* fileinfo       = view_get_subview(ui.view_base, "fileinfotable");
-    view_t* fileinfoscroll = view_get_subview(ui.view_base, "fileinfoscroll");
-    view_t* fileinfoevt    = view_get_subview(ui.view_base, "fileinfoevt");
-    view_t* fileinfohead   = view_get_subview(ui.view_base, "fileinfohead");
+    ku_view_t* fileinfo       = ku_view_get_subview(ui.view_base, "fileinfotable");
+    ku_view_t* fileinfoscroll = ku_view_get_subview(ui.view_base, "fileinfoscroll");
+    ku_view_t* fileinfoevt    = ku_view_get_subview(ui.view_base, "fileinfoevt");
+    ku_view_t* fileinfohead   = ku_view_get_subview(ui.view_base, "fileinfohead");
 
     if (fileinfo)
     {
@@ -877,10 +875,10 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, cstr_new_cstring("file/last_status"));
     VADDR(fields, num_new_int(180));
 
-    // view_t* filelist       = view_get_subview(ui.view_base, "filelisttable");
-    view_t* filelistscroll = view_get_subview(ui.view_base, "filelistscroll");
-    view_t* filelistevt    = view_get_subview(ui.view_base, "filelistevt");
-    view_t* filelisthead   = view_get_subview(ui.view_base, "filelisthead");
+    // ku_view_t* filelist       = ku_view_get_subview(ui.view_base, "filelisttable");
+    ku_view_t* filelistscroll = ku_view_get_subview(ui.view_base, "filelistscroll");
+    ku_view_t* filelistevt    = ku_view_get_subview(ui.view_base, "filelistevt");
+    ku_view_t* filelisthead   = ku_view_get_subview(ui.view_base, "filelisthead");
 
     if (filelist)
     {
@@ -902,14 +900,14 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ui.file_list_data = VNEW(); // REL S0
     ku_table_set_data(ui.filelisttable, ui.file_list_data);
 
-    window_activate(ui.window, filelistevt);
+    ku_window_activate(ui.window, filelistevt);
 
     // clipboard table
 
-    view_t* cliplist       = view_get_subview(ui.view_base, "cliplist");
-    view_t* cliplistscroll = view_get_subview(ui.view_base, "cliplistscroll");
-    view_t* cliplistevt    = view_get_subview(ui.view_base, "cliplistevt");
-    view_t* cliplisthead   = view_get_subview(ui.view_base, "cliplisthead");
+    ku_view_t* cliplist       = ku_view_get_subview(ui.view_base, "cliplist");
+    ku_view_t* cliplistscroll = ku_view_get_subview(ui.view_base, "cliplistscroll");
+    ku_view_t* cliplistevt    = ku_view_get_subview(ui.view_base, "cliplistevt");
+    ku_view_t* cliplisthead   = ku_view_get_subview(ui.view_base, "cliplisthead");
 
     if (cliplist)
     {
@@ -935,37 +933,37 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     /* close button */
 
-    ui.exit_btn = view_get_subview(ui.view_base, "app_close_btn");
+    ui.exit_btn = ku_view_get_subview(ui.view_base, "app_close_btn");
     vh_button_add(ui.exit_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
-    ui.full_btn = view_get_subview(ui.view_base, "app_maximize_btn");
+    ui.full_btn = ku_view_get_subview(ui.view_base, "app_maximize_btn");
     vh_button_add(ui.full_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
-    /* ui.clip_btn = view_get_subview(ui.view_base, "show_clipboard_btn"); */
+    /* ui.clip_btn = ku_view_get_subview(ui.view_base, "show_clipboard_btn"); */
     /* vh_button_add(ui.clip_btn, VH_BUTTON_NORMAL, btn_cb); */
 
-    ui.sidebar_btn = view_get_subview(ui.view_base, "show_properties_btn");
+    ui.sidebar_btn = ku_view_get_subview(ui.view_base, "show_properties_btn");
     vh_button_add(ui.sidebar_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
-    ui.play_btn = view_get_subview(ui.view_base, "playbtn");
+    ui.play_btn = ku_view_get_subview(ui.view_base, "playbtn");
     vh_button_add(ui.play_btn, VH_BUTTON_TOGGLE, ui_on_btn_event);
 
-    ui.next_btn = view_get_subview(ui.view_base, "nextbtn");
+    ui.next_btn = ku_view_get_subview(ui.view_base, "nextbtn");
     vh_button_add(ui.next_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
-    ui.prev_btn = view_get_subview(ui.view_base, "prevbtn");
+    ui.prev_btn = ku_view_get_subview(ui.view_base, "prevbtn");
     vh_button_add(ui.prev_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
-    ui.settings_btn = view_get_subview(ui.view_base, "settingsbtn");
+    ui.settings_btn = ku_view_get_subview(ui.view_base, "settingsbtn");
     vh_button_add(ui.settings_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
-    view_t* settingsclosebtn = view_get_subview(ui.view_base, "settingsclosebtn");
+    ku_view_t* settingsclosebtn = ku_view_get_subview(ui.view_base, "settingsclosebtn");
     vh_button_add(settingsclosebtn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
     // get main bottom for layout change
 
-    ui.main_bottom  = view_get_subview(ui.view_base, "main_bottom");
-    ui.left_dragger = view_get_subview(ui.view_base, "left_dragger");
+    ui.main_bottom  = ku_view_get_subview(ui.view_base, "main_bottom");
+    ui.left_dragger = ku_view_get_subview(ui.view_base, "left_dragger");
 
     if (ui.left_dragger)
     {
@@ -975,10 +973,10 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     /* settings list */
 
-    view_t* settingspopupcont = view_get_subview(ui.view_base, "settingspopupcont");
-    view_t* settingspopup     = view_get_subview(ui.view_base, "settingspopup");
-    view_t* settingslist      = view_get_subview(ui.view_base, "settingstable");
-    view_t* settingslistevt   = view_get_subview(ui.view_base, "settingslistevt");
+    ku_view_t* settingspopupcont = ku_view_get_subview(ui.view_base, "settingspopupcont");
+    ku_view_t* settingspopup     = ku_view_get_subview(ui.view_base, "settingspopup");
+    ku_view_t* settingslist      = ku_view_get_subview(ui.view_base, "settingstable");
+    ku_view_t* settingslistevt   = ku_view_get_subview(ui.view_base, "settingslistevt");
 
     settingspopup->blocks_touch  = 1;
     settingspopup->blocks_scroll = 1;
@@ -1011,14 +1009,14 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ku_table_set_data(ui.settingstable, items);
     REL(items);
 
-    view_remove_from_parent(ui.settingspopupcont);
+    ku_view_remove_from_parent(ui.settingspopupcont);
 
     /* context list */
 
-    view_t* contextpopupcont = view_get_subview(ui.view_base, "contextpopupcont");
-    view_t* contextpopup     = view_get_subview(ui.view_base, "contextpopup");
-    view_t* contextlist      = view_get_subview(ui.view_base, "contexttable");
-    view_t* contextlistevt   = view_get_subview(ui.view_base, "contextlistevt");
+    ku_view_t* contextpopupcont = ku_view_get_subview(ui.view_base, "contextpopupcont");
+    ku_view_t* contextpopup     = ku_view_get_subview(ui.view_base, "contextpopup");
+    ku_view_t* contextlist      = ku_view_get_subview(ui.view_base, "contexttable");
+    ku_view_t* contextlistevt   = ku_view_get_subview(ui.view_base, "contextlistevt");
 
     contextpopup->blocks_touch  = 1;
     contextpopup->blocks_scroll = 1;
@@ -1055,22 +1053,22 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     vh_touch_add(ui.contextpopupcont, ui_on_touch);
 
-    view_remove_from_parent(ui.contextpopupcont);
+    ku_view_remove_from_parent(ui.contextpopupcont);
 
     // info textfield
 
-    ui.view_infotf = view_get_subview(ui.view_base, "infotf");
+    ui.view_infotf = ku_view_get_subview(ui.view_base, "infotf");
     tg_text_add(ui.view_infotf);
 
-    ui.progress_style = ui_util_gen_textstyle(ui.view_infotf);
+    ui.progress_style = ku_util_gen_textstyle(ui.view_infotf);
     ui_show_progress("Directory loaded");
 
     /* input popup */
 
-    ui.inputarea = RET(view_get_subview(ui.view_base, "inputarea"));
-    ui.inputbck  = view_get_subview(ui.view_base, "inputbck");
-    ui.inputtf   = view_get_subview(ui.view_base, "inputtf");
-    ui.inputts   = ui_util_gen_textstyle(ui.inputtf);
+    ui.inputarea = RET(ku_view_get_subview(ui.view_base, "inputarea"));
+    ui.inputbck  = ku_view_get_subview(ui.view_base, "inputbck");
+    ui.inputtf   = ku_view_get_subview(ui.view_base, "inputtf");
+    ui.inputts   = ku_util_gen_textstyle(ui.inputtf);
 
     ui.inputbck->blocks_touch   = 1;
     ui.inputarea->blocks_touch  = 1;
@@ -1080,18 +1078,18 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     vh_touch_add(ui.inputarea, ui_on_touch);
 
-    view_remove_from_parent(ui.inputarea);
+    ku_view_remove_from_parent(ui.inputarea);
 
     // main gap
 
-    ui.view_maingap = view_get_subview(ui.view_base, "main_gap");
+    ui.view_maingap = ku_view_get_subview(ui.view_base, "main_gap");
 
-    ui.cliplistbox = RET(view_get_subview(ui.view_base, "cliplistbox"));
-    ui.fileinfobox = RET(view_get_subview(ui.view_base, "fileinfobox"));
+    ui.cliplistbox = RET(ku_view_get_subview(ui.view_base, "cliplistbox"));
+    ui.fileinfobox = RET(ku_view_get_subview(ui.view_base, "fileinfobox"));
 
-    ui.sidebar = RET(view_get_subview(ui.view_base, "sidebar"));
+    ui.sidebar = RET(ku_view_get_subview(ui.view_base, "sidebar"));
 
-    if (config_get_bool("sidebar_visible") == 0) view_remove_from_parent(ui.sidebar);
+    if (config_get_bool("sidebar_visible") == 0) ku_view_remove_from_parent(ui.sidebar);
 
     // fill up files table
 
@@ -1099,14 +1097,14 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     // show texture map for debug
 
-    /* view_t* texmap       = view_new("texmap", ((vr_t){0, 0, 150, 150})); */
+    /* ku_view_t* texmap       = ku_view_new("texmap", ((ku_rect_t){0, 0, 150, 150})); */
     /* texmap->needs_touch  = 0; */
     /* texmap->exclude      = 0; */
     /* texmap->texture.full = 1; */
     /* texmap->style.right  = 0; */
     /* texmap->style.top    = 0; */
 
-    /* window_add(ui.window,texmap); */
+    /* ku_window_add(ui.window,texmap); */
 }
 
 void ui_destroy()
@@ -1117,7 +1115,7 @@ void ui_destroy()
 	ui.ms = NULL;
     }
 
-    window_remove(ui.window, ui.view_base);
+    ku_window_remove(ui.window, ui.view_base);
 
     REL(ui.cliplistbox);
     REL(ui.fileinfobox);
@@ -1138,7 +1136,7 @@ void ui_destroy()
 
     REL(ui.inputarea);
 
-    text_destroy(); // DESTROY 0
+    ku_text_destroy(); // DESTROY 0
 }
 
 void ui_update_layout(int w, int h)
@@ -1175,16 +1173,16 @@ void ui_update_layout(int w, int h)
 
 void ui_update_dragger()
 {
-    /* view_t* filelist = view_get_subview(ui.view_base, "filelisttable"); */
-    /* vr_t    df       = ui.left_dragger->frame.local; */
+    /* ku_view_t* filelist = ku_view_get_subview(ui.view_base, "filelisttable"); */
+    /* ku_rect_t    df       = ui.left_dragger->frame.local; */
     /* df.x             = filelist->frame.global.x + filelist->frame.global.w; */
     /* df.y             = filelist->frame.global.y + filelist->frame.global.h; */
-    /* view_set_frame(ui.left_dragger, df); */
+    /* ku_view_set_frame(ui.left_dragger, df); */
 }
 
 void ui_describe()
 {
-    view_describe(ui.view_base, 0);
+    ku_view_describe(ui.view_base, 0);
 }
 
 void ui_update_player()

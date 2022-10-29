@@ -13,13 +13,13 @@ typedef enum _coder_media_type_t
     CODER_MEDIA_TYPE_OTHER
 } coder_media_type_t;
 
-bm_t*              coder_load_image(const char* path);
-void               coder_load_image_into(const char* path, bm_t* bitmap);
-int                coder_load_cover_into(const char* path, bm_t* bitmap);
+ku_bitmap_t*       coder_load_image(const char* path);
+void               coder_load_image_into(const char* path, ku_bitmap_t* bitmap);
+int                coder_load_cover_into(const char* path, ku_bitmap_t* bitmap);
 int                coder_load_metadata_into(const char* path, map_t* map);
 coder_media_type_t coder_get_type(const char* path);
 int                coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* data, vec_t* drop);
-int                coder_write_png(char* path, bm_t* bm);
+int                coder_write_png(char* path, ku_bitmap_t* bm);
 
 #endif
 
@@ -36,10 +36,10 @@ int                coder_write_png(char* path, bm_t* bm);
 #include "zc_path.c"
 #include <limits.h>
 
-bm_t* coder_load_image(const char* path)
+ku_bitmap_t* coder_load_image(const char* path)
 {
-    bm_t* bitmap  = NULL;
-    int   success = 0;
+    ku_bitmap_t* bitmap  = NULL;
+    int          success = 0;
 
     AVFormatContext* src_ctx = avformat_alloc_context(); // FREE 0
 
@@ -76,7 +76,7 @@ bm_t* coder_load_image(const char* path)
 
 		if (img_convert_ctx != NULL)
 		{
-		    bitmap = bm_new(frame->width, frame->height); // REL 0
+		    bitmap = ku_bitmap_new(frame->width, frame->height); // REL 0
 
 		    uint8_t* scaledpixels[1];
 		    scaledpixels[0] = malloc(bitmap->w * bitmap->h * 4);
@@ -87,9 +87,9 @@ bm_t* coder_load_image(const char* path)
 		    pitch[0] = bitmap->w * 4;
 		    sws_scale(img_convert_ctx, (const uint8_t* const*) frame->data, frame->linesize, 0, frame->height, scaledpixels, pitch);
 
-		    gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x00000000, 0);
+		    ku_draw_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x00000000, 0);
 
-		    gfx_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
+		    ku_draw_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 
 		    free(scaledpixels[0]);
 
@@ -114,7 +114,7 @@ bm_t* coder_load_image(const char* path)
     return bitmap;
 }
 
-void coder_load_image_into(const char* path, bm_t* bitmap)
+void coder_load_image_into(const char* path, ku_bitmap_t* bitmap)
 {
     AVFormatContext* src_ctx = avformat_alloc_context(); // FREE 0
 
@@ -161,9 +161,9 @@ void coder_load_image_into(const char* path, bm_t* bitmap)
 		    pitch[0] = bitmap->w * 4;
 		    sws_scale(img_convert_ctx, (const uint8_t* const*) frame->data, frame->linesize, 0, frame->height, scaledpixels, pitch);
 
-		    gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x000000FF, 0);
+		    ku_draw_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x000000FF, 0);
 
-		    gfx_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
+		    ku_draw_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 
 		    free(scaledpixels[0]);
 		    sws_freeContext(img_convert_ctx); // FREE 4
@@ -184,7 +184,7 @@ void coder_load_image_into(const char* path, bm_t* bitmap)
     avformat_free_context(src_ctx); // FREE 0
 }
 
-int coder_load_cover_into(const char* path, bm_t* bitmap)
+int coder_load_cover_into(const char* path, ku_bitmap_t* bitmap)
 {
     assert(path != NULL);
 
@@ -201,7 +201,7 @@ int coder_load_cover_into(const char* path, bm_t* bitmap)
 	printf("avformat_open_input() failed");
     }
 
-    // bm_t* result = NULL;
+    // ku_bitmap_t* result = NULL;
 
     // find the first attached picture, if available
     for (i = 0; i < src_ctx->nb_streams; i++)
@@ -247,7 +247,7 @@ int coder_load_cover_into(const char* path, bm_t* bitmap)
 
 		if (bitmap)
 		{
-		    gfx_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
+		    ku_draw_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 		}
 
 		sws_freeContext(img_convert_ctx); // FREE 3
@@ -834,7 +834,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 	return -1;
 }
 
-int coder_write_png(char* path, bm_t* bm)
+int coder_write_png(char* path, ku_bitmap_t* bm)
 {
     int            success = 0;
     const AVCodec* codec   = avcodec_find_encoder(AV_CODEC_ID_PNG);

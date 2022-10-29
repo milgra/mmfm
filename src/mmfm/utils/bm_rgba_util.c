@@ -4,16 +4,16 @@
 #include "ku_bitmap.c"
 #include <string.h>
 
-bm_t* bm_new_flip_y(bm_t* bm);
-void  bm_write(bm_t* bm, char* path);
+ku_bitmap_t* bm_new_flip_y(ku_bitmap_t* bm);
+void         bm_write(ku_bitmap_t* bm, char* path);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-bm_t* bm_new_flip_y(bm_t* bm)
+ku_bitmap_t* bm_new_flip_y(ku_bitmap_t* bm)
 {
-    bm_t* tmp = bm_new(bm->w, bm->h);
+    ku_bitmap_t* tmp = ku_bitmap_new(bm->w, bm->h);
     for (int y = 0; y < bm->h; y++)
     {
 	int src_y = bm->h - y - 1;
@@ -22,7 +22,7 @@ bm_t* bm_new_flip_y(bm_t* bm)
     return tmp;
 }
 
-void bm_write(bm_t* bm, char* path)
+void bm_write(ku_bitmap_t* bm, char* path)
 {
     int w = bm->w;
     int h = bm->h;

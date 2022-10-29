@@ -3,7 +3,7 @@
 
 #include "ku_bitmap.c"
 
-bm_t* pdf_render(char* filename);
+ku_bitmap_t* pdf_render(char* filename);
 
 #endif
 
@@ -11,7 +11,7 @@ bm_t* pdf_render(char* filename);
 
 #include <mupdf/fitz.h>
 
-bm_t* pdf_render(char* filename)
+ku_bitmap_t* pdf_render(char* filename)
 {
     char*        input;
     float        zoom, rotate;
@@ -99,8 +99,8 @@ bm_t* pdf_render(char* filename)
     printf("w %d h %d s %td\n", pix->w, pix->h, pix->stride);
     printf("255\n");
 
-    bm_t*    res  = bm_new(pix->w, pix->h);
-    uint8_t* data = res->data;
+    ku_bitmap_t* res  = ku_bitmap_new(pix->w, pix->h);
+    uint8_t*     data = res->data;
 
     for (y = 0; y < pix->h; ++y)
     {

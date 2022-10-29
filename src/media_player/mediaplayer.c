@@ -178,8 +178,8 @@ void          mp_unmute(MediaState_t* ms);
 void          mp_set_volume(MediaState_t* ms, float volume);
 void          mp_set_position(MediaState_t* ms, float ratio);
 void          mp_set_visutype(MediaState_t* ms, int visutype);
-void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, bm_t* bm);
-void          mp_audio_refresh(MediaState_t* opaque, bm_t* bml, bm_t* bmr);
+void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, ku_bitmap_t* bm);
+void          mp_audio_refresh(MediaState_t* opaque, ku_bitmap_t* bml, ku_bitmap_t* bmr);
 double        mp_get_master_clock(MediaState_t* ms);
 
 #endif
@@ -1462,7 +1462,7 @@ double vp_duration(MediaState_t* ms, Frame* vp, Frame* nextvp)
 
 unsigned sws_flags = SWS_BICUBIC;
 
-int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_convert_ctx, bm_t* bm)
+int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_convert_ctx, ku_bitmap_t* bm)
 {
     int ret = 0;
 
@@ -1493,7 +1493,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
 	    if (bm)
 	    {
 
-		gfx_insert_rgb(bm, scaledpixels[0], bm->w, bm->h, 0, 0);
+		ku_draw_insert_rgb(bm, scaledpixels[0], bm->w, bm->h, 0, 0);
 	    }
 	    else
 	    {
@@ -1506,7 +1506,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
     return ret;
 }
 
-void video_image_display(MediaState_t* ms, bm_t* bm)
+void video_image_display(MediaState_t* ms, ku_bitmap_t* bm)
 {
     Frame* vp;
     // Frame*   sp = NULL;
@@ -1526,13 +1526,13 @@ void video_image_display(MediaState_t* ms, bm_t* bm)
 }
 
 /* display the current picture, if any */
-void video_display(MediaState_t* ms, bm_t* bm)
+void video_display(MediaState_t* ms, ku_bitmap_t* bm)
 {
     if (ms->vidst) video_image_display(ms, bm);
 }
 
 /* called to display each frame */
-void mp_video_refresh(MediaState_t* ms, double* remaining_time, bm_t* bm)
+void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm)
 {
     double time;
 
@@ -1621,7 +1621,7 @@ static inline int compute_mod(int a, int b)
     return a < 0 ? a % b + b : a % b;
 }
 
-void mp_audio_refresh(MediaState_t* ms, bm_t* bml, bm_t* bmr)
+void mp_audio_refresh(MediaState_t* ms, ku_bitmap_t* bml, ku_bitmap_t* bmr)
 {
     int     i, i_start, x, y1, y2, y, ys, delay, n, nb_display_channels;
     int     ch, channels, h, h2;
@@ -1699,8 +1699,8 @@ void mp_audio_refresh(MediaState_t* ms, bm_t* bml, bm_t* bmr)
 
     if (ms->visutype == 0) // frequency
     {
-	gfx_rect(bml, edge, edge, width, height, 0x000000FF, 1);
-	gfx_rect(bmr, edge, edge, width, height, 0x000000FF, 1);
+	ku_draw_rect(bml, edge, edge, width, height, 0x000000FF, 1);
+	ku_draw_rect(bmr, edge, edge, width, height, 0x000000FF, 1);
 
 	/* total height for one channel */
 	h = height;
@@ -1712,7 +1712,7 @@ void mp_audio_refresh(MediaState_t* ms, bm_t* bml, bm_t* bmr)
 	    i  = i_start + ch;
 	    y1 = ytop + (h / 2); /* position of center line */
 
-	    bm_t* bitmap = ch == 0 ? bml : bmr;
+	    ku_bitmap_t* bitmap = ch == 0 ? bml : bmr;
 
 	    int prevy = -1;
 	    for (x = 0; x < width; x++)
@@ -1736,7 +1736,7 @@ void mp_audio_refresh(MediaState_t* ms, bm_t* bml, bm_t* bmr)
 		int hy = prevy < y2 ? y2 - prevy : prevy - y2;
 		if (hy == 0) hy = 1;
 
-		gfx_rect(bitmap, xleft + x, sy, 1, hy, 0xFFFFFFFF, 1);
+		ku_draw_rect(bitmap, xleft + x, sy, 1, hy, 0xFFFFFFFF, 1);
 
 		prevy = y2;
 
@@ -1803,14 +1803,14 @@ void mp_audio_refresh(MediaState_t* ms, bm_t* bml, bm_t* bmr)
 		uint32_t colorr = ((r << 16) + (r << 8) + r) << 8 | 0xFF;
 
 		int h = bml->h;
-		gfx_rect(bml, ms->xpos + edge, h - edge - y, 1, 1, colorl, 1);
-		gfx_rect(bmr, ms->xpos + edge, h - edge - y, 1, 1, colorr, 1);
+		ku_draw_rect(bml, ms->xpos + edge, h - edge - y, 1, 1, colorl, 1);
+		ku_draw_rect(bmr, ms->xpos + edge, h - edge - y, 1, 1, colorr, 1);
 	    }
 
 	    if (ms->xpos < width - 1)
 	    {
-		gfx_rect(bml, ms->xpos + edge + 1, 1, 1, height - 1, 0xFFFFFFFF, 1);
-		gfx_rect(bmr, ms->xpos + edge + 1, 1, 1, height - 1, 0xFFFFFFFF, 1);
+		ku_draw_rect(bml, ms->xpos + edge + 1, 1, 1, height - 1, 0xFFFFFFFF, 1);
+		ku_draw_rect(bmr, ms->xpos + edge + 1, 1, 1, height - 1, 0xFFFFFFFF, 1);
 	    }
 
 	    if (!ms->paused)

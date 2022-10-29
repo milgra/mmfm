@@ -2,8 +2,8 @@
 #include "evrecorder.c"
 #include "filemanager.c"
 #include "ku_window.c"
+#include "ku_wl_connector.c"
 #include "ui.c"
-#include "wl_connector.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_map.c"
@@ -23,7 +23,7 @@ struct
     char              replay;
     char              record;
     struct wl_window* window;
-    vr_t              dirty_prev;
+    ku_rect_t         dirty_prev;
     ku_window_t*      kuwindow;
 } mmfm = {0};
 
@@ -31,11 +31,11 @@ void init(wl_event_t event)
 {
     struct monitor_info* monitor = event.monitors[0];
 
-    mmfm.window = wl_connector_create_window("MMFM", 1200, 600);
+    mmfm.window = ku_wayland_create_window("MMFM", 1200, 600);
 
     zc_time(NULL);
 
-    mmfm.kuwindow = window_create(monitor->logical_width, monitor->logical_height);
+    mmfm.kuwindow = ku_window_create(monitor->logical_width, monitor->logical_height);
 
     ui_init(monitor->logical_width, monitor->logical_height, monitor->scale, mmfm.kuwindow); // DESTROY 3
     zc_time("ui init");
@@ -58,23 +58,23 @@ void event(wl_event_t event)
 {
 }
 
-void update(ev_t ev)
+void update(ku_event_t ev)
 {
     /* printf("UPDATE %i %i %i\n", ev.type, ev.w, ev.h); */
-    if (ev.type == EV_TIME)
+    if (ev.type == KU_EVENT_TIME)
     {
 	ui_update_player();
 
 	if (mmfm.replay)
 	{
 	    // get recorded events
-	    ev_t* recev = NULL;
+	    ku_event_t* recev = NULL;
 	    while ((recev = evrec_replay(ev.time)) != NULL)
 	    {
-		window_event(mmfm.kuwindow, *recev);
-		ui_update_cursor((vr_t){recev->x, recev->y, 10, 10});
+		ku_window_event(mmfm.kuwindow, *recev);
+		ui_update_cursor((ku_rect_t){recev->x, recev->y, 10, 10});
 
-		if (recev->type == EV_KDOWN && recev->keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
+		if (recev->type == KU_EVENT_KDOWN && recev->keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
 	    }
 	}
     }
@@ -83,22 +83,22 @@ void update(ev_t ev)
 	if (mmfm.record)
 	{
 	    evrec_record(ev);
-	    if (ev.type == EV_KDOWN && ev.keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
+	    if (ev.type == KU_EVENT_KDOWN && ev.keycode == SDLK_PRINTSCREEN) ui_save_screenshot(ev.time, mmfm.replay, NULL);
 	}
     }
 
-    if (ev.type == EV_RESIZE)
+    if (ev.type == KU_EVENT_RESIZE)
     {
 	ui_update_layout(ev.w, ev.h);
     }
 
     // in case of replay only send time events
-    if (!mmfm.replay || ev.type == EV_TIME)
+    if (!mmfm.replay || ev.type == KU_EVENT_TIME)
     {
-	window_event(mmfm.kuwindow, ev);
+	ku_window_event(mmfm.kuwindow, ev);
     }
 
-    if (ev.type == EV_RESIZE)
+    if (ev.type == KU_EVENT_RESIZE)
     {
 	ui_update_dragger();
 	// ui_describe();
@@ -107,39 +107,39 @@ void update(ev_t ev)
     if (mmfm.window->frame_cb == NULL)
     {
 	// frame callback from wl connector
-	vr_t dirty = window_update(mmfm.kuwindow, 0);
+	ku_rect_t dirty = ku_window_update(mmfm.kuwindow, 0);
 
 	if (dirty.w > 0 && dirty.h > 0)
 	{
 	    /* zc_log_debug("drt %i %i %i %i", (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h); */
 	    /* zc_log_debug("drt prev %i %i %i %i", (int) mmfm.dirty_prev.x, (int) mmfm.dirty_prev.y, (int) mmfm.dirty_prev.w, (int) mmfm.dirty_prev.h); */
-	    vr_t sum = vr_add(dirty, mmfm.dirty_prev);
+	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirty_prev);
 	    /* zc_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
 	    // clear out dirty rectangle
-	    /* bm_cut(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
+	    /* ku_bitmap_cut(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
 	    /* zc_time(NULL); */
 	    /* memset(mmfm.window->bitmap.data, 0, mmfm.window->bitmap.size); */
-	    window_render(mmfm.kuwindow, 0, &mmfm.window->bitmap, sum);
+	    ku_window_render(mmfm.kuwindow, 0, &mmfm.window->bitmap, sum);
 	    /* zc_time("RENDER"); */
 
-	    /* bm_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */
-	    /* wl_connector_draw_window(mmfm.window, 0, 0, mmfm.window->width, mmfm.window->height); */
+	    /* ku_bitmap_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */
+	    /* ku_wayland_draw_window(mmfm.window, 0, 0, mmfm.window->width, mmfm.window->height); */
 	    /* nanosleep((const struct timespec[]){{0, 100000000L}}, NULL); */
 
-	    wl_connector_draw_window(mmfm.window, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
+	    ku_wayland_draw_window(mmfm.window, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
 
 	    mmfm.dirty_prev = dirty;
 	}
     }
 }
 
-void render(uint32_t time, uint32_t index, bm_t* bm)
+void render(uint32_t time, uint32_t index, ku_bitmap_t* bm)
 {
     /* printf("RENDER\n"); */
     /* zc_time(NULL); */
-    /* int changed = window_render(mmfm.kuwindow,time, bm); */
+    /* int changed = ku_window_render(mmfm.kuwindow,time, bm); */
     /* zc_time("render"); */
 }
 
@@ -276,7 +276,7 @@ int main(int argc, char* argv[])
     if (rec_path) config_set("rec_path", rec_path);
     if (rep_path) config_set("rep_path", rep_path);
 
-    wl_connector_init(init, event, update, render, destroy);
+    ku_wayland_init(init, event, update, render, destroy);
 
     /* wm_loop(init, update, render, destroy, frm_par, "mmfm"); */
 

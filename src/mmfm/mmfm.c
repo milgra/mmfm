@@ -29,10 +29,8 @@ struct
 
 void init(wl_event_t event)
 {
-    if (SDL_Init(SDL_INIT_AUDIO) < 0) // QUIT 0
-    {
-	zc_log_error("SDL could not initialize! SDL_Error: %s", SDL_GetError());
-    }
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+    SDL_Init(SDL_INIT_AUDIO);
 
     struct monitor_info* monitor = event.monitors[0];
 
@@ -66,48 +64,12 @@ void event(wl_event_t event)
 void update(ku_event_t ev)
 {
     /* printf("UPDATE %i %i %i\n", ev.type, ev.w, ev.h); */
-    if (ev.type == KU_EVENT_TIME)
-    {
-	ui_update_player();
 
-	if (mmfm.replay)
-	{
-	    // get recorded events
-	    ku_event_t* recev = NULL;
-	    while ((recev = evrec_replay(ev.time)) != NULL)
-	    {
-		ku_window_event(mmfm.kuwindow, *recev);
-		ui_update_cursor((ku_rect_t){recev->x, recev->y, 10, 10});
+    ku_window_event(mmfm.kuwindow, ev);
 
-		if (recev->type == KU_EVENT_KDOWN && recev->keycode == XKB_KEY_Print) ui_save_screenshot(ev.time, mmfm.replay, NULL);
-	    }
-	}
-    }
-    else
-    {
-	if (mmfm.record)
-	{
-	    evrec_record(ev);
-	    if (ev.type == KU_EVENT_KDOWN && ev.keycode == XKB_KEY_Print) ui_save_screenshot(ev.time, mmfm.replay, NULL);
-	}
-    }
+    if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
 
-    if (ev.type == KU_EVENT_RESIZE)
-    {
-	ui_update_layout(ev.w, ev.h);
-    }
-
-    // in case of replay only send time events
-    if (!mmfm.replay || ev.type == KU_EVENT_TIME)
-    {
-	ku_window_event(mmfm.kuwindow, ev);
-    }
-
-    if (ev.type == KU_EVENT_RESIZE)
-    {
-	ui_update_dragger();
-	// ui_describe();
-    }
+    if (ev.type == KU_EVENT_TIME) ui_update_player();
 
     if (mmfm.window->frame_cb == NULL)
     {
@@ -139,6 +101,14 @@ void update(ku_event_t ev)
     }
 }
 
+void update_record(ku_event_t ev)
+{
+}
+
+void update_replay(ku_event_t ev)
+{
+}
+
 void render(uint32_t time, uint32_t index, ku_bitmap_t* bm)
 {
     /* printf("RENDER\n"); */
@@ -155,6 +125,8 @@ void destroy()
     ui_destroy(); // DESTROY 3
 
     REL(mmfm.kuwindow);
+
+    SDL_Quit(); // QUIT 0
 }
 
 int main(int argc, char* argv[])

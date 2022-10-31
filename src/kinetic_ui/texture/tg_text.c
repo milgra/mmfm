@@ -17,6 +17,7 @@ typedef struct _tg_text_t
 
 void  tg_text_add(ku_view_t* view);
 void  tg_text_set(ku_view_t* view, char* text, textstyle_t style);
+void  tg_text_set1(ku_view_t* view, char* text);
 char* tg_text_get(ku_view_t* view);
 
 #endif
@@ -25,6 +26,7 @@ char* tg_text_get(ku_view_t* view);
 
 #include "ku_bitmap.c"
 #include "ku_draw.c"
+#include "ku_util.c"
 #include "tg_css.c"
 #include "zc_cstring.c"
 
@@ -41,7 +43,7 @@ void tg_text_gen(ku_view_t* view)
 	if ((style.textcolor & 0xFF) < 0xFF || (style.backcolor & 0xFF) < 0xFF) view->texture.transparent = 1;
 	else view->texture.transparent = 0;
 
-	if (strlen(gen->text) > 0)
+	if ((gen->text != NULL) && strlen(gen->text) > 0)
 	{
 	    ku_text_render(gen->text, style, fontmap);
 	}
@@ -73,11 +75,22 @@ void tg_text_add(ku_view_t* view)
 
     tg_text_t* gen = CAL(sizeof(tg_text_t), tg_text_del, tg_text_desc);
 
-    gen->text = NULL; // REL 1
+    gen->text  = NULL; // REL 1
+    gen->style = ku_util_gen_textstyle(view);
 
     view->tex_gen_data = gen;
     view->tex_gen      = tg_text_gen;
     view->exclude      = 0;
+}
+
+void tg_text_set1(ku_view_t* view, char* text)
+{
+    tg_text_t* gen = view->tex_gen_data;
+
+    if (gen->text) REL(gen->text);
+    if (text) gen->text = cstr_new_cstring(text);
+
+    view->texture.state = TS_BLANK;
 }
 
 void tg_text_set(ku_view_t* view, char* text, textstyle_t style)

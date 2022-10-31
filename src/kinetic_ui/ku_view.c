@@ -161,6 +161,7 @@ struct _ku_view_t
     char* class;       /* css class(es) */
     char*      script; /* script */
     char*      type;   /* html type (button,checkbox) */
+    char*      text;   /* html text */
     vec_t*     views;  /* subviews */
     ku_view_t* parent; /* parent view */
     uint32_t   index;  /* depth */
@@ -177,6 +178,7 @@ struct _ku_view_t
 
 ku_view_t* ku_view_new(char* id, ku_rect_t frame);
 void       ku_view_set_type(ku_view_t* view, char* type);
+void       ku_view_set_text(ku_view_t* view, char* type);
 void       ku_view_set_class(ku_view_t* view, char* class);
 void       ku_view_set_script(ku_view_t* view, char* script);
 void       ku_view_add_subview(ku_view_t* view, ku_view_t* subview);
@@ -230,6 +232,7 @@ void ku_view_del(void* pointer)
     if (view->texture.bitmap) REL(view->texture.bitmap); // not all views has texture
     if (view->class) REL(view->class);
     if (view->type) REL(view->type);
+    if (view->text) REL(view->text);
     if (view->script) REL(view->script);
 
     REL(view->id);
@@ -274,6 +277,12 @@ void ku_view_set_type(ku_view_t* view, char* type)
 {
     if (view->type) REL(view->type);
     if (type) view->type = RET(type);
+}
+
+void ku_view_set_text(ku_view_t* view, char* text)
+{
+    if (view->text) REL(view->text);
+    if (text) view->text = RET(text);
 }
 
 void ku_view_set_class(ku_view_t* view, char* class)

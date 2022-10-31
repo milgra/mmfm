@@ -30,6 +30,7 @@ avdevice = cc.find_library('avdevice',static:false)
 avformat = cc.find_library('avformat',static:false)
 avfilter = cc.find_library('avfilter',static:false)
 swresample = cc.find_library('swresample',static:false)
+egl = cc.find_library('EGL',static:false)
 
 xkbcommon = dependency('xkbcommon')
 
@@ -79,12 +80,13 @@ foreach p : protocols
 endforeach
 
 
-mmfm_dependencies = [wayland_client,png,rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau,xkbcommon]
+mmfm_dependencies = [wayland_client,png,rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau,xkbcommon,egl]
 
 mmfm_version = '"@0@"'.format(meson.project_version())
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
 add_project_arguments('-DPKG_DATADIR="' + pkg_datadir + '"',
 		      '-DMMFM_VERSION=@0@'.format(mmfm_version),
+		      '-DGLEW_EGL',
 		      language: 'c')
 add_project_arguments('-Wno-unused-but-set-variable', language: 'c')
 
@@ -95,6 +97,7 @@ endif
 mmfm_inc = include_directories(
 	'/usr/include',
 	'/usr/include/GL',
+	'/usr/include/EGL',
 	'/usr/include/SDL2',
 	'/usr/include/mupdf',
 	'/usr/include/freetype2',
@@ -151,6 +154,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/kinetic_ui/ku_event.c',
 	       'src/kinetic_ui/ku_html.c',
 	       'src/kinetic_ui/ku_css.c',
+	       'src/kinetic_ui/ku_gl.c',
 	       'src/kinetic_ui/ku_rect.c',
 	       'src/kinetic_ui/ku_bitmap.c',
 	       'src/kinetic_ui/texture/tg_css.c',
@@ -174,6 +178,9 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/kinetic_ui/handler/vh_tbl_scrl.c',
 	       'src/kinetic_ui/handler/vh_tbl_head.c',
 	       'src/kinetic_ui/ku_view.c',
+	       'src/kinetic_ui/ku_gl_atlas.c',
+	       'src/kinetic_ui/ku_floatbuffer.c',
+	       'src/kinetic_ui/ku_gl_shader.c',
 	       'src/kinetic_ui/ku_gen_html.c',
 	       'src/kinetic_ui/ku_gen_css.c',
 	       'src/kinetic_ui/ku_gen_type.c',

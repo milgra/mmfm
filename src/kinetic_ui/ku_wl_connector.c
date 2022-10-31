@@ -583,8 +583,8 @@ void ku_wayland_pointer_handle_axis(void* data, struct wl_pointer* wl_pointer, u
 	{.type       = KU_EVENT_SCROLL,
 	 .x          = px,
 	 .y          = py,
-	 .dx         = axis == 1 ? (float) value / 100.0 : 0,
-	 .dy         = axis == 0 ? (float) -value / 100.0 : 0,
+	 .dx         = axis == 1 ? (float) value / 200.0 : 0,
+	 .dy         = axis == 0 ? (float) -value / 200.0 : 0,
 	 .ctrl_down  = wlc.keyboard.control,
 	 .shift_down = wlc.keyboard.shift};
 

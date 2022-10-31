@@ -24,6 +24,7 @@ typedef struct _tag_t
 
     html_range_t id;
     html_range_t type;
+    html_range_t text;
     html_range_t class;
     html_range_t script;
 } tag_t;
@@ -188,6 +189,7 @@ void ku_html_analyze_tags(char* html, tag_t* tags, uint32_t count)
 
 	tags[i].id     = ku_html_extract_value(tags[i], "id=\"", html);
 	tags[i].type   = ku_html_extract_value(tags[i], "type=\"", html);
+	tags[i].text   = ku_html_extract_value(tags[i], "text=\"", html);
 	tags[i].class  = ku_html_extract_value(tags[i], "class=\"", html);
 	tags[i].script = ku_html_extract_value(tags[i], "script=\"", html);
 

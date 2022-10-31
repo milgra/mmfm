@@ -31,6 +31,7 @@ void ui_update_player();
 #include "ku_gen_css.c"
 #include "ku_gen_html.c"
 #include "ku_gen_type.c"
+#include "ku_gl.c"
 #include "ku_table.c"
 #include "ku_util.c"
 #include "ku_wl_connector.c"
@@ -104,7 +105,6 @@ struct _ui_t
     ku_view_t* contextpopupcont;
 
     textstyle_t background_style;
-    textstyle_t progress_style;
     textstyle_t inputts;
 
     MediaState_t* ms;
@@ -145,13 +145,12 @@ int ui_comp_entry(void* left, void* right)
 
 void ui_show_progress(char* progress)
 {
-    tg_text_set(ui.view_infotf, progress, ui.progress_style);
+    tg_text_set1(ui.view_infotf, progress);
 }
 
 void ui_on_mp_event(ms_event_t event)
 {
     vh_cv_body_set_content_size(ui.visubody, (int) event.rect.x, (int) event.rect.y);
-    printf("ON MP EVENT\n");
     ui.force_refresh = 1;
 }
 
@@ -177,11 +176,17 @@ void ui_open(char* path)
 
 	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
 
-	if (ui.visuvideo->texture.bitmap != NULL)
-	{
-	    ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
-	    ui.visuvideo->texture.changed = 1;
-	}
+	tg_scaledimg_t* tg = (tg_scaledimg_t*) ui.visuvideo->tex_gen_data;
+
+	if (tg->bitmap != NULL) ku_bitmap_insert(
+	    tg->bitmap,
+	    (bmr_t){0, 0, tg->bitmap->w, tg->bitmap->h},
+	    pdfbmp,
+	    (bmr_t){0, 0, pdfbmp->w, pdfbmp->h},
+	    0,
+	    0);
+
+	tg_scaledimg_gen(ui.visuvideo);
 
 	REL(pdfbmp);
     }
@@ -430,8 +435,6 @@ void on_fileinfo_event(ku_table_event_t event)
 
 void on_cv_event(vh_cv_evnt_event_t event)
 {
-    printf("ON CV EVENT\n");
-
     ui.force_refresh = 1;
 }
 
@@ -1072,9 +1075,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     // info textfield
 
     ui.view_infotf = ku_view_get_subview(ui.view_base, "infotf");
-    tg_text_add(ui.view_infotf);
 
-    ui.progress_style = ku_util_gen_textstyle(ui.view_infotf);
     ui_show_progress("Directory loaded");
 
     /* input popup */
@@ -1181,7 +1182,8 @@ void ui_update_layout(int w, int h)
 	    ui.view_maingap->style.width = 0;
 	}
     }
-    /* ku_layout(ui.view_base); */
+
+    ku_view_layout(ui.view_base);
     /* view_describe(ui.view_base, 0); */
 }
 

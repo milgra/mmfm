@@ -29,8 +29,10 @@ void         ku_window_resize_to_root(ku_window_t* window, ku_view_t* view);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "ku_gl.c"
 #include "zc_log.c"
 #include "zc_map.c"
+#include "zc_time.c"
 #include "zc_util2.c"
 #include "zc_vec2.c"
 #include "zc_vector.c"
@@ -53,6 +55,8 @@ ku_window_t* ku_window_create(int width, int height)
     win->views     = VNEW();
     win->implqueue = VNEW();
     win->explqueue = VNEW();
+
+    ku_gl_init();
 
     return win;
 }
@@ -275,79 +279,87 @@ void ku_window_render(ku_window_t* win, uint32_t time, ku_bitmap_t* bm, ku_rect_
 
     masks[0] = dirty;
 
+    zc_time(NULL);
+    ku_gl_add_textures(win->views);
+    zc_time("texture");
+    ku_gl_add_vertexes(win->views);
+    zc_time("vertex");
+    ku_gl_render(bm);
+    zc_time("render");
+
     /* draw view into bitmap */
 
-    for (int i = 0; i < win->views->length; i++)
-    {
-	ku_view_t* view = win->views->data[i];
+    /* for (int i = 0; i < win->views->length; i++) */
+    /* { */
+    /* 	ku_view_t* view = win->views->data[i]; */
 
-	if (view->style.masked)
-	{
-	    dirty = ku_rect_is(masks[maski], view->frame.global);
-	    maski++;
-	    masks[maski] = dirty;
-	    /* printf("%s masked, dirty %f %f %f %f\n", view->id, dirty.x, dirty.y, dirty.w, dirty.h); */
-	}
+    /* 	if (view->style.masked) */
+    /* 	{ */
+    /* 	    dirty = ku_rect_is(masks[maski], view->frame.global); */
+    /* 	    maski++; */
+    /* 	    masks[maski] = dirty; */
+    /* 	    /\* printf("%s masked, dirty %f %f %f %f\n", view->id, dirty.x, dirty.y, dirty.w, dirty.h); *\/ */
+    /* 	} */
 
-	if (view->texture.bitmap)
-	{
-	    ku_rect_t rect = view->frame.global;
+    /* 	if (view->texture.bitmap) */
+    /* 	{ */
+    /* 	    ku_rect_t rect = view->frame.global; */
 
-	    bmr_t dstmsk = ku_bitmap_is(
-		(bmr_t){(int) dirty.x, (int) dirty.y, (int) (dirty.x + dirty.w), (int) (dirty.y + dirty.h)},
-		(bmr_t){0, 0, bm->w, bm->h});
-	    bmr_t srcmsk = {0, 0, view->texture.bitmap->w, view->texture.bitmap->h};
+    /* 	    bmr_t dstmsk = ku_bitmap_is( */
+    /* 		(bmr_t){(int) dirty.x, (int) dirty.y, (int) (dirty.x + dirty.w), (int) (dirty.y + dirty.h)}, */
+    /* 		(bmr_t){0, 0, bm->w, bm->h}); */
+    /* 	    bmr_t srcmsk = {0, 0, view->texture.bitmap->w, view->texture.bitmap->h}; */
 
-	    if (view->frame.region.w > 0 && view->frame.region.h > 0)
-	    {
-		srcmsk.x += view->frame.region.x;
-		srcmsk.y += view->frame.region.y;
-		srcmsk.z = srcmsk.x + view->frame.region.w;
-		srcmsk.w = srcmsk.y + view->frame.region.h;
-	    }
+    /* 	    if (view->frame.region.w > 0 && view->frame.region.h > 0) */
+    /* 	    { */
+    /* 		srcmsk.x += view->frame.region.x; */
+    /* 		srcmsk.y += view->frame.region.y; */
+    /* 		srcmsk.z = srcmsk.x + view->frame.region.w; */
+    /* 		srcmsk.w = srcmsk.y + view->frame.region.h; */
+    /* 	    } */
 
-	    if (view->texture.transparent == 0 || i == 0)
-	    {
-		ku_bitmap_insert(
-		    bm,
-		    dstmsk,
-		    view->texture.bitmap,
-		    srcmsk,
-		    rect.x - view->style.shadow_blur,
-		    rect.y - view->style.shadow_blur);
-	    }
-	    else
-	    {
-		if (view->texture.alpha == 1.0)
-		{
-		    ku_bitmap_blend(
-			bm,
-			dstmsk,
-			view->texture.bitmap,
-			srcmsk,
-			rect.x - view->style.shadow_blur,
-			rect.y - view->style.shadow_blur);
-		}
-		else
-		{
-		    ku_bitmap_blend_with_alpha(
-			bm,
-			dstmsk,
-			view->texture.bitmap,
-			srcmsk,
-			rect.x - view->style.shadow_blur,
-			rect.y - view->style.shadow_blur,
-			(255 - (int) (view->texture.alpha * 255.0)));
-		}
-	    }
-	}
+    /* 	    if (view->texture.transparent == 0 || i == 0) */
+    /* 	    { */
+    /* 		ku_bitmap_insert( */
+    /* 		    bm, */
+    /* 		    dstmsk, */
+    /* 		    view->texture.bitmap, */
+    /* 		    srcmsk, */
+    /* 		    rect.x - view->style.shadow_blur, */
+    /* 		    rect.y - view->style.shadow_blur); */
+    /* 	    } */
+    /* 	    else */
+    /* 	    { */
+    /* 		if (view->texture.alpha == 1.0) */
+    /* 		{ */
+    /* 		    ku_bitmap_blend( */
+    /* 			bm, */
+    /* 			dstmsk, */
+    /* 			view->texture.bitmap, */
+    /* 			srcmsk, */
+    /* 			rect.x - view->style.shadow_blur, */
+    /* 			rect.y - view->style.shadow_blur); */
+    /* 		} */
+    /* 		else */
+    /* 		{ */
+    /* 		    ku_bitmap_blend_with_alpha( */
+    /* 			bm, */
+    /* 			dstmsk, */
+    /* 			view->texture.bitmap, */
+    /* 			srcmsk, */
+    /* 			rect.x - view->style.shadow_blur, */
+    /* 			rect.y - view->style.shadow_blur, */
+    /* 			(255 - (int) (view->texture.alpha * 255.0))); */
+    /* 		} */
+    /* 	    } */
+    /* 	} */
 
-	if (view->style.unmask)
-	{
-	    maski--;
-	    dirty = masks[maski];
-	}
-    }
+    /* 	if (view->style.unmask) */
+    /* 	{ */
+    /* 	    maski--; */
+    /* 	    dirty = masks[maski]; */
+    /* 	} */
+    /* } */
 }
 
 ku_view_t* ku_window_get_root(ku_window_t* win)

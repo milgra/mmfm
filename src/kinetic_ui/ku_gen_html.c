@@ -54,6 +54,15 @@ void ku_gen_html_parse(char* htmlpath, vec_t* views)
 		REL(type); // REL 2
 	    }
 
+	    if (t.text.len > 0)
+	    {
+		// store html stype
+		char* text = CAL(sizeof(char) * t.text.len + 1, NULL, cstr_describe); // REL 2
+		memcpy(text, html + t.text.pos + 1, t.text.len);
+		ku_view_set_text(view, text);
+		REL(text); // REL 2
+	    }
+
 	    if (t.script.len > 0)
 	    {
 		// store html stype

@@ -11,9 +11,8 @@
 
 typedef struct _tg_scaledimg_t
 {
-    ku_bitmap_t* bitmap;
-    int          w;
-    int          h;
+    int w;
+    int h;
 } tg_scaledimg_t;
 
 void tg_scaledimg_add(ku_view_t* view, int w, int h);
@@ -36,23 +35,14 @@ void tg_scaledimg_gen(ku_view_t* view)
     /* just resize texture bitmap with the view */
 
     if (bm == NULL ||
-	bm->w != (int) view->frame.global.w ||
-	bm->h != (int) view->frame.global.h)
+	bm->w != (int) gen->w ||
+	bm->h != (int) gen->h)
     {
-	bm = ku_bitmap_new((int) view->frame.global.w, (int) view->frame.global.h); // REL 0
+	bm = ku_bitmap_new((int) gen->w, (int) gen->h); // REL 0
 
 	ku_view_set_texture_bmp(view, bm);
 
-	/* if we have a bitmap, re-scale that */
-
-	printf("GEN BITMAP %i\n", gen->bitmap == NULL);
-	if (gen->bitmap)
-	{
-	    /* memset(bm->data, 0xFF, bm->size); */
-	    ku_draw_scale(gen->bitmap, bm);
-	}
-
-	/* else it will be filled up externally */
+	ku_draw_rect(bm, 0, 0, bm->w, bm->h, 0x00000000, 0);
 
 	REL(bm);
     }
@@ -66,10 +56,6 @@ void tg_scaledimg_set_content_size(ku_view_t* view, int w, int h)
 
     gen->w = w;
     gen->h = h;
-
-    if (gen->bitmap) REL(gen->bitmap);
-
-    gen->bitmap = ku_bitmap_new(w, h);
 }
 
 void tg_scaledimg_add(ku_view_t* view, int w, int h)

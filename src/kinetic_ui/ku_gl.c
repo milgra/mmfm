@@ -48,6 +48,13 @@ gltex_t           tex_atlas;
 gltex_t           tex_frame;
 ku_gl_atlas_t*    atlas       = NULL;
 ku_floatbuffer_t* floatbuffer = NULL;
+ku_bitmap_t*      pixelmap;
+
+GLuint pbo1;
+GLuint pbo2;
+GLuint pbos[2];
+GLuint pbindex;
+GLuint pbnindex;
 
 glsha_t ku_gl_create_texture_shader()
 {
@@ -167,9 +174,6 @@ void ku_gl_delete_texture(gltex_t tex)
     glDeleteFramebuffers(1, &tex.fb); // DEL 1
 }
 
-GLuint pbo1;
-GLuint pbo2;
-
 void ku_gl_init()
 {
     EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -210,28 +214,39 @@ void ku_gl_init()
     shader = ku_gl_create_texture_shader();
     buffer = ku_gl_create_vertex_buffer();
 
-    tex_atlas = ku_gl_create_texture(0, 4096, 4096);
-    tex_frame = ku_gl_create_texture(1, 4096, 4096);
+    tex_atlas = ku_gl_create_texture(0, 2048, 2048);
+    tex_frame = ku_gl_create_texture(1, 2048, 2048);
 
-    atlas       = ku_gl_atlas_new(4096, 4096);
+    atlas       = ku_gl_atlas_new(2048, 2048);
     floatbuffer = ku_floatbuffer_new();
 
     glbuf_t vb = {0};
 
-    /* glGenBuffers(1, &pbo1); // DEL 0 */
-    /* glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo1); */
-    /* glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLfloat) * 4096 * 4096, 0, GL_STREAM_READ); */
+    glGenBuffers(1, &pbo1); // DEL 0
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo1);
+    glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 2048 * 2048, 0, GL_STREAM_READ);
 
-    /* glGenBuffers(1, &pbo2); // DEL 0 */
-    /* glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo2); */
-    /* glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLfloat) * 4096 * 4096, 0, GL_STREAM_READ); */
+    glGenBuffers(1, &pbo2); // DEL 0
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo2);
+    glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 2048 * 2048, 0, GL_STREAM_READ);
+
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+    pbos[0] = pbo1;
+    pbos[1] = pbo2;
+
+    pbindex  = 0;
+    pbnindex = 1;
+
+    pixelmap = ku_bitmap_new(2048, 2048);
+    REL(pixelmap->data);
 }
 
 void ku_gl_add_textures(vec_t* views)
 {
     /* reset atlas */
     if (atlas) REL(atlas);
-    atlas = ku_gl_atlas_new(4096, 4096);
+    atlas = ku_gl_atlas_new(2048, 2048);
 
     /* add texture to atlas */
     for (int index = 0; index < views->length; index++)
@@ -336,12 +351,30 @@ void ku_gl_render(ku_bitmap_t* bitmap)
     glUniformMatrix4fv(shader.uni_loc[0], 1, 0, projection.array);
     glViewport(0, 0, bitmap->w, bitmap->h);
 
-    /* glNamedFramebufferReadBuffer(tex_frame.fb, GL_FRONT); */
+    pbindex  = (pbindex + 1) % 2;
+    pbnindex = (pbindex + 1) % 2;
+
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pbindex]);
 
     glDrawArrays(GL_TRIANGLES, 0, floatbuffer->pos);
-    glReadPixels(0, 0, bitmap->w, bitmap->h, GL_RGBA, GL_UNSIGNED_BYTE, bitmap->data);
 
-    /* GLubyte* ptr = (GLubyte*) glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY); */
+    glReadPixels(0, 0, 2048, 2048, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pbnindex]);
+
+    GLuint* src = (GLuint*) glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+
+    pixelmap->data = src;
+
+    ku_bitmap_insert(
+	bitmap,
+	(bmr_t){0, 0, bitmap->w, bitmap->h},
+	pixelmap,
+	(bmr_t){0, 0, pixelmap->w, pixelmap->h},
+	0,
+	0);
+
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(0);

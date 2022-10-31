@@ -176,17 +176,11 @@ void ui_open(char* path)
 
 	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
 
-	tg_scaledimg_t* tg = (tg_scaledimg_t*) ui.visuvideo->tex_gen_data;
-
-	if (tg->bitmap != NULL) ku_bitmap_insert(
-	    tg->bitmap,
-	    (bmr_t){0, 0, tg->bitmap->w, tg->bitmap->h},
-	    pdfbmp,
-	    (bmr_t){0, 0, pdfbmp->w, pdfbmp->h},
-	    0,
-	    0);
-
-	tg_scaledimg_gen(ui.visuvideo);
+	if (ui.visuvideo->texture.bitmap != NULL)
+	{
+	    ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+	    ui.visuvideo->texture.changed = 1;
+	}
 
 	REL(pdfbmp);
     }

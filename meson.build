@@ -17,6 +17,7 @@ rt = cc.find_library('rt',static:false)
 gl = cc.find_library('GL',static:false)
 glew = cc.find_library('GLEW',static:false)
 sdl2 = cc.find_library('SDL2',static:false)
+wegl = cc.find_library('wayland-egl',static:false)
 swscale = cc.find_library('swscale',static:false)
 pthread = cc.find_library('pthread',static:false)
 jpeg = cc.find_library('jpeg',static:false)
@@ -80,7 +81,7 @@ foreach p : protocols
 endforeach
 
 
-mmfm_dependencies = [wayland_client,png,rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau,xkbcommon,egl]
+mmfm_dependencies = [wayland_client,png,rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau,xkbcommon,egl,wegl]
 
 mmfm_version = '"@0@"'.format(meson.project_version())
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
@@ -179,7 +180,7 @@ com_sources = ['src/mmfm/ui/ui.c',
 	       'src/kinetic_ui/handler/vh_tbl_head.c',
 	       'src/kinetic_ui/ku_view.c',
 	       'src/kinetic_ui/ku_gl_atlas.c',
-	       'src/kinetic_ui/ku_floatbuffer.c',
+	       'src/kinetic_ui/ku_gl_floatbuffer.c',
 	       'src/kinetic_ui/ku_gl_shader.c',
 	       'src/kinetic_ui/ku_gen_html.c',
 	       'src/kinetic_ui/ku_gen_css.c',

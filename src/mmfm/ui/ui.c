@@ -188,29 +188,29 @@ void ui_open(char* path)
     {
 	coder_media_type_t type = coder_get_type(path);
 
-	if (type == CODER_MEDIA_TYPE_VIDEO || type == CODER_MEDIA_TYPE_AUDIO || type == CODER_MEDIA_TYPE_IMAGE)
+	ui.current_type = type;
+
+	if (type == CODER_MEDIA_TYPE_VIDEO || type == CODER_MEDIA_TYPE_AUDIO)
 	{
 	    ui.ms = mp_open(path, ui_on_mp_event);
 	}
+	else if (type == CODER_MEDIA_TYPE_IMAGE)
+	{
+	    ku_bitmap_t* image = coder_load_image(path);
 
-	ui.current_type = type;
-	/* else if (type == CODER_MEDIA_TYPE_IMAGE) */
-	/* { */
-	/*     ku_bitmap_t* image = coder_load_image(path); */
+	    if (image)
+	    {
+		vh_cv_body_set_content_size(ui.visubody, image->w, image->h);
 
-	/*     if (image) */
-	/*     { */
-	/* 	vh_cv_body_set_content_size(ui.visubody, image->w, image->h); */
+		if (ui.visuvideo->texture.bitmap != NULL)
+		{
+		    ku_draw_insert(ui.visuvideo->texture.bitmap, image, 0, 0);
+		    ui.visuvideo->texture.changed = 1;
+		}
 
-	/* 	if (ui.visuvideo->texture.bitmap != NULL) */
-	/* 	{ */
-	/* 	    ku_draw_insert(ui.visuvideo->texture.bitmap, image, 0, 0); */
-	/* 	    ui.visuvideo->texture.changed = 1; */
-	/* 	} */
-
-	/* 	REL(image); */
-	/*     } */
-	/* } */
+		REL(image);
+	    }
+	}
     }
 }
 

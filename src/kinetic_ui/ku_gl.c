@@ -16,8 +16,8 @@ void ku_gl_add_vertexes(vec_t* views);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "ku_floatbuffer.c"
 #include "ku_gl_atlas.c"
+#include "ku_gl_floatbuffer.c"
 #include "ku_gl_shader.c"
 #include "ku_view.c"
 #include "zc_util3.c"
@@ -214,21 +214,21 @@ void ku_gl_init()
     shader = ku_gl_create_texture_shader();
     buffer = ku_gl_create_vertex_buffer();
 
-    tex_atlas = ku_gl_create_texture(0, 2048, 2048);
-    tex_frame = ku_gl_create_texture(1, 2048, 2048);
+    tex_atlas = ku_gl_create_texture(0, 4096, 4096);
+    tex_frame = ku_gl_create_texture(1, 4096, 4096);
 
-    atlas       = ku_gl_atlas_new(2048, 2048);
+    atlas       = ku_gl_atlas_new(4096, 4096);
     floatbuffer = ku_floatbuffer_new();
 
     glbuf_t vb = {0};
 
     glGenBuffers(1, &pbo1); // DEL 0
     glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo1);
-    glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 2048 * 2048, 0, GL_STREAM_READ);
+    glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 4096 * 4096, 0, GL_STREAM_READ);
 
     glGenBuffers(1, &pbo2); // DEL 0
     glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo2);
-    glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 2048 * 2048, 0, GL_STREAM_READ);
+    glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 4096 * 4096, 0, GL_STREAM_READ);
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
@@ -238,15 +238,18 @@ void ku_gl_init()
     pbindex  = 0;
     pbnindex = 1;
 
-    pixelmap = ku_bitmap_new(2048, 2048);
+    pixelmap = ku_bitmap_new(4096, 4096);
     REL(pixelmap->data);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void ku_gl_add_textures(vec_t* views)
 {
     /* reset atlas */
     if (atlas) REL(atlas);
-    atlas = ku_gl_atlas_new(2048, 2048);
+    atlas = ku_gl_atlas_new(4096, 4096);
 
     /* add texture to atlas */
     for (int index = 0; index < views->length; index++)
@@ -358,7 +361,7 @@ void ku_gl_render(ku_bitmap_t* bitmap)
 
     glDrawArrays(GL_TRIANGLES, 0, floatbuffer->pos);
 
-    glReadPixels(0, 0, 2048, 2048, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glReadPixels(0, 0, 4096, 4096, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pbnindex]);
 

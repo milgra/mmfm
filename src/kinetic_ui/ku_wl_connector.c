@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <wayland-egl.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
@@ -460,6 +461,10 @@ struct wl_window* ku_wayland_create_window(char* title, int width, int height)
 
     info->frame_cb = wl_surface_frame(info->surface);
     wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+
+    wl_egl_window_create(info->surface, width, height);
+
+    eglCreateWindowSurface((EGLDisplay) display->egl.dpy, display->egl.conf, (EGLNativeWindowType) display->native, NULL);
 
     return info;
 }

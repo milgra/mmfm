@@ -38,7 +38,7 @@ void init(wl_event_t event)
 
     /* mmfm.window = ku_wayland_create_eglwindow("MMFM", 1200, 600); */
 
-    zc_time(NULL);
+    /* zc_time(NULL); */
 
     mmfm.kuwindow = ku_window_create(monitor->logical_width, monitor->logical_height);
 
@@ -93,10 +93,10 @@ void update(ku_event_t ev)
 	    /* zc_time("RENDER"); */
 
 	    /* ku_bitmap_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */
-	    /* ku_wayland_draw_window(mmfm.window, 0, 0, mmfm.window->width, mmfm.window->height); */
+	    ku_wayland_draw_window(mmfm.window, 0, 0, mmfm.window->width, mmfm.window->height);
 	    /* nanosleep((const struct timespec[]){{0, 100000000L}}, NULL); */
 
-	    ku_wayland_draw_window(mmfm.window, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
+	    /* ku_wayland_draw_window(mmfm.window, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
 	    mmfm.dirty_prev = dirty;
 	}

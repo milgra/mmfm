@@ -56,7 +56,7 @@ ku_window_t* ku_window_create(int width, int height)
     win->implqueue = VNEW();
     win->explqueue = VNEW();
 
-    ku_gl_init();
+    /* ku_gl_init(); */
 
     return win;
 }

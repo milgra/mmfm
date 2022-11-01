@@ -331,18 +331,13 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
     // TODO refresh rate can differ so animations should be time based
     (*wlc.update)(event);
 
-    if (info->type == WL_WINDOW_EGL)
-    {
-	info->frame_cb = wl_surface_frame(info->surface);
-	wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+    /* info->frame_cb = wl_surface_frame(info->surface); */
+    /* wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info); */
 
-	glClearColor(0.5, 0.3, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
+    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
+    /* glClear(GL_COLOR_BUFFER_BIT); */
 
-	eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
-
-	wl_surface_commit(info->surface);
-    }
+    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
 
     /* ku_wayland_draw(); */
     /* Submit a frame for this event */
@@ -432,16 +427,16 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 	    printf("RESIZE EGLWINDOW %i %i\n", info->width, info->height);
 
 	    wl_egl_window_resize(info->eglwindow, info->width, info->height, 0, 0);
-	    wl_surface_commit(info->surface);
+	    /* wl_surface_commit(info->surface); */
 
 	    /* wl_display_dispatch_pending(wlc.display); */
 
 	    /* This space deliberately left blank */
 
-	    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
-	    /* glClear(GL_COLOR_BUFFER_BIT); */
+	    glClearColor(0.5, 0.3, 0.0, 1.0);
+	    glClear(GL_COLOR_BUFFER_BIT);
 
-	    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
+	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
 	}
     }
 
@@ -628,16 +623,18 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 	printf("Could not make the current window current !\n");
     }
 
+    printf("dispatch pending\n");
+
     wl_display_dispatch_pending(wlc.display);
 
     /* This space deliberately left blank */
 
-    glClearColor(0.5, 0.3, 0.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
+    /* glClear(GL_COLOR_BUFFER_BIT); */
 
-    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
+    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
 
-    wl_surface_commit(info->surface);
+    /* wl_surface_commit(info->surface); */
 
     /* while (1) */
     /* { */
@@ -648,6 +645,8 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
     /* 	eglSwapBuffers(display, surface); */
     /* } */
+
+    return info;
 }
 
 /* deletes xdg surface and toplevel */
@@ -700,9 +699,19 @@ void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h)
 	info->frame_cb = wl_surface_frame(info->surface);
 	wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
 
-	wl_surface_attach(info->surface, info->buffer, 0, 0);
-	wl_surface_damage(info->surface, x, y, w, h);
-	wl_surface_commit(info->surface);
+	if (info->type == WL_WINDOW_NATIVE)
+	{
+	    wl_surface_attach(info->surface, info->buffer, 0, 0);
+	    wl_surface_damage(info->surface, x, y, w, h);
+	    wl_surface_commit(info->surface);
+	}
+	else if (info->type == WL_WINDOW_EGL)
+	{
+	    glClearColor(0.5, 0.3, 0.0, 1.0);
+	    glClear(GL_COLOR_BUFFER_BIT);
+
+	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
+	}
     }
     else printf("NO DRAW\n");
 }
@@ -1183,8 +1192,9 @@ void ku_wayland_init(
 
 	    wlc.monitor = wlc.monitors[0];
 
-	    while (wl_display_dispatch(wlc.display))
+	    while (wl_display_dispatch(wlc.display) > -1)
 	    {
+		printf("DISSP\n");
 		/* This space deliberately left blank */
 		if (ku_wayland_exit_flag) break;
 	    }

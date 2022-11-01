@@ -331,6 +331,19 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
     // TODO refresh rate can differ so animations should be time based
     (*wlc.update)(event);
 
+    if (info->type == WL_WINDOW_EGL)
+    {
+	info->frame_cb = wl_surface_frame(info->surface);
+	wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+
+	glClearColor(0.5, 0.3, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
+
+	wl_surface_commit(info->surface);
+    }
+
     /* ku_wayland_draw(); */
     /* Submit a frame for this event */
 
@@ -416,8 +429,19 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 	    info->width  = info->new_width;
 	    info->height = info->new_height;
 
+	    printf("RESIZE EGLWINDOW %i %i\n", info->width, info->height);
+
 	    wl_egl_window_resize(info->eglwindow, info->width, info->height, 0, 0);
 	    wl_surface_commit(info->surface);
+
+	    /* wl_display_dispatch_pending(wlc.display); */
+
+	    /* This space deliberately left blank */
+
+	    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
+	    /* glClear(GL_COLOR_BUFFER_BIT); */
+
+	    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
 	}
     }
 
@@ -435,19 +459,23 @@ static void wl_surface_enter(void* userData, struct wl_surface* surface, struct 
     zc_log_debug("wl surface enter");
     struct wl_window* info = userData;
 
-    for (int index = 0; index < wlc.monitor_count; index++)
+    if (info->type == WL_WINDOW_NATIVE)
     {
-	struct monitor_info* monitor = wlc.monitors[index];
 
-	if (monitor->wl_output == output)
+	for (int index = 0; index < wlc.monitor_count; index++)
 	{
-	    zc_log_debug("output name %s %i %i", monitor->name, monitor->scale, info->scale);
+	    struct monitor_info* monitor = wlc.monitors[index];
 
-	    if (monitor->scale != info->scale)
+	    if (monitor->wl_output == output)
 	    {
-		info->monitor   = monitor;
-		info->new_scale = monitor->scale;
-		ku_wayland_resize_window_buffer(info);
+		zc_log_debug("output name %s %i %i", monitor->name, monitor->scale, info->scale);
+
+		if (monitor->scale != info->scale)
+		{
+		    info->monitor   = monitor;
+		    info->new_scale = monitor->scale;
+		    ku_wayland_resize_window_buffer(info);
+		}
 	    }
 	}
     }
@@ -469,6 +497,8 @@ static const struct wl_surface_listener wl_surface_listener = {
 struct wl_window* ku_wayland_create_window(char* title, int width, int height)
 {
     struct wl_window* info = CAL(sizeof(struct wl_window), NULL, NULL);
+
+    info->type = WL_WINDOW_NATIVE;
 
     wlc.windows[0] = info;
 
@@ -1145,7 +1175,7 @@ void ku_wayland_init(
 
 	// second roundtrip triggers events attached in global events
 	wl_display_roundtrip(wlc.display);
-	Q if (wlc.compositor)
+	if (wlc.compositor)
 	{
 	    struct _wl_event_t event = {.id = WL_EVENT_OUTPUT_ADDED, .monitors = wlc.monitors, .monitor_count = wlc.monitor_count};
 

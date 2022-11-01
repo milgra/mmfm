@@ -60,11 +60,11 @@ GLuint pbnindex;
 glsha_t ku_gl_create_texture_shader()
 {
     char* vsh =
-	"#version 120\n"
+	"#version 100\n"
 	"attribute vec3 position;"
 	"attribute vec4 texcoord;"
 	"uniform mat4 projection;"
-	"varying vec4 vUv;"
+	"varying highp vec4 vUv;"
 	"void main ( )"
 	"{"
 	"    gl_Position = projection * vec4(position,1.0);"
@@ -72,32 +72,32 @@ glsha_t ku_gl_create_texture_shader()
 	"}";
 
     char* fsh =
-	"#version 120\n"
+	"#version 100\n"
 	"uniform sampler2D sampler[10];"
 	"uniform int domask;"
-	"uniform ivec2 texdim;"
-	"varying vec4 vUv;"
+	"uniform highp vec2 texdim;"
+	"varying highp vec4 vUv;"
 	"void main( )"
 	"{"
-	" vec4 col = vec4(1.0);"
-	" int unit = int(vUv.z);"
-	" float alpha = vUv.w;"
-	"	if (unit == 0) col = texture2D(sampler[0], vUv.xy);"
-	"	else if (unit == 1) col = texture2D(sampler[1], vUv.xy);"
-	"	else if (unit == 2) col = texture2D(sampler[2], vUv.xy);"
-	"	else if (unit == 3) col = texture2D(sampler[3], vUv.xy);"
-	"	else if (unit == 4) col = texture2D(sampler[4], vUv.xy);"
-	"	else if (unit == 5) col = texture2D(sampler[5], vUv.xy);"
-	"	else if (unit == 6) col = texture2D(sampler[6], vUv.xy);"
-	"	else if (unit == 7) col = texture2D(sampler[7], vUv.xy);"
-	"	else if (unit == 8) col = texture2D(sampler[8], vUv.xy);"
-	" if (domask == 1)"
-	" {"
-	"  vec4 msk = texture2D(sampler[1], vec2(gl_FragCoord.x / texdim.x, gl_FragCoord.y / texdim.y));"
-	"  if (msk.a < col.a) col.a = msk.a;"
-	" }"
-	" if (alpha < 1.0) col.w *= alpha;"
-	" gl_FragColor = col;"
+	/* " highp vec4 col = vec4(1.0);" */
+	/* " int unit = int(vUv.z);" */
+	/* " highp float alpha = vUv.w;" */
+	/* "	if (unit == 0) col = texture2D(sampler[0], vUv.xy);" */
+	/* "	else if (unit == 1) col = texture2D(sampler[1], vUv.xy);" */
+	/* "	else if (unit == 2) col = texture2D(sampler[2], vUv.xy);" */
+	/* "	else if (unit == 3) col = texture2D(sampler[3], vUv.xy);" */
+	/* "	else if (unit == 4) col = texture2D(sampler[4], vUv.xy);" */
+	/* "	else if (unit == 5) col = texture2D(sampler[5], vUv.xy);" */
+	/* "	else if (unit == 6) col = texture2D(sampler[6], vUv.xy);" */
+	/* "	else if (unit == 7) col = texture2D(sampler[7], vUv.xy);" */
+	/* "	else if (unit == 8) col = texture2D(sampler[8], vUv.xy);" */
+	/* " if (domask == 1)" */
+	/* " {" */
+	/* "  highp vec4 msk = texture2D(sampler[1], vec2(gl_FragCoord.x / texdim.x, gl_FragCoord.y / texdim.y));" */
+	/* "  if (msk.a < col.a) col.a = msk.a;" */
+	/* " }" */
+	/* " if (alpha < 1.0) col.w *= alpha;" */
+	" gl_FragColor = texture2D(sampler[0], vUv.xy);"
 	"}";
 
     glsha_t sha = ku_gl_shader_create(vsh, fsh, 2, ((const char*[]){"position", "texcoord"}), 13, ((const char*[]){"projection", "sampler[0]", "sampler[1]", "sampler[2]", "sampler[3]", "sampler[4]", "sampler[5]", "sampler[6]", "sampler[7]", "sampler[8]", "sampler[9]", "domask", "texdim"}));
@@ -159,12 +159,13 @@ gltex_t ku_gl_create_texture(int index, uint32_t w, uint32_t h)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
-    glGenFramebuffers(1, &tex.fb); // DEL 1
+    /* glGenFramebuffers(1, &tex.fb); // DEL 1 */
 
-    glBindFramebuffer(GL_FRAMEBUFFER, tex.fb);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex.tx, 0);
-    glClearColor(1.0, 0.0, 0.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    /* glBindFramebuffer(GL_FRAMEBUFFER, tex.fb); */
+    /* glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex.tx, 0); */
+    /* glClearColor(1.0, 0.0, 0.0, 1.0); */
+    /* glClear(GL_COLOR_BUFFER_BIT); */
+    /* glBindFramebuffer(GL_FRAMEBUFFER, 0); */
 
     return tex;
 }
@@ -177,34 +178,34 @@ void ku_gl_delete_texture(gltex_t tex)
 
 void ku_gl_init()
 {
-    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    if (display == EGL_NO_DISPLAY)
-    {
-	printf("ERROR 0\n");
-    }
+    /* EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY); */
+    /* if (display == EGL_NO_DISPLAY) */
+    /* { */
+    /* 	printf("ERROR 0\n"); */
+    /* } */
 
-    if (eglInitialize(display, NULL, NULL) != EGL_TRUE)
-    {
-	printf("ERROR 1\n");
-    }
+    /* if (eglInitialize(display, NULL, NULL) != EGL_TRUE) */
+    /* { */
+    /* 	printf("ERROR 1\n"); */
+    /* } */
 
-    EGLConfig config;
-    EGLint    num_config = 0;
-    if (eglChooseConfig(display, NULL, &config, 1, &num_config) != EGL_TRUE)
-    {
-	printf("ERROR 2\n");
-    }
-    if (num_config == 0)
-    {
-	printf("ERROR 3\n");
-    }
+    /* EGLConfig config; */
+    /* EGLint    num_config = 0; */
+    /* if (eglChooseConfig(display, NULL, &config, 1, &num_config) != EGL_TRUE) */
+    /* { */
+    /* 	printf("ERROR 2\n"); */
+    /* } */
+    /* if (num_config == 0) */
+    /* { */
+    /* 	printf("ERROR 3\n"); */
+    /* } */
 
-    eglBindAPI(EGL_OPENGL_API);
-    EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, NULL);
-    if (eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, context) != EGL_TRUE)
-    {
-	printf("ERROR 4\n");
-    }
+    /* eglBindAPI(EGL_OPENGL_API); */
+    /* EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, NULL); */
+    /* if (eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, context) != EGL_TRUE) */
+    /* { */
+    /* 	printf("ERROR 4\n"); */
+    /* } */
 
     GLenum err = glewInit();
     if (GLEW_OK != err)
@@ -216,31 +217,31 @@ void ku_gl_init()
     buffer = ku_gl_create_vertex_buffer();
 
     tex_atlas = ku_gl_create_texture(0, 4096, 4096);
-    tex_frame = ku_gl_create_texture(1, 4096, 4096);
+    /* tex_frame = ku_gl_create_texture(1, 4096, 4096); */
 
     atlas       = ku_gl_atlas_new(4096, 4096);
     floatbuffer = ku_floatbuffer_new();
 
-    glbuf_t vb = {0};
+    /* glbuf_t vb = {0}; */
 
-    glGenBuffers(1, &pbo1); // DEL 0
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo1);
-    glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 4096 * 4096, 0, GL_STREAM_READ);
+    /* glGenBuffers(1, &pbo1); // DEL 0 */
+    /* glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo1); */
+    /* glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 4096 * 4096, 0, GL_STREAM_READ); */
 
-    glGenBuffers(1, &pbo2); // DEL 0
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo2);
-    glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 4096 * 4096, 0, GL_STREAM_READ);
+    /* glGenBuffers(1, &pbo2); // DEL 0 */
+    /* glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo2); */
+    /* glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 4096 * 4096, 0, GL_STREAM_READ); */
 
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    /* glBindBuffer(GL_PIXEL_PACK_BUFFER, 0); */
 
-    pbos[0] = pbo1;
-    pbos[1] = pbo2;
+    /* pbos[0] = pbo1; */
+    /* pbos[1] = pbo2; */
 
-    pbindex  = 0;
-    pbnindex = 1;
+    /* pbindex  = 0; */
+    /* pbnindex = 1; */
 
-    pixelmap = ku_bitmap_new(4096, 4096);
-    REL(pixelmap->data);
+    /* pixelmap = ku_bitmap_new(4096, 4096); */
+    /* REL(pixelmap->data); */
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -341,8 +342,11 @@ void ku_gl_add_vertexes(vec_t* views)
 
 void ku_gl_render(ku_bitmap_t* bitmap)
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, tex_frame.fb);
+    /* glBindFramebuffer(GL_FRAMEBUFFER, tex_frame.fb); */
     glBindVertexArray(buffer.vao);
+
+    glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
+    glBindTexture(GL_TEXTURE_2D, tex_atlas.tx);
 
     glClearColor(1.0, 1.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -350,37 +354,12 @@ void ku_gl_render(ku_bitmap_t* bitmap)
     glUseProgram(shader.name);
 
     matrix4array_t projection;
-    projection.matrix = m4_defaultortho(0.0, bitmap->w, 0, bitmap->h, 0.0, 1.0);
+    projection.matrix = m4_defaultortho(0.0, bitmap->w, bitmap->h, 0, 0.0, 1.0);
 
     glUniformMatrix4fv(shader.uni_loc[0], 1, 0, projection.array);
     glViewport(0, 0, bitmap->w, bitmap->h);
 
-    pbindex  = (pbindex + 1) % 2;
-    pbnindex = (pbindex + 1) % 2;
-
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pbindex]);
-
     glDrawArrays(GL_TRIANGLES, 0, floatbuffer->pos);
-
-    glReadPixels(0, 0, 4096, 4096, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pbnindex]);
-
-    GLuint* src = (GLuint*) glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-
-    pixelmap->data = src;
-
-    ku_bitmap_insert(
-	bitmap,
-	(bmr_t){0, 0, bitmap->w, bitmap->h},
-	pixelmap,
-	(bmr_t){0, 0, pixelmap->w, pixelmap->h},
-	0,
-	0);
-
-    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(0);
 }
 

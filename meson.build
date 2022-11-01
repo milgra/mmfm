@@ -87,7 +87,7 @@ mmfm_version = '"@0@"'.format(meson.project_version())
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
 add_project_arguments('-DPKG_DATADIR="' + pkg_datadir + '"',
 		      '-DMMFM_VERSION=@0@'.format(mmfm_version),
-		      '-DGLEW_EGL',
+#		      '-DGLEW_EGL',
 		      language: 'c')
 add_project_arguments('-Wno-unused-but-set-variable', language: 'c')
 
@@ -97,7 +97,7 @@ endif
 
 mmfm_inc = include_directories(
 	'/usr/include',
-	'/usr/include/GL',
+	'/usr/include/GLES2',
 	'/usr/include/EGL',
 	'/usr/include/SDL2',
 	'/usr/include/mupdf',

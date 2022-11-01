@@ -3,6 +3,8 @@
 
 #include "ku_bitmap.c"
 #include "ku_event.c"
+#include <EGL/egl.h>
+#include <GLES2/gl2.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -53,8 +55,16 @@ struct monitor_info
     struct wl_output*       wl_output;
 };
 
+enum wl_window_type
+{
+    WL_WINDOW_NATIVE,
+    WL_WINDOW_EGL
+};
+
 struct wl_window
 {
+    enum wl_window_type type;
+
     struct xdg_surface*  xdg_surface;  // window surface
     struct xdg_toplevel* xdg_toplevel; // window info
     struct wl_surface*   surface;      // wl surface for window
@@ -73,6 +83,13 @@ struct wl_window
     struct wl_callback* frame_cb;
 
     struct monitor_info* monitor;
+
+    struct wl_egl_window* eglwindow;
+
+    struct wl_region* region;
+
+    EGLDisplay egldisplay;
+    EGLSurface eglsurface;
 };
 
 struct layer_info
@@ -108,6 +125,8 @@ void wl_hide();
 struct wl_window* ku_wayland_create_window(char* title, int width, int height);
 void              ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h);
 void              ku_wayland_delete_window(struct wl_window* info);
+
+struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height);
 
 void ku_wayland_create_layer();
 void ku_wayland_delete_layer();
@@ -389,7 +408,20 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 
     xdg_surface_ack_configure(xdg_surface, serial);
 
-    ku_wayland_resize_window_buffer(info);
+    if (info->type == WL_WINDOW_NATIVE) ku_wayland_resize_window_buffer(info);
+    else
+    {
+	if (info->width != info->new_width && info->height != info->new_height)
+	{
+	    info->width  = info->new_width;
+	    info->height = info->new_height;
+
+	    wl_egl_window_resize(info->eglwindow, info->width, info->height, 0, 0);
+	    wl_surface_commit(info->surface);
+	}
+    }
+
+    /* ku_wayland_resize_window_buffer(info); */
 }
 
 static const struct xdg_surface_listener xdg_surface_listener = {
@@ -462,11 +494,130 @@ struct wl_window* ku_wayland_create_window(char* title, int width, int height)
     info->frame_cb = wl_surface_frame(info->surface);
     wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
 
-    wl_egl_window_create(info->surface, width, height);
-
-    eglCreateWindowSurface((EGLDisplay) display->egl.dpy, display->egl.conf, (EGLNativeWindowType) display->native, NULL);
-
     return info;
+}
+
+struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height)
+{
+    struct wl_window* info = CAL(sizeof(struct wl_window), NULL, NULL);
+
+    info->type = WL_WINDOW_EGL;
+
+    wlc.windows[0] = info;
+
+    info->new_scale  = 1;
+    info->new_width  = width;
+    info->new_height = height;
+
+    info->surface = wl_compositor_create_surface(wlc.compositor);
+    wl_surface_add_listener(info->surface, &wl_surface_listener, info);
+
+    info->xdg_surface = xdg_wm_base_get_xdg_surface(wlc.xdg_wm_base, info->surface);
+    xdg_surface_add_listener(info->xdg_surface, &xdg_surface_listener, info);
+
+    info->xdg_toplevel = xdg_surface_get_toplevel(info->xdg_surface);
+    xdg_toplevel_add_listener(info->xdg_toplevel, &xdg_toplevel_listener, info);
+    xdg_toplevel_set_title(info->xdg_toplevel, title);
+
+    wl_surface_commit(info->surface);
+
+    info->frame_cb = wl_surface_frame(info->surface);
+    wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+
+    info->region = wl_compositor_create_region(wlc.compositor);
+
+    wl_region_add(info->region, 0, 0, width, height);
+    wl_surface_set_opaque_region(info->surface, info->region);
+
+    struct wl_egl_window* egl_window = wl_egl_window_create(info->surface, width, height);
+
+    info->eglwindow = egl_window;
+
+    if (egl_window == EGL_NO_SURFACE)
+    {
+	printf("No window !?\n");
+    }
+    else printf("Window created !\n");
+
+    EGLint     numConfigs;
+    EGLint     majorVersion;
+    EGLint     minorVersion;
+    EGLContext context;
+    EGLSurface surface;
+    EGLConfig  config;
+    EGLint     fbAttribs[] =
+	{
+	    EGL_SURFACE_TYPE, EGL_WINDOW_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT, EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_NONE};
+    EGLint contextAttribs[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE};
+
+    EGLDisplay display = eglGetDisplay(wlc.display);
+    if (display == EGL_NO_DISPLAY)
+    {
+	printf("No EGL Display...\n");
+    }
+
+    info->egldisplay = display;
+
+    // Initialize EGL
+    if (!eglInitialize(display, &majorVersion, &minorVersion))
+    {
+	printf("No Initialisation...\n");
+    }
+
+    // Get configs
+    if ((eglGetConfigs(display, NULL, 0, &numConfigs) != EGL_TRUE) || (numConfigs == 0))
+    {
+	printf("No configuration...\n");
+    }
+
+    // Choose config
+    if ((eglChooseConfig(display, fbAttribs, &config, 1, &numConfigs) != EGL_TRUE) || (numConfigs != 1))
+    {
+	printf("No configuration...\n");
+    }
+
+    // Create a surface
+    surface = eglCreateWindowSurface(display, config, (EGLNativeWindowType) egl_window, NULL);
+    if (surface == EGL_NO_SURFACE)
+    {
+	printf("No surface...\n");
+    }
+
+    info->eglsurface = surface;
+
+    // Create a GL context
+    context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttribs);
+    if (context == EGL_NO_CONTEXT)
+    {
+	printf("No context...\n");
+    }
+
+    // Make the context current
+    if (!eglMakeCurrent(display, surface, surface, context))
+    {
+	printf("Could not make the current window current !\n");
+    }
+
+    wl_display_dispatch_pending(wlc.display);
+
+    /* This space deliberately left blank */
+
+    glClearColor(0.5, 0.3, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
+
+    wl_surface_commit(info->surface);
+
+    /* while (1) */
+    /* { */
+    /* 	wl_display_dispatch_pending(wlc.display); */
+
+    /* 	glClearColor(0.5, 0.3, 0.0, 1.0); */
+    /* 	glClear(GL_COLOR_BUFFER_BIT); */
+
+    /* 	eglSwapBuffers(display, surface); */
+    /* } */
 }
 
 /* deletes xdg surface and toplevel */
@@ -994,8 +1145,7 @@ void ku_wayland_init(
 
 	// second roundtrip triggers events attached in global events
 	wl_display_roundtrip(wlc.display);
-
-	if (wlc.compositor)
+	Q if (wlc.compositor)
 	{
 	    struct _wl_event_t event = {.id = WL_EVENT_OUTPUT_ADDED, .monitors = wlc.monitors, .monitor_count = wlc.monitor_count};
 

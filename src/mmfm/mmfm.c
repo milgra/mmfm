@@ -36,6 +36,8 @@ void init(wl_event_t event)
 
     mmfm.window = ku_wayland_create_window("MMFM", 1200, 600);
 
+    /* mmfm.window = ku_wayland_create_eglwindow("MMFM", 1200, 600); */
+
     zc_time(NULL);
 
     mmfm.kuwindow = ku_window_create(monitor->logical_width, monitor->logical_height);

@@ -3,8 +3,9 @@
 
 #include "ku_bitmap.c"
 #include "zc_vector.c"
+/* #include <GL/glew.h> */
 #include <EGL/egl.h>
-#include <GL/glew.h>
+#include <GLES2/gl2.h>
 #include <stdio.h>
 
 void ku_gl_init();

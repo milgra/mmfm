@@ -164,6 +164,7 @@ struct wlc_t
 
     struct zwp_pointer_gestures_v1*      pointer_manager;
     struct zwp_pointer_gesture_pinch_v1* pinch_gesture;
+    struct zwp_pointer_gesture_hold_v1*  hold_gesture;
 
     int                   monitor_count;
     struct monitor_info** monitors;
@@ -729,6 +730,33 @@ int py   = 0;
 int drag = 0;
 
 static void
+gesture_hold_begin(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
+{
+    /* GdkWaylandSeat* seat = data; */
+
+    /* emit_gesture_hold_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_BEGIN, time, fingers); */
+    /* seat->gesture_n_fingers = fingers; */
+
+    zc_log_debug("hold start");
+}
+
+static void
+gesture_hold_end(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, int32_t cancelled)
+{
+    /* GdkWaylandSeat*         seat = data; */
+    /* GdkTouchpadGesturePhase phase; */
+
+    /* phase = (cancelled) ? GDK_TOUCHPAD_GESTURE_PHASE_CANCEL : GDK_TOUCHPAD_GESTURE_PHASE_END; */
+
+    /* emit_gesture_hold_event(seat, phase, time, seat->gesture_n_fingers); */
+    zc_log_debug("hold end");
+}
+
+static const struct zwp_pointer_gesture_hold_v1_listener gesture_hold_listener = {
+    gesture_hold_begin,
+    gesture_hold_end};
+
+static void
 gesture_pinch_begin(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
 {
     /* GdkWaylandSeat* seat = data; */
@@ -1121,8 +1149,10 @@ static void ku_wayland_seat_handle_capabilities(void* data, struct wl_seat* wl_s
 	if (wlc.pointer_manager)
 	{
 	    wlc.pinch_gesture = zwp_pointer_gestures_v1_get_pinch_gesture(wlc.pointer_manager, wlc.pointer);
-
 	    zwp_pointer_gesture_pinch_v1_add_listener(wlc.pinch_gesture, &gesture_pinch_listener, wl_seat);
+
+	    /* wlc.hold_gesture = zwp_pointer_gestures_v1_get_hold_gesture(wlc.pointer_manager, wlc.pointer); */
+	    /* zwp_pointer_gesture_hold_v1_add_listener(wlc.hold_gesture, &gesture_hold_listener, wl_seat); */
 	}
     }
 }

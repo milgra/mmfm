@@ -10,6 +10,7 @@
 
 void ku_gl_init();
 void ku_gl_render(ku_bitmap_t* bitmap);
+void ku_gl_render_quad(ku_bitmap_t* bitmap, uint32_t index, bmr_t mask);
 void ku_gl_add_textures(vec_t* views);
 void ku_gl_add_vertexes(vec_t* views);
 
@@ -247,26 +248,48 @@ void ku_gl_init()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
+int ku_gl_reset_texture = 0;
+
 void ku_gl_add_textures(vec_t* views)
 {
     /* reset atlas */
-    if (atlas) REL(atlas);
-    atlas = ku_gl_atlas_new(4096, 4096);
+    if (ku_gl_reset_texture)
+    {
+	if (atlas) REL(atlas);
+	atlas = ku_gl_atlas_new(4096, 4096);
+    }
 
     /* add texture to atlas */
     for (int index = 0; index < views->length; index++)
     {
 	ku_view_t* view = views->data[index];
 
-	int res = ku_gl_atlas_put(atlas, view->id, view->texture.bitmap->w, view->texture.bitmap->h);
+	if (view->texture.uploaded == 0)
+	{
+	    ku_gl_atlas_coords_t coords = ku_gl_atlas_get(atlas, view->id);
 
-	if (res < 0) printf("TEXTURE FULL, NEEDS RESET\n");
+	    if (view->texture.bitmap->w != coords.w || view->texture.bitmap->h != coords.h || ku_gl_reset_texture)
+	    {
+		// texture doesn't exist or size mismatch
+		int success = ku_gl_atlas_put(atlas, view->id, view->texture.bitmap->w, view->texture.bitmap->h);
+		// TODO reset main texture, maybe all views?
+		if (success < 0)
+		{
+		    printf("TEXTURE FULL, NEEDS RESET\n");
+		    ku_gl_reset_texture = 1;
+		}
 
-	ku_gl_atlas_coords_t coords = ku_gl_atlas_get(atlas, view->id);
+		coords = ku_gl_atlas_get(atlas, view->id);
+	    }
 
-	glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, coords.x, coords.y, coords.w, coords.h, GL_RGBA, GL_UNSIGNED_BYTE, view->texture.bitmap->data);
+	    glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
+	    glTexSubImage2D(GL_TEXTURE_2D, 0, coords.x, coords.y, coords.w, coords.h, GL_RGBA, GL_UNSIGNED_BYTE, view->texture.bitmap->data);
+
+	    view->texture.uploaded = 1;
+	}
     }
+
+    ku_gl_reset_texture = 0;
 }
 
 void ku_gl_add_vertexes(vec_t* views)
@@ -280,6 +303,16 @@ void ku_gl_add_vertexes(vec_t* views)
 
 	ku_rect_t            rect = view->frame.global;
 	ku_gl_atlas_coords_t text = ku_gl_atlas_get(atlas, view->id);
+
+	/* expand with blur thickness */
+
+	if (view->style.shadow_blur > 0)
+	{
+	    rect.x -= view->style.shadow_blur;
+	    rect.y -= view->style.shadow_blur;
+	    rect.w += 2 * view->style.shadow_blur;
+	    rect.h += 2 * view->style.shadow_blur;
+	}
 
 	float data[36];
 
@@ -360,6 +393,32 @@ void ku_gl_render(ku_bitmap_t* bitmap)
     glViewport(0, 0, bitmap->w, bitmap->h);
 
     glDrawArrays(GL_TRIANGLES, 0, floatbuffer->pos);
+    glBindVertexArray(0);
+}
+
+void ku_gl_render_quad(ku_bitmap_t* bitmap, uint32_t index, bmr_t mask)
+{
+    /* glBindFramebuffer(GL_FRAMEBUFFER, tex_frame.fb); */
+    glBindVertexArray(buffer.vao);
+
+    glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
+    glBindTexture(GL_TEXTURE_2D, tex_atlas.tx);
+
+    glUseProgram(shader.name);
+
+    /* draw masked region only */
+
+    matrix4array_t projection;
+    projection.matrix = m4_defaultortho(mask.x, mask.z, mask.w, mask.y, 0.0, 1.0);
+
+    glUniformMatrix4fv(shader.uni_loc[0], 1, 0, projection.array);
+
+    /* viewport origo is in the left bottom corner */
+
+    glViewport(mask.x, bitmap->h - mask.w, mask.z - mask.x, mask.w - mask.y);
+
+    glDrawArrays(GL_TRIANGLES, index * 6, 6);
+
     glBindVertexArray(0);
 }
 

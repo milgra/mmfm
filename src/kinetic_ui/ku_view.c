@@ -124,6 +124,7 @@ typedef struct _texture_t
     texst_t      state;         /* render state of texture */
     ku_bitmap_t* bitmap;        /* texture bitmap */
     char         changed;       /* texture is changed */
+    char         uploaded;      /* texture is uploaded, used by renderes */
     char         alpha_changed; /* alpha channel is changed */
 
     // decoration

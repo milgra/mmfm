@@ -2,6 +2,8 @@
 #include "evrecorder.c"
 #include "filemanager.c"
 #include "ku_connector_wayland.c"
+#include "ku_renderer_egl.c"
+#include "ku_renderer_soft.c"
 #include "ku_window.c"
 #include "ui.c"
 #include "zc_cstring.c"
@@ -25,6 +27,7 @@ struct
     struct wl_window* window;
     ku_rect_t         dirty_prev;
     ku_window_t*      kuwindow;
+
 } mmfm = {0};
 
 void init(wl_event_t event)
@@ -34,9 +37,10 @@ void init(wl_event_t event)
 
     struct monitor_info* monitor = event.monitors[0];
 
-    mmfm.window = ku_wayland_create_window("MMFM", 1200, 600);
+    /* mmfm.window = ku_wayland_create_window("MMFM", 1200, 600); */
 
-    /* mmfm.window = ku_wayland_create_eglwindow("MMFM", 1200, 600); */
+    mmfm.window = ku_wayland_create_eglwindow("MMFM", 1200, 600);
+    ku_renderer_egl_init();
 
     /* zc_time(NULL); */
 
@@ -82,14 +86,18 @@ void update(ku_event_t ev)
 	{
 	    /* zc_log_debug("drt %i %i %i %i", (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h); */
 	    /* zc_log_debug("drt prev %i %i %i %i", (int) mmfm.dirty_prev.x, (int) mmfm.dirty_prev.y, (int) mmfm.dirty_prev.w, (int) mmfm.dirty_prev.h); */
-	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirty_prev);
 	    /* zc_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
+
+	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirty_prev);
 
 	    /* zc_time(NULL); */
 	    /* memset(mmfm.window->bitmap.data, 0, mmfm.window->bitmap.size); */
 	    // clear out dirty rectangle
-	    /* ku_bitmap_cut(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
-	    ku_window_render(mmfm.kuwindow, 0, &mmfm.window->bitmap, sum);
+
+	    /* ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum); */
+
+	    ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum);
+
 	    /* zc_time("RENDER"); */
 
 	    /* ku_bitmap_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */

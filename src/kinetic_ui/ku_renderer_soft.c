@@ -2,56 +2,23 @@
 #define ku_renderer_software_h
 
 #include "ku_bitmap.c"
+#include "ku_rect.c"
 #include "zc_vector.c"
 
-void ku_renderer_software_render(vec_t* views, ku_bitmap_t* bitmap);
+void ku_renderer_software_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "ku_rect.c"
 #include "ku_view.c"
 #include "zc_time.c"
 
-void ku_renderer_software_render(vec_t* views, ku_bitmap_t* bitmap)
+void ku_renderer_software_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty)
 {
-    /* calculate dirty rect */
+    /* cut out dirty rect */
 
-    ku_rect_t dirty = {0};
-
-    for (int i = 0; i < views->length; i++)
-    {
-	ku_view_t* view = views->data[i];
-
-	if (view->texture.type == TT_MANAGED && view->texture.state == TS_BLANK) ku_view_gen_texture(view);
-
-	if (view->texture.changed)
-	{
-	    dirty                 = ku_rect_add(dirty, view->frame.global);
-	    view->texture.changed = 0;
-	}
-	else if (view->frame.dim_changed)
-	{
-	    dirty                   = ku_rect_add(dirty, view->frame.global);
-	    view->frame.dim_changed = 0;
-	}
-	else if (view->frame.pos_changed)
-	{
-	    dirty                   = ku_rect_add(dirty, view->frame.global);
-	    view->frame.pos_changed = 0;
-	}
-	else if (view->frame.reg_changed)
-	{
-	    dirty                   = ku_rect_add(dirty, view->frame.global);
-	    view->frame.reg_changed = 0;
-	}
-	else if (view->texture.alpha_changed)
-	{
-	    dirty                       = ku_rect_add(dirty, view->frame.global);
-	    view->texture.alpha_changed = 0;
-	}
-    }
+    /* ku_bitmap_cut(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
     /* we need to keep nested masks in mind */
 

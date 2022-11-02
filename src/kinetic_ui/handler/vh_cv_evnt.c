@@ -127,6 +127,10 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
 	    vh->z += ev.dy;
 	}
     }
+    else if (ev.type == KU_EVENT_PINCH)
+    {
+	vh->z += 1.0 - ev.ratio;
+    }
     else if (ev.type == KU_EVENT_RESIZE)
     {
     }

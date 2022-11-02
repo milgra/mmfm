@@ -23,6 +23,7 @@
 #include <wayland-egl.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include "pointer-gestures-unstable-v1-client-protocol.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
@@ -161,7 +162,8 @@ struct wlc_t
     struct zwlr_layer_shell_v1*    layer_shell;        // active layer shell
     struct zwlr_layer_surface_v1*  layer_surface;      // active layer surface
 
-    // outputs
+    struct zwp_pointer_gestures_v1*      pointer_manager;
+    struct zwp_pointer_gesture_pinch_v1* pinch_gesture;
 
     int                   monitor_count;
     struct monitor_info** monitors;
@@ -719,12 +721,59 @@ void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h)
     else printf("NO DRAW\n");
 }
 
-/* pointer listener */
+/* gesture listener */
 
 // TODO differentiate these by wl_pointer address
 int px   = 0;
 int py   = 0;
 int drag = 0;
+
+static void
+gesture_pinch_begin(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
+{
+    /* GdkWaylandSeat* seat = data; */
+
+    /* emit_gesture_pinch_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_BEGIN, time, fingers, 0, 0, 1, 0); */
+    /* seat->gesture_n_fingers = fingers; */
+}
+
+static void
+gesture_pinch_update(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t time, wl_fixed_t dx, wl_fixed_t dy, wl_fixed_t scale, wl_fixed_t rotation)
+{
+    /* GdkWaylandSeat* seat = data; */
+
+    /* emit_gesture_pinch_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_UPDATE, time, seat->gesture_n_fingers, wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation)); */
+
+    zc_log_debug("pinch dx %f dy %f scale %f rotation %f", wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation));
+
+    ku_event_t event =
+	{.type       = KU_EVENT_PINCH,
+	 .x          = px,
+	 .y          = py,
+	 .ratio      = wl_fixed_to_double(scale),
+	 .ctrl_down  = wlc.keyboard.control,
+	 .shift_down = wlc.keyboard.shift};
+
+    (*wlc.update)(event);
+}
+
+static void
+gesture_pinch_end(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, int32_t cancelled)
+{
+    /* GdkWaylandSeat*         seat = data; */
+    /* GdkTouchpadGesturePhase phase; */
+
+    /* phase = (cancelled) ? GDK_TOUCHPAD_GESTURE_PHASE_CANCEL : GDK_TOUCHPAD_GESTURE_PHASE_END; */
+
+    /* emit_gesture_pinch_event(seat, phase, time, seat->gesture_n_fingers, 0, 0, 1, 0); */
+}
+
+static const struct zwp_pointer_gesture_pinch_v1_listener gesture_pinch_listener = {
+    gesture_pinch_begin,
+    gesture_pinch_update,
+    gesture_pinch_end};
+
+/* pointer listener */
 
 void ku_wayland_pointer_handle_enter(void* data, struct wl_pointer* wl_pointer, uint serial, struct wl_surface* surface, wl_fixed_t surface_x, wl_fixed_t surface_y)
 {
@@ -1068,6 +1117,13 @@ static void ku_wayland_seat_handle_capabilities(void* data, struct wl_seat* wl_s
     {
 	wlc.pointer = wl_seat_get_pointer(wl_seat);
 	wl_pointer_add_listener(wlc.pointer, &pointer_listener, NULL);
+
+	if (wlc.pointer_manager)
+	{
+	    wlc.pinch_gesture = zwp_pointer_gestures_v1_get_pinch_gesture(wlc.pointer_manager, wlc.pointer);
+
+	    zwp_pointer_gesture_pinch_v1_add_listener(wlc.pinch_gesture, &gesture_pinch_listener, wl_seat);
+	}
     }
 }
 
@@ -1145,6 +1201,10 @@ static void ku_wayland_handle_global(
     {
 	wlc.xdg_wm_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
 	xdg_wm_base_add_listener(wlc.xdg_wm_base, &xdg_wm_base_listener, NULL);
+    }
+    else if (strcmp(interface, zwp_pointer_gestures_v1_interface.name) == 0)
+    {
+	wlc.pointer_manager = wl_registry_bind(registry, name, &zwp_pointer_gestures_v1_interface, 1);
     }
 }
 

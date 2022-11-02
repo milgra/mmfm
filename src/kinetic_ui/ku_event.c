@@ -19,6 +19,7 @@ enum evtype
     KU_EVENT_KUP,
     KU_EVENT_TEXT,
     KU_EVENT_WINDOW_SHOW,
+    KU_EVENT_PINCH,
 };
 
 typedef struct _ku_event_t
@@ -36,6 +37,8 @@ typedef struct _ku_event_t
 
     float dx; // scroll x
     float dy; // scroll y
+
+    float ratio; // pinch ratio
 
     int w; // resize width
     int h; // resize height

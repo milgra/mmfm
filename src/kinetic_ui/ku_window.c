@@ -163,6 +163,21 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	    }
 	}
     }
+    else if (ev.type == KU_EVENT_PINCH)
+    {
+	vec_reset(win->implqueue);
+	ku_view_coll_touched(win->root, ev, win->implqueue);
+
+	for (int i = win->implqueue->length - 1; i > -1; i--)
+	{
+	    ku_view_t* v = win->implqueue->data[i];
+	    if (v->needs_touch && v->parent)
+	    {
+		if (v->handler) (*v->handler)(v, ev);
+		if (v->blocks_scroll) break;
+	    }
+	}
+    }
     else if (ev.type == KU_EVENT_KDOWN || ev.type == KU_EVENT_KUP)
     {
 	for (int i = win->explqueue->length - 1; i > -1; i--)

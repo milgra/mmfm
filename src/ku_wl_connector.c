@@ -23,7 +23,6 @@
 #include <wayland-egl.h>
 #include <xkbcommon/xkbcommon.h>
 
-#include "pointer-gestures-unstable-v1-client-protocol.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
@@ -74,6 +73,8 @@ struct wl_window
     int                  shm_size;     // active bufferdata size
     ku_bitmap_t          bitmap;
 
+    struct wl_egl_window* eglwindow;
+
     int scale;
     int width;
     int height;
@@ -84,8 +85,6 @@ struct wl_window
     struct wl_callback* frame_cb;
 
     struct monitor_info* monitor;
-
-    struct wl_egl_window* eglwindow;
 
     struct wl_region* region;
 
@@ -162,9 +161,7 @@ struct wlc_t
     struct zwlr_layer_shell_v1*    layer_shell;        // active layer shell
     struct zwlr_layer_surface_v1*  layer_surface;      // active layer surface
 
-    struct zwp_pointer_gestures_v1*      pointer_manager;
-    struct zwp_pointer_gesture_pinch_v1* pinch_gesture;
-    struct zwp_pointer_gesture_hold_v1*  hold_gesture;
+    // outputs
 
     int                   monitor_count;
     struct monitor_info** monitors;
@@ -318,6 +315,14 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
 
     info->frame_cb = NULL;
 
+    /* info->frame_cb = wl_surface_frame(info->surface); */
+    /* wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info); */
+
+    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
+    /* glClear(GL_COLOR_BUFFER_BIT); */
+
+    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
+
     if (time - lasttime > 1000)
     {
 	/* printf("FRAME PER SEC : %u\n", lastcount); */
@@ -333,14 +338,6 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
 
     // TODO refresh rate can differ so animations should be time based
     (*wlc.update)(event);
-
-    /* info->frame_cb = wl_surface_frame(info->surface); */
-    /* wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info); */
-
-    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
-    /* glClear(GL_COLOR_BUFFER_BIT); */
-
-    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
 
     /* ku_wayland_draw(); */
     /* Submit a frame for this event */
@@ -419,16 +416,6 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 
     xdg_surface_ack_configure(xdg_surface, serial);
 
-    if (info->width != info->new_width && info->height != info->new_height)
-    {
-	ku_event_t event = {
-	    .type = KU_EVENT_RESIZE,
-	    .w    = info->new_width,
-	    .h    = info->new_height};
-
-	(*wlc.update)(event);
-    }
-
     if (info->type == WL_WINDOW_NATIVE) ku_wayland_resize_window_buffer(info);
     else
     {
@@ -437,24 +424,10 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 	    info->width  = info->new_width;
 	    info->height = info->new_height;
 
-	    info->bitmap.w = info->width;
-	    info->bitmap.h = info->height;
-
 	    wl_egl_window_resize(info->eglwindow, info->width, info->height, 0, 0);
-	    /* wl_surface_commit(info->surface); */
-
-	    /* wl_display_dispatch_pending(wlc.display); */
-
-	    /* This space deliberately left blank */
-
-	    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
-	    /* glClear(GL_COLOR_BUFFER_BIT); */
-
-	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
+	    wl_surface_commit(info->surface);
 	}
     }
-
-    /* ku_wayland_resize_window_buffer(info); */
 }
 
 static const struct xdg_surface_listener xdg_surface_listener = {
@@ -477,7 +450,7 @@ static void wl_surface_enter(void* userData, struct wl_surface* surface, struct 
 
 	    if (monitor->wl_output == output)
 	    {
-		zc_log_debug("output name %s %i %i", monitor->name, monitor->scale, info->scale);
+		/* zc_log_debug("output name %s %i %i", monitor->name, monitor->scale, info->scale); */
 
 		if (monitor->scale != info->scale)
 		{
@@ -505,6 +478,7 @@ static const struct wl_surface_listener wl_surface_listener = {
 
 struct wl_window* ku_wayland_create_window(char* title, int width, int height)
 {
+    printf("CREATE WINDOW %i %i\n", width, height);
     struct wl_window* info = CAL(sizeof(struct wl_window), NULL, NULL);
 
     info->type = WL_WINDOW_NATIVE;
@@ -528,10 +502,10 @@ struct wl_window* ku_wayland_create_window(char* title, int width, int height)
 
     /* wl_display_roundtrip(wlc.display); */
 
-    wl_surface_commit(info->surface);
-
     info->frame_cb = wl_surface_frame(info->surface);
     wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+
+    wl_surface_commit(info->surface);
 
     return info;
 }
@@ -637,18 +611,16 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 	printf("Could not make the current window current !\n");
     }
 
-    printf("dispatch pending\n");
+    wl_display_dispatch_pending(wlc.display);
 
-    /* wl_display_dispatch_pending(wlc.display); */
+    /* This space deliberately left blank */
 
-    /* this space deliberately left blank */
+    glClearColor(0.5, 0.3, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
-    /* glClear(GL_COLOR_BUFFER_BIT); */
+    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
 
-    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
-
-    /* wl_surface_commit(info->surface); */
+    wl_surface_commit(info->surface);
 
     /* while (1) */
     /* { */
@@ -659,8 +631,6 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
     /* 	eglSwapBuffers(display, surface); */
     /* } */
-
-    return info;
 }
 
 /* deletes xdg surface and toplevel */
@@ -678,10 +648,10 @@ void ku_wayland_delete_window(struct wl_window* info)
 
 void ku_wayland_resize_window_buffer(struct wl_window* info)
 {
+    zc_log_debug("BUFFER RESIZE w %i h %i s %i", info->new_width, info->new_height, info->new_scale);
+
     if (info->new_width != info->width || info->new_height != info->height || info->new_scale != info->scale)
     {
-	zc_log_debug("BUFFER RESIZE w %i h %i s %i", info->new_width, info->new_height, info->new_scale);
-
 	int32_t nwidth  = round_to_int(info->new_width * info->new_scale);
 	int32_t nheight = round_to_int(info->new_height * info->new_scale);
 
@@ -693,6 +663,13 @@ void ku_wayland_resize_window_buffer(struct wl_window* info)
 
 	wl_surface_attach(info->surface, info->buffer, 0, 0);
 	wl_surface_commit(info->surface);
+
+	ku_event_t event = {
+	    .type = KU_EVENT_RESIZE,
+	    .w    = nwidth,
+	    .h    = nheight};
+
+	(*wlc.update)(event);
     }
 }
 
@@ -706,103 +683,19 @@ void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h)
 	info->frame_cb = wl_surface_frame(info->surface);
 	wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
 
-	if (info->type == WL_WINDOW_NATIVE)
-	{
-	    wl_surface_attach(info->surface, info->buffer, 0, 0);
-	    wl_surface_damage(info->surface, x, y, w, h);
-	    wl_surface_commit(info->surface);
-	}
-	else if (info->type == WL_WINDOW_EGL)
-	{
-	    /* glClearColor(0.5, 0.0, 0.0, 1.0); */
-	    /* glClear(GL_COLOR_BUFFER_BIT); */
-
-	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
-	}
+	wl_surface_attach(info->surface, info->buffer, 0, 0);
+	wl_surface_damage(info->surface, x, y, w, h);
+	wl_surface_commit(info->surface);
     }
     else printf("NO DRAW\n");
 }
 
-/* gesture listener */
+/* pointer listener */
 
 // TODO differentiate these by wl_pointer address
 int px   = 0;
 int py   = 0;
 int drag = 0;
-
-static void
-gesture_hold_begin(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
-{
-    /* GdkWaylandSeat* seat = data; */
-
-    /* emit_gesture_hold_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_BEGIN, time, fingers); */
-    /* seat->gesture_n_fingers = fingers; */
-
-    zc_log_debug("hold start");
-}
-
-static void
-gesture_hold_end(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, int32_t cancelled)
-{
-    /* GdkWaylandSeat*         seat = data; */
-    /* GdkTouchpadGesturePhase phase; */
-
-    /* phase = (cancelled) ? GDK_TOUCHPAD_GESTURE_PHASE_CANCEL : GDK_TOUCHPAD_GESTURE_PHASE_END; */
-
-    /* emit_gesture_hold_event(seat, phase, time, seat->gesture_n_fingers); */
-    zc_log_debug("hold end");
-}
-
-static const struct zwp_pointer_gesture_hold_v1_listener gesture_hold_listener = {
-    gesture_hold_begin,
-    gesture_hold_end};
-
-static void
-gesture_pinch_begin(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
-{
-    /* GdkWaylandSeat* seat = data; */
-
-    /* emit_gesture_pinch_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_BEGIN, time, fingers, 0, 0, 1, 0); */
-    /* seat->gesture_n_fingers = fingers; */
-}
-
-static void
-gesture_pinch_update(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t time, wl_fixed_t dx, wl_fixed_t dy, wl_fixed_t scale, wl_fixed_t rotation)
-{
-    /* GdkWaylandSeat* seat = data; */
-
-    /* emit_gesture_pinch_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_UPDATE, time, seat->gesture_n_fingers, wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation)); */
-
-    zc_log_debug("pinch dx %f dy %f scale %f rotation %f", wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation));
-
-    ku_event_t event =
-	{.type       = KU_EVENT_PINCH,
-	 .x          = px,
-	 .y          = py,
-	 .ratio      = wl_fixed_to_double(scale),
-	 .ctrl_down  = wlc.keyboard.control,
-	 .shift_down = wlc.keyboard.shift};
-
-    (*wlc.update)(event);
-}
-
-static void
-gesture_pinch_end(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, int32_t cancelled)
-{
-    /* GdkWaylandSeat*         seat = data; */
-    /* GdkTouchpadGesturePhase phase; */
-
-    /* phase = (cancelled) ? GDK_TOUCHPAD_GESTURE_PHASE_CANCEL : GDK_TOUCHPAD_GESTURE_PHASE_END; */
-
-    /* emit_gesture_pinch_event(seat, phase, time, seat->gesture_n_fingers, 0, 0, 1, 0); */
-}
-
-static const struct zwp_pointer_gesture_pinch_v1_listener gesture_pinch_listener = {
-    gesture_pinch_begin,
-    gesture_pinch_update,
-    gesture_pinch_end};
-
-/* pointer listener */
 
 void ku_wayland_pointer_handle_enter(void* data, struct wl_pointer* wl_pointer, uint serial, struct wl_surface* surface, wl_fixed_t surface_x, wl_fixed_t surface_y)
 {
@@ -1146,15 +1039,6 @@ static void ku_wayland_seat_handle_capabilities(void* data, struct wl_seat* wl_s
     {
 	wlc.pointer = wl_seat_get_pointer(wl_seat);
 	wl_pointer_add_listener(wlc.pointer, &pointer_listener, NULL);
-
-	if (wlc.pointer_manager)
-	{
-	    wlc.pinch_gesture = zwp_pointer_gestures_v1_get_pinch_gesture(wlc.pointer_manager, wlc.pointer);
-	    zwp_pointer_gesture_pinch_v1_add_listener(wlc.pinch_gesture, &gesture_pinch_listener, wl_seat);
-
-	    /* wlc.hold_gesture = zwp_pointer_gestures_v1_get_hold_gesture(wlc.pointer_manager, wlc.pointer); */
-	    /* zwp_pointer_gesture_hold_v1_add_listener(wlc.hold_gesture, &gesture_hold_listener, wl_seat); */
-	}
     }
 }
 
@@ -1233,10 +1117,6 @@ static void ku_wayland_handle_global(
 	wlc.xdg_wm_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
 	xdg_wm_base_add_listener(wlc.xdg_wm_base, &xdg_wm_base_listener, NULL);
     }
-    else if (strcmp(interface, zwp_pointer_gestures_v1_interface.name) == 0)
-    {
-	wlc.pointer_manager = wl_registry_bind(registry, name, &zwp_pointer_gestures_v1_interface, 1);
-    }
 }
 
 static void ku_wayland_handle_global_remove(void* data, struct wl_registry* registry, uint32_t name)
@@ -1278,17 +1158,19 @@ void ku_wayland_init(
 
 	// second roundtrip triggers events attached in global events
 	wl_display_roundtrip(wlc.display);
+
 	if (wlc.compositor)
 	{
 	    struct _wl_event_t event = {.id = WL_EVENT_OUTPUT_ADDED, .monitors = wlc.monitors, .monitor_count = wlc.monitor_count};
 
-	    (*wlc.init)(event);
-
 	    wlc.monitor = wlc.monitors[0];
 
-	    while (wl_display_dispatch(wlc.display) > -1)
+	    (*wlc.init)(event);
+
+	    while (wl_display_dispatch_pending(wlc.display) > -1)
 	    {
 		/* This space deliberately left blank */
+
 		if (ku_wayland_exit_flag) break;
 	    }
 

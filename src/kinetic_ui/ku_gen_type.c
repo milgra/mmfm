@@ -23,7 +23,6 @@ void ku_gen_type_apply(vec_t* views, void (*button_event)(vh_button_event_t), vo
 
 	if (view->type && strcmp(view->type, "label") == 0)
 	{
-	    printf("label : %s\n", view->text);
 	    tg_text_add(view);
 	    tg_text_set1(view, view->text);
 	}

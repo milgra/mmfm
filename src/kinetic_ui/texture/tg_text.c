@@ -75,8 +75,7 @@ void tg_text_add(ku_view_t* view)
 
     tg_text_t* gen = CAL(sizeof(tg_text_t), tg_text_del, tg_text_desc);
 
-    gen->text  = NULL; // REL 1
-    gen->style = ku_util_gen_textstyle(view);
+    gen->text = NULL; // REL 1
 
     view->tex_gen_data = gen;
     view->tex_gen      = tg_text_gen;
@@ -86,6 +85,8 @@ void tg_text_add(ku_view_t* view)
 void tg_text_set1(ku_view_t* view, char* text)
 {
     tg_text_t* gen = view->tex_gen_data;
+
+    gen->style = ku_util_gen_textstyle(view);
 
     if (gen->text) REL(gen->text);
     if (text) gen->text = cstr_new_cstring(text);

@@ -8,7 +8,7 @@
 #include <GLES2/gl2.h>
 #include <stdio.h>
 
-void ku_gl_init();
+void ku_gl_init(int max_dev_width, int max_dev_height);
 void ku_gl_render(ku_bitmap_t* bitmap);
 void ku_gl_render_quad(ku_bitmap_t* bitmap, uint32_t index, bmr_t mask);
 void ku_gl_add_textures(vec_t* views);
@@ -22,6 +22,7 @@ void ku_gl_add_vertexes(vec_t* views);
 #include "ku_gl_floatbuffer.c"
 #include "ku_gl_shader.c"
 #include "ku_view.c"
+#include "zc_log.c"
 #include "zc_util3.c"
 
 EGLDisplay glDisplay;
@@ -52,11 +53,7 @@ ku_gl_atlas_t*    atlas       = NULL;
 ku_floatbuffer_t* floatbuffer = NULL;
 ku_bitmap_t*      pixelmap;
 
-GLuint pbo1;
-GLuint pbo2;
-GLuint pbos[2];
-GLuint pbindex;
-GLuint pbnindex;
+int texture_size = 0;
 
 glsha_t ku_gl_create_texture_shader()
 {
@@ -80,25 +77,10 @@ glsha_t ku_gl_create_texture_shader()
 	"varying highp vec4 vUv;"
 	"void main( )"
 	"{"
-	/* " highp vec4 col = vec4(1.0);" */
-	/* " int unit = int(vUv.z);" */
-	/* " highp float alpha = vUv.w;" */
-	/* "	if (unit == 0) col = texture2D(sampler[0], vUv.xy);" */
-	/* "	else if (unit == 1) col = texture2D(sampler[1], vUv.xy);" */
-	/* "	else if (unit == 2) col = texture2D(sampler[2], vUv.xy);" */
-	/* "	else if (unit == 3) col = texture2D(sampler[3], vUv.xy);" */
-	/* "	else if (unit == 4) col = texture2D(sampler[4], vUv.xy);" */
-	/* "	else if (unit == 5) col = texture2D(sampler[5], vUv.xy);" */
-	/* "	else if (unit == 6) col = texture2D(sampler[6], vUv.xy);" */
-	/* "	else if (unit == 7) col = texture2D(sampler[7], vUv.xy);" */
-	/* "	else if (unit == 8) col = texture2D(sampler[8], vUv.xy);" */
-	/* " if (domask == 1)" */
-	/* " {" */
-	/* "  highp vec4 msk = texture2D(sampler[1], vec2(gl_FragCoord.x / texdim.x, gl_FragCoord.y / texdim.y));" */
-	/* "  if (msk.a < col.a) col.a = msk.a;" */
-	/* " }" */
-	/* " if (alpha < 1.0) col.w *= alpha;" */
-	" gl_FragColor = texture2D(sampler[0], vUv.xy);"
+	" highp float alpha = vUv.w;"
+	" highp vec4 col = texture2D(sampler[0], vUv.xy);"
+	" if (alpha < 1.0) col.w *= alpha;"
+	" gl_FragColor = col;"
 	"}";
 
     glsha_t sha = ku_gl_shader_create(vsh, fsh, 2, ((const char*[]){"position", "texcoord"}), 13, ((const char*[]){"projection", "sampler[0]", "sampler[1]", "sampler[2]", "sampler[3]", "sampler[4]", "sampler[5]", "sampler[6]", "sampler[7]", "sampler[8]", "sampler[9]", "domask", "texdim"}));
@@ -177,7 +159,7 @@ void ku_gl_delete_texture(gltex_t tex)
     glDeleteFramebuffers(1, &tex.fb); // DEL 1
 }
 
-void ku_gl_init()
+void ku_gl_init(int max_dev_width, int max_dev_height)
 {
     /* EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY); */
     /* if (display == EGL_NO_DISPLAY) */
@@ -220,7 +202,6 @@ void ku_gl_init()
     tex_atlas = ku_gl_create_texture(0, 4096, 4096);
     /* tex_frame = ku_gl_create_texture(1, 4096, 4096); */
 
-    atlas       = ku_gl_atlas_new(4096, 4096);
     floatbuffer = ku_floatbuffer_new();
 
     /* glbuf_t vb = {0}; */
@@ -246,50 +227,83 @@ void ku_gl_init()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    /* calculate needed texture size, should be four times bigger than the highest resolution display */
+
+    int size = max_dev_width > max_dev_height ? max_dev_width : max_dev_height;
+    size *= 2;
+    int binsize = 2;
+    while (binsize < size) binsize *= 2;
+
+    int value;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &value); // Returns 1 value
+
+    if (binsize > value) binsize = value;
+
+    zc_log_info("Texture size will be %i", binsize);
+
+    texture_size = binsize;
+
+    atlas = ku_gl_atlas_new(texture_size, texture_size);
 }
 
+int ku_gl_force_texture = 0;
 int ku_gl_reset_texture = 0;
 
 void ku_gl_add_textures(vec_t* views)
 {
-    /* reset atlas */
-    if (ku_gl_reset_texture)
-    {
-	if (atlas) REL(atlas);
-	atlas = ku_gl_atlas_new(4096, 4096);
-    }
-
-    /* add texture to atlas */
-    for (int index = 0; index < views->length; index++)
-    {
-	ku_view_t* view = views->data[index];
-
-	if (view->texture.uploaded == 0)
-	{
-	    ku_gl_atlas_coords_t coords = ku_gl_atlas_get(atlas, view->id);
-
-	    if (view->texture.bitmap->w != coords.w || view->texture.bitmap->h != coords.h || ku_gl_reset_texture)
-	    {
-		// texture doesn't exist or size mismatch
-		int success = ku_gl_atlas_put(atlas, view->id, view->texture.bitmap->w, view->texture.bitmap->h);
-		// TODO reset main texture, maybe all views?
-		if (success < 0)
-		{
-		    printf("TEXTURE FULL, NEEDS RESET\n");
-		    ku_gl_reset_texture = 1;
-		}
-
-		coords = ku_gl_atlas_get(atlas, view->id);
-	    }
-
-	    glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
-	    glTexSubImage2D(GL_TEXTURE_2D, 0, coords.x, coords.y, coords.w, coords.h, GL_RGBA, GL_UNSIGNED_BYTE, view->texture.bitmap->data);
-
-	    view->texture.uploaded = 1;
-	}
-    }
-
     ku_gl_reset_texture = 0;
+    ku_gl_force_texture = 0;
+
+    for (;;)
+    {
+	/* reset atlas */
+	if (ku_gl_reset_texture)
+	{
+	    if (atlas) REL(atlas);
+	    atlas               = ku_gl_atlas_new(texture_size, texture_size);
+	    ku_gl_reset_texture = 0;
+	    ku_gl_force_texture = 1;
+	}
+
+	/* add texture to atlas */
+	for (int index = 0; index < views->length; index++)
+	{
+	    ku_view_t* view = views->data[index];
+
+	    /* does it fit into the texture atlas? */
+	    if (view->texture.bitmap->w < texture_size && view->texture.bitmap->h < texture_size)
+	    {
+		/* do we have to upload it? */
+		if (view->texture.uploaded == 0 || ku_gl_force_texture)
+		{
+		    ku_gl_atlas_coords_t coords = ku_gl_atlas_get(atlas, view->id);
+
+		    /* did it's size change or is it zero yet? */
+		    if (view->texture.bitmap->w != coords.w || view->texture.bitmap->h != coords.h || ku_gl_force_texture)
+		    {
+			int success = ku_gl_atlas_put(atlas, view->id, view->texture.bitmap->w, view->texture.bitmap->h);
+
+			if (success < 0)
+			{
+			    zc_log_debug("Texture Atlas Reset\n");
+			    ku_gl_reset_texture = 1;
+			    break;
+			}
+
+			coords = ku_gl_atlas_get(atlas, view->id);
+		    }
+
+		    glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
+		    glTexSubImage2D(GL_TEXTURE_2D, 0, coords.x, coords.y, coords.w, coords.h, GL_RGBA, GL_UNSIGNED_BYTE, view->texture.bitmap->data);
+
+		    view->texture.uploaded = 1;
+		}
+	    }
+	}
+
+	if (ku_gl_reset_texture == 0) break;
+    }
 }
 
 void ku_gl_add_vertexes(vec_t* views)

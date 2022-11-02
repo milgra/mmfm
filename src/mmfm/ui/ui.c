@@ -20,6 +20,7 @@ void ui_save_screenshot(uint32_t time, char hide_cursor, ku_bitmap_t* bm);
 void ui_update_layout(int w, int h);
 void ui_describe();
 void ui_update_player();
+void ui_load_folder(char* folder);
 
 #endif
 
@@ -1099,10 +1100,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ui.sidebar = RET(ku_view_get_subview(ui.view_base, "sidebar"));
 
     if (config_get_bool("sidebar_visible") == 0) ku_view_remove_from_parent(ui.sidebar);
-
-    // fill up files table
-
-    ui_load_folder(config_get("top_path"));
 
     // show texture map for debug
 

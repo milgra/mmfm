@@ -5,7 +5,7 @@
 #include "ku_rect.c"
 #include "zc_vector.c"
 
-void ku_renderer_egl_init();
+void ku_renderer_egl_init(int max_device_width, int max_device_height);
 void ku_renderer_egl_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty);
 
 #endif
@@ -16,9 +16,9 @@ void ku_renderer_egl_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty);
 #include "ku_view.c"
 #include "zc_time.c"
 
-void ku_renderer_egl_init()
+void ku_renderer_egl_init(int max_device_width, int max_device_height)
 {
-    ku_gl_init();
+    ku_gl_init(max_device_width, max_device_height);
 }
 
 void ku_renderer_egl_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty)

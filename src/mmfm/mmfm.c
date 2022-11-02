@@ -28,6 +28,8 @@ struct
     ku_rect_t         dirty_prev;
     ku_window_t*      kuwindow;
 
+    int first_render;
+    int use_software_renderer;
 } mmfm = {0};
 
 void init(wl_event_t event)
@@ -37,15 +39,29 @@ void init(wl_event_t event)
 
     struct monitor_info* monitor = event.monitors[0];
 
-    /* mmfm.window = ku_wayland_create_window("MMFM", 1200, 600); */
+    if (mmfm.use_software_renderer)
+    {
+	mmfm.window = ku_wayland_create_window("MMFM", 1200, 600);
+    }
+    else
+    {
+	mmfm.window = ku_wayland_create_eglwindow("MMFM", 1200, 600);
 
-    mmfm.window = ku_wayland_create_eglwindow("MMFM", 1200, 600);
-    ku_renderer_egl_init();
+	int max_width  = 0;
+	int max_height = 0;
 
-    /* zc_time(NULL); */
+	for (int index = 0; index < event.monitor_count; index++)
+	{
+	    struct monitor_info* monitor = event.monitors[index];
+	    if (monitor->logical_width > max_width) max_width = monitor->logical_width;
+	    if (monitor->logical_height > max_height) max_height = monitor->logical_height;
+	}
+	ku_renderer_egl_init(max_width, max_height);
+    }
 
     mmfm.kuwindow = ku_window_create(monitor->logical_width, monitor->logical_height);
 
+    zc_time(NULL);
     ui_init(monitor->logical_width, monitor->logical_height, monitor->scale, mmfm.kuwindow); // DESTROY 3
     zc_time("ui init");
 
@@ -72,14 +88,12 @@ void update(ku_event_t ev)
     /* printf("UPDATE %i %i %i\n", ev.type, ev.w, ev.h); */
 
     ku_window_event(mmfm.kuwindow, ev);
-
+    /* if (ev.type == KU_EVENT_RESIZE) ku_view_describe(mmfm.kuwindow->root, 0); */
     if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
-
     if (ev.type == KU_EVENT_TIME) ui_update_player();
 
     if (mmfm.window->frame_cb == NULL)
     {
-	// frame callback from wl connector
 	ku_rect_t dirty = ku_window_update(mmfm.kuwindow, 0);
 
 	if (dirty.w > 0 && dirty.h > 0)
@@ -91,23 +105,22 @@ void update(ku_event_t ev)
 	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirty_prev);
 
 	    /* zc_time(NULL); */
-	    /* memset(mmfm.window->bitmap.data, 0, mmfm.window->bitmap.size); */
-	    // clear out dirty rectangle
-
-	    /* ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum); */
-
-	    ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum);
-
-	    /* zc_time("RENDER"); */
-
-	    /* ku_bitmap_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */
-	    /* ku_wayland_draw_window(mmfm.window, 0, 0, mmfm.window->width, mmfm.window->height); */
-	    /* nanosleep((const struct timespec[]){{0, 100000000L}}, NULL); */
+	    if (mmfm.use_software_renderer) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum);
+	    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum);
+	    /* zc_time("Render"); */
 
 	    ku_wayland_draw_window(mmfm.window, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
 
 	    mmfm.dirty_prev = dirty;
 	}
+    }
+
+    // post-first-render init
+
+    if (mmfm.first_render == 0)
+    {
+	mmfm.first_render = 1;
+	ui_load_folder(config_get("top_path"));
     }
 }
 
@@ -167,6 +180,7 @@ int main(int argc, char* argv[])
 	"  -s --record= [recorder file] \t record session to file\n"
 	"  -p --replay= [recorder file] \t replay session from file\n"
 	"  -f --frame= [widthxheight] \t initial window dimension\n"
+	"  --software_render \t use software rendering instead of gl accelerated rendering\n"
 	"\n";
 
     const struct option long_options[] =
@@ -175,6 +189,7 @@ int main(int argc, char* argv[])
 	    {"verbose", no_argument, NULL, 'v'},
 	    {"resources", optional_argument, 0, 'r'},
 	    {"record", optional_argument, 0, 's'},
+	    {"software_renderer", optional_argument, 0, 0},
 	    {"replay", optional_argument, 0, 'p'},
 	    {"config", optional_argument, 0, 'c'},
 	    {"frame", optional_argument, 0, 'f'}};
@@ -192,6 +207,11 @@ int main(int argc, char* argv[])
     {
 	switch (option)
 	{
+	    case 0:
+		if (option_index == 4) mmfm.use_software_renderer = 1;
+		/* printf("option %i %s", option_index, long_options[option_index].name); */
+		/* if (optarg) printf(" with arg %s", optarg); */
+		break;
 	    case '?': printf("parsing option %c value: %s\n", option, optarg); break;
 	    case 'c': cfg_par = cstr_new_cstring(optarg); break; // REL 0
 	    case 'r': res_par = cstr_new_cstring(optarg); break; // REL 1
@@ -258,8 +278,6 @@ int main(int argc, char* argv[])
     if (rep_path) config_set("rep_path", rep_path);
 
     ku_wayland_init(init, event, update, render, destroy);
-
-    /* wm_loop(init, update, render, destroy, frm_par, "mmfm"); */
 
     config_destroy(); // DESTROY 0
 

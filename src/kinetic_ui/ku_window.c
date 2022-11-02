@@ -56,7 +56,7 @@ ku_window_t* ku_window_create(int width, int height)
     win->implqueue = VNEW();
     win->explqueue = VNEW();
 
-    ku_gl_init();
+    /* ku_gl_init(); */
 
     return win;
 }
@@ -279,14 +279,14 @@ void ku_window_render(ku_window_t* win, uint32_t time, ku_bitmap_t* bm, ku_rect_
 
     masks[0] = dirty;
 
-    zc_time(NULL);
-    ku_gl_add_textures(win->views);
-    zc_time("texture");
-    ku_gl_add_vertexes(win->views);
-    zc_time("vertex");
-    ku_gl_render(bm);
-    zc_time("render");
-    return;
+    /* zc_time(NULL); */
+    /* ku_gl_add_textures(win->views); */
+    /* zc_time("texture"); */
+    /* ku_gl_add_vertexes(win->views); */
+    /* zc_time("vertex"); */
+    /* ku_gl_render(bm); */
+    /* zc_time("render"); */
+    /* return; */
 
     /* draw view into bitmap */
 

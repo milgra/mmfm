@@ -1,8 +1,8 @@
 #include "config.c"
 #include "evrecorder.c"
 #include "filemanager.c"
+#include "ku_connector_wayland.c"
 #include "ku_window.c"
-#include "ku_wl_connector.c"
 #include "ui.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
@@ -34,9 +34,9 @@ void init(wl_event_t event)
 
     struct monitor_info* monitor = event.monitors[0];
 
-    /* mmfm.window = ku_wayland_create_window("MMFM", 1200, 600); */
+    mmfm.window = ku_wayland_create_window("MMFM", 1200, 600);
 
-    mmfm.window = ku_wayland_create_eglwindow("MMFM", 1200, 600);
+    /* mmfm.window = ku_wayland_create_eglwindow("MMFM", 1200, 600); */
 
     /* zc_time(NULL); */
 

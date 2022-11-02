@@ -26,7 +26,7 @@ void ku_renderer_egl_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty)
     /* cut out dirty rect */
 
     /* zc_time(NULL); */
-    ku_gl_add_textures(views);
+    ku_gl_add_textures(views, 0);
     /* zc_time("texture"); */
     ku_gl_add_vertexes(views);
     /* zc_time("vertex"); */

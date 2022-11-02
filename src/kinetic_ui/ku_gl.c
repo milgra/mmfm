@@ -11,7 +11,7 @@
 void ku_gl_init(int max_dev_width, int max_dev_height);
 void ku_gl_render(ku_bitmap_t* bitmap);
 void ku_gl_render_quad(ku_bitmap_t* bitmap, uint32_t index, bmr_t mask);
-void ku_gl_add_textures(vec_t* views);
+void ku_gl_add_textures(vec_t* views, int force);
 void ku_gl_add_vertexes(vec_t* views);
 
 #endif
@@ -199,9 +199,6 @@ void ku_gl_init(int max_dev_width, int max_dev_height)
     shader = ku_gl_create_texture_shader();
     buffer = ku_gl_create_vertex_buffer();
 
-    tex_atlas = ku_gl_create_texture(0, 4096, 4096);
-    /* tex_frame = ku_gl_create_texture(1, 4096, 4096); */
-
     floatbuffer = ku_floatbuffer_new();
 
     /* glbuf_t vb = {0}; */
@@ -245,65 +242,78 @@ void ku_gl_init(int max_dev_width, int max_dev_height)
     texture_size = binsize;
 
     atlas = ku_gl_atlas_new(texture_size, texture_size);
+
+    tex_atlas = ku_gl_create_texture(0, texture_size, texture_size);
 }
 
-int ku_gl_force_texture = 0;
-int ku_gl_reset_texture = 0;
-
-void ku_gl_add_textures(vec_t* views)
+void ku_gl_add_textures(vec_t* views, int force)
 {
-    ku_gl_reset_texture = 0;
-    ku_gl_force_texture = 0;
-
-    for (;;)
+    /* reset atlas */
+    if (force)
     {
-	/* reset atlas */
-	if (ku_gl_reset_texture)
+	if (texture_size != atlas->width)
 	{
-	    if (atlas) REL(atlas);
-	    atlas               = ku_gl_atlas_new(texture_size, texture_size);
-	    ku_gl_reset_texture = 0;
-	    ku_gl_force_texture = 1;
+	    ku_gl_delete_texture(tex_atlas);
+	    tex_atlas = ku_gl_create_texture(0, texture_size, texture_size);
 	}
+	if (atlas) REL(atlas);
+	atlas = ku_gl_atlas_new(texture_size, texture_size);
+    }
 
-	/* add texture to atlas */
-	for (int index = 0; index < views->length; index++)
+    int reset = 0;
+
+    /* add texture to atlas */
+    for (int index = 0; index < views->length; index++)
+    {
+	ku_view_t* view = views->data[index];
+
+	/* does it fit into the texture atlas? */
+	if (view->texture.bitmap &&
+	    view->texture.bitmap->w < texture_size &&
+	    view->texture.bitmap->h < texture_size)
 	{
-	    ku_view_t* view = views->data[index];
-
-	    /* does it fit into the texture atlas? */
-	    if (view->texture.bitmap->w < texture_size && view->texture.bitmap->h < texture_size)
+	    /* do we have to upload it? */
+	    if (view->texture.uploaded == 0 || force)
 	    {
-		/* do we have to upload it? */
-		if (view->texture.uploaded == 0 || ku_gl_force_texture)
+		ku_gl_atlas_coords_t coords = ku_gl_atlas_get(atlas, view->id);
+
+		/* did it's size change or is it zero yet? */
+		if (view->texture.bitmap->w != coords.w || view->texture.bitmap->h != coords.h || force)
 		{
-		    ku_gl_atlas_coords_t coords = ku_gl_atlas_get(atlas, view->id);
+		    int success = ku_gl_atlas_put(atlas, view->id, view->texture.bitmap->w, view->texture.bitmap->h);
 
-		    /* did it's size change or is it zero yet? */
-		    if (view->texture.bitmap->w != coords.w || view->texture.bitmap->h != coords.h || ku_gl_force_texture)
+		    if (success < 0)
 		    {
-			int success = ku_gl_atlas_put(atlas, view->id, view->texture.bitmap->w, view->texture.bitmap->h);
-
-			if (success < 0)
-			{
-			    zc_log_debug("Texture Atlas Reset\n");
-			    ku_gl_reset_texture = 1;
-			    break;
-			}
-
-			coords = ku_gl_atlas_get(atlas, view->id);
+			zc_log_debug("Texture Atlas Reset\n");
+			if (force == 0) reset = 1;
+			break;
 		    }
 
-		    glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
-		    glTexSubImage2D(GL_TEXTURE_2D, 0, coords.x, coords.y, coords.w, coords.h, GL_RGBA, GL_UNSIGNED_BYTE, view->texture.bitmap->data);
-
-		    view->texture.uploaded = 1;
+		    coords = ku_gl_atlas_get(atlas, view->id);
 		}
+
+		glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, coords.x, coords.y, coords.w, coords.h, GL_RGBA, GL_UNSIGNED_BYTE, view->texture.bitmap->data);
+
+		view->texture.uploaded = 1;
 	    }
 	}
+	else
+	{
+	    if (force == 0)
+	    {
+		/* increase texture and atlas size to fit texture */
 
-	if (ku_gl_reset_texture == 0) break;
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texture_size); // Returns 1 value
+
+		reset = 1;
+	    }
+
+	    /* TODO : auto test texture resize */
+	}
     }
+
+    if (reset == 1) ku_gl_add_textures(views, 1);
 }
 
 void ku_gl_add_vertexes(vec_t* views)

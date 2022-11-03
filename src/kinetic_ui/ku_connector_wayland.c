@@ -441,6 +441,10 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 	    info->bitmap.h = info->height;
 
 	    wl_egl_window_resize(info->eglwindow, info->width, info->height, 0, 0);
+
+	    wl_region_add(info->region, 0, 0, info->width, info->height);
+	    wl_surface_set_opaque_region(info->surface, info->region);
+
 	    /* wl_surface_commit(info->surface); */
 
 	    /* wl_display_dispatch_pending(wlc.display); */
@@ -584,10 +588,25 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
     EGLContext context;
     EGLSurface surface;
     EGLConfig  config;
-    EGLint     fbAttribs[] =
-	{
-	    EGL_SURFACE_TYPE, EGL_WINDOW_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT, EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_NONE};
-    EGLint contextAttribs[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE};
+    EGLint     fbAttribs[] = {
+	    EGL_SURFACE_TYPE,
+	    EGL_WINDOW_BIT,
+	    EGL_RENDERABLE_TYPE,
+	    EGL_OPENGL_ES2_BIT,
+	    EGL_RED_SIZE,
+	    8,
+	    EGL_GREEN_SIZE,
+	    8,
+	    EGL_BLUE_SIZE,
+	    8,
+	    /* EGL_ALPHA_SIZE, */
+	    /* 8, */
+	    EGL_NONE};
+    EGLint contextAttribs[] = {
+	EGL_CONTEXT_CLIENT_VERSION,
+	2,
+	EGL_NONE,
+	EGL_NONE};
 
     EGLDisplay display = eglGetDisplay(wlc.display);
     if (display == EGL_NO_DISPLAY)
@@ -621,6 +640,8 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
     {
 	printf("No surface...\n");
     }
+
+    /* eglSurfaceAttrib(display, surface, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED); */
 
     info->eglsurface = surface;
 

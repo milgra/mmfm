@@ -31,6 +31,8 @@ void ku_renderer_egl_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty)
     ku_gl_add_vertexes(views);
     /* zc_time("vertex"); */
 
+    /* ku_gl_clear_rect(bitmap, (int) dirty.x, (int) dirty.y, (int) (dirty.x + dirty.w), (int) (dirty.y + dirty.h)); */
+
     /* we need to keep nested masks in mind */
 
     static ku_rect_t masks[32] = {0};

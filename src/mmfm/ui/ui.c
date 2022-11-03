@@ -560,7 +560,7 @@ void ui_on_btn_event(vh_button_event_t event)
 
     if (btnview == ui.clip_btn)
     {
-	ku_view_t* top = ku_view_get_subview(ui.view_base, "top_container");
+	ku_view_t* top = ku_view_get_subview(ui.view_base, "top_flex");
 	if (ui.fileinfobox->parent) ku_view_remove_from_parent(ui.fileinfobox);
 
 	if (ui.cliplistbox->parent)
@@ -575,7 +575,7 @@ void ui_on_btn_event(vh_button_event_t event)
     }
     if (btnview == ui.sidebar_btn)
     {
-	ku_view_t* top = ku_view_get_subview(ui.view_base, "top_container");
+	ku_view_t* top = ku_view_get_subview(ui.view_base, "top_flex");
 
 	if (ui.sidebar->parent)
 	{
@@ -974,7 +974,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     // get main bottom for layout change
 
-    ui.main_bottom  = ku_view_get_subview(ui.view_base, "main_bottom");
+    ui.main_bottom  = ku_view_get_subview(ui.view_base, "top_flex");
     ui.left_dragger = ku_view_get_subview(ui.view_base, "left_dragger");
 
     if (ui.left_dragger)
@@ -1154,7 +1154,7 @@ void ui_update_layout(int w, int h)
 	if (ui.view_maingap)
 	{
 	    ui.view_maingap->style.w_per = 0;
-	    ui.view_maingap->style.width = 5;
+	    ui.view_maingap->style.width = 1;
 
 	    ui.view_maingap->style.h_per  = 1;
 	    ui.view_maingap->style.height = 0;
@@ -1167,7 +1167,7 @@ void ui_update_layout(int w, int h)
 	if (ui.view_maingap)
 	{
 	    ui.view_maingap->style.h_per  = 0;
-	    ui.view_maingap->style.height = 5;
+	    ui.view_maingap->style.height = 1;
 
 	    ui.view_maingap->style.w_per = 1;
 	    ui.view_maingap->style.width = 0;

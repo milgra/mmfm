@@ -4,23 +4,23 @@
     <div id="main_top"/>
 
     <div id="main_bottom" class="rowflex">
-	
+      
       <div id="top_container" class="colflex">
-
-	<div id="pathbck">
-      	  <div id="pathbar">
-	    <div id="pathflex" class="colflex">
-	      <div id="pathtf" type="label" text="/home/milgra" />
-	      <!-- <div id="pathclearbtn"> -->
-		<!--   <div id="pathclearicon" class="closeiconblack"/> -->
-		<!-- </div> -->
-	    </div>
+	
+	<div id="pathbck" class="marginlt4">
+      	    <!-- <div id="pathbar"> -->
+	        <div id="pathflex" class="colflex">
+	            <div id="pathtf" type="label" text="/home/milgra" />
+	            <!-- <div id="pathclearbtn"> -->
+			<!--   <div id="pathclearicon" class="closeiconblack"/> -->
+			<!-- </div> -->
+		        </div>
+	      <!-- </div> -->
 	  </div>
-	</div>
 
 	<div id="top_flex" class="rowflex">
 	  
-	  <div id="filelistbox" class="colflex">
+	  <div id="filelistbox" class="colflex marginlt4">
 	    <div id="filelisthead" class="tablehead overflowhidden"/>
 	    <div id="filelistbck" class="black fullscaleview overflowhidden">
 	      <div id="filelisttable" class="tablebody fullscaleview"/>
@@ -32,10 +32,10 @@
 	    </div>
 	  </div>
 
-	  <div id="gap0" class="horgap5"/>
+	  <!-- <div id="gap0" class="horgap5"/> -->
 
 	  <div id="sidebar" class="colflex">
-	    <div id="fileinfobox" class="colflex fullscaleview">
+	    <div id="fileinfobox" class="colflex fullscaleview marginlt4">
 	      <div id="fileinfohead" class="tablehead overflowhidden"/>
 	      <div id="fileinfobck" class="black fullscaleview overflowhidden">
 		<div id="fileinfotable" class="tablebody fullscaleview"/>
@@ -47,7 +47,7 @@
 	      </div>
 	    </div>
 	    
-	    <div id="cliplistbox" class="colflex fullscaleview">
+	    <div id="cliplistbox" class="colflex fullscaleview marginlt4">
 	      <div id="cliplisthead" class="tablehead overflowhidden"/>
 	      <div id="cliplistbck" class="black fullscaleview overflowhidden">
 		<div id="cliplist" class="tablebody fullscaleview"/>
@@ -63,11 +63,40 @@
 	
       </div>
 
-      <div id="main_gap" class="vertgap5"/>
+      <!-- <div id="main_gap" class="horgap5"/> -->
 
       <div id="bottom_container" class="colflex">
-	
-	<div id="preview" class="fullscaleview overflowhidden">
+
+	<div id="pathbck" class="margint4">
+	  <div id="cntrlflex" class="rowflex">
+	    <div id="gap0" class="gap"/>
+	    <div id="prevbtn" class="ctrlbtn">
+	      <div id="previcon"/>
+	    </div>
+	    <div id="playbtn" class="ctrlbtn">
+	      <div id="playicon"/>
+	      <div id="pauseicon"/>
+	    </div>
+	    <div id="nextbtn" class="ctrlbtn">
+	      <div id="nexticon"/>
+	    </div>
+	    <div id="gap1" class="gap"/>
+	    <div id="posslider" class="slider" type="slider">
+	      <div id="possliderbar" class="sliderbar"/>
+	      <div id="poslabel" class="label" type="label" text="00:00"/>
+	    </div>
+	    <div id="gap1" class="gap"/>
+	    <div id="plusbtn" class="ctrlbtn">
+	      <div id="plusicon"/>
+	    </div>
+	    <div id="gap4" class="gap"/>
+	    <div id="minusbtn" class="ctrlbtn">
+	      <div id="minusicon"/>
+	    </div>
+	  </div>
+	</div>
+
+	<div id="preview" class="fullscaleview overflowhidden margint4">
 	  <div id="previewbody" class="fullscaleview">
 	    <div id="previewcont"/>
 	  </div>
@@ -78,34 +107,11 @@
 	  <div id="previewevnt" class="fullscaleview"/>
 
 	  <div id="zoombuttons">
-	    <div id="plusbtn" class="blackbtn">
-	      <div id="plusicon"/>
-	    </div>
-	    <div id="gap4" class="fullscaleview"/>
-	    <div id="minusbtn" class="blackbtn">
-	      <div id="minusicon"/>
-	    </div>
 	  </div>
 	  
 	  <div id="controls">
-	    <div id="posslider" class="slider" type="slider">
-	      <div id="possliderbar" class="sliderbar"/>
-	      <div id="poslabel" class="label" type="label" text="00:00"/>
-	    </div>
 	    <div id="buttons">
 	      <div id="buttonsflex" class="rowflex">
-		<div id="gap0" class="fullscaleview"/>
-		<div id="prevbtn" class="ctrlbtn">
-		  <div id="previcon"/>
-		</div>
-		<div id="playbtn" class="ctrlbtn">
-		  <div id="playicon"/>
-		  <div id="pauseicon"/>
-		</div>
-		<div id="nextbtn" class="ctrlbtn">
-		  <div id="nexticon"/>
-		</div>
-		<div id="gap1" class="fullscaleview"/>
 	      </div>
 	    </div>
 	  </div>

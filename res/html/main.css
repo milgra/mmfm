@@ -21,6 +21,20 @@
     height: 100%;
 }
 
+.margin4 {
+    margin: 2px;
+}
+
+.marginlt4 {
+    margin-right: 2px;
+    margin-top: 2px;
+}
+
+.margint4 {
+
+    margin-top: 2px;
+}
+
 .textaligncenter {
     text-align: center;
 }
@@ -58,13 +72,13 @@
 }
 
 .vertgap5 {
-    height: 5px;
+    height: 1px;
     width: 100%;
     background-color: #151515FF;
 }
 .horgap5 {
     height: 100%;
-    width: 5px;
+    width: 1px;
     background-color: #151515FF;
 }
 
@@ -93,8 +107,8 @@
 
 #pathbck {
     width: 100%;
-    height: 34px;
-    background-color: #343434FF;
+    height: 30px;
+    background-color: #121212FF;
 }
 
 #pathbar {
@@ -351,16 +365,15 @@
 }
 
 .slider {
-    width: 60%;
-    margin: auto;
-    height: 30px;
+    width: 100%;
+    height: 28px;
     background-color: #111111FF;
-    border-radius: 5px;
 }
 
 .sliderbar {
-    width: 1%;
-    height: 30px;
+    top: 5px;
+    width: 5%;
+    height: 18px;
     background-color: #889988FF;
     border-radius: 5px;
 }

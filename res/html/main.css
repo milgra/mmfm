@@ -111,6 +111,11 @@
     background-color: #121212FF;
 }
 
+#ctrlbck {
+    width: 100%;
+    height: 30px;
+}
+
 #pathbar {
     width: 100%;
     height: 100%;
@@ -135,8 +140,9 @@
 }
 
 .ctrlbtn {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
+    background-color: #121212FF;
 }
 
 .closeicon {
@@ -350,6 +356,11 @@
     height: 30px;
 }
 
+#pathprevbtn {
+    width: 30px;
+    height: 30px;
+}
+
 #inputbar {
     width: 100%;
     height: 100%;
@@ -364,10 +375,17 @@
     blocks: no;
 }
 
+.upicon {
+    width: 30px;
+    height: 30px;
+    background-image: url("up.png");
+    blocks: no;
+}
+
 .slider {
     width: 100%;
     height: 28px;
-    background-color: #111111FF;
+    background-color: #121212FF;
 }
 
 .sliderbar {

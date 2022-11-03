@@ -615,8 +615,8 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
     /* This space deliberately left blank */
 
-    glClearColor(0.5, 0.3, 0.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
+    /* glClear(GL_COLOR_BUFFER_BIT); */
 
     eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
 
@@ -683,9 +683,12 @@ void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h)
 	info->frame_cb = wl_surface_frame(info->surface);
 	wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
 
-	wl_surface_attach(info->surface, info->buffer, 0, 0);
-	wl_surface_damage(info->surface, x, y, w, h);
-	wl_surface_commit(info->surface);
+	if (info->type == WL_WINDOW_NATIVE)
+	{
+	    wl_surface_attach(info->surface, info->buffer, 0, 0);
+	    wl_surface_damage(info->surface, x, y, w, h);
+	    wl_surface_commit(info->surface);
+	}
     }
     else printf("NO DRAW\n");
 }

@@ -261,7 +261,6 @@ ku_rect_t ku_window_update(ku_window_t* win, uint32_t time)
 	}
 	else if (view->frame.dim_changed)
 	{
-	    printf("%s dim changed\n", view->id);
 	    result                  = ku_rect_add(result, view->frame.global);
 	    view->frame.dim_changed = 0;
 	}

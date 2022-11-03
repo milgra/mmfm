@@ -973,7 +973,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     // get main bottom for layout change
 
-    ui.main_bottom  = ku_view_get_subview(ui.view_base, "top_flex");
+    ui.main_bottom  = ku_view_get_subview(ui.view_base, "main_bottom");
     ui.left_dragger = ku_view_get_subview(ui.view_base, "left_dragger");
 
     if (ui.left_dragger)

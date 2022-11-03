@@ -445,15 +445,9 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 	    wl_region_add(info->region, 0, 0, info->width, info->height);
 	    wl_surface_set_opaque_region(info->surface, info->region);
 
-	    /* wl_surface_commit(info->surface); */
-
-	    /* wl_display_dispatch_pending(wlc.display); */
-
-	    /* This space deliberately left blank */
-
-	    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
 	    /* glClear(GL_COLOR_BUFFER_BIT); */
-
+	    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
+	    /* glClear(GL_COLOR_BUFFER_BIT); */
 	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
 	}
     }
@@ -599,8 +593,8 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 	    8,
 	    EGL_BLUE_SIZE,
 	    8,
-	    /* EGL_ALPHA_SIZE, */
-	    /* 8, */
+	    EGL_ALPHA_SIZE,
+	    8,
 	    EGL_NONE};
     EGLint contextAttribs[] = {
 	EGL_CONTEXT_CLIENT_VERSION,
@@ -633,6 +627,11 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
     {
 	printf("No configuration...\n");
     }
+
+    EGLint sfAttribs[] = {
+	EGL_RENDER_BUFFER,
+	EGL_SINGLE_BUFFER,
+	EGL_NONE};
 
     // Create a surface
     surface = eglCreateWindowSurface(display, config, (EGLNativeWindowType) egl_window, NULL);

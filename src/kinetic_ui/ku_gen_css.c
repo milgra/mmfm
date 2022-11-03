@@ -110,10 +110,7 @@ void ku_gen_css_apply_style(ku_view_t* view, map_t* style, char* respath, float 
 	    if (strcmp(val, "flex") == 0)
 	    {
 		view->style.display = LD_FLEX;
-		view->exclude       = 1;
 	    }
-	    if (strcmp(val, "none") == 0)
-		view->exclude = 1;
 	}
 	else if (strcmp(key, "overflow") == 0)
 	{

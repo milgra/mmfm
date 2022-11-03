@@ -79,7 +79,6 @@ void tg_text_add(ku_view_t* view)
 
     view->tex_gen_data = gen;
     view->tex_gen      = tg_text_gen;
-    view->exclude      = 0;
 }
 
 void tg_text_set1(ku_view_t* view, char* text)

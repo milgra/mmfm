@@ -159,13 +159,18 @@ void vh_cv_body_zoom(
 
     /* new dimensions */
 
-    float ds = s / 100.0;
-    if (ds > 0.5) ds = 0.5;
-    if (ds < -0.5) ds = -0.5;
+    /* float ds = s / 100.0; */
+    /* if (ds > 0.5) ds = 0.5; */
+    /* if (ds < -0.5) ds = -0.5; */
 
-    if (vh->scale + ds > 10.0) vh->scale = 10.0;
-    else if (vh->scale + ds < 0.1) vh->scale = 0.1;
-    else vh->scale += ds;
+    /* if (vh->scale + ds > 10.0) vh->scale = 10.0; */
+    /* else if (vh->scale + ds < 0.1) vh->scale = 0.1; */
+    /* else vh->scale += ds; */
+
+    vh->scale = s;
+
+    if (vh->scale > 10.0) vh->scale = 10.0;
+    else if (vh->scale < 0.1) vh->scale = 0.1;
 
     float nw = vh->cw * vh->scale;
     float nh = vh->ch * vh->scale;

@@ -146,7 +146,6 @@ typedef struct _frame_t
 typedef struct _ku_view_t ku_view_t;
 struct _ku_view_t
 {
-    char exclude;   /* view should be displayed? */
     char rearrange; /* subview structure changed, window needs rearrange */
 
     char needs_key;   /* accepts key events */
@@ -252,7 +251,6 @@ ku_view_t* ku_view_new(char* id, ku_rect_t frame)
     view->texture.resizable = 1;
     view->needs_touch       = 1;
     // view->blocks_touch      = 1;
-    view->exclude = 1;
 
     // reset margins
 

@@ -122,7 +122,7 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
     {
 	vh->sx -= ev.dx;
 	vh->sy += ev.dy;
-	// force timer event
+	// cause dirty rect which causes frame events to flow for later animation
 	vh->tbody_view->frame.dim_changed = 1;
     }
     else if (ev.type == KU_EVENT_RESIZE)

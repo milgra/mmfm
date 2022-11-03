@@ -68,7 +68,6 @@ void tg_scaledimg_add(ku_view_t* view, int w, int h)
 
     view->tex_gen_data = gen;
     view->tex_gen      = tg_scaledimg_gen;
-    view->exclude      = 0;
 }
 
 #endif

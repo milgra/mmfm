@@ -222,7 +222,7 @@ void ku_window_activate(ku_window_t* win, ku_view_t* view)
 
 void ku_window_rearrange(ku_window_t* win, ku_view_t* view, vec_t* views)
 {
-    if (!view->exclude) VADD(views, view);
+    VADD(views, view);
     if (view->style.unmask == 1) view->style.unmask = 0; // reset unmasking
     vec_t* vec = view->views;
     for (int i = 0; i < vec->length; i++) ku_window_rearrange(win, vec->data[i], views);
@@ -242,7 +242,7 @@ ku_rect_t ku_window_update(ku_window_t* win, uint32_t time)
 	vec_reset(win->views);
 	ku_window_rearrange(win, win->root, win->views);
 
-	result = ku_rect_add(result, win->root->frame.global);
+	result = win->root->frame.global;
 
 	win->root->rearrange = 0;
     }
@@ -261,6 +261,7 @@ ku_rect_t ku_window_update(ku_window_t* win, uint32_t time)
 	}
 	else if (view->frame.dim_changed)
 	{
+	    printf("%s dim changed\n", view->id);
 	    result                  = ku_rect_add(result, view->frame.global);
 	    view->frame.dim_changed = 0;
 	}

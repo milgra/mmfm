@@ -701,7 +701,6 @@ void ui_on_drag(vh_drag_event_t event)
 void ui_add_cursor()
 {
     ui.cursor                         = ku_view_new("ui.cursor", ((ku_rect_t){10, 10, 10, 10}));
-    ui.cursor->exclude                = 0;
     ui.cursor->style.background_color = 0xFF000099;
     ui.cursor->needs_touch            = 0;
     tg_css_add(ui.cursor);
@@ -1105,7 +1104,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     /* ku_view_t* texmap       = ku_view_new("texmap", ((ku_rect_t){0, 0, 150, 150})); */
     /* texmap->needs_touch  = 0; */
-    /* texmap->exclude      = 0; */
     /* texmap->texture.full = 1; */
     /* texmap->style.right  = 0; */
     /* texmap->style.top    = 0; */

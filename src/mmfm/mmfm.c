@@ -98,11 +98,11 @@ void update(ku_event_t ev)
 
 	if (dirty.w > 0 && dirty.h > 0)
 	{
+	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirty_prev);
+
 	    /* zc_log_debug("drt %i %i %i %i", (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h); */
 	    /* zc_log_debug("drt prev %i %i %i %i", (int) mmfm.dirty_prev.x, (int) mmfm.dirty_prev.y, (int) mmfm.dirty_prev.w, (int) mmfm.dirty_prev.h); */
 	    /* zc_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
-
-	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirty_prev);
 
 	    /* zc_time(NULL); */
 	    if (mmfm.use_software_renderer) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum);

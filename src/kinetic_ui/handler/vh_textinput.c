@@ -146,8 +146,6 @@ void vh_textinput_upd(ku_view_t* view)
 
 			REL(texture);
 
-			gv->exclude = 0; // do we have to have 0 as default?!?!
-
 			ku_view_add_subview(view, gv);
 
 			ku_view_set_frame(gv, nf);

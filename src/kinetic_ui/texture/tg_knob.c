@@ -103,7 +103,6 @@ void tg_knob_add(ku_view_t* view)
 
     view->tex_gen_data = tg;
     view->tex_gen      = tg_knob_gen;
-    view->exclude      = 0;
 
     view->needs_touch   = 1;
     view->blocks_touch  = 1;

@@ -188,7 +188,6 @@ void tg_css_add(ku_view_t* view)
     else
     {
 	view->tex_gen = tg_css_gen;
-	view->exclude = 0;
     }
 }
 

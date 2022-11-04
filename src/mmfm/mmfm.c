@@ -158,6 +158,15 @@ void update_record(ku_event_t ev)
 
 void update_replay(ku_event_t ev)
 {
+    if (ev.type == KU_EVENT_TIME)
+    {
+	// get recorded events
+	ku_event_t* recev = NULL;
+	while ((recev = evrec_replay(ev.time)) != NULL)
+	{
+	    update(*recev);
+	}
+    }
 }
 
 void render(uint32_t time, uint32_t index, ku_bitmap_t* bm)
@@ -306,13 +315,11 @@ int main(int argc, char* argv[])
     if (rep_path) config_set("rep_path", rep_path);
 
     if (rec_path) evrec_init_recorder(rec_path); // DESTROY 4
+    if (rep_path) evrec_init_player(rec_path);
 
-    ku_wayland_init(
-	init,
-	event,
-	rec_path == NULL ? update : update_record,
-	render,
-	destroy);
+    if (rec_path != NULL) ku_wayland_init(init, event, update_record, render, destroy, 0);
+    else if (rep_path != NULL) ku_wayland_init(init, event, update_replay, render, destroy, 1500);
+    else ku_wayland_init(init, event, update, render, destroy, 0);
 
     config_destroy(); // DESTROY 0
 

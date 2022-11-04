@@ -119,7 +119,8 @@ void ku_wayland_init(
     void (*event)(wl_event_t event),
     void (*update)(ku_event_t),
     void (*render)(uint32_t time, uint32_t index, ku_bitmap_t* bm),
-    void (*destroy)());
+    void (*destroy)(),
+    int time_event_delay);
 
 void ku_wayland_draw();
 void wl_hide();
@@ -135,6 +136,7 @@ void ku_wayland_delete_layer();
 
 void ku_wayland_exit();
 void ku_wayland_toggle_fullscreen();
+void ku_wayland_set_time_event_delay(int ms);
 
 #endif
 
@@ -190,6 +192,8 @@ struct wlc_t
     ku_event_t key_repeat_event;
 
     float last_scale;
+
+    int time_event_timer_fd;
 } wlc = {0};
 
 int ku_wayland_exit_flag = 0;
@@ -1319,7 +1323,8 @@ void ku_wayland_init(
     void (*event)(wl_event_t event),
     void (*update)(ku_event_t event),
     void (*render)(uint32_t time, uint32_t index, ku_bitmap_t* bm),
-    void (*destroy)())
+    void (*destroy)(),
+    int time_event_delay)
 {
     wlc.monitors = CAL(sizeof(struct monitor_info) * 16, NULL, NULL);
     wlc.windows  = CAL(sizeof(struct wl_window) * 16, NULL, NULL);
@@ -1335,6 +1340,7 @@ void ku_wayland_init(
     if (wlc.display)
     {
 	wlc.key_repeat_timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+	wlc.time_event_timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
 
 	if (wlc.key_repeat_timer_fd < 0) zc_log_error("cannot create key repeat timer");
 
@@ -1359,10 +1365,13 @@ void ku_wayland_init(
 	    struct pollfd fds[] = {
 		{wl_display_get_fd(wlc.display), POLLIN},
 		{wlc.key_repeat_timer_fd, POLLIN},
+		{wlc.time_event_timer_fd, POLLIN},
 	    };
 	    const int nfds = sizeof(fds) / sizeof(*fds);
 
 	    wl_display_dispatch(wlc.display);
+
+	    ku_wayland_set_time_event_delay(time_event_delay);
 
 	    while (1)
 	    {
@@ -1391,6 +1400,11 @@ void ku_wayland_init(
 		    keyboard_repeat();
 		}
 
+		if (fds[2].revents & POLLIN)
+		{
+		    printf("TIMER EVENT\n");
+		}
+
 		if (ku_wayland_exit_flag) break;
 	    }
 
@@ -1410,6 +1424,17 @@ void ku_wayland_exit()
 void ku_wayland_toggle_fullscreen(struct wl_window* window)
 {
     xdg_toplevel_set_fullscreen(window->xdg_toplevel, NULL);
+}
+
+void ku_wayland_set_time_event_delay(int ms)
+{
+    struct itimerspec spec = {0};
+    if (ms > 0)
+    {
+	spec.it_value.tv_sec  = ms / 1000;
+	spec.it_value.tv_nsec = (ms % 1000) * 1000000l;
+    }
+    timerfd_settime(wlc.time_event_timer_fd, 0, &spec, NULL);
 }
 
 #endif

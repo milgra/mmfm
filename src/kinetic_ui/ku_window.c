@@ -11,6 +11,9 @@ struct _ku_window_t
     ku_view_t* root;
     vec_t*     views;
 
+    int width;
+    int height;
+
     vec_t* implqueue; // views selected by roll over
     vec_t* explqueue; // views selected by click
 };
@@ -56,6 +59,8 @@ ku_window_t* ku_window_create(int width, int height)
     win->implqueue = VNEW();
     win->explqueue = VNEW();
 
+    win->width  = width;
+    win->height = height;
     /* ku_gl_init(); */
 
     return win;
@@ -76,6 +81,9 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	    ku_view_set_frame(win->root, (ku_rect_t){0.0, 0.0, (float) ev.w, (float) ev.h});
 	    ku_view_layout(win->root);
 	    ku_view_evt(win->root, ev);
+
+	    win->width  = ev.w;
+	    win->height = ev.h;
 	}
     }
     else if (ev.type == KU_EVENT_MMOVE)

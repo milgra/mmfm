@@ -14,6 +14,7 @@ void ku_gl_render_quad(ku_bitmap_t* bitmap, uint32_t index, bmr_t mask);
 void ku_gl_add_textures(vec_t* views, int force);
 void ku_gl_add_vertexes(vec_t* views);
 void ku_gl_clear_rect(ku_bitmap_t* bitmap, int x, int y, int w, int h);
+void ku_gl_save_framebuffer(ku_bitmap_t* bitmap);
 
 #endif
 
@@ -470,6 +471,11 @@ void ku_gl_clear_rect(ku_bitmap_t* bitmap, int x, int y, int w, int h)
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_SCISSOR_TEST);
+}
+
+void ku_gl_save_framebuffer(ku_bitmap_t* bitmap)
+{
+    glReadPixels(0, 0, bitmap->w, bitmap->h, GL_RGBA, GL_UNSIGNED_BYTE, bitmap->data);
 }
 
 #endif

@@ -1,11 +1,14 @@
+#include "coder.c"
 #include "config.c"
 #include "evrecorder.c"
 #include "filemanager.c"
 #include "ku_connector_wayland.c"
+#include "ku_gl.c"
 #include "ku_renderer_egl.c"
 #include "ku_renderer_soft.c"
 #include "ku_window.c"
 #include "ui.c"
+#include "zc_bitmap_ext.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_map.c"
@@ -126,6 +129,31 @@ void update(ku_event_t ev)
 
 void update_record(ku_event_t ev)
 {
+    update(ev);
+
+    evrec_record(ev);
+
+    if (ev.type == KU_EVENT_KDOWN && ev.keycode == XKB_KEY_Print)
+    {
+	static int shotindex = 0;
+
+	char* name = cstr_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
+	char* path = path_new_append(config_get("rec_path"), name);          // REL 2
+
+	if (mmfm.use_software_renderer)
+	{
+	    coder_write_png(path, &mmfm.window->bitmap);
+	}
+	else
+	{
+	    ku_bitmap_t* bitmap = ku_bitmap_new(mmfm.window->width, mmfm.window->height);
+	    ku_gl_save_framebuffer(bitmap);
+	    ku_bitmap_t* flipped = bm_new_flip_y(bitmap); // REL 3
+	    coder_write_png(path, flipped);
+	    REL(flipped);
+	    REL(bitmap);
+	}
+    }
 }
 
 void update_replay(ku_event_t ev)
@@ -277,7 +305,14 @@ int main(int argc, char* argv[])
     if (rec_path) config_set("rec_path", rec_path);
     if (rep_path) config_set("rep_path", rep_path);
 
-    ku_wayland_init(init, event, update, render, destroy);
+    if (rec_path) evrec_init_recorder(rec_path); // DESTROY 4
+
+    ku_wayland_init(
+	init,
+	event,
+	rec_path == NULL ? update : update_record,
+	render,
+	destroy);
 
     config_destroy(); // DESTROY 0
 

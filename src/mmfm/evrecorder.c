@@ -13,6 +13,7 @@ ku_event_t* evrec_replay(uint32_t time);
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "zc_path.c"
 #include "zc_vector.c"
 #include <stdio.h>
 
@@ -28,9 +29,11 @@ struct evrec_t
 
 void evrec_init_recorder(char* path)
 {
-    FILE* file = fopen(path, "w"); // CLOSE 0
-    if (!file) printf("evrec recorder : cannot open file %s\n", path);
+    char* newpath = path_new_append(path, "session0.rec");
+    FILE* file    = fopen(newpath, "w"); // CLOSE 0
+    if (!file) printf("evrec recorder : cannot open file %s\n", newpath);
     rec.file = file;
+    REL(newpath);
 }
 
 void evrec_init_player(char* path)

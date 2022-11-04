@@ -153,29 +153,29 @@
 }
 
 #previcon {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background-image: url("prev.png");
     blocks: no;
 }
 
 #nexticon {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background-image: url("next.png");
     blocks: no;
 }
 
 #playicon {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background-image: url("play.png");
     blocks: no;
 }
 
 #pauseicon {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background-image: url("pause.png");
     blocks: no;
 }
@@ -216,14 +216,14 @@
 }
 
 #plusicon {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background-image: url("plus.png");
     blocks: no;
 }
 #minusicon {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background-image: url("minus.png");
     blocks: no;
 }
@@ -339,7 +339,7 @@
     width: 100%;
     height: 100%;
     blocks: no;
-    color: #DEDEDEFF;
+    color: #FFFFFFFF;
     font-size: 16px;
     text-align: left;
     font-family: "Terminus (TTF):style=Bold";

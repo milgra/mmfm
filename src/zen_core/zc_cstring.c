@@ -1,16 +1,18 @@
 #ifndef zc_cstring_h
 #define zc_cstring_h
 
+#include "zc_vector.c"
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 
-char* cstr_new_format(int size, char* format, ...);
-char* cstr_new_cstring(char* string);
-char* cstr_append(char* str, char* add);
-char* cstr_append_sub(char* str, char* add, int from, int len);
-char* cstr_new_delete_utf_codepoints(char* str, int from, int len);
-void  cstr_describe(void* p, int level);
+char*  cstr_new_format(int size, char* format, ...);
+char*  cstr_new_cstring(char* string);
+char*  cstr_append(char* str, char* add);
+char*  cstr_append_sub(char* str, char* add, int from, int len);
+char*  cstr_new_delete_utf_codepoints(char* str, int from, int len);
+vec_t* cstr_tokenize(char* str, char* del);
+void   cstr_describe(void* p, int level);
 
 #endif
 
@@ -82,6 +84,27 @@ char* cstr_new_delete_utf_codepoints(char* str, int from, int len)
     }
 
     return new_text;
+}
+
+vec_t* cstr_tokenize(char* str, char* del)
+{
+    char*  token;
+    char*  copy   = cstr_new_cstring(str);
+    vec_t* result = VNEW();
+
+    token = strtok(copy, del);
+
+    while (token != NULL)
+    {
+	char* txt = CAL(strlen(token) + 1, NULL, cstr_describe);
+	memcpy(txt, token, strlen(token));
+
+	VADDR(result, txt);
+
+	token = strtok(NULL, del);
+    }
+
+    return result;
 }
 
 void cstr_describe(void* p, int level)

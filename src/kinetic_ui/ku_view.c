@@ -540,6 +540,7 @@ void ku_view_layout(ku_view_t* view)
     {
 	if (view->style.flexdir == FD_ROW)
 	{
+	    // calculate width of all fixed width views
 	    for (int i = 0; i < view->views->length; i++)
 	    {
 		ku_view_t* v = view->views->data[i];
@@ -554,6 +555,7 @@ void ku_view_layout(ku_view_t* view)
 	}
 	if (view->style.flexdir == FD_COL)
 	{
+	    // calculate height of all fixed height views
 	    for (int i = 0; i < view->views->length; i++)
 	    {
 		ku_view_t* v = view->views->data[i];

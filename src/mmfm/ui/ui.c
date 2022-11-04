@@ -96,6 +96,11 @@ struct _ui_t
     ku_view_t* inputbck;
     ku_view_t* inputtf;
 
+    ku_view_t* pathtf;
+    ku_view_t* timetf;
+
+    ku_view_t* posslider;
+
     ku_table_t* cliptable;
     ku_table_t* filelisttable;
     ku_table_t* fileinfotable;
@@ -105,8 +110,12 @@ struct _ui_t
     ku_view_t* settingspopupcont;
     ku_view_t* contextpopupcont;
 
+    /* TODO textstyles should be auto generated in tg_text/vh_textinput */
+
     textstyle_t background_style;
     textstyle_t inputts;
+    textstyle_t pathts;
+    textstyle_t timets;
 
     MediaState_t* ms;
 
@@ -119,6 +128,9 @@ struct _ui_t
     int                force_refresh;
 
     ku_window_t* window;
+
+    float timestate;
+
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -244,16 +256,16 @@ void ui_show_info(map_t* info)
 
 void ui_load_folder(char* folder)
 {
-    printf("load folder %s\n", folder);
     if (folder) RET(folder); // avoid freeing up if the same pointer is passed to us
     if (ui.current_folder) REL(ui.current_folder);
     if (folder)
     {
-	ui.current_folder = folder;
+	ui.current_folder = path_new_normalize1(folder);
+	vh_textinput_set_text(ui.pathtf, ui.current_folder);
 
 	map_t* files = MNEW(); // REL 0
 	zc_time(NULL);
-	fm_list(folder, files);
+	fm_list(ui.current_folder, files);
 	zc_time("file list");
 
 	vec_reset(ui.file_list_data);
@@ -553,12 +565,11 @@ void ui_on_btn_event(vh_button_event_t event)
 {
     ku_view_t* btnview = event.view;
 
-    printf("BUTTON EVENT\n");
+    printf("%s\n", btnview->id);
 
     if (btnview == ui.exit_btn) ku_wayland_exit();
-    if (btnview == ui.full_btn) ku_wayland_toggle_fullscreen(ui.window);
-
-    if (btnview == ui.clip_btn)
+    else if (btnview == ui.full_btn) ku_wayland_toggle_fullscreen(ui.window);
+    else if (btnview == ui.clip_btn)
     {
 	ku_view_t* top = ku_view_get_subview(ui.view_base, "top_flex");
 	if (ui.fileinfobox->parent) ku_view_remove_from_parent(ui.fileinfobox);
@@ -573,7 +584,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	}
 	ku_view_layout(top);
     }
-    if (btnview == ui.sidebar_btn)
+    else if (btnview == ui.sidebar_btn)
     {
 	ku_view_t* top = ku_view_get_subview(ui.view_base, "top_flex");
 
@@ -591,7 +602,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	config_write(config_get("cfg_path"));
 	ku_view_layout(top);
     }
-    if (btnview == ui.prev_btn)
+    else if (strcmp(event.view->id, "prevbtn") == 0)
     {
 	int32_t index = ui.filelisttable->selected_index - 1;
 
@@ -604,7 +615,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	if (strcmp(type, "directory") != 0) ui_open(path);
 	ui_show_info(info);
     }
-    if (btnview == ui.next_btn)
+    else if (strcmp(event.view->id, "nextbtn") == 0)
     {
 	int32_t index = ui.filelisttable->selected_index + 1;
 
@@ -617,7 +628,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	if (strcmp(type, "directory") != 0) ui_open(path);
 	ui_show_info(info);
     }
-    if (btnview == ui.play_btn)
+    else if (strcmp(event.view->id, "playbtn") == 0)
     {
 	if (event.vh->state == VH_BUTTON_DOWN)
 	{
@@ -630,7 +641,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	    if (ui.ms) mp_play(ui.ms);
 	}
     }
-    if (btnview == ui.settings_btn)
+    else if (btnview == ui.settings_btn)
     {
 	if (!ui.settingspopupcont->parent)
 	{
@@ -638,10 +649,34 @@ void ui_on_btn_event(vh_button_event_t event)
 	    ku_view_layout(ui.view_base);
 	}
     }
-    if (strcmp(event.view->id, "settingsclosebtn") == 0)
+    else if (strcmp(event.view->id, "settingsclosebtn") == 0)
     {
 	ku_view_remove_from_parent(ui.settingspopupcont);
     }
+    else if (strcmp(event.view->id, "pathprevbtn") == 0)
+    {
+    }
+    else if (strcmp(event.view->id, "pathclearbtn") == 0)
+    {
+	vh_textinput_set_text(ui.pathtf, "");
+	ku_window_activate(ui.window, ui.pathtf);
+	vh_textinput_activate(ui.pathtf, 1);
+    }
+    else if (strcmp(event.view->id, "plusbtn") == 0)
+    {
+	vh_cv_body_t* body = ui.visubody->handler_data;
+	vh_cv_body_zoom(ui.visubody, body->scale + 0.1, event.ev.x, event.ev.y);
+    }
+    else if (strcmp(event.view->id, "minusbtn") == 0)
+    {
+	vh_cv_body_t* body = ui.visubody->handler_data;
+	vh_cv_body_zoom(ui.visubody, body->scale - 0.1, event.ev.x, event.ev.y);
+    }
+}
+
+void ui_on_slider_event(vh_slider_event_t event)
+{
+    if (ui.ms) mp_set_position(ui.ms, event.ratio);
 }
 
 void ui_on_touch_event(vh_touch_event_t event)
@@ -679,6 +714,29 @@ void ui_on_text_event(vh_textinput_event_t event)
 
 		ui_load_folder(ui.current_folder);
 	    }
+	}
+    }
+    else if (strcmp(event.view->id, "pathtf") == 0)
+    {
+	if (event.id == VH_TEXTINPUT_DEACTIVATE) vh_textinput_activate(ui.pathtf, 0);
+
+	if (event.id == VH_TEXTINPUT_RETURN)
+	{
+	    vh_textinput_activate(ui.pathtf, 0);
+
+	    char* valid_path = cstr_new_cstring(event.text);
+	    for (;;)
+	    {
+		if (fm_exists(valid_path)) break;
+		else
+		{
+		    char* prev_path = path_new_remove_last_component(valid_path);
+		    REL(valid_path);
+		    valid_path = prev_path;
+		}
+	    }
+	    ui_load_folder(valid_path);
+	    REL(valid_path);
 	}
     }
 }
@@ -770,7 +828,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     ku_gen_html_parse(config_get("html_path"), view_list);
     ku_gen_css_apply(view_list, config_get("css_path"), config_get("res_path"), 1.0);
-    ku_gen_type_apply(view_list, NULL, NULL); // TODO use btn and slider event
+    ku_gen_type_apply(view_list, ui_on_btn_event, ui_on_slider_event);
 
     ui.view_base = RET(vec_head(view_list));
 
@@ -956,15 +1014,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ui.sidebar_btn = ku_view_get_subview(ui.view_base, "show_properties_btn");
     vh_button_add(ui.sidebar_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
-    ui.play_btn = ku_view_get_subview(ui.view_base, "playbtn");
-    vh_button_add(ui.play_btn, VH_BUTTON_TOGGLE, ui_on_btn_event);
-
-    ui.next_btn = ku_view_get_subview(ui.view_base, "nextbtn");
-    vh_button_add(ui.next_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
-
-    ui.prev_btn = ku_view_get_subview(ui.view_base, "prevbtn");
-    vh_button_add(ui.prev_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
-
     ui.settings_btn = ku_view_get_subview(ui.view_base, "settingsbtn");
     vh_button_add(ui.settings_btn, VH_BUTTON_NORMAL, ui_on_btn_event);
 
@@ -1089,6 +1138,20 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     ku_view_remove_from_parent(ui.inputarea);
 
+    /* path bar */
+
+    ui.pathtf = ku_view_get_subview(ui.view_base, "pathtf");
+    ui.pathts = ku_util_gen_textstyle(ui.pathtf);
+
+    vh_textinput_add(ui.pathtf, "/home/milgra", "", ui.pathts, ui_on_text_event);
+
+    /* time label */
+
+    ui.timetf = ku_view_get_subview(ui.view_base, "timelabel");
+    ui.timets = ku_util_gen_textstyle(ui.timetf);
+
+    ui.posslider = ku_view_get_subview(ui.view_base, "posslider");
+
     // main gap
 
     ui.view_maingap = ku_view_get_subview(ui.view_base, "main_gap");
@@ -1199,11 +1262,29 @@ void ui_update_player()
 	ui.force_refresh = 0;
 	// mp_audio_refresh(ui.ms, ui.visuvideo->texture.bitmap, ui.visuvideo->texture.bitmap);
 
+	double time = roundf(mp_get_master_clock(ui.ms) * 10.0) / 10.0;
+
 	if (ui.autoplay == 0 && !ui.ms->paused)
 	{
-	    double time = roundf(mp_get_master_clock(ui.ms) * 10.0) / 10.0;
-
 	    if (time > 0.1) mp_pause(ui.ms);
+	}
+
+	if (time != ui.timestate && !isnan(time))
+	{
+	    ui.timestate = time;
+
+	    int tmin = (int) floor(time / 60.0);
+	    int tsec = (int) time % 60;
+	    int dmin = (int) floor(ui.ms->duration / 60.0);
+	    int dsec = (int) ui.ms->duration % 60;
+
+	    char timebuff[20];
+	    snprintf(timebuff, 20, "%.2i:%.2i / %.2i:%.2i", tmin, tsec, dmin, dsec);
+	    tg_text_set(ui.timetf, timebuff, ui.timets);
+
+	    double ratio = time / ui.ms->duration;
+
+	    vh_slider_set(ui.posslider, ratio);
 	}
 
 	ui.visuvideo->texture.changed = 1;

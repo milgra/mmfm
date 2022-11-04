@@ -27,6 +27,7 @@ typedef struct _vh_button_event_t
     enum vh_button_event_id id;
     vh_button_t*            vh;
     ku_view_t*              view;
+    ku_event_t              ev;
 } vh_button_event_t;
 
 struct _vh_button_t
@@ -120,14 +121,14 @@ void vh_button_evt(ku_view_t* view, ku_event_t ev)
 		if (vh->onview) vh_anim_alpha(vh->onview, 1.0, 0.0, 10, AT_LINEAR);
 	    }
 
-	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view, .vh = vh};
+	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view, .vh = vh, .ev = ev};
 	    if (vh->on_event) (*vh->on_event)(event);
 	}
 	else
 	{
 	    vh->state = VH_BUTTON_UP;
 
-	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view, .vh = vh};
+	    vh_button_event_t event = {.id = VH_BUTTON_EVENT, .view = view, .vh = vh, .ev = ev};
 	    if (vh->on_event) (*vh->on_event)(event);
 
 	    /* if (vh->offview) vh_anim_alpha(vh->offview, 1.0, 0.0, 10, AT_LINEAR); */

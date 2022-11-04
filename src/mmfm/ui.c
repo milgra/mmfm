@@ -524,7 +524,6 @@ void on_contextlist_event(ku_table_event_t event)
 	}
 	else if (event.selected_index == 2) // send to cb
 	{
-	    zc_log_debug("Sending to clipboard");
 	    vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
 	    ku_table_set_data(ui.cliptable, ui.clip_list_data);
 	}
@@ -532,12 +531,51 @@ void on_contextlist_event(ku_table_event_t event)
 	{
 	    if (ui.current_folder)
 	    {
-		zc_log_debug("Paste using copy to %s", ui.current_folder);
+		for (int index = 0; index < ui.clip_list_data->length; index++)
+		{
+		    map_t* data    = ui.clip_list_data->data[index];
+		    char*  path    = MGET(data, "file/path");
+		    char*  name    = MGET(data, "file/basename");
+		    char*  newpath = cstr_new_format(PATH_MAX, "%s/%s", ui.current_folder, name);
+
+		    int res = fm_copy(path, newpath);
+
+		    if (res < 0)
+		    {
+			ui_show_progress("Copy error");
+		    }
+		    else
+		    {
+			ui_show_progress("Files copied");
+			ui_load_folder(ui.current_folder);
+		    }
+		}
 	    }
 	}
 	else if (event.selected_index == 4) // paste using move
 	{
-	    zc_log_debug("Paste using move");
+	    for (int index = 0; index < ui.clip_list_data->length; index++)
+	    {
+		map_t* data    = ui.clip_list_data->data[index];
+		char*  path    = MGET(data, "file/path");
+		char*  name    = MGET(data, "file/basename");
+		char*  newpath = cstr_new_format(PATH_MAX, "%s/%s", ui.current_folder, name);
+
+		int res = fm_rename1(path, newpath);
+
+		if (res < 0)
+		{
+		    ui_show_progress("Move error");
+		}
+		else
+		{
+		    ui_show_progress("Files moved");
+		    ui_load_folder(ui.current_folder);
+		}
+	    }
+	    /* clear clipboard */
+	    vec_reset(ui.clip_list_data);
+	    ku_table_set_data(ui.cliptable, ui.clip_list_data);
 	}
 	else if (event.selected_index == 5) // reset clipboard
 	{
@@ -595,6 +633,7 @@ void ui_on_key_down(vh_key_event_t event)
     }
     if (event.ev.keycode == XKB_KEY_v && event.ev.ctrl_down)
     {
+	printf("rowview %i\n", ui.rowview_for_context_menu == NULL);
 	if (ui.rowview_for_context_menu)
 	{
 	    ku_rect_t  frame        = ui.rowview_for_context_menu->frame.global;
@@ -770,6 +809,7 @@ void ui_on_text_event(vh_textinput_event_t event)
 	if (event.id == VH_TEXTINPUT_RETURN)
 	{
 	    vh_textinput_activate(ui.pathtf, 0);
+	    ku_window_deactivate(ui.window, ui.pathtf);
 
 	    char* valid_path = cstr_new_cstring(event.text);
 	    for (;;)

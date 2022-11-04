@@ -1,5 +1,4 @@
 /*
-  Milan Toth's communication channel
   One-way non-locking communication channel between threads
   If mtch_send returns 0, channel is full, send data again later
   If mtch_recv returns 0, channel is empty

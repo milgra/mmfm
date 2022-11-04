@@ -20,6 +20,7 @@ void         ku_window_event(ku_window_t* window, ku_event_t event);
 void         ku_window_add(ku_window_t* window, ku_view_t* view);
 void         ku_window_remove(ku_window_t* window, ku_view_t* view);
 void         ku_window_activate(ku_window_t* window, ku_view_t* view);
+void         ku_window_deactivate(ku_window_t* window, ku_view_t* view);
 ku_view_t*   ku_window_get_root(ku_window_t* window);
 ku_rect_t    ku_window_update(ku_window_t* window, uint32_t time);
 void         ku_window_resize_to_root(ku_window_t* window, ku_view_t* view);
@@ -218,6 +219,11 @@ void ku_window_remove(ku_window_t* win, ku_view_t* view)
 void ku_window_activate(ku_window_t* win, ku_view_t* view)
 {
     vec_add_unique_data(win->explqueue, view);
+}
+
+void ku_window_deactivate(ku_window_t* win, ku_view_t* view)
+{
+    vec_rem(win->explqueue, view);
 }
 
 void ku_window_rearrange(ku_window_t* win, ku_view_t* view, vec_t* views)

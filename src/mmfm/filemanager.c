@@ -9,6 +9,8 @@
 int  fm_create(char* file_path, mode_t mode);
 void fm_delete(char* path);
 int  fm_rename(char* old, char* new, char* new_dirs);
+int  fm_rename1(char* old, char* new);
+int  fm_copy(char* old, char* new);
 int  fm_exists(char* path);
 void fm_list(char* fmpath, map_t* db);
 void fm_listdir(char* fm_path, map_t* files);
@@ -104,6 +106,27 @@ int fm_rename(char* old_path, char* new_path, char* new_dirs)
 	return error;
     }
     return error;
+}
+
+int fm_rename1(char* old_path, char* new_path)
+{
+    zc_log_info("fm : renaming %s to %s", old_path, new_path);
+
+    int error = 0;
+
+    error = rename(old_path, new_path);
+    return error;
+}
+
+int fm_copy(char* old_path, char* new_path)
+{
+    char* command = cstr_new_format(7 + PATH_MAX * 2, "cp -r %s %s", old_path, new_path);
+
+    int res = system(command);
+
+    zc_log_debug("%s result : %i", command, res);
+
+    return res;
 }
 
 int fm_exists(char* path)

@@ -1333,19 +1333,59 @@ void ku_wayland_init(
 
 	// second roundtrip triggers events attached in global events
 	wl_display_roundtrip(wlc.display);
+
 	if (wlc.compositor)
 	{
+	    printf("POLL 1\n");
 	    struct _wl_event_t event = {.id = WL_EVENT_OUTPUT_ADDED, .monitors = wlc.monitors, .monitor_count = wlc.monitor_count};
 
 	    (*wlc.init)(event);
 
 	    wlc.monitor = wlc.monitors[0];
 
-	    while (wl_display_dispatch(wlc.display) > -1)
+	    struct pollfd fds[] = {
+		{wl_display_get_fd(wlc.display), POLLIN},
+		{wlc.key_repeat_timer_fd, POLLIN},
+	    };
+	    const int nfds = sizeof(fds) / sizeof(*fds);
+
+	    wl_display_dispatch(wlc.display);
+
+	    while (1)
 	    {
-		/* This space deliberately left blank */
+		if (wl_display_flush(wlc.display) < 0)
+		{
+		    if (errno == EAGAIN) continue;
+		    break;
+		}
+
+		if (poll(fds, nfds, -1) < 0)
+		{
+		    if (errno == EAGAIN) continue;
+		    break;
+		}
+
+		if (fds[0].revents & POLLIN)
+		{
+		    if (wl_display_dispatch(wlc.display) < 0)
+		    {
+			break;
+		    }
+		}
+
+		if (fds[1].revents & POLLIN)
+		{
+		    keyboard_repeat();
+		}
+
 		if (ku_wayland_exit_flag) break;
 	    }
+
+	    /* while (wl_display_dispatch(wlc.display) > -1) */
+	    /* { */
+	    /* 	/\* This space deliberately left blank *\/ */
+	    /* 	if (ku_wayland_exit_flag) break; */
+	    /* } */
 
 	    wl_display_disconnect(wlc.display);
 	}

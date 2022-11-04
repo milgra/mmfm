@@ -36,7 +36,6 @@ void ui_load_folder(char* folder);
 #include "ku_gl.c"
 #include "ku_table.c"
 #include "ku_util.c"
-#include "map_util.c"
 #include "mediaplayer.c"
 #include "pdf.c"
 #include "tg_css.c"
@@ -48,10 +47,12 @@ void ui_load_folder(char* folder);
 #include "vh_cv_scrl.c"
 #include "vh_drag.c"
 #include "vh_key.c"
+#include "vh_tbl_body.c"
 #include "vh_textinput.c"
 #include "vh_touch.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
+#include "zc_map_ext.c"
 #include "zc_number.c"
 #include "zc_path.c"
 #include "zc_time.c"
@@ -372,6 +373,16 @@ void on_files_event(ku_table_event_t event)
 
 	    if (strcmp(type, "directory") != 0) ui_open(path);
 	    ui_show_info(info);
+
+	    if (index < ui.file_list_data->length)
+	    {
+		ku_view_t*     filelist  = ku_view_get_subview(ui.view_base, "filelisttable");
+		vh_tbl_body_t* vh        = filelist->handler_data;
+		int            rel_index = index - vh->head_index;
+		ku_view_t*     sel_item  = vh->items->data[rel_index];
+
+		ui.rowview_for_context_menu = sel_item;
+	    }
 	}
 	else if (event.ev.keycode == XKB_KEY_Return)
 	{
@@ -513,14 +524,20 @@ void on_contextlist_event(ku_table_event_t event)
 	}
 	else if (event.selected_index == 2) // send to cb
 	{
+	    zc_log_debug("Sending to clipboard");
 	    vec_add_in_vector(ui.clip_list_data, ui.filelisttable->selected_items);
 	    ku_table_set_data(ui.cliptable, ui.clip_list_data);
 	}
 	else if (event.selected_index == 3) // paste using copy
 	{
+	    if (ui.current_folder)
+	    {
+		zc_log_debug("Paste using copy to %s", ui.current_folder);
+	    }
 	}
 	else if (event.selected_index == 4) // paste using move
 	{
+	    zc_log_debug("Paste using move");
 	}
 	else if (event.selected_index == 5) // reset clipboard
 	{
@@ -578,7 +595,16 @@ void ui_on_key_down(vh_key_event_t event)
     }
     if (event.ev.keycode == XKB_KEY_v && event.ev.ctrl_down)
     {
-	// show paste menu
+	if (ui.rowview_for_context_menu)
+	{
+	    ku_rect_t  frame        = ui.rowview_for_context_menu->frame.global;
+	    ku_view_t* contextpopup = ui.contextpopupcont->views->data[0];
+	    ku_rect_t  iframe       = contextpopup->frame.global;
+	    iframe.x                = frame.x;
+	    iframe.y                = frame.y;
+	    ku_view_set_frame(contextpopup, iframe);
+	    ku_view_add_subview(ui.view_base, ui.contextpopupcont);
+	}
     }
 }
 

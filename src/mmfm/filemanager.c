@@ -37,7 +37,7 @@ void fm_detail(map_t* file);
 #include <unistd.h>
 
 #include "coder.c"
-#include "cstr_util.c"
+#include "zc_cstr_ext.c"
 #include "zc_cstring.c"
 #include "zc_log.c"
 #include "zc_path.c"

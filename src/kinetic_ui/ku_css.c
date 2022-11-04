@@ -32,7 +32,7 @@ map_t* ku_css_new(char* path);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "cstr_util.c"
+#include "zc_cstr_ext.c"
 
 uint32_t ku_css_count_props(char* css)
 {

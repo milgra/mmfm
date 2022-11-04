@@ -111,20 +111,19 @@ mmfm_inc = include_directories(
 	'src/kinetic_ui/handler',
 	'src/kinetic_ui/texture',
 	'src/mmfm',
-	'src/mmfm/ui',
-	'src/mmfm/utils')
+	'src/zen_core_ext')
 
 
-com_sources = ['src/mmfm/ui/ui.c',
+com_sources = ['src/mmfm/ui.c',
 	       'src/mmfm/config.c',
 	       'src/mmfm/evrecorder.c',
 	       'src/mmfm/filemanager.c',
 	       'src/mmfm/kvlist.c',
 	       'src/mmfm/mmfm.c',
 	       'src/mmfm/pdf.c',
-	       'src/mmfm/utils/bm_rgba_util.c',
-	       'src/mmfm/utils/cstr_util.c',
-	       'src/mmfm/utils/map_util.c',
+	       'src/zen_core_ext/zc_bitmap_ext.c',
+	       'src/zen_core_ext/zc_cstr_ext.c',
+	       'src/zen_core_ext/zc_map_ext.c',
 
 	       'src/zen_core/zc_channel.c',
 	       'src/zen_core/zc_cstring.c',

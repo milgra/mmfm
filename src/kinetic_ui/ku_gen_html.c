@@ -9,9 +9,9 @@ void ku_gen_html_parse(char* htmlpath, vec_t* views);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "cstr_util.c"
 #include "ku_html.c"
 #include "ku_view.c"
+#include "zc_cstr_ext.c"
 
 void ku_gen_html_parse(char* htmlpath, vec_t* views)
 {

@@ -17,6 +17,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
+#include <sys/timerfd.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -183,6 +184,10 @@ struct wlc_t
 
     struct xdg_wm_base* xdg_wm_base;
 
+    int        key_repeat_period;
+    int        key_repeat_delay;
+    int        key_repeat_timer_fd;
+    ku_event_t key_repeat_event;
 } wlc = {0};
 
 int ku_wayland_exit_flag = 0;
@@ -990,17 +995,42 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 	.shift_down = wlc.keyboard.shift};
     (*wlc.update)(event);
 
+    wlc.key_repeat_event = event;
+
+    if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED && wlc.key_repeat_period > 0)
+    {
+	struct itimerspec spec = {0};
+	spec.it_value.tv_sec   = wlc.key_repeat_delay / 1000;
+	spec.it_value.tv_nsec  = (wlc.key_repeat_delay % 1000) * 1000000l;
+	timerfd_settime(wlc.key_repeat_timer_fd, 0, &spec, NULL);
+    }
+    else if (key_state == WL_KEYBOARD_KEY_STATE_RELEASED)
+    {
+	struct itimerspec spec = {0};
+	timerfd_settime(wlc.key_repeat_timer_fd, 0, &spec, NULL);
+    }
+
     zc_log_debug("keyboard key %i", key);
+}
+
+static void keyboard_repeat()
+{
+    (*wlc.update)(wlc.key_repeat_event);
 }
 
 static void keyboard_repeat_info(void* data, struct wl_keyboard* wl_keyboard, int32_t rate, int32_t delay)
 {
     zc_log_debug("keyboard repeat info %i %i", rate, delay);
-    /*    panel->repeat_delay = delay; */
-    /*     if (rate > 0) */
-    /* 	panel->repeat_period = 1000 / rate; */
-    /*     else */
-    /* 	panel->repeat_period = -1; */
+
+    wlc.key_repeat_delay = delay;
+    if (rate > 0)
+    {
+	wlc.key_repeat_period = 1000 / rate;
+    }
+    else
+    {
+	wlc.key_repeat_period = -1;
+    }
 }
 
 static void keyboard_modifiers(void* data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group)
@@ -1290,6 +1320,11 @@ void ku_wayland_init(
 
     if (wlc.display)
     {
+
+	wlc.key_repeat_timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+
+	if (wlc.key_repeat_timer_fd < 0) zc_log_error("cannot create key repeat timer");
+
 	struct wl_registry* registry = wl_display_get_registry(wlc.display);
 	wl_registry_add_listener(registry, &registry_listener, NULL);
 

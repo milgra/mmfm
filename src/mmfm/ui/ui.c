@@ -131,6 +131,7 @@ struct _ui_t
 
     float timestate;
 
+    map_t* last_visited_folders;
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -256,10 +257,16 @@ void ui_show_info(map_t* info)
 
 void ui_load_folder(char* folder)
 {
-    if (folder) RET(folder); // avoid freeing up if the same pointer is passed to us
-    if (ui.current_folder) REL(ui.current_folder);
     if (folder)
     {
+	if (ui.current_folder)
+	{
+	    // store folder as last visited
+	    MPUT(ui.last_visited_folders, ui.current_folder, folder);
+	}
+
+	if (ui.current_folder) REL(ui.current_folder);
+
 	ui.current_folder = path_new_normalize1(folder);
 	vh_textinput_set_text(ui.pathtf, ui.current_folder);
 
@@ -274,6 +281,20 @@ void ui_load_folder(char* folder)
 
 	ku_table_set_data(ui.filelisttable, ui.file_list_data);
 	REL(files);
+
+	/* jump to item if there is a last visited item */
+	char* last_visited = MGET(ui.last_visited_folders, ui.current_folder);
+	if (last_visited)
+	{
+	    int index;
+	    for (index = 0; index < ui.file_list_data->length; index++)
+	    {
+		map_t* info = ui.file_list_data->data[index];
+		char*  path = MGET(info, "file/path");
+		if (strcmp(path, last_visited) == 0) break;
+	    }
+	    ku_table_select(ui.filelisttable, index);
+	}
 
 	ui_show_progress("Directory loaded");
     }
@@ -819,8 +840,9 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 {
     ku_text_init(); // DESTROY 0
 
-    ui.window   = window;
-    ui.autoplay = 1;
+    ui.window               = window;
+    ui.autoplay             = 1;
+    ui.last_visited_folders = MNEW();
 
     /* generate views from descriptors */
 

@@ -1381,12 +1381,6 @@ void ku_wayland_init(
 		if (ku_wayland_exit_flag) break;
 	    }
 
-	    /* while (wl_display_dispatch(wlc.display) > -1) */
-	    /* { */
-	    /* 	/\* This space deliberately left blank *\/ */
-	    /* 	if (ku_wayland_exit_flag) break; */
-	    /* } */
-
 	    wl_display_disconnect(wlc.display);
 	}
 	else zc_log_debug("compositor not received");

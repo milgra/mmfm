@@ -3,7 +3,8 @@
 
 #include "ku_bitmap.c"
 
-ku_bitmap_t* pdf_render(char* filename);
+int          pdf_count(char* filename);
+ku_bitmap_t* pdf_render(char* filename, int page);
 
 #endif
 
@@ -11,16 +12,13 @@ ku_bitmap_t* pdf_render(char* filename);
 
 #include <mupdf/fitz.h>
 
-ku_bitmap_t* pdf_render(char* filename)
+int pdf_count(char* filename)
 {
     char*        input;
     float        zoom, rotate;
     int          page_number, page_count;
     fz_context*  ctx;
     fz_document* doc;
-    fz_pixmap*   pix;
-    fz_matrix    ctm;
-    int          x, y;
 
     /* if (argc < 3) */
     /* { */
@@ -72,10 +70,55 @@ ku_bitmap_t* pdf_render(char* filename)
 	fz_drop_context(ctx);
     }
 
-    if (page_number < 0 || page_number >= page_count)
+    return page_count;
+}
+
+ku_bitmap_t* pdf_render(char* filename, int page_number)
+{
+    char*        input;
+    float        zoom, rotate;
+    fz_context*  ctx;
+    fz_document* doc;
+    fz_pixmap*   pix;
+    fz_matrix    ctm;
+    int          x, y;
+
+    /* if (argc < 3) */
+    /* { */
+    /*   fprintf(stderr, "usage: example input-file page-number [ zoom [ rotate ] ]\n"); */
+    /*   fprintf(stderr, "\tinput-file: path of PDF, XPS, CBZ or EPUB document to open\n"); */
+    /*   fprintf(stderr, "\tPage numbering starts from one.\n"); */
+    /*   fprintf(stderr, "\tZoom level is in percent (100 percent is 72 dpi).\n"); */
+    /*   fprintf(stderr, "\tRotation is in degrees clockwise.\n"); */
+    /*   return EXIT_FAILURE; */
+    /* } */
+
+    input  = filename;
+    zoom   = 200.0;
+    rotate = 0.0;
+
+    /* Create a context to hold the exception stack and various caches. */
+    ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
+    if (!ctx)
     {
-	fprintf(stderr, "page number out of range: %d (page count %d)\n", page_number + 1, page_count);
-	fz_drop_document(ctx, doc);
+	fprintf(stderr, "cannot create mupdf context\n");
+    }
+
+    /* Register the default file types to handle. */
+    fz_try(ctx)
+	fz_register_document_handlers(ctx);
+    fz_catch(ctx)
+    {
+	fprintf(stderr, "cannot register document handlers: %s\n", fz_caught_message(ctx));
+	fz_drop_context(ctx);
+    }
+
+    /* Open the document. */
+    fz_try(ctx)
+	doc = fz_open_document(ctx, input);
+    fz_catch(ctx)
+    {
+	fprintf(stderr, "cannot open document: %s\n", fz_caught_message(ctx));
 	fz_drop_context(ctx);
     }
 

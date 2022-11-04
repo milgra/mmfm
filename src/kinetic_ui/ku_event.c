@@ -48,6 +48,7 @@ typedef struct _ku_event_t
     char     text[8];
     int      dclick;
     uint32_t keycode;
+    int      repeat; // key event is coming from repeat
 
 } ku_event_t;
 

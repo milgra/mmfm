@@ -24,8 +24,6 @@ typedef struct _vh_cv_evnt_t
     float      mx;
     float      my;
     float      z;
-    float      fz;  // fix zoom
-    float      ofz; // old zoom
     void (*on_event)(vh_cv_evnt_event_t event);
 } vh_cv_evnt_t;
 
@@ -111,15 +109,6 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
 	    if (vh->on_event) (*vh->on_event)(event);
 	}
 
-	if (vh->fz != vh->ofz)
-	{
-	    vh->ofz = vh->fz;
-
-	    vh_cv_body_zoom(vh->tbody_view, vh->fz, vh->mx, vh->my);
-	    vh_cv_evnt_event_t event = {0};
-	    if (vh->on_event) (*vh->on_event)(event);
-	}
-
 	if (vh->tscrl_view && vh->scroll_visible) vh_cv_scrl_update(vh->tscrl_view);
 
 	vh_cv_scrl_t* svh = vh->tscrl_view->handler_data;
@@ -142,7 +131,9 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_PINCH)
     {
-	vh->fz = ev.ratio;
+	vh_cv_body_t* body = vh->tbody_view->handler_data;
+	vh_cv_body_zoom(vh->tbody_view, body->scale + ev.ratio, ev.x, ev.y);
+
 	// cause dirty rect which causes frame events to flow for later animation
 	vh->tbody_view->frame.dim_changed = 1;
     }

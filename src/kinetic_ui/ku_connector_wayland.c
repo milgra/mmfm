@@ -188,6 +188,8 @@ struct wlc_t
     int        key_repeat_delay;
     int        key_repeat_timer_fd;
     ku_event_t key_repeat_event;
+
+    float last_scale;
 } wlc = {0};
 
 int ku_wayland_exit_flag = 0;
@@ -789,6 +791,8 @@ gesture_pinch_begin(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint
 
     /* emit_gesture_pinch_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_BEGIN, time, fingers, 0, 0, 1, 0); */
     /* seat->gesture_n_fingers = fingers; */
+
+    wlc.last_scale = 1.0;
 }
 
 static void
@@ -798,13 +802,16 @@ gesture_pinch_update(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uin
 
     /* emit_gesture_pinch_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_UPDATE, time, seat->gesture_n_fingers, wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation)); */
 
-    zc_log_debug("pinch dx %f dy %f scale %f rotation %f", wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation));
+    /* zc_log_debug("pinch dx %f dy %f scale %f rotation %f", wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation)); */
+
+    float delta    = wl_fixed_to_double(scale) - wlc.last_scale;
+    wlc.last_scale = wl_fixed_to_double(scale);
 
     ku_event_t event =
 	{.type       = KU_EVENT_PINCH,
 	 .x          = px,
 	 .y          = py,
-	 .ratio      = wl_fixed_to_double(scale),
+	 .ratio      = delta,
 	 .ctrl_down  = wlc.keyboard.control,
 	 .shift_down = wlc.keyboard.shift};
 
@@ -1015,7 +1022,14 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 
 static void keyboard_repeat()
 {
-    (*wlc.update)(wlc.key_repeat_event);
+    ku_event_t event = wlc.key_repeat_event;
+    event.repeat     = 1;
+    (*wlc.update)(event);
+
+    struct itimerspec spec = {0};
+    spec.it_value.tv_sec   = wlc.key_repeat_period / 1000;
+    spec.it_value.tv_nsec  = (wlc.key_repeat_period % 1000) * 1000000l;
+    timerfd_settime(wlc.key_repeat_timer_fd, 0, &spec, NULL);
 }
 
 static void keyboard_repeat_info(void* data, struct wl_keyboard* wl_keyboard, int32_t rate, int32_t delay)
@@ -1320,7 +1334,6 @@ void ku_wayland_init(
 
     if (wlc.display)
     {
-
 	wlc.key_repeat_timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
 
 	if (wlc.key_repeat_timer_fd < 0) zc_log_error("cannot create key repeat timer");

@@ -10,6 +10,13 @@ enum _ui_inputmode
     UI_IM_RENAME
 };
 
+typedef enum _ui_media_type ui_media_type;
+enum _ui_media_type
+{
+    UI_MT_STREAM,
+    UI_MT_DOCUMENT,
+};
+
 void ui_init(int width, int height, float scale, ku_window_t* window);
 void ui_destroy();
 void ui_add_cursor();
@@ -133,6 +140,11 @@ struct _ui_t
     float timestate;
 
     map_t* last_visited_folders;
+
+    int pdf_page_count;
+
+    char*         pdfpath;
+    ui_media_type media_type;
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -187,7 +199,17 @@ void ui_open(char* path)
 
     if (strstr(path, ".pdf") != NULL)
     {
-	ku_bitmap_t* pdfbmp = pdf_render(path);
+	if (ui.pdfpath) REL(ui.pdfpath);
+	ui.pdfpath = RET(path);
+
+	ui.pdf_page_count   = pdf_count(path);
+	ku_bitmap_t* pdfbmp = pdf_render(path, 0);
+
+	vh_slider_set(ui.posslider, 0.1);
+	char timebuff[20];
+	snprintf(timebuff, 20, "Page %i / %i", 0, ui.pdf_page_count);
+
+	tg_text_set(ui.timetf, timebuff, ui.timets);
 
 	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
 
@@ -198,6 +220,8 @@ void ui_open(char* path)
 	}
 
 	REL(pdfbmp);
+
+	ui.media_type = UI_MT_DOCUMENT;
     }
     else
     {
@@ -226,6 +250,8 @@ void ui_open(char* path)
 		REL(image);
 	    }
 	}
+
+	ui.media_type = UI_MT_STREAM;
     }
 }
 
@@ -367,21 +393,25 @@ void on_files_event(ku_table_event_t event)
 
 	    ku_table_select(event.table, index);
 
-	    map_t* info = event.selected_items->data[0];
-	    char*  path = MGET(info, "file/path");
-	    char*  type = MGET(info, "file/type");
-
-	    if (strcmp(type, "directory") != 0) ui_open(path);
-	    ui_show_info(info);
-
-	    if (index < ui.file_list_data->length)
+	    if (event.ev.repeat == 0)
 	    {
-		ku_view_t*     filelist  = ku_view_get_subview(ui.view_base, "filelisttable");
-		vh_tbl_body_t* vh        = filelist->handler_data;
-		int            rel_index = index - vh->head_index;
-		ku_view_t*     sel_item  = vh->items->data[rel_index];
 
-		ui.rowview_for_context_menu = sel_item;
+		map_t* info = event.selected_items->data[0];
+		char*  path = MGET(info, "file/path");
+		char*  type = MGET(info, "file/type");
+
+		if (strcmp(type, "directory") != 0) ui_open(path);
+		ui_show_info(info);
+
+		if (index < ui.file_list_data->length)
+		{
+		    ku_view_t*     filelist  = ku_view_get_subview(ui.view_base, "filelisttable");
+		    vh_tbl_body_t* vh        = filelist->handler_data;
+		    int            rel_index = index - vh->head_index;
+		    ku_view_t*     sel_item  = vh->items->data[rel_index];
+
+		    ui.rowview_for_context_menu = sel_item;
+		}
 	    }
 	}
 	else if (event.ev.keycode == XKB_KEY_Return)
@@ -763,6 +793,26 @@ void ui_on_btn_event(vh_button_event_t event)
 void ui_on_slider_event(vh_slider_event_t event)
 {
     if (ui.ms) mp_set_position(ui.ms, event.ratio);
+    if (ui.media_type == UI_MT_DOCUMENT)
+    {
+	int          page   = (int) (roundf(((float) (ui.pdf_page_count - 1) * event.ratio)));
+	ku_bitmap_t* pdfbmp = pdf_render(ui.pdfpath, page);
+
+	char timebuff[20];
+	snprintf(timebuff, 20, "Page %i / %i", page, ui.pdf_page_count);
+
+	tg_text_set(ui.timetf, timebuff, ui.timets);
+
+	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
+
+	if (ui.visuvideo->texture.bitmap != NULL)
+	{
+	    ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+	    ui.visuvideo->texture.changed = 1;
+	}
+
+	REL(pdfbmp);
+    }
 }
 
 void ui_on_touch_event(vh_touch_event_t event)
@@ -1290,6 +1340,8 @@ void ui_destroy()
     REL(ui.sidebar);
 
     REL(ui.inputarea);
+
+    if (ui.pdfpath) REL(ui.pdfpath);
 
     ku_text_destroy(); // DESTROY 0
 }

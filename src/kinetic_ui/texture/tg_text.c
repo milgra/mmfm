@@ -19,6 +19,7 @@ void  tg_text_add(ku_view_t* view);
 void  tg_text_set(ku_view_t* view, char* text, textstyle_t style);
 void  tg_text_set1(ku_view_t* view, char* text);
 char* tg_text_get(ku_view_t* view);
+void  tg_text_set_style(ku_view_t* view, textstyle_t style);
 
 #endif
 
@@ -99,6 +100,14 @@ void tg_text_set(ku_view_t* view, char* text, textstyle_t style)
 
     if (gen->text) REL(gen->text);
     if (text) gen->text = cstr_new_cstring(text);
+
+    gen->style          = style;
+    view->texture.state = TS_BLANK;
+}
+
+void tg_text_set_style(ku_view_t* view, textstyle_t style)
+{
+    tg_text_t* gen = view->tex_gen_data;
 
     gen->style          = style;
     view->texture.state = TS_BLANK;

@@ -937,25 +937,27 @@ ku_table_t* ui_create_table(ku_view_t* view, vec_t* fields)
     /*   </div> */
     /* </div> */
 
-    ku_view_t* header = NULL;
-    ku_view_t* layers = NULL;
-    ku_view_t* body   = NULL;
-    ku_view_t* scroll = NULL;
-    ku_view_t* event  = NULL;
-    ku_view_t* row_a  = NULL;
-    ku_view_t* row_b  = NULL;
-    ku_view_t* row_s  = NULL;
+    ku_view_t* header  = NULL;
+    ku_view_t* headrow = NULL;
+    ku_view_t* layers  = NULL;
+    ku_view_t* body    = NULL;
+    ku_view_t* scroll  = NULL;
+    ku_view_t* event   = NULL;
+    ku_view_t* row_a   = NULL;
+    ku_view_t* row_b   = NULL;
+    ku_view_t* row_s   = NULL;
 
     if (view->views->length == 2)
     {
-	header = view->views->data[0];
-	layers = view->views->data[1];
-	body   = layers->views->data[0];
-	scroll = layers->views->data[1];
-	event  = layers->views->data[2];
-	row_a  = body->views->data[0];
-	row_b  = body->views->data[1];
-	row_s  = body->views->data[2];
+	header  = view->views->data[0];
+	headrow = header->views->data[0];
+	layers  = view->views->data[1];
+	body    = layers->views->data[0];
+	scroll  = layers->views->data[1];
+	event   = layers->views->data[2];
+	row_a   = body->views->data[0];
+	row_b   = body->views->data[1];
+	row_s   = body->views->data[2];
     }
     if (view->views->length == 1)
     {
@@ -970,7 +972,7 @@ ku_table_t* ui_create_table(ku_view_t* view, vec_t* fields)
     textstyle_t rowastyle = ku_util_gen_textstyle(row_a);
     textstyle_t rowbstyle = ku_util_gen_textstyle(row_b);
     textstyle_t rowsstyle = ku_util_gen_textstyle(row_s);
-    textstyle_t headstyle = header == NULL ? (textstyle_t){0} : ku_util_gen_textstyle(header);
+    textstyle_t headstyle = headrow == NULL ? (textstyle_t){0} : ku_util_gen_textstyle(headrow);
 
     ku_table_t* table = ku_table_create(
 	"table",

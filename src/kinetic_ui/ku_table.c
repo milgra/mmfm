@@ -271,17 +271,14 @@ ku_view_t* ku_table_item_create(
 		}
 	    }
 
+	    textstyle_t style = index % 2 == 0 ? uit->rowastyle : uit->rowbstyle;
+
 	    if (uit->selected_items->length > 0)
 	    {
 		uint32_t pos = vec_index_of_data(uit->selected_items, data);
 
-		if (pos < UINT32_MAX)
-		{
-		    /* rowview->style.background_color = 0x006600FF; */
-		}
+		if (pos < UINT32_MAX) style = uit->rowsstyle;
 	    }
-
-	    textstyle_t style = index % 2 == 0 ? uit->rowastyle : uit->rowbstyle;
 
 	    int wth = 0;
 
@@ -342,23 +339,36 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 		for (int index = 0; index < bvh->items->length; index++)
 		{
 		    ku_view_t* item = bvh->items->data[index];
-		    if (item->style.background_color == 0x006600FF)
+
+		    textstyle_t style = index % 2 == 0 ? uit->rowastyle : uit->rowbstyle;
+
+		    for (int i = 0; i < item->views->length; i++)
 		    {
-			item->style.background_color = 0x000000FF;
-			ku_view_invalidate_texture(item);
+			ku_view_t* cellview = item->views->data[i];
+			tg_text_set_style(cellview, style);
 		    }
 		}
 	    }
 
 	    VADD(uit->selected_items, data);
-	    event.rowview->style.background_color = 0x006600FF;
-	    ku_view_invalidate_texture(event.rowview);
+
+	    for (int i = 0; i < event.rowview->views->length; i++)
+	    {
+		ku_view_t* cellview = event.rowview->views->data[i];
+		tg_text_set_style(cellview, uit->rowsstyle);
+	    }
 	}
 	else
 	{
 	    VREM(uit->selected_items, data);
-	    event.rowview->style.background_color = 0x000000FF;
-	    ku_view_invalidate_texture(event.rowview);
+
+	    textstyle_t style = event.index % 2 == 0 ? uit->rowastyle : uit->rowbstyle;
+
+	    for (int i = 0; i < event.rowview->views->length; i++)
+	    {
+		ku_view_t* cellview = event.rowview->views->data[i];
+		tg_text_set_style(cellview, style);
+	    }
 	}
 
 	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};

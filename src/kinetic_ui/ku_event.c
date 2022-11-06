@@ -2,10 +2,12 @@
 #define ku_event_h
 
 #include <stdint.h>
+#include <time.h>
 
 enum evtype
 {
     KU_EVENT_EMPTY,
+    KU_EVENT_FRAME,
     KU_EVENT_TIME,
     KU_EVENT_RESIZE,
     KU_EVENT_MMOVE,
@@ -20,11 +22,14 @@ enum evtype
     KU_EVENT_TEXT,
     KU_EVENT_WINDOW_SHOW,
     KU_EVENT_PINCH,
+    KU_EVENT_STDIN,
 };
 
 typedef struct _ku_event_t
 {
     enum evtype type;
+
+    /* poiniter properties */
 
     int x; // mouse coord x
     int y; // mouse coord y
@@ -32,18 +37,26 @@ typedef struct _ku_event_t
     int drag;   // mouse drag
     int button; // mouse button id
 
+    /* keyboard modifiers */
+
     int ctrl_down;  // modifiers
     int shift_down; // modifiers
 
+    /* scroll */
+
     float dx; // scroll x
     float dy; // scroll y
+
+    /* touchpad */
 
     float ratio; // pinch ratio
 
     int w; // resize width
     int h; // resize height
 
-    uint32_t time; // event timestamp
+    uint32_t        time;       // milliseconds since start
+    struct timespec time_unix;  // unix timestamp
+    float           tine_frame; // elapsed time since last frame
 
     char     text[8];
     int      dclick;

@@ -71,7 +71,7 @@ void vh_anim_add(ku_view_t* view, void (*on_event)(vh_anim_event_t), void* userd
 
 void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 {
-    if (ev.type == KU_EVENT_TIME)
+    if (ev.type == KU_EVENT_FRAME)
     {
 	vh_anim_t* vh = view->handler_data;
 

@@ -298,7 +298,7 @@ void vh_textinput_on_anim(vh_anim_event_t event)
 void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
 {
     vh_textinput_t* data = view->handler_data;
-    if (ev.type == KU_EVENT_TIME)
+    if (ev.type == KU_EVENT_FRAME)
     {
     }
     else if (ev.type == KU_EVENT_MDOWN)
@@ -403,10 +403,6 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
 	    vh_textinput_event_t event = {.id = VH_TEXTINPUT_DEACTIVATE, .vh = data, .text = data->text, .view = view};
 	    if (data->on_event) (*data->on_event)(event);
 	}
-    }
-    else if (ev.type == KU_EVENT_TIME)
-    {
-	// animate glyphs
     }
 }
 

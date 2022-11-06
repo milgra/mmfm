@@ -65,7 +65,7 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
 {
     vh_tbl_evnt_t* vh = view->handler_data;
 
-    if (ev.type == KU_EVENT_TIME)
+    if (ev.type == KU_EVENT_FRAME)
     {
 	vh_tbl_body_t* bvh = vh->tbody_view->handler_data;
 

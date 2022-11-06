@@ -68,7 +68,7 @@ ku_window_t* ku_window_create(int width, int height)
 
 void ku_window_event(ku_window_t* win, ku_event_t ev)
 {
-    if (ev.type == KU_EVENT_TIME)
+    if (ev.type == KU_EVENT_FRAME)
     {
 	ku_view_evt(win->root, ev);
     }

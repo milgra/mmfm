@@ -69,7 +69,7 @@ void vh_button_on_anim(vh_anim_event_t event)
 
 void vh_button_evt(ku_view_t* view, ku_event_t ev)
 {
-    if (ev.type == KU_EVENT_TIME)
+    if (ev.type == KU_EVENT_FRAME)
     {
 	vh_button_t* vh = view->handler_data;
 	if (!vh->inited)

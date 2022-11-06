@@ -46,7 +46,7 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
 {
     vh_cv_evnt_t* vh = view->handler_data;
 
-    if (ev.type == KU_EVENT_TIME)
+    if (ev.type == KU_EVENT_FRAME)
     {
 	vh_cv_body_t* bvh = vh->tbody_view->handler_data;
 	ku_rect_t     cf  = bvh->content->frame.local;

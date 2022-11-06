@@ -38,7 +38,9 @@ void evrec_init_recorder(char* path)
 
 void evrec_init_player(char* path)
 {
-    FILE* file = fopen(path, "r");
+    char* newpath = path_new_append(path, "session0.rec");
+
+    FILE* file = fopen(newpath, "r");
     if (!file) printf("evrec player : cannot open file %s\n", path);
 
     rec.file   = file;

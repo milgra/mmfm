@@ -193,13 +193,42 @@ struct wlc_t
 
     float last_scale;
 
-    int time_event_timer_fd;
+    int             time_event_interval;
+    int             time_event_timer_fd;
+    struct timespec time_start;
+
 } wlc = {0};
 
 int ku_wayland_exit_flag = 0;
 
 void ku_wayland_create_buffer();
 void ku_wayland_resize_window_buffer(struct wl_window* info);
+
+ku_event_t init_event()
+{
+    struct timespec stop;
+    struct timespec start = wlc.time_start;
+    struct timespec result;
+
+    clock_gettime(CLOCK_REALTIME, &stop);
+
+    if ((stop.tv_nsec - start.tv_nsec) < 0)
+    {
+	result.tv_sec  = stop.tv_sec - start.tv_sec - 1;
+	result.tv_nsec = stop.tv_nsec - start.tv_nsec + 1000000000;
+    }
+    else
+    {
+	result.tv_sec  = stop.tv_sec - start.tv_sec;
+	result.tv_nsec = stop.tv_nsec - start.tv_nsec;
+    }
+
+    ku_event_t event = {
+	.time_unix = stop,
+	.time      = result.tv_sec * 1000 + result.tv_nsec / 1000000};
+
+    return event;
+}
 
 int32_t round_to_int(double val)
 {
@@ -338,9 +367,8 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
 
     lastcount++;
 
-    ku_event_t event = {
-	.type = KU_EVENT_TIME,
-	.time = time};
+    ku_event_t event = init_event();
+    event.type       = KU_EVENT_FRAME;
 
     // TODO refresh rate can differ so animations should be time based
     (*wlc.update)(event);
@@ -432,10 +460,10 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 
     if (info->width != info->new_width && info->height != info->new_height)
     {
-	ku_event_t event = {
-	    .type = KU_EVENT_RESIZE,
-	    .w    = info->new_width,
-	    .h    = info->new_height};
+	ku_event_t event = init_event();
+	event.type       = KU_EVENT_RESIZE;
+	event.w          = info->new_width;
+	event.h          = info->new_height;
 
 	(*wlc.update)(event);
     }
@@ -670,6 +698,7 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
     printf("dispatch pending\n");
 
+    /* glDrawBuffer(GL_FRONT); */
     /* wl_display_dispatch_pending(wlc.display); */
 
     /* this space deliberately left blank */
@@ -811,13 +840,13 @@ gesture_pinch_update(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uin
     float delta    = wl_fixed_to_double(scale) - wlc.last_scale;
     wlc.last_scale = wl_fixed_to_double(scale);
 
-    ku_event_t event =
-	{.type       = KU_EVENT_PINCH,
-	 .x          = px,
-	 .y          = py,
-	 .ratio      = delta,
-	 .ctrl_down  = wlc.keyboard.control,
-	 .shift_down = wlc.keyboard.shift};
+    ku_event_t event = init_event();
+    event.type       = KU_EVENT_PINCH;
+    event.x          = px;
+    event.y          = py;
+    event.ratio      = delta;
+    event.ctrl_down  = wlc.keyboard.control;
+    event.shift_down = wlc.keyboard.shift;
 
     (*wlc.update)(event);
 }
@@ -852,11 +881,11 @@ void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer,
 {
     /* zc_log_debug("pointer handle motion %f %f", wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y)); */
 
-    ku_event_t event = {
-	.type = KU_EVENT_MMOVE,
-	.drag = drag,
-	.x    = (int) wl_fixed_to_double(surface_x) * wlc.monitor->scale,
-	.y    = (int) wl_fixed_to_double(surface_y) * wlc.monitor->scale};
+    ku_event_t event = init_event();
+    event.type       = KU_EVENT_MMOVE;
+    event.drag       = drag;
+    event.x          = (int) wl_fixed_to_double(surface_x) * wlc.monitor->scale;
+    event.y          = (int) wl_fixed_to_double(surface_y) * wlc.monitor->scale;
 
     px = event.x;
     py = event.y;
@@ -869,7 +898,10 @@ void ku_wayland_pointer_handle_button(void* data, struct wl_pointer* wl_pointer,
 {
     zc_log_debug("pointer handle button %u state %u time %u", button, state, time);
 
-    ku_event_t event = {.x = px, .y = py, .button = button == 272 ? 1 : 3};
+    ku_event_t event = init_event();
+    event.x          = px;
+    event.y          = py;
+    event.button     = button == 272 ? 1 : 3;
 
     if (state)
     {
@@ -891,14 +923,14 @@ void ku_wayland_pointer_handle_button(void* data, struct wl_pointer* wl_pointer,
 void ku_wayland_pointer_handle_axis(void* data, struct wl_pointer* wl_pointer, uint time, uint axis, wl_fixed_t value)
 {
     /* zc_log_debug("pointer handle axis %u %i", axis, value); */
-    ku_event_t event =
-	{.type       = KU_EVENT_SCROLL,
-	 .x          = px,
-	 .y          = py,
-	 .dx         = axis == 1 ? (float) value / 200.0 : 0,
-	 .dy         = axis == 0 ? (float) -value / 200.0 : 0,
-	 .ctrl_down  = wlc.keyboard.control,
-	 .shift_down = wlc.keyboard.shift};
+    ku_event_t event = init_event();
+    event.type       = KU_EVENT_SCROLL;
+    event.x          = px;
+    event.y          = py;
+    event.dx         = axis == 1 ? (float) value / 200.0 : 0;
+    event.dy         = axis == 0 ? (float) -value / 200.0 : 0;
+    event.ctrl_down  = wlc.keyboard.control;
+    event.shift_down = wlc.keyboard.shift;
 
     (*wlc.update)(event);
 }
@@ -985,12 +1017,12 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 	{
 	    if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED)
 	    {
-		ku_event_t event = {
-		    .keycode    = sym,
-		    .type       = KU_EVENT_TEXT,
-		    .time       = time,
-		    .ctrl_down  = wlc.keyboard.control,
-		    .shift_down = wlc.keyboard.shift};
+		ku_event_t event = init_event();
+		event.keycode    = sym;
+		event.type       = KU_EVENT_TEXT;
+		event.time       = time;
+		event.ctrl_down  = wlc.keyboard.control;
+		event.shift_down = wlc.keyboard.shift;
 
 		memcpy(event.text, buf, 8);
 		(*wlc.update)(event);
@@ -998,12 +1030,12 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 	}
     }
 
-    ku_event_t event = {
-	.keycode    = sym,
-	.type       = key_state == WL_KEYBOARD_KEY_STATE_PRESSED ? KU_EVENT_KDOWN : KU_EVENT_KUP,
-	.time       = time,
-	.ctrl_down  = wlc.keyboard.control,
-	.shift_down = wlc.keyboard.shift};
+    ku_event_t event = init_event();
+    event.keycode    = sym;
+    event.type       = key_state == WL_KEYBOARD_KEY_STATE_PRESSED ? KU_EVENT_KDOWN : KU_EVENT_KUP;
+    event.time       = time;
+    event.ctrl_down  = wlc.keyboard.control;
+    event.shift_down = wlc.keyboard.shift;
     (*wlc.update)(event);
 
     wlc.key_repeat_event = event;
@@ -1324,7 +1356,7 @@ void ku_wayland_init(
     void (*update)(ku_event_t event),
     void (*render)(uint32_t time, uint32_t index, ku_bitmap_t* bm),
     void (*destroy)(),
-    int time_event_delay)
+    int time_event_interval)
 {
     wlc.monitors = CAL(sizeof(struct monitor_info) * 16, NULL, NULL);
     wlc.windows  = CAL(sizeof(struct wl_window) * 16, NULL, NULL);
@@ -1336,6 +1368,8 @@ void ku_wayland_init(
     wlc.destroy = destroy;
 
     wlc.display = wl_display_connect(NULL);
+
+    clock_gettime(CLOCK_REALTIME, &wlc.time_start);
 
     if (wlc.display)
     {
@@ -1363,15 +1397,16 @@ void ku_wayland_init(
 	    wlc.monitor = wlc.monitors[0];
 
 	    struct pollfd fds[] = {
-		{wl_display_get_fd(wlc.display), POLLIN},
-		{wlc.key_repeat_timer_fd, POLLIN},
-		{wlc.time_event_timer_fd, POLLIN},
-	    };
+		{.fd = wl_display_get_fd(wlc.display), .events = POLLIN},
+		{.fd = wlc.key_repeat_timer_fd, .events = POLLIN},
+		{.fd = wlc.time_event_timer_fd, .events = POLLIN},
+		{.fd = STDIN_FILENO, .events = POLLIN}};
+
 	    const int nfds = sizeof(fds) / sizeof(*fds);
 
 	    wl_display_dispatch(wlc.display);
 
-	    ku_wayland_set_time_event_delay(time_event_delay);
+	    ku_wayland_set_time_event_delay(time_event_interval);
 
 	    while (1)
 	    {
@@ -1387,7 +1422,7 @@ void ku_wayland_init(
 		    break;
 		}
 
-		if (fds[0].revents & POLLIN)
+		if (fds[0].revents & POLLIN) /* wayland events */
 		{
 		    if (wl_display_dispatch(wlc.display) < 0)
 		    {
@@ -1395,14 +1430,38 @@ void ku_wayland_init(
 		    }
 		}
 
-		if (fds[1].revents & POLLIN)
+		if (fds[1].revents & POLLIN) /* key repeat timer events */
 		{
 		    keyboard_repeat();
 		}
 
-		if (fds[2].revents & POLLIN)
+		if (fds[2].revents & POLLIN) /* time event timer events */
 		{
-		    printf("TIMER EVENT\n");
+
+		    struct itimerspec spec = {0};
+		    spec.it_value.tv_sec   = wlc.time_event_interval / 1000;
+		    spec.it_value.tv_nsec  = (wlc.time_event_interval % 1000) * 1000000l;
+		    timerfd_settime(wlc.time_event_timer_fd, 0, &spec, NULL);
+
+		    ku_event_t event = init_event();
+		    event.type       = KU_EVENT_TIME;
+
+		    (*wlc.update)(event);
+		}
+
+		if (fds[3].revents & POLLIN) /* stdin events */
+		{
+		    char buffer[2] = {0};
+		    while (fgets(buffer, 2, stdin))
+		    {
+			ku_event_t event = init_event();
+			event.type       = KU_EVENT_STDIN;
+			event.time       = 0;
+			event.text[0]    = buffer[0];
+			event.text[1]    = '\0';
+
+			(*wlc.update)(event);
+		    }
 		}
 
 		if (ku_wayland_exit_flag) break;
@@ -1428,7 +1487,8 @@ void ku_wayland_toggle_fullscreen(struct wl_window* window)
 
 void ku_wayland_set_time_event_delay(int ms)
 {
-    struct itimerspec spec = {0};
+    wlc.time_event_interval = ms;
+    struct itimerspec spec  = {0};
     if (ms > 0)
     {
 	spec.it_value.tv_sec  = ms / 1000;

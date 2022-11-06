@@ -93,7 +93,7 @@ void update(ku_event_t ev)
     ku_window_event(mmfm.kuwindow, ev);
     /* if (ev.type == KU_EVENT_RESIZE) ku_view_describe(mmfm.kuwindow->root, 0); */
     if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
-    if (ev.type == KU_EVENT_TIME) ui_update_player();
+    if (ev.type == KU_EVENT_FRAME) ui_update_player();
 
     if (mmfm.window->frame_cb == NULL)
     {
@@ -167,6 +167,8 @@ void update_replay(ku_event_t ev)
 	    update(*recev);
 	}
     }
+
+    update(ev);
 }
 
 void render(uint32_t time, uint32_t index, ku_bitmap_t* bm)
@@ -315,10 +317,10 @@ int main(int argc, char* argv[])
     if (rep_path) config_set("rep_path", rep_path);
 
     if (rec_path) evrec_init_recorder(rec_path); // DESTROY 4
-    if (rep_path) evrec_init_player(rec_path);
+    if (rep_path) evrec_init_player(rep_path);
 
     if (rec_path != NULL) ku_wayland_init(init, event, update_record, render, destroy, 0);
-    else if (rep_path != NULL) ku_wayland_init(init, event, update_replay, render, destroy, 1500);
+    else if (rep_path != NULL) ku_wayland_init(init, event, update_replay, render, destroy, 16);
     else ku_wayland_init(init, event, update, render, destroy, 0);
 
     config_destroy(); // DESTROY 0

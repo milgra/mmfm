@@ -34,27 +34,36 @@ typedef struct _ku_table_event_t
 
 struct _ku_table_t
 {
-    char*       id;             // unique id for item generation
-    uint32_t    cnt;            // item count for item generation
-    vec_t*      items;          // data items
-    vec_t*      cache;          // item cache
-    vec_t*      fields;         // field name field size interleaved vector
-    vec_t*      selected_items; // selected items
-    int32_t     selected_index; // index of last selected
-    ku_view_t*  body_v;
-    ku_view_t*  evnt_v;
-    ku_view_t*  scrl_v;
-    textstyle_t textstyle;
+    char*      id;             // unique id for item generation
+    uint32_t   cnt;            // item count for item generation
+    vec_t*     items;          // data items
+    vec_t*     cache;          // item cache
+    vec_t*     fields;         // field name field size interleaved vector
+    vec_t*     selected_items; // selected items
+    int32_t    selected_index; // index of last selected
+    ku_view_t* body_v;
+    ku_view_t* evnt_v;
+    ku_view_t* scrl_v;
+
+    textstyle_t rowastyle; // alternating row a style
+    textstyle_t rowbstyle; // alternating row b style
+    textstyle_t rowsstyle; // selected row textstyle
+    textstyle_t headstyle; // header textstyle
+
     void (*on_event)(ku_table_event_t event);
 };
 
 ku_table_t* ku_table_create(
-    char*      id,
-    ku_view_t* body,
-    ku_view_t* scrl,
-    ku_view_t* evnt,
-    ku_view_t* head,
-    vec_t*     fields,
+    char*       id,
+    ku_view_t*  body,
+    ku_view_t*  scrl,
+    ku_view_t*  evnt,
+    ku_view_t*  head,
+    vec_t*      fields,
+    textstyle_t rowastyle,
+    textstyle_t rowbstyle,
+    textstyle_t rowsstyle,
+    textstyle_t headstyle,
     void (*on_event)(ku_table_event_t event));
 
 void ku_table_select(
@@ -186,25 +195,23 @@ ku_view_t* ku_table_head_create(
     ku_table_t* uit = (ku_table_t*) userdata;
 
     char*      headid   = cstr_new_format(100, "%s_header", uit->id); // REL 0
-    ku_view_t* headview = ku_view_new(headid, (ku_rect_t){0, 0, 100, uit->textstyle.line_height});
+    ku_view_t* headview = ku_view_new(headid, (ku_rect_t){0, 0, 100, uit->headstyle.line_height});
+
     REL(headid); // REL 0
 
-    int         wth = 0;
-    textstyle_t ts  = uit->textstyle;
+    int wth = 0;
 
     for (int i = 0; i < uit->fields->length; i += 2)
     {
 	char*      field    = uit->fields->data[i];
 	num_t*     size     = uit->fields->data[i + 1];
-	char*      cellid   = cstr_new_format(100, "%s_cell_%s", headview->id, field);              // REL 2
-	ku_view_t* cellview = ku_view_new(cellid, (ku_rect_t){wth, 0, size->intv, ts.line_height}); // REL 3
+	char*      cellid   = cstr_new_format(100, "%s_cell_%s", headview->id, field);                          // REL 2
+	ku_view_t* cellview = ku_view_new(cellid, (ku_rect_t){wth, 0, size->intv, uit->headstyle.line_height}); // REL 3
 
 	wth += size->intv + 2;
 
-	ts.backcolor = 0x454545FF;
-
 	tg_text_add(cellview);
-	tg_text_set(cellview, field, ts);
+	tg_text_set(cellview, field, uit->headstyle);
 
 	ku_view_add_subview(headview, cellview);
 
@@ -212,7 +219,7 @@ ku_view_t* ku_table_head_create(
 	REL(cellview); // REL 3
     }
 
-    ku_view_set_frame(headview, (ku_rect_t){0, 0, wth, ts.line_height});
+    ku_view_set_frame(headview, (ku_rect_t){0, 0, wth, uit->headstyle.line_height});
 
     return headview;
 }
@@ -232,8 +239,6 @@ ku_view_t* ku_table_item_create(
 	{
 	    map_t* data = uit->items->data[index];
 
-	    textstyle_t ts = uit->textstyle;
-
 	    if (uit->cache->length > 0)
 	    {
 		rowview = RET(uit->cache->data[0]);
@@ -242,10 +247,8 @@ ku_view_t* ku_table_item_create(
 	    else
 	    {
 		char* rowid = cstr_new_format(100, "%s_rowitem_%i", uit->id, uit->cnt++); // REL 0
-		rowview     = ku_view_new(rowid, (ku_rect_t){0, 0, table_v->frame.local.w, ts.line_height});
+		rowview     = ku_view_new(rowid, (ku_rect_t){0, 0, table_v->frame.local.w, uit->rowastyle.line_height});
 		REL(rowid); // REL 0
-
-		tg_css_add(rowview);
 
 		int wth = 0;
 
@@ -254,8 +257,8 @@ ku_view_t* ku_table_item_create(
 		    char*  field = uit->fields->data[i];
 		    num_t* size  = uit->fields->data[i + 1];
 		    // char*   value    = MGET(data, field);
-		    char*      cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field);               // REL 2
-		    ku_view_t* cellview = ku_view_new(cellid, (ku_rect_t){wth, 0, size->intv, ts.line_height}); // REL 3
+		    char*      cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field);                           // REL 2
+		    ku_view_t* cellview = ku_view_new(cellid, (ku_rect_t){wth, 0, size->intv, uit->rowastyle.line_height}); // REL 3
 
 		    wth += size->intv + 2;
 
@@ -268,21 +271,17 @@ ku_view_t* ku_table_item_create(
 		}
 	    }
 
-	    rowview->style.background_color = 0x000000FF;
-
 	    if (uit->selected_items->length > 0)
 	    {
 		uint32_t pos = vec_index_of_data(uit->selected_items, data);
 
 		if (pos < UINT32_MAX)
 		{
-		    rowview->style.background_color = 0x006600FF;
+		    /* rowview->style.background_color = 0x006600FF; */
 		}
 	    }
 
-	    ku_view_invalidate_texture(rowview);
-
-	    uint32_t color = index % 2 != 0 ? 0x35353588 : 0x45454588;
+	    textstyle_t style = index % 2 == 0 ? uit->rowastyle : uit->rowbstyle;
 
 	    int wth = 0;
 
@@ -300,13 +299,11 @@ ku_view_t* ku_table_item_create(
 
 		wth += size->intv + 2;
 
-		ts.backcolor = color;
-
-		if (value) tg_text_set(cellview, value, ts);
-		else tg_text_set(cellview, "", ts); // reset old value
+		if (value) tg_text_set(cellview, value, style);
+		else tg_text_set(cellview, "", style); // reset old value
 	    }
 
-	    ku_view_set_frame(rowview, (ku_rect_t){0, 0, wth, ts.line_height});
+	    ku_view_set_frame(rowview, (ku_rect_t){0, 0, wth, style.line_height});
 	}
     }
 
@@ -454,12 +451,16 @@ void ku_table_desc(
 }
 
 ku_table_t* ku_table_create(
-    char*      id, // id has to be unique
-    ku_view_t* body,
-    ku_view_t* scrl,
-    ku_view_t* evnt,
-    ku_view_t* head,
-    vec_t*     fields,
+    char*       id,
+    ku_view_t*  body,
+    ku_view_t*  scrl,
+    ku_view_t*  evnt,
+    ku_view_t*  head,
+    vec_t*      fields,
+    textstyle_t rowastyle,
+    textstyle_t rowbstyle,
+    textstyle_t rowsstyle,
+    textstyle_t headstyle,
     void (*on_event)(ku_table_event_t event))
 {
     assert(id != NULL);
@@ -472,6 +473,11 @@ ku_table_t* ku_table_create(
     uit->selected_items = VNEW();               // REL S3
     uit->on_event       = on_event;
 
+    uit->rowastyle = rowastyle;
+    uit->rowbstyle = rowbstyle;
+    uit->rowsstyle = rowsstyle;
+    uit->headstyle = headstyle;
+
     uit->body_v = RET(body);
 
     vh_tbl_body_attach(
@@ -479,10 +485,6 @@ ku_table_t* ku_table_create(
 	ku_table_item_create,
 	ku_table_item_recycle,
 	uit);
-
-    uit->textstyle             = ku_util_gen_textstyle(body);
-    uit->textstyle.margin_left = 5;
-    if (uit->textstyle.line_height == 0) uit->textstyle.line_height = (int) uit->textstyle.size;
 
     if (head)
     {

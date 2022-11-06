@@ -20,43 +20,55 @@
 	</div>
 	
 	<div id="top_flex" class="rowflex">
-	  
-	  <div id="filelistbox" class="colflex marginlt4">
-	    <div id="filelisthead" class="tablehead overflowhidden"/>
-	    <div id="filelistbck" class="black fullscaleview overflowhidden">
-	      <div id="filelisttable" class="tablebody fullscaleview"/>
-	      <div id="filelistscroll" class="fullscaleview">
-		<div id="filelistvertscroll" class="vertscroll"/>
-		<div id="filelisthoriscroll" class="horiscroll"/>
+
+	  <div id="filetable" class="colflex marginlt4">
+	    <div id="filetablehead" class="tablehead overflowhidden"/>
+	    <div id="filetablelayers" class="tableback fullscaleview overflowhidden" type="label" text="FILES">
+	      <div id="filetablebody" class="tablebody fullscaleview">
+		  <div id="filetable_row_a" class="rowa" type="label" text="row a"/>
+		  <div id="filetable_row_b" class="rowb" type="label" text="row b"/>
+		  <div id="filetable_row_selected" class="rowselected" type="label" text="row selected"/>
 	      </div>
-	      <div id="filelistevt" class="fullscaleview"/>
+	      <div id="filetablescroll" class="fullscaleview">
+		<div id="filetablevertscroll" class="vertscroll"/>
+		<div id="filetablehoriscroll" class="horiscroll"/>
+	      </div>
+	      <div id="filetableevt" class="fullscaleview"/>
 	    </div>
 	  </div>
 
 	  <!-- <div id="gap0" class="horgap5"/> -->
 
 	  <div id="sidebar" class="colflex">
-	    <div id="fileinfobox" class="colflex fullscaleview marginlt4">
-	      <div id="fileinfohead" class="tablehead overflowhidden"/>
-	      <div id="fileinfobck" class="black fullscaleview overflowhidden">
-		<div id="fileinfotable" class="tablebody fullscaleview"/>
-		<div id="fileinfoscroll" class="fullscaleview">
-		  <div id="fileinfovertscroll" class="vertscroll"/>
-		  <div id="fileinfohoriscroll" class="horiscroll"/>
+	    <div id="infotable" class="colflex fullscaleview marginlt4">
+	      <div id="infotablehead" class="tablehead overflowhidden"/>
+	      <div id="infotablelayers" class="tableback fullscaleview overflowhidden" type="label" text="FILE INFO">
+		<div id="infotablebody" class="tablebody fullscaleview">
+		  <div id="infotable_row_a" class="rowa" type="label" text="row a"/>
+		  <div id="infotable_row_b" class="rowb" type="label" text="row b"/>
+		  <div id="infotable_row_selected" class="rowselected" type="label" text="row selected"/>
 		</div>
-		<div id="fileinfoevt" class="fullscaleview"/>
+		<div id="infotablescroll" class="fullscaleview">
+		  <div id="infotablevertscroll" class="vertscroll"/>
+		  <div id="infotablehoriscroll" class="horiscroll"/>
+		</div>
+		<div id="infotableevt" class="fullscaleview"/>
 	      </div>
 	    </div>
 	    
-	    <div id="cliplistbox" class="colflex fullscaleview marginlt4">
-	      <div id="cliplisthead" class="tablehead overflowhidden"/>
-	      <div id="cliplistbck" class="black fullscaleview overflowhidden">
-		<div id="cliplist" class="tablebody fullscaleview"/>
-		<div id="cliplistscroll" class="fullscaleview">
-		  <div id="cliplistvertscroll" class="vertscroll"/>
-		  <div id="cliplisthoriscroll" class="horiscroll"/>
+	    <div id="cliptable" class="colflex fullscaleview marginlt4">
+	      <div id="cliptablehead" class="tablehead overflowhidden"/>
+	      <div id="cliptablelayers" class="tableback fullscaleview overflowhidden" type="label" text="PREVIEW">
+		<div id="cliptablebody" class="tablebody fullscaleview">
+		  <div id="cliptable_row_a" class="rowa" type="label" text="row a"/>
+		  <div id="cliptable_row_b" class="rowb" type="label" text="row b"/>
+		  <div id="cliptable_row_selected" class="rowselected" type="label" text="row selected"/>
 		</div>
-		<div id="cliplistevt" class="fullscaleview"/>
+		<div id="cliptablescroll" class="fullscaleview">
+		  <div id="cliptablevertscroll" class="vertscroll"/>
+		  <div id="cliptablehoriscroll" class="horiscroll"/>
+		</div>
+		<div id="cliptableevt" class="fullscaleview"/>
 	      </div>
 	    </div>
 	  </div>
@@ -98,7 +110,7 @@
 	  </div>
 	</div>
 
-	<div id="preview" class="fullscaleview overflowhidden margint4">
+	<div id="preview" class="tableback fullscaleview overflowhidden margint4" type="label" text="PREVIEW">
 	  <div id="previewbody" class="fullscaleview">
 	    <div id="previewcont"/>
 	  </div>
@@ -153,10 +165,14 @@
   <div id="settingspopupcont" class="popupcontainer fullscaleview">
     <div id="settingspopup">
       <div id="settingsshadow" class="popupshadow">
-	<div id="settingslist">
-	  <div id="settingslistbck" class="fullscaleview">
-	    <div id="settingstable" class="tablebody textaligncenter fullscaleview"/>
-	    <div id="settingslistevt" class="fullscaleview"/>
+	<div id="settingstable">
+	  <div id="settingstablelayers" class="fullscaleview">
+	    <div id="settingstablebody" class="tablebody textaligncenter fullscaleview">
+	      <div id="settingstable_row_a" class="rowa" type="label" text="row a"/>
+	      <div id="settingstable_row_b" class="rowb" type="label" text="row b"/>
+	      <div id="settingstable_row_selected" class="rowselected" type="label" text="row selected"/>
+	    </div>
+	    <div id="settingstableevt" class="fullscaleview"/>
 	  </div>
 	</div>
 	<div id="settingsclosebtn" class="closebtn">
@@ -169,10 +185,14 @@
   <div id="contextpopupcont" class="popupcontainer fullscaleview">
     <div id="contextpopup">
       <div id="contextshadow" class="popupshadow">
-	<div id="contextlist">
-	  <div id="contextlistbck" class="fullscaleview">
-	    <div id="contexttable" class="contexttablebody fullscaleview"/>
-	    <div id="contextlistevt" class="fullscaleview"/>
+	<div id="contexttable">
+	  <div id="contexttablelayers" class="fullscaleview">
+	    <div id="contexttablebody" class="contexttablebody fullscaleview">
+	      <div id="contexttable_row_a" class="rowa" type="label" text="row a"/>
+	      <div id="contexttable_row_b" class="rowb" type="label" text="row b"/>
+	      <div id="contexttable_row_selected" class="rowselected" type="label" text="row selected"/>
+	    </div>
+	    <div id="contexttabletevt" class="fullscaleview"/>
 	  </div>
 	</div>
       </div>

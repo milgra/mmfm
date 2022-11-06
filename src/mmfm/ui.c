@@ -990,6 +990,7 @@ ku_table_t* ui_create_table(ku_view_t* view, vec_t* fields)
     ku_view_remove_from_parent(row_a);
     ku_view_remove_from_parent(row_b);
     ku_view_remove_from_parent(row_s);
+    if (headrow) ku_view_remove_from_parent(headrow);
 
     return table;
 }

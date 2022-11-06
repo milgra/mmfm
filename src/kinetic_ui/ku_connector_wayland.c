@@ -197,6 +197,7 @@ struct wlc_t
     int             time_event_timer_fd;
     struct timespec time_start;
 
+    ku_event_t frame_event;
 } wlc = {0};
 
 int ku_wayland_exit_flag = 0;
@@ -368,7 +369,11 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
     lastcount++;
 
     ku_event_t event = init_event();
+
     event.type       = KU_EVENT_FRAME;
+    event.time_frame = (float) (event.time - wlc.frame_event.time) / 1000.0;
+
+    wlc.frame_event = event;
 
     // TODO refresh rate can differ so animations should be time based
     (*wlc.update)(event);
@@ -488,6 +493,10 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 	    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
 	    /* glClear(GL_COLOR_BUFFER_BIT); */
 	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
+
+	    ku_event_t event = init_event();
+	    event.type       = KU_EVENT_FRAME;
+	    wlc.frame_event  = event;
 	}
     }
 

@@ -298,10 +298,7 @@ void vh_textinput_on_anim(vh_anim_event_t event)
 void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
 {
     vh_textinput_t* data = view->handler_data;
-    if (ev.type == KU_EVENT_FRAME)
-    {
-    }
-    else if (ev.type == KU_EVENT_MDOWN)
+    if (ev.type == KU_EVENT_MDOWN)
     {
 	// ku_rect_t frame = view->frame.global;
 

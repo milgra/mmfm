@@ -56,7 +56,7 @@ typedef struct _ku_event_t
 
     uint32_t        time;       // milliseconds since start
     struct timespec time_unix;  // unix timestamp
-    float           tine_frame; // elapsed time since last frame
+    float           time_frame; // elapsed time since last frame
 
     char     text[8];
     int      dclick;

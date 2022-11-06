@@ -111,6 +111,7 @@ void update(ku_event_t ev)
 	    if (mmfm.use_software_renderer) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum);
 	    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum);
 	    /* zc_time("Render"); */
+	    /* nanosleep((const struct timespec[]){{0, 100000000L}}, NULL); */
 
 	    ku_wayland_draw_window(mmfm.window, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
 

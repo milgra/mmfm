@@ -80,13 +80,13 @@ void vh_cv_scrl_update(ku_view_t* view)
     ku_rect_t vf = view->frame.local;
     ku_rect_t cf = bvh->content->frame.local;
 
-    float pratio = cf.y / (vf.h - cf.h);
-    float sratio = vf.h / cf.h;
+    float pratio = -cf.y / cf.h;
+    float sratio = cf.h / vf.h;
 
-    if (sratio < 1.0)
+    if (sratio > 1.0)
     {
-	float hth = vf.h * sratio;
-	float pos = vf.h * pratio;
+	float hth = (vf.h - vh->hori_v->frame.local.h) * (1 / sratio);
+	float pos = (vf.h - vh->hori_v->frame.local.h) * pratio;
 
 	if (vh->state == 2)
 	{
@@ -101,13 +101,13 @@ void vh_cv_scrl_update(ku_view_t* view)
 	ku_view_set_frame(vh->vert_v, frame);
     }
 
-    pratio = cf.x / (vf.w - cf.w);
-    sratio = vf.w / cf.w;
+    pratio = -cf.x / cf.w;
+    sratio = cf.w / vf.w;
 
-    if (sratio < 1.0)
+    if (sratio > 1.0)
     {
-	float wth = vf.w * sratio;
-	float pos = vf.w * pratio;
+	float wth = (vf.w - vh->vert_v->frame.local.w) * (1 / sratio);
+	float pos = (vf.w - vh->vert_v->frame.local.w) * pratio;
 
 	if (vh->state == 2)
 	{

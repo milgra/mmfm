@@ -47,14 +47,7 @@
 .tablehead {
     height: 25px;
     width: 100%;
-    background-color: #252525FF;
-}
-
-.tablebody {
-    line-height: 25px;
-    color: #DEDEDEFF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
+    background-color: #888888FF;
 }
 
 .vertscroll {
@@ -441,7 +434,7 @@
     height: 30px;
     line-height: 25px;
     color: #DEDEDEFF;
-    background-color: #121212FF;
+    background-color: #222222FF;
     font-size: 16px;
     font-family: "Terminus (TTF):style=Bold";
 }
@@ -453,7 +446,7 @@
     height: 30px;
     line-height: 25px;
     color: #DEDEDEFF;
-    background-color: #151515FF;
+    background-color: #252525FF;
     font-size: 16px;
     font-family: "Terminus (TTF):style=Bold";
 }
@@ -464,7 +457,7 @@
     margin-left: 10px;
     line-height: 25px;
     color: #DEDEDEFF;
-    background-color: #313131FF;
+    background-color: #454545FF;
     font-size: 16px;
     font-family: "Terminus (TTF):style=Bold";
 }
@@ -486,6 +479,6 @@
     font-size: 60px;
     font-family: "Terminus (TTF):style=Bold";
     color: #353535FF;
-    background-color: #252525FF;
+    background-color: #222222FF;
     text-align: center;
 }

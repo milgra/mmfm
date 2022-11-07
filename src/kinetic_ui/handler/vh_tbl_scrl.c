@@ -84,10 +84,11 @@ void vh_tbl_scrl_update(ku_view_t* view)
 
     if (bvh->items->length > 0 && vh->item_cnt > 0)
     {
-	ku_view_t* head = bvh->items->data[0];
+	ku_view_t* head = vec_head(bvh->items);
+	ku_view_t* tail = vec_tail(bvh->items);
 
 	int vert_pos = bvh->top_index;
-	int vert_vis = bvh->bot_index - bvh->top_index;
+	int vert_vis = bvh->bot_index - bvh->top_index + 1;
 	int vert_max = vh->item_cnt;
 
 	if (vert_max > 1.0)
@@ -95,8 +96,15 @@ void vh_tbl_scrl_update(ku_view_t* view)
 	    float pratio = (float) vert_pos / (float) vert_max;
 	    float sratio = (float) vert_vis / (float) vert_max;
 
-	    float pos = view->frame.local.h * pratio;
-	    float hth = view->frame.local.h * sratio;
+	    float height = tail->frame.local.y + tail->frame.local.h - head->frame.local.y;
+	    if (height < view->frame.local.h)
+	    {
+		pratio = 0.0;
+		sratio = 1.0;
+	    }
+
+	    float pos = (view->frame.local.h - vh->hori_v->frame.local.h) * pratio;
+	    float hth = (view->frame.local.h - vh->hori_v->frame.local.h) * sratio;
 
 	    if (hth < 30.0) hth = 30.0;
 
@@ -121,6 +129,13 @@ void vh_tbl_scrl_update(ku_view_t* view)
 	{
 	    float pratio = (float) hori_pos / (float) hori_max;
 	    float sratio = (float) hori_vis / (float) hori_max;
+
+	    float width = head->frame.local.w;
+	    if (width < view->frame.local.w)
+	    {
+		pratio = 0.0;
+		sratio = 1.0;
+	    }
 
 	    float pos = view->frame.local.w * pratio;
 	    float wth = view->frame.local.w * sratio;

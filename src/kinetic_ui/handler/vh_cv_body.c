@@ -14,7 +14,7 @@ typedef struct _vh_cv_body_t
     float      ch; // content height
     float      px;
     float      py;
-    float      scale;
+    float      zoom;
 } vh_cv_body_t;
 
 void vh_cv_body_attach(
@@ -73,7 +73,7 @@ void vh_cv_body_attach(
     vh_cv_body_t* vh = CAL(sizeof(vh_cv_body_t), vh_cv_body_del, vh_cv_body_desc);
     vh->userdata     = userdata;
     vh->content      = view->views->data[0];
-    vh->scale        = 1.0;
+    vh->zoom         = 1.0;
 
     vh->cw = 1;
     vh->ch = 1;
@@ -100,7 +100,7 @@ void vh_cv_body_set_content_size(
     float nw = lf.w;
     float nh = nw * cr;
 
-    vh->scale = (float) nw / cw;
+    vh->zoom = (float) nw / cw;
 
     if (nh > lf.h)
     {
@@ -108,7 +108,7 @@ void vh_cv_body_set_content_size(
 
 	nh = lf.h;
 	nw *= cr;
-	vh->scale = (float) nh / ch;
+	vh->zoom = (float) nh / ch;
     }
 
     ku_rect_t frame = vh->content->frame.local;
@@ -138,7 +138,7 @@ void vh_cv_body_move(
 
 void vh_cv_body_zoom(
     ku_view_t* view,
-    float      s,
+    float      z,
     int        x,
     int        y)
 {
@@ -157,23 +157,11 @@ void vh_cv_body_zoom(
     float rw = pw / gf.w;
     float rh = ph / gf.h;
 
-    /* new dimensions */
+    vh->zoom = z;
+    if (vh->zoom < 0.001) vh->zoom = 0.001;
 
-    /* float ds = s / 100.0; */
-    /* if (ds > 0.5) ds = 0.5; */
-    /* if (ds < -0.5) ds = -0.5; */
-
-    /* if (vh->scale + ds > 10.0) vh->scale = 10.0; */
-    /* else if (vh->scale + ds < 0.1) vh->scale = 0.1; */
-    /* else vh->scale += ds; */
-
-    vh->scale = s;
-
-    if (vh->scale > 10.0) vh->scale = 10.0;
-    else if (vh->scale < 0.1) vh->scale = 0.1;
-
-    float nw = vh->cw * vh->scale;
-    float nh = vh->ch * vh->scale;
+    float nw = vh->cw * vh->zoom;
+    float nh = vh->ch * vh->zoom;
 
     lf.x = (float) x - rw * nw - view->frame.global.x;
     lf.y = (float) y - rh * nh - view->frame.global.y;

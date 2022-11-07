@@ -23,7 +23,7 @@ typedef struct _vh_cv_evnt_t
     float      sy;
     float      mx;
     float      my;
-    float      z;
+    float      zoom;
     void (*on_event)(vh_cv_evnt_event_t event);
 } vh_cv_evnt_t;
 
@@ -74,11 +74,8 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
 	}
 	else
 	{
-	    if (top < 0.001) dy -= top / 5.0; // scroll back top item
-	    if (bot > view->frame.local.h - 0.001)
-	    {
-		dy += (view->frame.local.h - bot) / 5.0; // scroll back bottom item
-	    }
+	    vh->my = view->frame.global.y + view->frame.global.h / 2.0;
+	    dy     = ((view->frame.local.h - hth) / 2.0 - top) / 2.0;
 	}
 
 	if (wth >= view->frame.local.w)
@@ -91,20 +88,19 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
 	}
 	else
 	{
-	    if (lft < 0.01) dx -= lft / 5.0;
-	    if (rgt > view->frame.local.w - 0.01)
-	    {
-		dx += (view->frame.local.w - rgt) / 5.0;
-	    }
+	    vh->mx = view->frame.global.x + view->frame.global.w / 2.0;
+	    dx     = ((view->frame.local.w - wth) / 2.0 - lft) / 2.0;
 	}
 
 	vh_cv_body_move(vh->tbody_view, dx, dy);
 
-	if (vh->z > 0.001 || vh->z < -0.001)
+	if (vh->zoom > 1.0001 || vh->zoom < 0.9999)
 	{
-	    vh->z *= 0.8;
+	    vh->zoom += (1.0 - vh->zoom) / 5.0;
 
-	    vh_cv_body_zoom(vh->tbody_view, vh->z, vh->mx, vh->my);
+	    float zoom = bvh->zoom * vh->zoom;
+
+	    vh_cv_body_zoom(vh->tbody_view, zoom, vh->mx, vh->my);
 	    vh_cv_evnt_event_t event = {0};
 	    if (vh->on_event) (*vh->on_event)(event);
 	}
@@ -124,7 +120,7 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
 	}
 	else
 	{
-	    vh->z -= (ev.dy - 1.0);
+	    vh->zoom -= (ev.dy - 1.0);
 	}
 	// cause dirty rect which causes frame events to flow for later animation
 	vh->tbody_view->frame.dim_changed = 1;
@@ -132,7 +128,8 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
     else if (ev.type == KU_EVENT_PINCH)
     {
 	vh_cv_body_t* body = vh->tbody_view->handler_data;
-	vh_cv_body_zoom(vh->tbody_view, body->scale + ev.ratio, ev.x, ev.y);
+
+	vh->zoom += ev.ratio;
 
 	// cause dirty rect which causes frame events to flow for later animation
 	vh->tbody_view->frame.dim_changed = 1;
@@ -214,6 +211,7 @@ void vh_cv_evnt_attach(
     vh->tbody_view   = tbody_view;
     vh->tscrl_view   = tscrl_view;
     vh->on_event     = on_event;
+    vh->zoom         = 1.0;
 
     view->handler_data = vh;
     view->handler      = vh_cv_evnt_evt;

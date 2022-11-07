@@ -384,7 +384,7 @@ void on_table_event(ku_table_event_t event)
 	    ui.drag_data = event.selected_items;
 	    ui.view_doc  = docview;
 	}
-	else if (event.id == KU_TABLE_EVENT_KEY)
+	else if (event.id == KU_TABLE_EVENT_KEY_DOWN)
 	{
 	    if (event.ev.keycode == XKB_KEY_Down || event.ev.keycode == XKB_KEY_Up)
 	    {
@@ -395,7 +395,7 @@ void on_table_event(ku_table_event_t event)
 
 		ku_table_select(event.table, index);
 
-		if (event.ev.repeat == 0)
+		if (event.ev.repeat == 0 || index == event.table->items->length - 1)
 		{
 		    map_t* info = event.selected_items->data[0];
 		    char*  path = MGET(info, "file/path");
@@ -777,7 +777,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	ku_rect_t     r    = ui.visubody->frame.global;
 	vh_cv_body_zoom(
 	    ui.visubody,
-	    body->scale * 1.1,
+	    body->zoom * 1.1,
 	    r.x + r.w / 2,
 	    r.y + r.h / 2);
     }
@@ -787,7 +787,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	ku_rect_t     r    = ui.visubody->frame.global;
 	vh_cv_body_zoom(
 	    ui.visubody,
-	    body->scale * 0.9,
+	    body->zoom * 0.9,
 	    r.x + r.w / 2,
 	    r.y + r.h / 2);
     }

@@ -14,7 +14,8 @@ enum vh_tbl_evnt_event_id
     VH_TBL_EVENT_OPEN,
     VH_TBL_EVENT_DRAG,
     VH_TBL_EVENT_DROP,
-    VH_TBL_EVENT_KEY
+    VH_TBL_EVENT_KEY_DOWN,
+    VH_TBL_EVENT_KEY_UP,
 };
 
 typedef struct _vh_tbl_evnt_t       vh_tbl_evnt_t;
@@ -42,6 +43,8 @@ struct _vh_tbl_evnt_t
     int        selected_index;
     float      sx;
     float      sy;
+    float      scroll_drag_x;
+    float      scroll_drag_y;
     void (*on_event)(vh_tbl_evnt_event_t event);
 };
 
@@ -90,20 +93,19 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
 		float dy = vh->sy;
 
 		if (top > 0.001) dy -= top; // scroll back top item
-		else if (bot < view->frame.local.h - 0.001)
+		else if (bot < view->frame.local.h - 0.001 - SCROLLBAR)
 		{
-		    if (hth > view->frame.local.h) dy += view->frame.local.h - bot; // scroll back bottom item
-		    else dy -= top;                                                 // scroll back top item
+		    if (hth > view->frame.local.h) dy += (view->frame.local.h - SCROLLBAR) - bot; // scroll back bottom item
+		    else dy -= top;                                                               // scroll back top item
 		}
 
 		if (lft > 0.001) dx -= lft;
-		else if (rgt < view->frame.local.w - 0.001)
+		else if (rgt < view->frame.local.w - 0.001 - SCROLLBAR)
 		{
-		    if (wth > view->frame.local.w) dx += view->frame.local.w - rgt;
+		    if (wth > view->frame.local.w) dx += (view->frame.local.w - SCROLLBAR) - rgt;
 		    else dx -= lft;
 		}
 
-		printf("MOVE %f dy %f\n", top, dy);
 		vh_tbl_body_move(vh->tbody_view, dx, dy);
 
 		if (vh->thead_view) vh_tbl_head_move(vh->thead_view, dx);
@@ -140,11 +142,11 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
 	{
 	    if (ev.x > view->frame.global.x + view->frame.global.w - SCROLLBAR)
 	    {
-		if (vh->tscrl_view) vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - view->frame.global.y);
+		if (vh->tscrl_view) vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - vh->scroll_drag_y);
 	    }
 	    if (ev.y > view->frame.global.y + view->frame.global.h - SCROLLBAR)
 	    {
-		if (vh->tscrl_view) vh_tbl_scrl_scroll_h(vh->tscrl_view, ev.x - view->frame.global.x);
+		if (vh->tscrl_view) vh_tbl_scrl_scroll_h(vh->tscrl_view, ev.x - vh->scroll_drag_x);
 	    }
 	}
 	if (vh->selected_item && ev.drag)
@@ -168,13 +170,19 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
     {
 	if (ev.x > view->frame.global.x + view->frame.global.w - SCROLLBAR)
 	{
-	    vh->scroll_drag = 1;
-	    if (vh->tscrl_view) vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - view->frame.global.y);
+	    vh_tbl_scrl_t* svh = vh->tscrl_view->handler_data;
+	    vh->scroll_drag    = 1;
+	    vh->scroll_drag_y  = ev.y - svh->hori_v->frame.global.y;
+
+	    if (vh->tscrl_view) vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - vh->scroll_drag_y);
 	}
 	if (ev.y > view->frame.global.y + view->frame.global.h - SCROLLBAR)
 	{
-	    vh->scroll_drag = 1;
-	    if (vh->tscrl_view) vh_tbl_scrl_scroll_h(vh->tscrl_view, ev.x - view->frame.global.x);
+	    vh_tbl_scrl_t* svh = vh->tscrl_view->handler_data;
+	    vh->scroll_drag    = 1;
+	    vh->scroll_drag_x  = ev.x - svh->hori_v->frame.global.x;
+
+	    if (vh->tscrl_view) vh_tbl_scrl_scroll_h(vh->tscrl_view, ev.x - vh->scroll_drag_x);
 	}
 	if (ev.x < view->frame.global.x + view->frame.global.w - SCROLLBAR &&
 	    ev.y < view->frame.global.y + view->frame.global.h - SCROLLBAR)
@@ -245,7 +253,12 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_KDOWN)
     {
-	vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_KEY, .view = view, .rowview = vh->selected_item, .index = 0, .ev = ev, .userdata = vh->userdata};
+	vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_KEY_DOWN, .view = view, .rowview = vh->selected_item, .index = 0, .ev = ev, .userdata = vh->userdata};
+	if (vh->on_event) (*vh->on_event)(event);
+    }
+    else if (ev.type == KU_EVENT_KUP)
+    {
+	vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_KEY_UP, .view = view, .rowview = vh->selected_item, .index = 0, .ev = ev, .userdata = vh->userdata};
 	if (vh->on_event) (*vh->on_event)(event);
     }
 }

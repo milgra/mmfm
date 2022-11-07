@@ -241,6 +241,7 @@ void vh_tbl_body_move(
 
     // get top and bot indexes
 
+    vh->top_index = vh->head_index;
     for (int index = 0;
 	 index < vh->items->length;
 	 index++)

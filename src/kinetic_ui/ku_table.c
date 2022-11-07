@@ -15,7 +15,8 @@ enum ku_table_event_id
     KU_TABLE_EVENT_CONTEXT,
     KU_TABLE_EVENT_DRAG,
     KU_TABLE_EVENT_DROP,
-    KU_TABLE_EVENT_KEY,
+    KU_TABLE_EVENT_KEY_DOWN,
+    KU_TABLE_EVENT_KEY_UP,
     KU_TABLE_EVENT_FIELDS_UPDATE,
     KU_TABLE_EVENT_FIELD_SELECT
 };
@@ -428,9 +429,14 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_DROP, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
 	(*uit->on_event)(tevent);
     }
-    else if (event.id == VH_TBL_EVENT_KEY)
+    else if (event.id == VH_TBL_EVENT_KEY_DOWN)
     {
-	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_KEY, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
+	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_KEY_DOWN, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
+	(*uit->on_event)(tevent);
+    }
+    else if (event.id == VH_TBL_EVENT_KEY_UP)
+    {
+	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_KEY_UP, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
 	(*uit->on_event)(tevent);
     }
 }
@@ -582,7 +588,7 @@ void ku_table_select(
 
 	    if (iframe.y + iframe.h > vframe.h)
 	    {
-		vh_tbl_body_move(uit->body_v, 0, iframe.y + iframe.h - vframe.h);
+		vh_tbl_body_move(uit->body_v, 0, iframe.y + iframe.h - vframe.h - 20.0);
 	    }
 	}
     }

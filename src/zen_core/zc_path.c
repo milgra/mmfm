@@ -127,12 +127,12 @@ char* path_new_normalize1(char* path)
 		// replace tilde with home
 		VADDR(newtok, cstr_new_cstring(getenv("HOME")));
 	    }
-	    else if (strlen(token) >= 2 && token[0] == '.' && token[1] == '.')
+	    else if (strlen(token) == 2 && token[0] == '.' && token[1] == '.')
 	    {
 		// delete last token
 		vec_rem_at_index(newtok, newtok->length - 1);
 	    }
-	    else if (token[0] == '.')
+	    else if (strlen(token) == 1 && token[0] == '.')
 	    {
 		// do nothing at current dir
 	    }

@@ -34,6 +34,8 @@ void vh_cv_evnt_attach(
     void*      userdata,
     void (*on_event)(vh_cv_evnt_event_t));
 
+void vh_cv_evnt_zoom(ku_view_t* view, float delta);
+
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
@@ -215,6 +217,14 @@ void vh_cv_evnt_attach(
 
     view->handler_data = vh;
     view->handler      = vh_cv_evnt_evt;
+}
+
+void vh_cv_evnt_zoom(ku_view_t* view, float delta)
+{
+    vh_cv_evnt_t* vh = view->handler_data;
+
+    vh->zoom += delta;
+    vh->tbody_view->frame.dim_changed = 1;
 }
 
 #endif

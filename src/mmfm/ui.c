@@ -668,6 +668,16 @@ void ui_on_key_down(vh_key_event_t event)
 	    ku_view_add_subview(ui.view_base, ui.contextpopupcont);
 	}
     }
+    if (event.ev.keycode == XKB_KEY_plus || event.ev.keycode == XKB_KEY_KP_Add)
+    {
+	ku_view_t* evview = ku_view_get_subview(ui.view_base, "previewevnt");
+	vh_cv_evnt_zoom(evview, 0.1);
+    }
+    if (event.ev.keycode == XKB_KEY_minus || event.ev.keycode == XKB_KEY_KP_Subtract)
+    {
+	ku_view_t* evview = ku_view_get_subview(ui.view_base, "previewevnt");
+	vh_cv_evnt_zoom(evview, -0.1);
+    }
 }
 
 void ui_on_btn_event(vh_button_event_t event)
@@ -773,23 +783,13 @@ void ui_on_btn_event(vh_button_event_t event)
     }
     else if (strcmp(event.view->id, "plusbtn") == 0)
     {
-	vh_cv_body_t* body = ui.visubody->handler_data;
-	ku_rect_t     r    = ui.visubody->frame.global;
-	vh_cv_body_zoom(
-	    ui.visubody,
-	    body->zoom * 1.1,
-	    r.x + r.w / 2,
-	    r.y + r.h / 2);
+	ku_view_t* evview = ku_view_get_subview(ui.view_base, "previewevnt");
+	vh_cv_evnt_zoom(evview, 0.1);
     }
     else if (strcmp(event.view->id, "minusbtn") == 0)
     {
-	vh_cv_body_t* body = ui.visubody->handler_data;
-	ku_rect_t     r    = ui.visubody->frame.global;
-	vh_cv_body_zoom(
-	    ui.visubody,
-	    body->zoom * 0.9,
-	    r.x + r.w / 2,
-	    r.y + r.h / 2);
+	ku_view_t* evview = ku_view_get_subview(ui.view_base, "previewevnt");
+	vh_cv_evnt_zoom(evview, -0.1);
     }
 }
 

@@ -304,7 +304,7 @@ void vh_tbl_body_vjump(
 
     // invalidate items
 
-    int count = vh->bot_index - vh->top_index;
+    int count = vh->bot_index - vh->top_index + 1;
 
     for (int index = 0;
 	 index < vh->items->length;

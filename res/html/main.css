@@ -25,9 +25,8 @@
     margin: 2px;
 }
 
-.marginlt4 {
+.marginl4 {
     margin-right: 2px;
-    margin-top: 2px;
 }
 
 .margint4 {
@@ -40,14 +39,14 @@
 }
 
 #main_top {
-    height: 38px;
+    height: 34px;
     width: 100%;
 }
 
 .tablehead {
-    height: 25px;
+    height: 20px;
     width: 100%;
-    background-color: #888888FF;
+    background-color: #121212FF;
 }
 
 .vertscroll {
@@ -86,7 +85,7 @@
 #headerbck {
     background-color: #343434FF;
     width: 100%;
-    height: 38px;
+    height: 34px;
 }
 
 #toolbar {
@@ -98,15 +97,34 @@
     flex-direction: row;
 }
 
-#pathbck {
+#pathbox {
     width: 100%;
-    height: 30px;
-    background-color: #121212FF;
+    height: 35px;
+    background-color: #343434FF;
+}
+
+#pathflex {
+    top: 4px;
+}
+
+.pathbck {
+    width: 100%;
+    height: 28px;
+    background-color: #454545FF;
+    border-radius: 4px;
+    box-shadow: 5px #0000000A;
+    display: flex;
+    flex-direction: row;
 }
 
 #ctrlbck {
     width: 100%;
-    height: 30px;
+    height: 35px;
+    background-color: #343434FF;
+}
+
+#cntrlflex {
+    top: 4px;
 }
 
 #pathbar {
@@ -135,7 +153,9 @@
 .ctrlbtn {
     width: 28px;
     height: 28px;
-    background-color: #121212FF;
+    background-color: #454545FF;
+    border-radius: 4px;
+    box-shadow: 5px #0000000A;
 }
 
 .closeicon {
@@ -378,13 +398,13 @@
 .slider {
     width: 100%;
     height: 28px;
-    background-color: #121212FF;
+    background-color: #232323FF;
+    border-radius: 5px;
 }
 
 .sliderbar {
-    top: 5px;
     width: 100%;
-    height: 18px;
+    height: 28px;
     background-color: #556655FF;
     border-radius: 5px;
 }
@@ -452,12 +472,12 @@
 }
 
 .head {
-    height: 25px;
+    height: 20px;
     width: 100%;
     margin-left: 10px;
-    line-height: 25px;
+    line-height: 20px;
     color: #DEDEDEFF;
-    background-color: #454545FF;
+    background-color: #121212FF;
     font-size: 16px;
     font-family: "Terminus (TTF):style=Bold";
 }

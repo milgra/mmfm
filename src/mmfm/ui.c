@@ -707,14 +707,23 @@ void ui_on_btn_event(vh_button_event_t event)
     {
 	ku_view_t* top = ku_view_get_subview(ui.view_base, "top_flex");
 
-	if (ui.sidebar->parent)
+	if (ui.infotablebox->parent)
 	{
-	    ku_view_remove_from_parent(ui.sidebar);
+	    ku_view_remove_from_parent(ui.infotablebox);
+	    ku_view_add_subview(top, ui.cliptablebox);
+
+	    config_set_bool("sidebar_visible", 1);
+	}
+	else if (ui.cliptablebox->parent)
+	{
+	    ku_view_remove_from_parent(ui.cliptablebox);
+
 	    config_set_bool("sidebar_visible", 0);
 	}
 	else
 	{
-	    ku_view_add_subview(top, ui.sidebar);
+	    ku_view_add_subview(top, ui.infotablebox);
+
 	    config_set_bool("sidebar_visible", 1);
 	}
 
@@ -1245,9 +1254,17 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ui.cliptablebox = RET(ku_view_get_subview(ui.view_base, "cliptable"));
     ui.infotablebox = RET(ku_view_get_subview(ui.view_base, "infotable"));
 
-    ui.sidebar = RET(ku_view_get_subview(ui.view_base, "sidebar"));
+    /* ui.sidebar = RET(ku_view_get_subview(ui.view_base, "sidebar")); */
 
-    if (config_get_bool("sidebar_visible") == 0) ku_view_remove_from_parent(ui.sidebar);
+    if (config_get_bool("sidebar_visible") == 0)
+    {
+	ku_view_remove_from_parent(ui.cliptablebox);
+	ku_view_remove_from_parent(ui.infotablebox);
+    }
+    else
+    {
+	ku_view_remove_from_parent(ui.cliptablebox);
+    }
 
     // show texture map for debug
 

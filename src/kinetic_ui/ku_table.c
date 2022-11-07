@@ -603,21 +603,21 @@ void ku_table_select(
 	int        realindex = bvh->head_index + i;
 	ku_view_t* item      = bvh->items->data[i];
 
-	if (item->style.background_color == 0x006600FF)
-	{
-	    item->style.background_color = 0x000000FF;
-	    ku_view_invalidate_texture(item);
-	}
+	textstyle_t style = realindex % 2 == 0 ? uit->rowastyle : uit->rowbstyle;
+	if (realindex == uit->selected_index) style = uit->rowsstyle;
 
-	if (realindex == uit->selected_index)
+	for (int i = 0; i < item->views->length; i++)
 	{
-	    item->style.background_color = 0x006600FF;
-	    ku_view_invalidate_texture(item);
+	    ku_view_t* cellview = item->views->data[i];
+	    tg_text_set_style(cellview, style);
 	}
     }
 
-    /* ku_table_event_t event = {.table = uit, .id = KU_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = index, .rowview = NULL}; */
-    /* (*uit->on_event)(event); */
+    if (uit->scrl_v)
+    {
+	vh_tbl_scrl_t* svh = uit->scrl_v->handler_data;
+	vh_tbl_scrl_update(uit->scrl_v);
+    }
 }
 
 vec_t* ku_table_get_fields(ku_table_t* uit)

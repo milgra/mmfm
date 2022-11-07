@@ -397,7 +397,6 @@ void on_table_event(ku_table_event_t event)
 
 		if (event.ev.repeat == 0)
 		{
-
 		    map_t* info = event.selected_items->data[0];
 		    char*  path = MGET(info, "file/path");
 		    char*  type = MGET(info, "file/type");
@@ -407,7 +406,7 @@ void on_table_event(ku_table_event_t event)
 
 		    if (index < ui.file_list_data->length)
 		    {
-			ku_view_t*     filetable = ku_view_get_subview(ui.view_base, "filetable");
+			ku_view_t*     filetable = ku_view_get_subview(ui.view_base, "filetablebody");
 			vh_tbl_body_t* vh        = filetable->handler_data;
 			int            rel_index = index - vh->head_index;
 			ku_view_t*     sel_item  = vh->items->data[rel_index];

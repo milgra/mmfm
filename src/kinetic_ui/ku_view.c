@@ -421,12 +421,13 @@ void ku_view_calc_global(ku_view_t* view)
     ku_rect_t frame_global = view->frame.local;
     ku_rect_t old_global   = view->frame.global;
 
-    frame_global.x = roundf(frame_parent.x) + roundf(frame_global.x);
-    frame_global.y = roundf(frame_parent.y) + roundf(frame_global.y);
+    frame_global.x = frame_parent.x + frame_global.x;
+    frame_global.y = frame_parent.y + frame_global.y;
 
     // notify about pos change
 
-    if (frame_global.x != old_global.x || frame_global.y != old_global.y) view->frame.pos_changed = 1;
+    if (fabs(frame_global.x - old_global.x) > 0.001 ||
+	fabs(frame_global.y - old_global.y) > 0.001) view->frame.pos_changed = 1;
 
     view->frame.global = frame_global;
 

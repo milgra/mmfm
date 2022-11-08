@@ -575,7 +575,7 @@ void ku_table_select(
     if (uit->selected_index < 0) uit->selected_index = 0;
     if (uit->selected_index > uit->items->length - 1) uit->selected_index = uit->items->length - 1;
 
-    if (bvh->bot_index <= uit->selected_index)
+    if (bvh->bot_index < uit->selected_index)
     {
 	vh_tbl_body_vjump(uit->body_v, uit->selected_index + 1, 0);
 

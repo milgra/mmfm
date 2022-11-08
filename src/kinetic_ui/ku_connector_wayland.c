@@ -1061,8 +1061,6 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
     (*wlc.update)(event);
 
     wlc.key_repeat_event = event;
-
-    zc_log_debug("keyboard key %i", key);
 }
 
 static void keyboard_repeat()
@@ -1079,8 +1077,6 @@ static void keyboard_repeat()
 
 static void keyboard_repeat_info(void* data, struct wl_keyboard* wl_keyboard, int32_t rate, int32_t delay)
 {
-    zc_log_debug("keyboard repeat info %i %i", rate, delay);
-
     wlc.key_repeat_delay = delay;
     if (rate > 0)
     {

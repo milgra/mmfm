@@ -184,7 +184,6 @@ void vh_button_add(ku_view_t* view, vh_button_type_t type, void (*on_event)(vh_b
 void vh_button_enable(ku_view_t* view)
 {
     vh_button_t* vh = view->handler_data;
-    printf("%s ENABLE %i\n", view->id, vh->enabled);
 
     if (vh->enabled == 0)
     {
@@ -195,7 +194,7 @@ void vh_button_enable(ku_view_t* view)
 void vh_button_disable(ku_view_t* view)
 {
     vh_button_t* vh = view->handler_data;
-    printf("%s DISABLE %i\n", view->id, vh->enabled);
+
     if (vh->enabled == 1)
     {
 	vh->enabled = 0;

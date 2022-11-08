@@ -341,6 +341,8 @@ void vh_tbl_body_vjump(
 	vh->bot_index  = topindex;
     }
 
+    printf("VJUMP TOP %i \n", topindex);
+
     vh_tbl_body_move(view, 0, 0);
 }
 

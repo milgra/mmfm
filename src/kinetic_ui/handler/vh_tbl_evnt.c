@@ -170,19 +170,25 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
     {
 	if (ev.x > view->frame.global.x + view->frame.global.w - SCROLLBAR)
 	{
-	    vh_tbl_scrl_t* svh = vh->tscrl_view->handler_data;
-	    vh->scroll_drag    = 1;
-	    vh->scroll_drag_y  = ev.y - svh->hori_v->frame.global.y;
+	    if (vh->tscrl_view)
+	    {
+		vh_tbl_scrl_t* svh = vh->tscrl_view->handler_data;
+		vh->scroll_drag    = 1;
+		vh->scroll_drag_y  = ev.y - svh->hori_v->frame.global.y;
 
-	    if (vh->tscrl_view) vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - vh->scroll_drag_y);
+		vh_tbl_scrl_scroll_v(vh->tscrl_view, ev.y - vh->scroll_drag_y);
+	    }
 	}
 	if (ev.y > view->frame.global.y + view->frame.global.h - SCROLLBAR)
 	{
-	    vh_tbl_scrl_t* svh = vh->tscrl_view->handler_data;
-	    vh->scroll_drag    = 1;
-	    vh->scroll_drag_x  = ev.x - svh->hori_v->frame.global.x;
+	    if (vh->tscrl_view)
+	    {
+		vh_tbl_scrl_t* svh = vh->tscrl_view->handler_data;
+		vh->scroll_drag    = 1;
+		vh->scroll_drag_x  = ev.x - svh->hori_v->frame.global.x;
 
-	    if (vh->tscrl_view) vh_tbl_scrl_scroll_h(vh->tscrl_view, ev.x - vh->scroll_drag_x);
+		vh_tbl_scrl_scroll_h(vh->tscrl_view, ev.x - vh->scroll_drag_x);
+	    }
 	}
 	if (ev.x < view->frame.global.x + view->frame.global.w - SCROLLBAR &&
 	    ev.y < view->frame.global.y + view->frame.global.h - SCROLLBAR)

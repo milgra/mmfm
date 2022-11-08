@@ -1202,6 +1202,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ui.last_visited_folders = MNEW();
 
     ui.file_list_data = VNEW(); // REL S0
+    ui.clip_list_data = VNEW(); // REL S0
 
     /* generate views from descriptors */
 

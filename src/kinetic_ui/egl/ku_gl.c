@@ -355,23 +355,23 @@ void ku_gl_add_vertexes(vec_t* views)
 
 	float data[36];
 
-	data[0] = rect.x;
-	data[1] = rect.y;
+	data[0] = (int) rect.x;
+	data[1] = (int) rect.y;
 
-	data[6] = rect.x + rect.w;
-	data[7] = rect.y + rect.h;
+	data[6] = (int) (rect.x + rect.w);
+	data[7] = (int) (rect.y + rect.h);
 
-	data[12] = rect.x;
-	data[13] = rect.y + rect.h;
+	data[12] = (int) rect.x;
+	data[13] = (int) (rect.y + rect.h);
 
-	data[18] = rect.x + rect.w;
-	data[19] = rect.y;
+	data[18] = (int) (rect.x + rect.w);
+	data[19] = (int) rect.y;
 
-	data[24] = rect.x;
-	data[25] = rect.y;
+	data[24] = (int) rect.x;
+	data[25] = (int) rect.y;
 
-	data[30] = rect.x + rect.w;
-	data[31] = rect.y + rect.h;
+	data[30] = (int) (rect.x + rect.w);
+	data[31] = (int) (rect.y + rect.h);
 
 	data[2] = text.ltx;
 	data[3] = text.lty;

@@ -122,7 +122,6 @@ struct _ui_t
 
     textstyle_t inputts;
     textstyle_t pathts;
-    textstyle_t timets;
 
     MediaState_t* ms;
 
@@ -208,7 +207,7 @@ void ui_open(char* path)
 	char timebuff[20];
 	snprintf(timebuff, 20, "Page %i / %i", 0, ui.pdf_page_count);
 
-	tg_text_set(ui.timetf, timebuff, ui.timets);
+	tg_text_set1(ui.timetf, timebuff);
 
 	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
 
@@ -813,7 +812,7 @@ void ui_on_slider_event(vh_slider_event_t event)
 	char timebuff[20];
 	snprintf(timebuff, 20, "Page %i / %i", page, ui.pdf_page_count);
 
-	tg_text_set(ui.timetf, timebuff, ui.timets);
+	tg_text_set1(ui.timetf, timebuff);
 
 	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
 
@@ -1243,7 +1242,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     /* time label */
 
     ui.timetf = ku_view_get_subview(ui.view_base, "timelabel");
-    ui.timets = ku_util_gen_textstyle(ui.timetf);
 
     ui.posslider = ku_view_get_subview(ui.view_base, "posslider");
 
@@ -1385,7 +1383,7 @@ void ui_update_player()
 
 	    char timebuff[20];
 	    snprintf(timebuff, 20, "%.2i:%.2i / %.2i:%.2i", tmin, tsec, dmin, dsec);
-	    tg_text_set(ui.timetf, timebuff, ui.timets);
+	    tg_text_set1(ui.timetf, timebuff);
 
 	    double ratio = time / ui.ms->duration;
 

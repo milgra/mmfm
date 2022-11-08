@@ -55,6 +55,7 @@ void ui_load_folder(char* folder);
 #include "vh_drag.c"
 #include "vh_key.c"
 #include "vh_tbl_body.c"
+#include "vh_tbl_scrl.c"
 #include "vh_textinput.c"
 #include "vh_touch.c"
 #include "zc_cstring.c"
@@ -149,6 +150,8 @@ struct _ui_t
 
     char*         pdfpath;
     ui_media_type media_type;
+
+    ku_view_t* focused;
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -835,6 +838,88 @@ void ui_on_key_down(vh_key_event_t event)
 	ku_view_t* evview = ku_view_get_subview(ui.view_base, "previewevnt");
 	vh_cv_evnt_zoom(evview, -0.1);
     }
+    if (event.ev.keycode == XKB_KEY_Tab)
+    {
+	/* cycle through controls */
+
+	ku_view_t* filetableevt    = ku_view_get_subview(ui.view_base, "filetableevt");
+	ku_view_t* filetablescroll = ku_view_get_subview(ui.view_base, "filetablescroll");
+
+	ku_view_t* infotableevt    = ku_view_get_subview(ui.view_base, "infotableevt");
+	ku_view_t* infotablescroll = ku_view_get_subview(ui.view_base, "infotablescroll");
+
+	ku_view_t* cliptableevt    = ku_view_get_subview(ui.view_base, "cliptableevt");
+	ku_view_t* cliptablescroll = ku_view_get_subview(ui.view_base, "cliptablescroll");
+
+	ku_view_t* previewevt    = ku_view_get_subview(ui.view_base, "previewevt");
+	ku_view_t* previewscroll = ku_view_get_subview(ui.view_base, "previewscrl");
+
+	ku_view_t* pathtf = ku_view_get_subview(ui.view_base, "pathtf");
+
+	if (ui.focused == filetableevt)
+	{
+	    printf("FILETABLE\n");
+	    vh_tbl_scrl_hide(filetablescroll);
+	    if (infotableevt)
+	    {
+		ui.focused = infotableevt;
+		vh_tbl_scrl_show(infotablescroll);
+		ku_window_activate(ui.window, infotableevt);
+	    }
+	    else if (cliptableevt)
+	    {
+		ui.focused = cliptableevt;
+		vh_tbl_scrl_show(cliptablescroll);
+		ku_window_activate(ui.window, cliptableevt);
+	    }
+	    else
+	    {
+		ui.focused = previewevt;
+		vh_tbl_scrl_show(previewscroll);
+		ku_window_activate(ui.window, previewevt);
+	    }
+	}
+	else if (infotableevt && ui.focused == infotableevt)
+	{
+	    printf("INFOTABLE\n");
+	    vh_tbl_scrl_hide(infotablescroll);
+	    if (cliptableevt)
+	    {
+		ui.focused = cliptableevt;
+		vh_tbl_scrl_show(cliptablescroll);
+		ku_window_activate(ui.window, cliptableevt);
+	    }
+	    else
+	    {
+		ui.focused = previewevt;
+		vh_cv_scrl_show(previewscroll);
+		ku_window_activate(ui.window, previewevt);
+	    }
+	}
+	else if (cliptableevt && ui.focused == cliptableevt)
+	{
+	    printf("CLIPTABLE\n");
+	    ui.focused = previewevt;
+	    vh_cv_scrl_show(previewscroll);
+	    ku_window_activate(ui.window, previewevt);
+	}
+	else if (ui.focused == previewevt)
+	{
+	    printf("PREVIEW\n");
+
+	    ui.focused = pathtf;
+	    ku_window_activate(ui.window, pathtf);
+	    vh_textinput_activate(ui.pathtf, 1);
+	}
+	else
+	{
+	    printf("ELSE\n");
+
+	    ui.focused = filetableevt;
+	    vh_tbl_scrl_show(filetablescroll);
+	    ku_window_activate(ui.window, filetableevt);
+	}
+    }
 }
 
 void ui_on_btn_event(vh_button_event_t event)
@@ -1331,7 +1416,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ku_view_t* preview     = ku_view_get_subview(ui.view_base, "preview");
     ku_view_t* previewbody = ku_view_get_subview(ui.view_base, "previewbody");
     ku_view_t* previewscrl = ku_view_get_subview(ui.view_base, "previewscrl");
-    ku_view_t* previewevnt = ku_view_get_subview(ui.view_base, "previewevnt");
+    ku_view_t* previewevnt = ku_view_get_subview(ui.view_base, "previewevt");
     ku_view_t* previewcont = ku_view_get_subview(ui.view_base, "previewcont");
 
     if (preview)

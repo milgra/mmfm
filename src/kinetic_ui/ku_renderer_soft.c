@@ -58,7 +58,7 @@ void ku_renderer_software_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t di
 
 	    /* if there is a region to draw, modify source mask */
 
-	    if (view->frame.region.w > 0 && view->frame.region.h > 0)
+	    if (view->frame.region.w > -1 && view->frame.region.h > -1)
 	    {
 		srcmsk.x += view->frame.region.x;
 		srcmsk.y += view->frame.region.y;

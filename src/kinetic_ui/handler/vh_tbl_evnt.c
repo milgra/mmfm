@@ -95,14 +95,14 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
 		if (top > 0.001) dy -= top; // scroll back top item
 		else if (bot < view->frame.local.h - 0.001 - SCROLLBAR)
 		{
-		    if (hth > view->frame.local.h) dy += (view->frame.local.h - SCROLLBAR) - bot; // scroll back bottom item
-		    else dy -= top;                                                               // scroll back top item
+		    if (hth > view->frame.local.h - 0.0001 - SCROLLBAR) dy += (view->frame.local.h - SCROLLBAR) - bot; // scroll back bottom item
+		    else dy -= top;                                                                                    // scroll back top item
 		}
 
 		if (lft > 0.001) dx -= lft;
 		else if (rgt < view->frame.local.w - 0.001 - SCROLLBAR)
 		{
-		    if (wth > view->frame.local.w) dx += (view->frame.local.w - SCROLLBAR) - rgt;
+		    if (wth > view->frame.local.w - 0.001 - SCROLLBAR) dx += (view->frame.local.w - SCROLLBAR) - rgt;
 		    else dx -= lft;
 		}
 

@@ -84,8 +84,6 @@ struct _ui_t
     ku_view_t* clip_btn;
     ku_view_t* sidebar_btn;
 
-    ku_view_t* prev_btn;
-    ku_view_t* next_btn;
     ku_view_t* play_btn;
     ku_view_t* settings_btn;
 
@@ -108,6 +106,13 @@ struct _ui_t
     ku_view_t* timetf;
 
     ku_view_t* posslider;
+
+    ku_view_t* playbtn;
+    ku_view_t* prevbtn;
+    ku_view_t* nextbtn;
+    ku_view_t* plusbtn;
+    ku_view_t* minusbtn;
+    ku_view_t* cntrlflex;
 
     ku_table_t* cliptable;
     ku_table_t* filetable;
@@ -140,6 +145,7 @@ struct _ui_t
     map_t* last_visited_folders;
 
     int pdf_page_count;
+    int pdf_page;
 
     char*         pdfpath;
     ui_media_type media_type;
@@ -181,6 +187,7 @@ void ui_on_mp_event(ms_event_t event)
 
 void ui_open(char* path)
 {
+    printf("UI OPEN %s\n", path);
     if (ui.ms)
     {
 	mp_close(ui.ms);
@@ -201,6 +208,7 @@ void ui_open(char* path)
 	ui.pdfpath = RET(path);
 
 	ui.pdf_page_count   = pdf_count(path);
+	ui.pdf_page         = 0;
 	ku_bitmap_t* pdfbmp = pdf_render(path, 0);
 
 	vh_slider_set(ui.posslider, 0.1);
@@ -220,6 +228,13 @@ void ui_open(char* path)
 	REL(pdfbmp);
 
 	ui.media_type = UI_MT_DOCUMENT;
+
+	vh_button_disable(ui.playbtn);
+	vh_button_enable(ui.nextbtn);
+	vh_button_enable(ui.prevbtn);
+	vh_button_enable(ui.plusbtn);
+	vh_button_enable(ui.minusbtn);
+	vh_slider_enable(ui.posslider);
     }
     else
     {
@@ -229,6 +244,13 @@ void ui_open(char* path)
 
 	if (type == CODER_MEDIA_TYPE_VIDEO || type == CODER_MEDIA_TYPE_AUDIO)
 	{
+	    vh_button_enable(ui.playbtn);
+	    vh_button_disable(ui.prevbtn);
+	    vh_button_disable(ui.nextbtn);
+	    vh_button_enable(ui.plusbtn);
+	    vh_button_enable(ui.minusbtn);
+	    vh_slider_enable(ui.posslider);
+
 	    ui.ms = mp_open(path, ui_on_mp_event);
 	}
 	else if (type == CODER_MEDIA_TYPE_IMAGE)
@@ -246,7 +268,25 @@ void ui_open(char* path)
 		}
 
 		REL(image);
+
+		vh_button_disable(ui.playbtn);
+		vh_button_disable(ui.prevbtn);
+		vh_button_disable(ui.nextbtn);
+		vh_button_enable(ui.plusbtn);
+		vh_button_enable(ui.minusbtn);
+		vh_slider_disable(ui.posslider);
+		tg_text_set1(ui.timetf, "");
 	    }
+	}
+	else
+	{
+	    vh_button_disable(ui.playbtn);
+	    vh_button_disable(ui.nextbtn);
+	    vh_button_disable(ui.prevbtn);
+	    vh_button_disable(ui.plusbtn);
+	    vh_button_disable(ui.minusbtn);
+	    tg_text_set1(ui.timetf, "");
+	    vh_slider_disable(ui.posslider);
 	}
 
 	ui.media_type = UI_MT_STREAM;
@@ -731,29 +771,51 @@ void ui_on_btn_event(vh_button_event_t event)
     }
     else if (strcmp(event.view->id, "prevbtn") == 0)
     {
-	int32_t index = ui.filetable->selected_index - 1;
+	ui.pdf_page--;
+	if (ui.pdf_page < 0) ui.pdf_page = 0;
 
-	ku_table_select(ui.filetable, index);
+	ku_bitmap_t* pdfbmp = pdf_render(ui.pdfpath, ui.pdf_page);
 
-	map_t* info = ui.filetable->selected_items->data[0];
-	char*  path = MGET(info, "file/path");
-	char*  type = MGET(info, "file/type");
+	char timebuff[20];
+	snprintf(timebuff, 20, "Page %i / %i", ui.pdf_page + 1, ui.pdf_page_count);
 
-	if (strcmp(type, "directory") != 0) ui_open(path);
-	ui_show_info(info);
+	tg_text_set1(ui.timetf, timebuff);
+
+	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
+
+	if (ui.visuvideo->texture.bitmap != NULL)
+	{
+	    ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+	    ui.visuvideo->texture.changed = 1;
+	}
+
+	vh_slider_set(ui.posslider, (float) (ui.pdf_page + 1) / (float) ui.pdf_page_count);
+
+	REL(pdfbmp);
     }
     else if (strcmp(event.view->id, "nextbtn") == 0)
     {
-	int32_t index = ui.filetable->selected_index + 1;
+	ui.pdf_page++;
+	if (ui.pdf_page == ui.pdf_page_count) ui.pdf_page--;
 
-	ku_table_select(ui.filetable, index);
+	ku_bitmap_t* pdfbmp = pdf_render(ui.pdfpath, ui.pdf_page);
 
-	map_t* info = ui.filetable->selected_items->data[0];
-	char*  path = MGET(info, "file/path");
-	char*  type = MGET(info, "file/type");
+	char timebuff[20];
+	snprintf(timebuff, 20, "Page %i / %i", ui.pdf_page + 1, ui.pdf_page_count);
 
-	if (strcmp(type, "directory") != 0) ui_open(path);
-	ui_show_info(info);
+	tg_text_set1(ui.timetf, timebuff);
+
+	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
+
+	if (ui.visuvideo->texture.bitmap != NULL)
+	{
+	    ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+	    ui.visuvideo->texture.changed = 1;
+	}
+
+	vh_slider_set(ui.posslider, (float) (ui.pdf_page + 1) / (float) ui.pdf_page_count);
+
+	REL(pdfbmp);
     }
     else if (strcmp(event.view->id, "playbtn") == 0)
     {
@@ -806,23 +868,29 @@ void ui_on_slider_event(vh_slider_event_t event)
     if (ui.ms) mp_set_position(ui.ms, event.ratio);
     if (ui.media_type == UI_MT_DOCUMENT)
     {
-	int          page   = (int) (roundf(((float) (ui.pdf_page_count - 1) * event.ratio)));
-	ku_bitmap_t* pdfbmp = pdf_render(ui.pdfpath, page);
+	int new_page = (int) (roundf(((float) (ui.pdf_page_count - 1) * event.ratio)));
 
-	char timebuff[20];
-	snprintf(timebuff, 20, "Page %i / %i", page, ui.pdf_page_count);
-
-	tg_text_set1(ui.timetf, timebuff);
-
-	vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
-
-	if (ui.visuvideo->texture.bitmap != NULL)
+	if (new_page != ui.pdf_page)
 	{
-	    ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
-	    ui.visuvideo->texture.changed = 1;
-	}
+	    ui.pdf_page = new_page;
 
-	REL(pdfbmp);
+	    ku_bitmap_t* pdfbmp = pdf_render(ui.pdfpath, ui.pdf_page);
+
+	    char timebuff[20];
+	    snprintf(timebuff, 20, "Page %i / %i", ui.pdf_page + 1, ui.pdf_page_count);
+
+	    tg_text_set1(ui.timetf, timebuff);
+
+	    vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
+
+	    if (ui.visuvideo->texture.bitmap != NULL)
+	    {
+		ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+		ui.visuvideo->texture.changed = 1;
+	    }
+
+	    REL(pdfbmp);
+	}
     }
 }
 
@@ -1263,6 +1331,20 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     {
 	ku_view_remove_from_parent(ui.cliptablebox);
     }
+
+    ui.playbtn  = RET(ku_view_get_subview(ui.view_base, "playbtn"));
+    ui.prevbtn  = RET(ku_view_get_subview(ui.view_base, "prevbtn"));
+    ui.nextbtn  = RET(ku_view_get_subview(ui.view_base, "nextbtn"));
+    ui.plusbtn  = RET(ku_view_get_subview(ui.view_base, "plusbtn"));
+    ui.minusbtn = RET(ku_view_get_subview(ui.view_base, "minusbtn"));
+
+    vh_button_disable(ui.playbtn);
+    vh_button_disable(ui.nextbtn);
+    vh_button_disable(ui.prevbtn);
+    vh_button_disable(ui.plusbtn);
+    vh_button_disable(ui.minusbtn);
+    tg_text_set1(ui.timetf, "");
+    vh_slider_disable(ui.posslider);
 
     // show texture map for debug
 

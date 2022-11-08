@@ -240,6 +240,9 @@ void vh_anim_alpha(ku_view_t* view, float sa, float ea, int steps, animtype_t ty
 	vh->asteps     = steps;
 	vh->anim_alpha = 1;
     }
+
+    // force frame animation with dirty rect
+    view->frame.pos_changed = 1;
 }
 
 void vh_anim_finish(ku_view_t* view)

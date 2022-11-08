@@ -54,7 +54,27 @@ void ku_renderer_egl_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty)
 
 	if (view->texture.bitmap)
 	{
-	    ku_gl_render_quad(bitmap, i, (bmr_t){(int) dirty.x, (int) dirty.y, (int) (dirty.x + dirty.w), (int) (dirty.y + dirty.h)});
+	    bmr_t mask = (bmr_t){(int) dirty.x, (int) dirty.y, (int) (dirty.x + dirty.w), (int) (dirty.y + dirty.h)};
+
+	    if (view->frame.region.w > -1 && view->frame.region.h > -1)
+	    {
+		ku_rect_t rect = view->frame.global;
+
+		bmr_t srcmsk = {(int) rect.x, (int) rect.y, (int) (rect.x + rect.w), (int) (rect.y + rect.h)};
+
+		srcmsk.x += view->frame.region.x;
+		srcmsk.y += view->frame.region.y;
+		srcmsk.z = srcmsk.x + view->frame.region.w;
+		srcmsk.w = srcmsk.y + view->frame.region.h;
+
+		mask = srcmsk;
+
+		if (srcmsk.x != srcmsk.z) ku_gl_render_quad(bitmap, i, mask);
+	    }
+	    else
+	    {
+		ku_gl_render_quad(bitmap, i, mask);
+	    }
 	}
 
 	if (view->style.unmask)

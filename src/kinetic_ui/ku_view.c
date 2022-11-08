@@ -252,6 +252,8 @@ ku_view_t* ku_view_new(char* id, ku_rect_t frame)
     view->needs_touch       = 1;
     // view->blocks_touch      = 1;
 
+    view->frame.region = (ku_rect_t){-1, -1, -1. - 1};
+
     // reset margins
 
     view->style.margin_top    = INT_MAX;

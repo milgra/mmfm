@@ -213,7 +213,7 @@ void ui_open(char* path)
 
 	vh_slider_set(ui.posslider, 0.1);
 	char timebuff[20];
-	snprintf(timebuff, 20, "Page %i / %i", 0, ui.pdf_page_count);
+	snprintf(timebuff, 20, "Page %i / %i", 1, ui.pdf_page_count);
 
 	tg_text_set1(ui.timetf, timebuff);
 
@@ -268,15 +268,14 @@ void ui_open(char* path)
 		}
 
 		REL(image);
-
-		vh_button_disable(ui.playbtn);
-		vh_button_disable(ui.prevbtn);
-		vh_button_disable(ui.nextbtn);
-		vh_button_enable(ui.plusbtn);
-		vh_button_enable(ui.minusbtn);
-		vh_slider_disable(ui.posslider);
-		tg_text_set1(ui.timetf, "");
 	    }
+	    vh_button_disable(ui.playbtn);
+	    vh_button_disable(ui.prevbtn);
+	    vh_button_disable(ui.nextbtn);
+	    vh_button_enable(ui.plusbtn);
+	    vh_button_enable(ui.minusbtn);
+	    vh_slider_disable(ui.posslider);
+	    tg_text_set1(ui.timetf, "");
 	}
 	else
 	{
@@ -642,9 +641,61 @@ void on_table_event(ku_table_event_t event)
     }
 }
 
+void ui_toggle_pause()
+{
+    ui.autoplay = 1 - ui.autoplay;
+
+    vh_button_set_state(ui.playbtn, ui.autoplay ? VH_BUTTON_UP : VH_BUTTON_DOWN);
+
+    if (ui.ms)
+    {
+	if (ui.autoplay == 0 && !ui.ms->paused)
+	{
+	    mp_pause(ui.ms);
+	}
+
+	if (ui.autoplay == 1 && ui.ms->paused)
+	{
+	    mp_play(ui.ms);
+	}
+    }
+}
+
 void on_cv_event(vh_cv_evnt_event_t event)
 {
-    ui.force_refresh = 1;
+    if (event.id == VH_CV_EVENT_RESIZE) ui.force_refresh = 1;
+    if (event.id == VH_CV_EVENT_CLICK)
+    {
+	if (ui.media_type == UI_MT_DOCUMENT)
+	{
+	    // TODO move these blocks into pdf_nextpage
+	    ui.pdf_page++;
+	    if (ui.pdf_page == ui.pdf_page_count) ui.pdf_page--;
+
+	    ku_bitmap_t* pdfbmp = pdf_render(ui.pdfpath, ui.pdf_page);
+
+	    char timebuff[20];
+	    snprintf(timebuff, 20, "Page %i / %i", ui.pdf_page + 1, ui.pdf_page_count);
+
+	    tg_text_set1(ui.timetf, timebuff);
+
+	    vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
+
+	    if (ui.visuvideo->texture.bitmap != NULL)
+	    {
+		ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+		ui.visuvideo->texture.changed = 1;
+	    }
+
+	    vh_slider_set(ui.posslider, (float) (ui.pdf_page + 1) / (float) ui.pdf_page_count);
+
+	    REL(pdfbmp);
+	}
+	else
+	{
+	    if (ui.current_type == CODER_MEDIA_TYPE_VIDEO || ui.current_type == CODER_MEDIA_TYPE_AUDIO) ui_toggle_pause();
+	}
+    }
 }
 
 void ui_cancel_input()
@@ -664,29 +715,97 @@ void ui_on_touch(vh_touch_event_t event)
     }
 }
 
-void ui_toggle_pause()
-{
-    ui.autoplay = 1 - ui.autoplay;
-
-    vh_button_set_state(ui.play_btn, ui.autoplay ? VH_BUTTON_UP : VH_BUTTON_DOWN);
-
-    if (ui.ms)
-    {
-	if (ui.autoplay == 0 && !ui.ms->paused)
-	{
-	    mp_pause(ui.ms);
-	}
-
-	if (ui.autoplay == 1 && ui.ms->paused)
-	{
-	    mp_play(ui.ms);
-	}
-    }
-}
-
 void ui_on_key_down(vh_key_event_t event)
 {
-    if (event.ev.keycode == XKB_KEY_space) ui_toggle_pause();
+    if (event.ev.keycode == XKB_KEY_space)
+    {
+	if (ui.media_type == UI_MT_DOCUMENT)
+	{
+	    // TODO move these blocks into pdf_nextpage
+	    ui.pdf_page++;
+	    if (ui.pdf_page == ui.pdf_page_count) ui.pdf_page--;
+
+	    ku_bitmap_t* pdfbmp = pdf_render(ui.pdfpath, ui.pdf_page);
+
+	    char timebuff[20];
+	    snprintf(timebuff, 20, "Page %i / %i", ui.pdf_page + 1, ui.pdf_page_count);
+
+	    tg_text_set1(ui.timetf, timebuff);
+
+	    vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
+
+	    if (ui.visuvideo->texture.bitmap != NULL)
+	    {
+		ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+		ui.visuvideo->texture.changed = 1;
+	    }
+
+	    vh_slider_set(ui.posslider, (float) (ui.pdf_page + 1) / (float) ui.pdf_page_count);
+
+	    REL(pdfbmp);
+	}
+	else
+	{
+	    if (ui.current_type == CODER_MEDIA_TYPE_VIDEO || ui.current_type == CODER_MEDIA_TYPE_AUDIO) ui_toggle_pause();
+	}
+    }
+    if (event.ev.keycode == XKB_KEY_Right)
+    {
+	if (ui.media_type == UI_MT_DOCUMENT)
+	{
+	    // TODO move these blocks into pdf_nextpage
+	    ui.pdf_page++;
+	    if (ui.pdf_page == ui.pdf_page_count) ui.pdf_page--;
+
+	    ku_bitmap_t* pdfbmp = pdf_render(ui.pdfpath, ui.pdf_page);
+
+	    char timebuff[20];
+	    snprintf(timebuff, 20, "Page %i / %i", ui.pdf_page + 1, ui.pdf_page_count);
+
+	    tg_text_set1(ui.timetf, timebuff);
+
+	    vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
+
+	    if (ui.visuvideo->texture.bitmap != NULL)
+	    {
+		ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+		ui.visuvideo->texture.changed = 1;
+	    }
+
+	    vh_slider_set(ui.posslider, (float) (ui.pdf_page + 1) / (float) ui.pdf_page_count);
+
+	    REL(pdfbmp);
+	}
+    }
+    if (event.ev.keycode == XKB_KEY_Left)
+    {
+	if (ui.media_type == UI_MT_DOCUMENT)
+	{
+	    // TODO move these blocks into pdf_nextpage
+	    ui.pdf_page--;
+	    if (ui.pdf_page == -1) ui.pdf_page++;
+
+	    ku_bitmap_t* pdfbmp = pdf_render(ui.pdfpath, ui.pdf_page);
+
+	    char timebuff[20];
+	    snprintf(timebuff, 20, "Page %i / %i", ui.pdf_page + 1, ui.pdf_page_count);
+
+	    tg_text_set1(ui.timetf, timebuff);
+
+	    vh_cv_body_set_content_size(ui.visubody, pdfbmp->w, pdfbmp->h);
+
+	    if (ui.visuvideo->texture.bitmap != NULL)
+	    {
+		ku_draw_insert(ui.visuvideo->texture.bitmap, pdfbmp, 0, 0);
+		ui.visuvideo->texture.changed = 1;
+	    }
+
+	    vh_slider_set(ui.posslider, (float) (ui.pdf_page + 1) / (float) ui.pdf_page_count);
+
+	    REL(pdfbmp);
+	}
+    }
+
     if (event.ev.keycode == XKB_KEY_Delete) ui_delete_selected();
     if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
     {
@@ -865,7 +984,12 @@ void ui_on_btn_event(vh_button_event_t event)
 
 void ui_on_slider_event(vh_slider_event_t event)
 {
-    if (ui.ms) mp_set_position(ui.ms, event.ratio);
+    if (ui.ms)
+    {
+	if (ui.ms->paused) mp_play(ui.ms);
+	mp_set_position(ui.ms, event.ratio);
+    }
+
     if (ui.media_type == UI_MT_DOCUMENT)
     {
 	int new_page = (int) (roundf(((float) (ui.pdf_page_count - 1) * event.ratio)));

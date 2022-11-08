@@ -7,9 +7,15 @@
 #include "vh_cv_body.c"
 #include "vh_cv_scrl.c"
 
+enum vh_cv_evnt_event_id
+{
+    VH_CV_EVENT_RESIZE,
+    VH_CV_EVENT_CLICK,
+};
+
 typedef struct _vh_cv_evnt_event_t
 {
-    int type;
+    enum vh_cv_evnt_event_id id;
 } vh_cv_evnt_event_t;
 
 typedef struct _vh_cv_evnt_t
@@ -103,7 +109,7 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
 	    float zoom = bvh->zoom * vh->zoom;
 
 	    vh_cv_body_zoom(vh->tbody_view, zoom, vh->mx, vh->my);
-	    vh_cv_evnt_event_t event = {0};
+	    vh_cv_evnt_event_t event = {.id = VH_CV_EVENT_RESIZE};
 	    if (vh->on_event) (*vh->on_event)(event);
 	}
 
@@ -183,6 +189,8 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
 	    vh->scroll_drag = 1;
 	    vh_cv_scrl_scroll_h(vh->tscrl_view, ev.x - view->frame.global.x);
 	}
+	vh_cv_evnt_event_t event = {.id = VH_CV_EVENT_CLICK};
+	if (vh->on_event) (*vh->on_event)(event);
     }
     else if (ev.type == KU_EVENT_MUP)
     {

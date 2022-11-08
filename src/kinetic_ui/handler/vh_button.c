@@ -122,17 +122,21 @@ void vh_button_evt(ku_view_t* view, ku_event_t ev)
 void vh_button_set_state(ku_view_t* view, vh_button_state_t state)
 {
     vh_button_t* vh = view->handler_data;
-    vh->state       = state;
 
-    if (state)
+    if (vh->enabled)
     {
-	if (vh->offview) vh_anim_alpha(vh->offview, 1.0, 0.0, 10, AT_LINEAR);
-	if (vh->onview) vh_anim_alpha(vh->onview, 0.0, 1.0, 10, AT_LINEAR);
-    }
-    else
-    {
-	if (vh->offview) vh_anim_alpha(vh->offview, 0.0, 1.0, 10, AT_LINEAR);
-	if (vh->onview) vh_anim_alpha(vh->onview, 1.0, 0.0, 10, AT_LINEAR);
+	vh->state = state;
+
+	if (state)
+	{
+	    if (vh->offview) vh_anim_alpha(vh->offview, 1.0, 0.0, 10, AT_LINEAR);
+	    if (vh->onview) vh_anim_alpha(vh->onview, 0.0, 1.0, 10, AT_LINEAR);
+	}
+	else
+	{
+	    if (vh->offview) vh_anim_alpha(vh->offview, 0.0, 1.0, 10, AT_LINEAR);
+	    if (vh->onview) vh_anim_alpha(vh->onview, 1.0, 0.0, 10, AT_LINEAR);
+	}
     }
 }
 
@@ -163,6 +167,7 @@ void vh_button_add(ku_view_t* view, vh_button_type_t type, void (*on_event)(vh_b
     }
     if (view->views->length > 1)
     {
+	vh->type   = VH_BUTTON_TOGGLE;
 	vh->onview = view->views->data[1];
 	vh_anim_add(vh->onview, vh_button_on_anim, view);
     }

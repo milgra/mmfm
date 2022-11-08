@@ -1466,7 +1466,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
 
     if (frame->width > 0 && frame->height > 0)
     {
-	*img_convert_ctx = sws_getCachedContext(*img_convert_ctx, frame->width, frame->height, frame->format, bm->w, bm->h, AV_PIX_FMT_RGB32, sws_flags, NULL, NULL, NULL);
+	*img_convert_ctx = sws_getCachedContext(*img_convert_ctx, frame->width, frame->height, frame->format, bm->w, bm->h, AV_PIX_FMT_RGBA, sws_flags, NULL, NULL, NULL);
 
 	if (*img_convert_ctx != NULL)
 	{

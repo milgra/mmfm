@@ -478,7 +478,6 @@ void on_table_event(ku_table_event_t event)
 		    ku_view_set_frame(contextpopup, iframe);
 
 		    ku_view_add_subview(ui.view_base, ui.contextpopupcont);
-		    // ku_layout(ui.view_base);
 		}
 	    }
 	}
@@ -1174,7 +1173,7 @@ ku_table_t* ui_create_table(ku_view_t* view, vec_t* fields)
     textstyle_t headstyle = headrow == NULL ? (textstyle_t){0} : ku_util_gen_textstyle(headrow);
 
     ku_table_t* table = ku_table_create(
-	"table",
+	view->id,
 	body,
 	scroll,
 	event,

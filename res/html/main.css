@@ -272,21 +272,35 @@
     border-radius: 15px;
     background-color: #151515FF;
     box-shadow: 40px #FFFFFF22;
- }
+}
+
+.popuptable {
+    width: 100%;
+    height: 100%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.settingstable {
+    width: 100%;
+    height: 100%;
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
 
 .popupcontainer {
     align-items: center;
 }
 
 #settingspopup {
-    width: 520px;
+    width: 500px;
     height: 280px;
     margin: auto;
 }
 
 #contextpopup {
     width: 200px;
-    height: 220px;
+    height: 250px;
     margin: auto;
 }
 
@@ -297,27 +311,18 @@
     height: 30px;
 }
 
-#settingslist {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    margin-top: 40px;
-    margin-bottom: 40px;
-    line-height: 40px;
-    background-color: #151515FF;
-}
-
-#contextlist {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    background-color: #353535FF;
-}
-
 .contexttablebody {
-    color: #DEDEDEFF;
+    color: #FF0000FF;
+    overflow: hidden;
+    text-align: left;
+    font-size: 16px;
+    font-family: "Terminus (TTF):style=Bold";
+    line-height: 30>px;
+}
+
+
+.settingstablebody {
+    color: #FF0000FF;
     overflow: hidden;
     text-align: left;
     font-size: 16px;
@@ -482,6 +487,40 @@
     font-family: "Terminus (TTF):style=Bold";
 }
 
+.contextrowa {
+    margin-left: 20px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    color: #DEDEDEFF;
+    background-color: #222222FF;
+    font-size: 16px;
+    font-family: "Terminus (TTF):style=Bold";
+}
+
+.contextrowb {
+    margin-left: 20px;
+    top: 30px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    color: #DEDEDEFF;
+    background-color: #252525FF;
+    font-size: 16px;
+    font-family: "Terminus (TTF):style=Bold";
+}
+
+.contextrowselected {
+    margin-left: 20px;
+    top: 60px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    color: #DEDEDEFF;
+    background-color: #004400FF;
+    font-size: 16px;
+    font-family: "Terminus (TTF):style=Bold";
+}
 
 .rowselected {
     margin-left: 10px;
@@ -501,4 +540,42 @@
     color: #353535FF;
     background-color: #222222FF;
     text-align: center;
+}
+
+.settingsrowa {
+    margin-left: 20px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    text-align: center;
+    color: #DEDEDEFF;
+    background-color: #222222FF;
+    font-size: 16px;
+    font-family: "Terminus (TTF):style=Bold";
+}
+
+.settingsrowb {
+    margin-left: 20px;
+    top: 30px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    color: #DEDEDEFF;
+    text-align: center;
+    background-color: #252525FF;
+    font-size: 16px;
+    font-family: "Terminus (TTF):style=Bold";
+}
+
+.settingsrowselected {
+    margin-left: 20px;
+    top: 60px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    text-align: center;
+    color: #DEDEDEFF;
+    background-color: #004400FF;
+    font-size: 16px;
+    font-family: "Terminus (TTF):style=Bold";
 }

@@ -196,6 +196,14 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
     {
 	vh->scroll_drag = 0;
     }
+    else if (ev.type == KU_EVENT_FOCUS)
+    {
+	if (vh->tscrl_view) vh_cv_scrl_show(vh->tscrl_view);
+    }
+    else if (ev.type == KU_EVENT_UNFOCUS)
+    {
+	if (vh->tscrl_view) vh_cv_scrl_hide(vh->tscrl_view);
+    }
 }
 
 void vh_cv_evnt_del(void* p)

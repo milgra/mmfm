@@ -10,6 +10,8 @@ struct _ku_window_t
 {
     ku_view_t* root;
     vec_t*     views;
+    vec_t*     focusable;
+    ku_view_t* focused;
 
     int width;
     int height;
@@ -27,6 +29,7 @@ void         ku_window_deactivate(ku_window_t* window, ku_view_t* view);
 ku_view_t*   ku_window_get_root(ku_window_t* window);
 ku_rect_t    ku_window_update(ku_window_t* window, uint32_t time);
 void         ku_window_resize_to_root(ku_window_t* window, ku_view_t* view);
+void         ku_window_set_focusable(ku_window_t* window, vec_t* views);
 
 #endif
 
@@ -39,6 +42,7 @@ void         ku_window_resize_to_root(ku_window_t* window, ku_view_t* view);
 #include "zc_util2.c"
 #include "zc_vec2.c"
 #include "zc_vector.c"
+#include <xkbcommon/xkbcommon.h>
 
 void ku_window_del(void* p)
 {
@@ -186,6 +190,45 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_KDOWN || ev.type == KU_EVENT_KUP)
     {
+	if (ev.type == KU_EVENT_KDOWN && ev.keycode == XKB_KEY_Tab && win->focusable->length > 0)
+	{
+	    if (win->focused == NULL)
+	    {
+		ku_view_t* v = win->focusable->data[0];
+		win->focused = v;
+		if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_FOCUS});
+		vec_add_unique_data(win->explqueue, v);
+	    }
+	    else
+	    {
+		/* unfocus first */
+		int index = 0;
+		for (index = 0; index < win->focusable->length; index++)
+		{
+		    ku_view_t* v = win->focusable->data[index];
+
+		    if (win->focused == v)
+		    {
+			win->focused = NULL;
+			if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_UNFOCUS});
+			vec_rem(win->explqueue, v);
+			break;
+		    }
+		}
+
+		/* focus next in queue */
+		index++;
+		if (index == win->focusable->length) index = 0;
+
+		ku_view_t* v = win->focusable->data[index];
+		win->focused = v;
+		if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_FOCUS});
+		vec_add_unique_data(win->explqueue, v);
+
+		printf("FOCUS %s\n", v->id);
+	    }
+	}
+
 	for (int i = win->explqueue->length - 1; i > -1; i--)
 	{
 	    ku_view_t* v = win->explqueue->data[i];
@@ -309,6 +352,12 @@ void ku_window_resize_to_root(ku_window_t* win, ku_view_t* view)
 
     ku_view_set_frame(view, (ku_rect_t){0.0, 0.0, (float) f.w, (float) f.h});
     ku_view_layout(view);
+}
+
+void ku_window_set_focusable(ku_window_t* window, vec_t* views)
+{
+    if (window->focusable) REL(window->focusable);
+    window->focusable = RET(views);
 }
 
 #endif

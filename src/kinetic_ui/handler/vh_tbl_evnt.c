@@ -267,6 +267,14 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
 	vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_KEY_UP, .view = view, .rowview = vh->selected_item, .index = 0, .ev = ev, .userdata = vh->userdata};
 	if (vh->on_event) (*vh->on_event)(event);
     }
+    else if (ev.type == KU_EVENT_FOCUS)
+    {
+	if (vh->tscrl_view) vh_tbl_scrl_show(vh->tscrl_view);
+    }
+    else if (ev.type == KU_EVENT_UNFOCUS)
+    {
+	if (vh->tscrl_view) vh_tbl_scrl_hide(vh->tscrl_view);
+    }
 }
 
 void vh_tbl_evnt_del(void* p)

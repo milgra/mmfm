@@ -401,6 +401,14 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
 	    if (data->on_event) (*data->on_event)(event);
 	}
     }
+    else if (ev.type == KU_EVENT_FOCUS)
+    {
+	vh_textinput_activate(view, 1);
+    }
+    else if (ev.type == KU_EVENT_UNFOCUS)
+    {
+	vh_textinput_activate(view, 0);
+    }
 }
 
 void vh_textinput_del(void* p)
@@ -449,7 +457,7 @@ void vh_textinput_add(ku_view_t* view, char* text, char* phtext, textstyle_t tex
     // cursor
 
     data->cursor_v                         = ku_view_new(id_c, (ku_rect_t){50, 12, 2, 0}); // REL 4
-    data->cursor_v->style.background_color = 0x666666FF;
+    data->cursor_v->style.background_color = 0xFFFFFFFF;
 
     tg_css_add(data->cursor_v);
     vh_anim_add(data->cursor_v, NULL, NULL);

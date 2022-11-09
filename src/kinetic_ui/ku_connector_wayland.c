@@ -1019,7 +1019,8 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
     if (!(sym == XKB_KEY_BackSpace ||
 	  sym == XKB_KEY_Escape ||
 	  sym == XKB_KEY_Return ||
-	  sym == XKB_KEY_Print))
+	  sym == XKB_KEY_Print ||
+	  sym == XKB_KEY_Tab))
     {
 	char buf[8];
 	if (xkb_keysym_to_utf8(sym, buf, 8))

@@ -151,7 +151,10 @@ struct _ui_t
     char*         pdfpath;
     ui_media_type media_type;
 
-    ku_view_t* focused;
+    vec_t* focusable_filelist;
+    vec_t* focusable_infolist;
+    vec_t* focusable_cliplist;
+
 } ui;
 
 int ui_comp_entry(void* left, void* right)
@@ -838,88 +841,6 @@ void ui_on_key_down(vh_key_event_t event)
 	ku_view_t* evview = ku_view_get_subview(ui.view_base, "previewevnt");
 	vh_cv_evnt_zoom(evview, -0.1);
     }
-    if (event.ev.keycode == XKB_KEY_Tab)
-    {
-	/* cycle through controls */
-
-	ku_view_t* filetableevt    = ku_view_get_subview(ui.view_base, "filetableevt");
-	ku_view_t* filetablescroll = ku_view_get_subview(ui.view_base, "filetablescroll");
-
-	ku_view_t* infotableevt    = ku_view_get_subview(ui.view_base, "infotableevt");
-	ku_view_t* infotablescroll = ku_view_get_subview(ui.view_base, "infotablescroll");
-
-	ku_view_t* cliptableevt    = ku_view_get_subview(ui.view_base, "cliptableevt");
-	ku_view_t* cliptablescroll = ku_view_get_subview(ui.view_base, "cliptablescroll");
-
-	ku_view_t* previewevt    = ku_view_get_subview(ui.view_base, "previewevt");
-	ku_view_t* previewscroll = ku_view_get_subview(ui.view_base, "previewscrl");
-
-	ku_view_t* pathtf = ku_view_get_subview(ui.view_base, "pathtf");
-
-	if (ui.focused == filetableevt)
-	{
-	    printf("FILETABLE\n");
-	    vh_tbl_scrl_hide(filetablescroll);
-	    if (infotableevt)
-	    {
-		ui.focused = infotableevt;
-		vh_tbl_scrl_show(infotablescroll);
-		ku_window_activate(ui.window, infotableevt);
-	    }
-	    else if (cliptableevt)
-	    {
-		ui.focused = cliptableevt;
-		vh_tbl_scrl_show(cliptablescroll);
-		ku_window_activate(ui.window, cliptableevt);
-	    }
-	    else
-	    {
-		ui.focused = previewevt;
-		vh_tbl_scrl_show(previewscroll);
-		ku_window_activate(ui.window, previewevt);
-	    }
-	}
-	else if (infotableevt && ui.focused == infotableevt)
-	{
-	    printf("INFOTABLE\n");
-	    vh_tbl_scrl_hide(infotablescroll);
-	    if (cliptableevt)
-	    {
-		ui.focused = cliptableevt;
-		vh_tbl_scrl_show(cliptablescroll);
-		ku_window_activate(ui.window, cliptableevt);
-	    }
-	    else
-	    {
-		ui.focused = previewevt;
-		vh_cv_scrl_show(previewscroll);
-		ku_window_activate(ui.window, previewevt);
-	    }
-	}
-	else if (cliptableevt && ui.focused == cliptableevt)
-	{
-	    printf("CLIPTABLE\n");
-	    ui.focused = previewevt;
-	    vh_cv_scrl_show(previewscroll);
-	    ku_window_activate(ui.window, previewevt);
-	}
-	else if (ui.focused == previewevt)
-	{
-	    printf("PREVIEW\n");
-
-	    ui.focused = pathtf;
-	    ku_window_activate(ui.window, pathtf);
-	    vh_textinput_activate(ui.pathtf, 1);
-	}
-	else
-	{
-	    printf("ELSE\n");
-
-	    ui.focused = filetableevt;
-	    vh_tbl_scrl_show(filetablescroll);
-	    ku_window_activate(ui.window, filetableevt);
-	}
-    }
 }
 
 void ui_on_btn_event(vh_button_event_t event)
@@ -954,17 +875,21 @@ void ui_on_btn_event(vh_button_event_t event)
 	    ku_view_remove_from_parent(ui.infotablebox);
 	    ku_view_add_subview(top, ui.cliptablebox);
 
+	    ku_window_set_focusable(ui.window, ui.focusable_cliplist);
+
 	    config_set_bool("sidebar_visible", 1);
 	}
 	else if (ui.cliptablebox->parent)
 	{
 	    ku_view_remove_from_parent(ui.cliptablebox);
+	    ku_window_set_focusable(ui.window, ui.focusable_filelist);
 
 	    config_set_bool("sidebar_visible", 0);
 	}
 	else
 	{
 	    ku_view_add_subview(top, ui.infotablebox);
+	    ku_window_set_focusable(ui.window, ui.focusable_infolist);
 
 	    config_set_bool("sidebar_visible", 1);
 	}
@@ -1317,6 +1242,32 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ui.view_drag = ku_view_get_subview(ui.view_base, "draglayer");
     vh_drag_attach(ui.view_drag, ui_on_drag);
 
+    /* set up focusable */
+
+    ku_view_t* filetableevnt = ku_view_get_subview(ui.view_base, "filetableevt");
+    ku_view_t* infotableevt  = ku_view_get_subview(ui.view_base, "infotableevt");
+    ku_view_t* cliptableevt  = ku_view_get_subview(ui.view_base, "cliptableevt");
+    ku_view_t* previewevt    = ku_view_get_subview(ui.view_base, "previewevt");
+    ku_view_t* pathtf        = ku_view_get_subview(ui.view_base, "pathtf");
+
+    ui.focusable_filelist = VNEW();
+    ui.focusable_infolist = VNEW();
+    ui.focusable_cliplist = VNEW();
+
+    VADDR(ui.focusable_filelist, filetableevnt);
+    VADDR(ui.focusable_filelist, previewevt);
+    VADDR(ui.focusable_filelist, pathtf);
+
+    VADDR(ui.focusable_infolist, filetableevnt);
+    VADDR(ui.focusable_infolist, infotableevt);
+    VADDR(ui.focusable_infolist, previewevt);
+    VADDR(ui.focusable_infolist, pathtf);
+
+    VADDR(ui.focusable_cliplist, filetableevnt);
+    VADDR(ui.focusable_cliplist, cliptableevt);
+    VADDR(ui.focusable_cliplist, previewevt);
+    VADDR(ui.focusable_cliplist, pathtf);
+
     /* setup visualizer */
 
     ui.visuvideo = ku_view_get_subview(ui.view_base, "previewcont");
@@ -1535,10 +1486,13 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     {
 	ku_view_remove_from_parent(ui.cliptablebox);
 	ku_view_remove_from_parent(ui.infotablebox);
+
+	ku_window_set_focusable(window, ui.focusable_filelist);
     }
     else
     {
 	ku_view_remove_from_parent(ui.cliptablebox);
+	ku_window_set_focusable(window, ui.focusable_infolist);
     }
 
     ui.playbtn  = RET(ku_view_get_subview(ui.view_base, "playbtn"));

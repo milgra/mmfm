@@ -23,6 +23,8 @@ enum evtype
     KU_EVENT_WINDOW_SHOW,
     KU_EVENT_PINCH,
     KU_EVENT_STDIN,
+    KU_EVENT_FOCUS,
+    KU_EVENT_UNFOCUS,
 };
 
 typedef struct _ku_event_t

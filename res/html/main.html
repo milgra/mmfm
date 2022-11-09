@@ -1,242 +1,224 @@
-<div id="base" class="fullscaleview">
-  
-  <div id="main" class="colflex">
+<div id="base" class="fullscale">
+
+  <div id="main" class="fullscale colflex">
+
+    <!-- placeholder for the header, pushes down main bottom -->
     <div id="main_top"/>
 
-    <div id="main_bottom" class="rowflex">
-      
-      <div id="top_container" class="colflex">
-	
-	<div id="pathbox">
+    <!-- contains the file/clip/info lists -->
+    <div id="main_bottom" class="fullscale rowflex">
+
+      <div id="top_container" class="fullscale colflex">
+
+	<!-- path above file/info/clip lists -->
+	<div id="path">
  	  <div id="pathflex" class="rowflex">
-	    <div id="pathgap0" class="gap"/>
-	    <div id="pathback" class="pathbck">
-	      <div id="pathtf"/>
-	      <div id="pathclearbtn" type="button">
+	    <div id="pathgap0" class="hgap5"/>
+	    <div id="pathback" class="toolbox fullscale rowflex">
+	      <div id="pathtf" class="font16left fullscale"/>
+	      <div id="pathclearbtn" class="toolbtn" type="button">
 		<div id="pathclearicon" class="closeicon"/>
 	      </div>
 	    </div>
-	    <div id="pathgap1" class="gap"/>
-	    
-	    <!-- <div id="pathprevbtn" type="button"> -->
-	      <!--   <div id="pathprevicon" class="upicon"/> -->
-	      <!-- </div> -->
+	    <div id="pathgap1" class="hgap5"/>
 	  </div>
 	</div>
-	
-	<div id="top_flex" class="rowflex">
 
-	  <div id="filetable" class="colflex marginl4">
-	    <div id="filetablehead" class="tablehead overflowhidden">
-	      <div id="filetableheadrow" class="head"/>
+	<div id="top_flex" class="fullscale rowflex">
+
+	  <!-- file table with rows -->
+	  <div id="filetable" class="fullscale colflex marginr2">
+	    <div id="filetablehead" class="tablehead">
+	      <div id="filetableheadrow" class="head rowtext"/>
 	    </div>
-	    <div id="filetablelayers" class="tableback fullscaleview overflowhidden" type="label" text="FILES">
-	      <div id="filetablebody" class="tablebody fullscaleview">
-		  <div id="filetable_row_a" class="rowa" type="label" text="row a"/>
-		  <div id="filetable_row_b" class="rowb" type="label" text="row b"/>
-		  <div id="filetable_row_selected" class="rowselected" type="label" text="row selected"/>
+	    <div id="filetablelayers" class="tableback fullscale" type="label" text="FILES">
+	      <div id="filetablebody" class="tablebody fullscale">
+		<div id="filetable_row_a" class="rowa rowtext" type="label" text="row a"/>
+		<div id="filetable_row_b" class="rowb rowtext" type="label" text="row b"/>
+		<div id="filetable_row_selected" class="rowselected rowtext" type="label" text="row selected"/>
 	      </div>
-	      <div id="filetablescroll" class="fullscaleview">
+	      <div id="filetablescroll" class="fullscale">
 		<div id="filetablevertscroll" class="vertscroll"/>
 		<div id="filetablehoriscroll" class="horiscroll"/>
 	      </div>
-	      <div id="filetableevt" class="fullscaleview"/>
+	      <div id="filetableevt" class="fullscale"/>
 	    </div>
 	  </div>
-
-	  <!-- <div id="sidebar" class="colflex"> -->
-	    <div id="infotable" class="colflex fullscaleview marginl4">
-	      <div id="infotablehead" class="tablehead overflowhidden">
-		<div id="infotableheadrow" class="head"/>
-	      </div>
-	      <div id="infotablelayers" class="tableback fullscaleview overflowhidden" type="label" text="FILE INFO">
-		<div id="infotablebody" class="tablebody fullscaleview">
-		  <div id="infotable_row_a" class="rowa" type="label" text="row a"/>
-		  <div id="infotable_row_b" class="rowb" type="label" text="row b"/>
-		  <div id="infotable_row_selected" class="rowselected" type="label" text="row selected"/>
-		</div>
-		<div id="infotablescroll" class="fullscaleview">
-		  <div id="infotablevertscroll" class="vertscroll"/>
-		  <div id="infotablehoriscroll" class="horiscroll"/>
-		</div>
-		<div id="infotableevt" class="fullscaleview"/>
-	      </div>
+	  
+	  <!-- info table with rows -->
+	  <div id="infotable" class="fullscale colflex marginr2">
+	    <div id="infotablehead" class="tablehead">
+	      <div id="infotableheadrow" class="head rowtext"/>
 	    </div>
-	    
-	    <div id="cliptable" class="colflex fullscaleview marginl4">
-	      <div id="cliptablehead" class="tablehead overflowhidden">
-		<div id="cliptableheadrow" class="head"/>
+	    <div id="infotablelayers" class="tableback fullscale" type="label" text="FILE INFO">
+	      <div id="infotablebody" class="tablebody fullscale">
+		<div id="infotable_row_a" class="rowa rowtext" type="label" text="row a"/>
+		<div id="infotable_row_b" class="rowb rowtext" type="label" text="row b"/>
+		<div id="infotable_row_selected" class="rowselected rowtext" type="label" text="row selected"/>
 	      </div>
-	      <div id="cliptablelayers" class="tableback fullscaleview overflowhidden" type="label" text="CLIPBOARD">
-		<div id="cliptablebody" class="tablebody fullscaleview">
-		  <div id="cliptable_row_a" class="rowa" type="label" text="row a"/>
-		  <div id="cliptable_row_b" class="rowb" type="label" text="row b"/>
-		  <div id="cliptable_row_selected" class="rowselected" type="label" text="row selected"/>
-		</div>
-		<div id="cliptablescroll" class="fullscaleview">
-		  <div id="cliptablevertscroll" class="vertscroll"/>
-		  <div id="cliptablehoriscroll" class="horiscroll"/>
-		</div>
-		<div id="cliptableevt" class="fullscaleview"/>
+	      <div id="infotablescroll" class="fullscale">
+		<div id="infotablevertscroll" class="vertscroll"/>
+		<div id="infotablehoriscroll" class="horiscroll"/>
 	      </div>
+	      <div id="infotableevt" class="fullscale"/>
 	    </div>
-	  <!-- </div> -->
-	</div>
-	
-      </div>
+	  </div>
+	  
+	  <!-- clip table with rows -->
+	  <div id="cliptable" class="fullscale colflex marginr2">
+	    <div id="cliptablehead" class="tablehead">
+	      <div id="cliptableheadrow" class="head rowtext"/>
+	    </div>
+	    <div id="cliptablelayers" class="tableback fullscale" type="label" text="CLIPBOARD">
+	      <div id="cliptablebody" class="tablebody fullscale">
+		<div id="cliptable_row_a" class="rowa rowtext" type="label" text="row a"/>
+		<div id="cliptable_row_b" class="rowb rowtext" type="label" text="row b"/>
+		<div id="cliptable_row_selected" class="rowselected rowtext" type="label" text="row selected"/>
+	      </div>
+	      <div id="cliptablescroll" class="fullscale">
+		<div id="cliptablevertscroll" class="vertscroll"/>
+		<div id="cliptablehoriscroll" class="horiscroll"/>
+	      </div>
+	      <div id="cliptableevt" class="fullscale"/>
+	    </div>
+	  </div>
+	  
+	</div><!-- end of top flex-->
+      </div><!-- end of top container-->
 
-      <!-- <div id="main_gap" class="horgap5"/> -->
+      <div id="bottom_container" class="fullscale colflex">
 
-      <div id="bottom_container" class="colflex">
-
-	<div id="ctrlbck">
+	<!-- preview control bar -->
+	<div id="ctrl">
 	  <div id="cntrlflex" class="rowflex">
-	    <div id="ctrlgap0" class="gap"/>
-	    <div id="prevbtn" type="button" class="ctrlbtn">
+	    <div id="ctrlgap0" class="hgap5"/>
+	    <div id="prevbtn" type="button" class="toolbox ctrlbtn">
 	      <div id="previcon"/>
 	    </div>
-	    <div id="ctrlgap1" class="gap"/>
-	    <div id="nextbtn" type="button" class="ctrlbtn">
+	    <div id="ctrlgap1" class="hgap5"/>
+	    <div id="nextbtn" type="button" class="toolbox ctrlbtn">
 	      <div id="nexticon"/>
 	    </div>
-	    <div id="ctrlgap2" class="gap"/>
-	    <div id="playbtn" type="button" class="ctrlbtn">
+	    <div id="ctrlgap2" class="hgap5"/>
+	    <div id="playbtn" type="button" class="toolbox ctrlbtn">
 	      <div id="playicon"/>
 	      <div id="pauseicon"/>
 	    </div>
-	    <div id="ctrlgap3" class="gap"/>
+	    <div id="ctrlgap3" class="hgap5"/>
 	    <div id="posslider" class="slider" type="slider">
 	      <div id="possliderbar" class="sliderbar"/>
 	      <div id="timelabel" class="label" type="label" text="00:00"/>
 	    </div>
-	    <div id="ctrlgap4" class="gap"/>
-	    <div id="plusbtn" type="button" class="ctrlbtn">
+	    <div id="ctrlgap4" class="hgap5"/>
+	    <div id="plusbtn" type="button" class="toolbox ctrlbtn">
 	      <div id="plusicon"/>
 	    </div>
-	    <div id="ctrlgap5" class="gap"/>
-	    <div id="minusbtn" type="button" class="ctrlbtn">
+	    <div id="ctrlgap5" class="hgap5"/>
+	    <div id="minusbtn" type="button" class="toolbox ctrlbtn">
 	      <div id="minusicon"/>
 	    </div>
-	    <div id="ctrlgap6" class="gap"/>
+	    <div id="ctrlgap6" class="hgap5"/>
 	  </div>
 	</div>
 
-	<div id="preview" class="tableback fullscaleview overflowhidden" type="label" text="PREVIEW">
-	  <div id="previewbody" class="fullscaleview">
+	<!-- preview area -->
+	<div id="preview" class="tableback fullscale" type="label" text="PREVIEW">
+	  <div id="previewbody" class="fullscale">
 	    <div id="previewcont"/>
 	  </div>
-	  <div id="previewscrl" class="fullscaleview">
+	  <div id="previewscrl" class="fullscale">
 	    <div id="previewvertscroll" class="vertscroll"/>
 	    <div id="previewhoriscroll" class="horiscroll"/>
 	  </div>
-	  <div id="previewevt" class="fullscaleview"/>
-
-	</div>	
-      </div>
-    </div>    
-  </div>
-
-  <!-- MAIN DIV -->
-
-  <div id="overlays" class="fullscaleview">
-    
-    <div id="headerbck">
-      <div id="headerflex" class="colflex">
-	<div id="toolbar">
-	  <div id="headgap0" class="gap"/>
-	  <div id="app_close_btn" class="toolbtn">
-	    <div id="app_close_icon" class="closeicon"/>
-	  </div>
-	  <div id="headgap1" class="gap"/>
-	  <div id="settingsbtn" class="toolbtn">
-	    <div id="settingsicon"/>
-	  </div>
-	  <div id="headgap2" class="gap"/>
-	  <div id="infobck" class="infobck">
-	    <div id="infotf" class="infotf" type="label"/>
-	  </div>
-	  <!-- <div id="gap7" class="gap"/> -->
-	  <!-- <div id="show_clipboard_btn" class="toolbtn"> -->
-	    <!-- </div> -->
-	  <div id="headgap3" class="gap"/>
-	  <div id="show_properties_btn" class="toolbtn">
-	    <div id="sidebaricon"/>
-	  </div>
-	  <div id="headgap4" class="gap"/>
-	  <div id="app_maximize_btn" class="toolbtn">
-	    <div id="maxicon"/>
-	  </div>
-	  <div id="headgap5" class="gap"/>
+	  <div id="previewevt" class="fullscale"/>
 	</div>
 	
+      </div><!-- end of bottom container -->
+    </div><!-- end of main bottom -->    
+  </div><!-- end of main -->
+
+  <div id="overlays" class="fullscale">    
+    <div id="header">
+      <div id="headerflex" class="rowflex">
+	<div id="headgap0" class="hgap5"/>
+	<div id="app_close_btn" class="toolbox toolbtn">
+	  <div id="app_close_icon" class="closeicon"/>
+	</div>
+	<div id="headgap1" class="hgap5"/>
+	<div id="settingsbtn" class="toolbox toolbtn">
+	  <div id="settingsicon"/>
+	</div>
+	<div id="headgap2" class="hgap5"/>
+	<div id="infobck" class="toolbox fullscale">
+	  <div id="infotf" class="infotf font16center fullscale" type="label"/>
+	</div>
+	<div id="headgap3" class="hgap5"/>
+	<div id="show_properties_btn" class="toolbox toolbtn">
+	  <div id="sidebaricon"/>
+	</div>
+	<div id="headgap4" class="hgap5"/>
+	<div id="app_maximize_btn" class="toolbox toolbtn">
+	  <div id="maxicon"/>
+	</div>
+	<div id="headgap5" class="hgap5"/>
       </div>
     </div>
   </div>
 
-  <div id="settingspopupcont" class="popupcontainer fullscaleview">
-    <div id="settingspopup">
-      <div id="settingsshadow" class="popupshadow">
-	<div id="settingstable" class="settingstable">
-	  <div id="settingstablelayers" class="fullscaleview">
-	    <div id="settingstablebody" class="settingstablebody fullscaleview">
-	      <div id="settingstable_row_a" class="settingsrowa" type="label" text="row a"/>
-	      <div id="settingstable_row_b" class="settingsrowb" type="label" text="row b"/>
-	      <div id="settingstable_row_selected" class="settingsrowselected" type="label" text="row selected"/>
-	    </div>
-	    <div id="settingstableevt" class="fullscaleview"/>
+  <div id="settingspopupcont" class="popupcontainer fullscale">
+    <div id="settingspopup" class="popupshadow">
+      <div id="settingstable" class="settingstable fullscale">
+	<div id="settingstablelayers" class="fullscale">
+	  <div id="settingstablebody" class="popuptablebody fullscale">
+	    <div id="settingstable_row_a" class="setrowa rowtext" type="label" text="row a"/>
+	    <div id="settingstable_row_b" class="setrowb rowtext" type="label" text="row b"/>
+	    <div id="settingstable_row_selected" class="setrowselected rowtext" type="label" text="row selected"/>
 	  </div>
+	  <div id="settingstableevt" class="fullscale"/>
 	</div>
-	<div id="settingsclosebtn" class="closebtn">
-	  <div id="settingscloseicon" class="closeicon"/>
-	</div>
+      </div>
+      <div id="settingsclosebtn" class="closebtn">
+	<div id="settingscloseicon" class="closeicon"/>
       </div>
     </div>
   </div>
 
-  <div id="contextpopupcont" class="popupcontainer fullscaleview">
-    <div id="contextpopup">
-      <div id="contextshadow" class="popupshadow">
-	<div id="contexttable" class="popuptable">
-	  <div id="contexttablelayers" class="fullscaleview">
-	    <div id="contexttablebody" class="contexttablebody fullscaleview">
-	      <div id="contexttable_row_a" class="contextrowa" type="label" text="row a"/>
-	      <div id="contexttable_row_b" class="contextrowb" type="label" text="row b"/>
-	      <div id="contexttable_row_selected" class="contextrowselected" type="label" text="row selected"/>
-	    </div>
-	    <div id="contexttabletevt" class="fullscaleview"/>
+  <div id="contextpopupcont" class="popupcontainer fullscale">
+    <div id="contextpopup" class="popupshadow">
+      <div id="contexttable" class="popuptable fullscale">
+	<div id="contexttablelayers" class="fullscale">
+	  <div id="contexttablebody" class="popuptablebody fullscale">
+	    <div id="contexttable_row_a" class="ctxrowa rowtext" type="label" text="row a"/>
+	    <div id="contexttable_row_b" class="ctxrowb rowtext" type="label" text="row b"/>
+	    <div id="contexttable_row_selected" class="ctxrowselected rowtext" type="label" text="row selected"/>
 	  </div>
+	  <div id="contexttabletevt" class="fullscale"/>
 	</div>
       </div>
     </div>
   </div>
 
-  <div id="okaypopupcont" class="popupcontainer fullscaleview">
-    <div id="okaypopup">
-      <div id="okayshadow" class="popupshadow">
-	<div id="okaylabel" class="label" type="label" text="Are you sure?"/>	
-	<div id="okayclosebtn" class="closebtn" type="button">
-	  <div id="okaycloseicon" class="closeicon"/>
-	</div>
-	<div id="okayacceptbtn" class="acceptbtn" type="button">
-	  <div id="okayaccepticon" class="accepticon"/>
-	</div>
+  <div id="okaypopupcont" class="popupcontainer fullscale">
+    <div id="okaypopup" class="popupshadow">
+      <div id="okaylabel" class="label" type="label" text="Are you sure?"/>	
+      <div id="okayclosebtn" class="closebtn" type="button">
+	<div id="okaycloseicon" class="closeicon"/>
+      </div>
+      <div id="okayacceptbtn" class="acceptbtn" type="button">
+	<div id="okayaccepticon" class="accepticon"/>
       </div>
     </div>
   </div>
 
-  <div id="inputarea" class="fullscaleview">
-    <div id="inputbck">
-      <div id="inputbar">
-	<div id="inputtf"/>
-	<div id="inputclearbtn">
-	  <div id="inputclearicon" class="closeiconblack"/>
-
-	</div>
+  <div id="inputarea" class="fullscale">
+    <div id="inputbck" class="rowflex">
+      <div id="inputtf" class="font16left fullscale"/>
+      <div id="inputclearbtn" class="toolbtn">
+	<div id="inputclearicon" class="closeiconblack"/>
       </div>
     </div>
   </div>
 
-  <!-- <div id="left_dragger" class="dragger"/> -->
-  <div id="draglayer" class="fullscaleview"/>
+  <div id="draglayer" class="fullscale"/>
 
 </div>

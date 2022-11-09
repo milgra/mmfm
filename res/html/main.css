@@ -1,52 +1,36 @@
-.fullscaleview {
+.fullscale {
     height: 100%;
     width: 100%;
-}
-
-.black {
-    background-color: #000000FF;
 }
 
 .colflex {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
-}
+ }
 
 .rowflex {
     display: flex;
     flex-direction: row;
-    width: 100%;
-    height: 100%;
-}
+ }
 
-.margin4 {
-    margin: 2px;
-}
-
-.marginl4 {
+.marginr2 {
     margin-right: 2px;
-}
-
-.margint4 {
-
-    margin-top: 2px;
-}
-
-.textaligncenter {
-    text-align: center;
-}
-
-#main_top {
-    height: 34px;
-    width: 100%;
 }
 
 .tablehead {
     height: 20px;
     width: 100%;
     background-color: #121212FF;
+    overflow: hidden;
+}
+
+.tableback {
+    font-size: 60px;
+    font-family: "Terminus (TTF):style=Bold";
+    color: #353535FF;
+    background-color: #222222FF;
+    text-align: center;
+    overflow: hidden;
 }
 
 .vertscroll {
@@ -63,106 +47,24 @@
     background-color: #ACACAC66;
 }
 
-.vertgap5 {
-    height: 1px;
-    width: 100%;
-    background-color: #151515FF;
-}
-.horgap5 {
-    height: 100%;
-    width: 1px;
-    background-color: #151515FF;
-}
-
-.gap {
+.hgap5 {
     width: 5px;
 }
 
-.overflowhidden {
-    overflow: hidden;
-}
-
-#headerbck {
-    background-color: #343434FF;
-    width: 100%;
-    height: 34px;
-}
-
-#toolbar {
-    width: 100%;
-    height: 38px;
-    margin: auto;
-    top: 4px;
-    display: flex;
-    flex-direction: row;
-}
-
-#pathbox {
-    width: 100%;
-    height: 35px;
-    background-color: #343434FF;
-}
-
-#pathflex {
-    top: 4px;
-}
-
-.pathbck {
-    width: 100%;
-    height: 28px;
+.toolbox {
     background-color: #454545FF;
     border-radius: 4px;
     box-shadow: 5px #0000000A;
-    display: flex;
-    flex-direction: row;
-}
-
-#ctrlbck {
-    width: 100%;
-    height: 35px;
-    background-color: #343434FF;
-}
-
-#cntrlflex {
-    top: 4px;
-}
-
-#pathbar {
-    width: 100%;
-    height: 100%;
-    margin-bottom: 4px;
-    background-color: #121212FF;
 }
 
 .toolbtn {
-    background-color: #454545FF;
     width: 30px;
     height: 30px;
-    border-radius: 4px;
-    box-shadow: 5px #0000000A;
-}
-
-.blackbtn {
-    background-color: #121212FF;
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    box-shadow: 5px #0000000A;
 }
 
 .ctrlbtn {
     width: 28px;
     height: 28px;
-    background-color: #454545FF;
-    border-radius: 4px;
-    box-shadow: 5px #0000000A;
-}
-
-.closeicon {
-    width: 30px;
-    height: 30px;
-    background-image: url("close.png");
-    blocks: no;
 }
 
 .acceptbtn {
@@ -170,6 +72,214 @@
     bottom: 5px;
     width: 30px;
     height: 30px;
+}
+
+.closebtn {
+    margin: auto;
+    top: 5px;
+    width: 30px;
+    height: 30px;
+}
+
+.font16center {
+    font-size: 16px;
+    text-align: center;
+    font-family: "Terminus (TTF):style=Bold";
+}
+
+.font16left {
+    font-size: 16px;
+    text-align: left;
+    font-family: "Terminus (TTF):style=Bold";
+}
+
+.infotf {
+    blocks: no;
+    color: #DEDEDEFF;
+}
+
+.settingstable {
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+.popupcontainer {
+    align-items: center;
+}
+
+.popupshadow {
+    border-radius: 15px;
+    background-color: #151515FF;
+    box-shadow: 40px #FFFFFF22;
+}
+
+.popuptable {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.popuptablebody {
+    color: #FF0000FF;
+    overflow: hidden;
+}
+
+.slider {
+    width: 100%;
+    height: 28px;
+    background-color: #232323FF;
+    border-radius: 5px;
+}
+
+.sliderbar {
+    width: 100%;
+    height: 28px;
+    background-color: #556655FF;
+    border-radius: 5px;
+}
+
+.rowtext {
+    color: #DEDEDEFF;
+    font-size: 16px;
+    font-family: "Terminus (TTF):style=Bold";
+}
+
+.rowa {
+    line-height: 25px;
+    margin-left: 10px;
+    width: 100%;
+    height: 30px;
+    background-color: #222222FF;
+}
+
+.rowb {
+    line-height: 25px;
+    margin-left: 10px;
+    top: 30px;
+    width: 100%;
+    height: 30px;
+    background-color: #252525FF;
+}
+
+.rowselected {
+    margin-left: 10px;
+    top: 60px;
+    width: 100%;
+    height: 30px;
+    line-height: 25px;
+    background-color: #004400FF;
+}
+
+.head {
+    height: 20px;
+    width: 100%;
+    margin-left: 10px;
+    line-height: 20px;
+    color: #DEDEDEFF;
+    background-color: #121212FF;
+}
+
+.ctxrowa {
+    margin-left: 20px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    background-color: #222222FF;
+}
+
+.ctxrowb {
+    margin-left: 20px;
+    top: 30px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    background-color: #252525FF;
+}
+
+.ctxrowselected {
+    margin-left: 20px;
+    top: 60px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    background-color: #004400FF;
+}
+
+.setrowa {
+    margin-left: 20px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    text-align: center;
+    background-color: #222222FF;
+}
+
+.setrowb {
+    margin-left: 20px;
+    top: 30px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    color: #DEDEDEFF;
+    text-align: center;
+    background-color: #252525FF;
+}
+
+.setrowselected {
+    margin-left: 20px;
+    top: 60px;
+    width: 100%;
+    height: 30px;
+    line-height: 35px;
+    text-align: center;
+    background-color: #004400FF;
+}
+
+#main_top {
+    width: 100%;
+    height: 34px;
+}
+
+#header {
+    background-color: #343434FF;
+    width: 100%;
+    height: 34px;
+}
+
+#headerflex {
+    width: 100%;
+    height: 30px;
+    top: 4px;
+}
+
+#path {
+    background-color: #343434FF;
+    width: 100%;
+    height: 35px;
+}
+
+#pathflex {
+    top: 4px;
+    width: 100%;
+    height: 28px;
+}
+
+#ctrl {
+    background-color: #343434FF;
+    width: 100%;
+    height: 35px;
+}
+
+#cntrlflex {
+    top: 4px;
+    width: 100%;
+    height: 100%;
+}
+
+.closeicon {
+    width: 30px;
+    height: 30px;
+    background-image: url("close.png");
+    blocks: no;
 }
 
 .accepticon {
@@ -235,75 +345,18 @@
     blocks: no;
 }
 
-#propertiesicon {
-    width: 30px;
-    height: 30px;
-    background-image: url("max.png");
-    blocks: no;
-}
-
 #plusicon {
     width: 28px;
     height: 28px;
     background-image: url("plus.png");
     blocks: no;
 }
+
 #minusicon {
     width: 28px;
     height: 28px;
     background-image: url("minus.png");
     blocks: no;
-}
-
-.infobck {
-    width: 100%;
-    height: 30px;
-    background-color: #454545FF;
-    border-radius: 4px;
-    box-shadow: 5px #0000000A;
-}
-
-.infotf {
-    width: 100%;
-    height: 100%;
-    blocks: no;
-    color: #DEDEDEFF;
-    font-size: 16px;
-    text-align: center;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.dragger {
-    width: 15px;
-    height: 15px;
-    border-radius: 2px;
-    background-color: #00000099;
-}
-
-.popupshadow {
-    width: 100%;
-    height: 100%;
-    border-radius: 15px;
-    background-color: #151515FF;
-    box-shadow: 40px #FFFFFF22;
-}
-
-.popuptable {
-    width: 100%;
-    height: 100%;
-    margin-top: 20px;
-    margin-bottom: 20px;
-}
-
-.settingstable {
-    width: 100%;
-    height: 100%;
-    margin-top: 40px;
-    margin-bottom: 40px;
-}
-
-.popupcontainer {
-    align-items: center;
 }
 
 #settingspopup {
@@ -324,32 +377,6 @@
     margin: auto;
 }
 
-.closebtn {
-    margin: auto;
-    top: 5px;
-    width: 30px;
-    height: 30px;
-}
-
-.contexttablebody {
-    color: #FF0000FF;
-    overflow: hidden;
-    text-align: left;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-    line-height: 30>px;
-}
-
-
-.settingstablebody {
-    color: #FF0000FF;
-    overflow: hidden;
-    text-align: left;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-    line-height: 30>px;
-}
-
 #inputbck {
     width: 500px;
     height: 30px;
@@ -363,47 +390,13 @@
 }
 
 #inputtf {
-    width: 100%;
-    height: 100%;
     blocks: no;
     color: #232323FF;
-    font-size: 16px;
-    text-align: left;
-    font-family: "Terminus (TTF):style=Bold";
-    margin-left: 5px;
 }
 
 #pathtf {
-    width: 100%;
-    height: 100%;
     blocks: no;
     color: #FFFFFFFF;
-    font-size: 16px;
-    text-align: left;
-    font-family: "Terminus (TTF):style=Bold";
-    margin-left: 5px;
-}
-
-#inputclearbtn {
-    width: 30px;
-    height: 30px;
-}
-
-#pathclearbtn {
-    width: 30px;
-    height: 30px;
-}
-
-#pathprevbtn {
-    width: 30px;
-    height: 30px;
-}
-
-#inputbar {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: row;
 }
 
 .closeiconblack {
@@ -418,184 +411,4 @@
     height: 30px;
     background-image: url("up.png");
     blocks: no;
-}
-
-.slider {
-    width: 100%;
-    height: 28px;
-    background-color: #232323FF;
-    border-radius: 5px;
-}
-
-.sliderbar {
-    width: 100%;
-    height: 28px;
-    background-color: #556655FF;
-    border-radius: 5px;
-}
-
-#zoombuttons {
-    display: flex;
-    flex-direction: row;
-    width: 65px;
-    height: 30px;
-    right: 10px;
-    top: 5px;
-}
-
-#controls {
-    display: flex;
-    flex-direction: column;
-    width: 600px;
-    height: 30px;
-    margin: auto;
-    top: 5px;
-}
-
-#buttons {
-    width: 100px;
-    height: 30px;
-    margin: auto;
-    top: 35px;
-    background-color: #111111FF;
-    border-radius: 5px;
-}
-
-.label {
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    background-color: #00000000;
-    margin-left: 5px;
-    line-height: 25px;
-    color: #DEDEDEFF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.rowa {
-    margin-left: 10px;
-    width: 100%;
-    height: 30px;
-    line-height: 25px;
-    color: #DEDEDEFF;
-    background-color: #222222FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.rowb {
-    margin-left: 10px;
-    top: 30px;
-    width: 100%;
-    height: 30px;
-    line-height: 25px;
-    color: #DEDEDEFF;
-    background-color: #252525FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.head {
-    height: 20px;
-    width: 100%;
-    margin-left: 10px;
-    line-height: 20px;
-    color: #DEDEDEFF;
-    background-color: #121212FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.contextrowa {
-    margin-left: 20px;
-    width: 100%;
-    height: 30px;
-    line-height: 35px;
-    color: #DEDEDEFF;
-    background-color: #222222FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.contextrowb {
-    margin-left: 20px;
-    top: 30px;
-    width: 100%;
-    height: 30px;
-    line-height: 35px;
-    color: #DEDEDEFF;
-    background-color: #252525FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.contextrowselected {
-    margin-left: 20px;
-    top: 60px;
-    width: 100%;
-    height: 30px;
-    line-height: 35px;
-    color: #DEDEDEFF;
-    background-color: #004400FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.rowselected {
-    margin-left: 10px;
-    top: 60px;
-    width: 100%;
-    height: 30px;
-    line-height: 25px;
-    color: #DEDEDEFF;
-    background-color: #004400FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.tableback {
-    font-size: 60px;
-    font-family: "Terminus (TTF):style=Bold";
-    color: #353535FF;
-    background-color: #222222FF;
-    text-align: center;
-}
-
-.settingsrowa {
-    margin-left: 20px;
-    width: 100%;
-    height: 30px;
-    line-height: 35px;
-    text-align: center;
-    color: #DEDEDEFF;
-    background-color: #222222FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.settingsrowb {
-    margin-left: 20px;
-    top: 30px;
-    width: 100%;
-    height: 30px;
-    line-height: 35px;
-    color: #DEDEDEFF;
-    text-align: center;
-    background-color: #252525FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
-}
-
-.settingsrowselected {
-    margin-left: 20px;
-    top: 60px;
-    width: 100%;
-    height: 30px;
-    line-height: 35px;
-    text-align: center;
-    color: #DEDEDEFF;
-    background-color: #004400FF;
-    font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
 }

@@ -44,11 +44,11 @@ void init(wl_event_t event)
 
     if (mmfm.use_software_renderer)
     {
-	mmfm.window = ku_wayland_create_window("MMFM", 1200, 600);
+	mmfm.window = ku_wayland_create_window("mmfm", 1200, 600);
     }
     else
     {
-	mmfm.window = ku_wayland_create_eglwindow("MMFM", 1200, 600);
+	mmfm.window = ku_wayland_create_eglwindow("mmfm", 1200, 600);
 
 	int max_width  = 0;
 	int max_height = 0;
@@ -70,13 +70,14 @@ void init(wl_event_t event)
 
     if (mmfm.record)
     {
+	ui_add_cursor();
 	evrec_init_recorder(config_get("rec_path")); // DESTROY 4
     }
 
     if (mmfm.replay)
     {
-	evrec_init_player(config_get("rep_path")); // DESTROY 5
 	ui_add_cursor();
+	evrec_init_player(config_get("rep_path")); // DESTROY 5
     }
 
     ui_update_layout(monitor->logical_width, monitor->logical_height);
@@ -129,33 +130,37 @@ void update(ku_event_t ev)
     }
 }
 
+void update_screenshot()
+{
+    static int shotindex = 0;
+
+    char* name = cstr_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
+    char* path = path_new_append(config_get("rec_path"), name);          // REL 2
+
+    if (mmfm.use_software_renderer)
+    {
+	coder_write_png(path, &mmfm.window->bitmap);
+    }
+    else
+    {
+	ku_bitmap_t* bitmap = ku_bitmap_new(mmfm.window->width, mmfm.window->height);
+	ku_gl_save_framebuffer(bitmap);
+	ku_bitmap_t* flipped = bm_new_flip_y(bitmap); // REL 3
+	coder_write_png(path, flipped);
+	REL(flipped);
+	REL(bitmap);
+    }
+    ui_update_cursor((ku_rect_t){0, 0, mmfm.window->width, mmfm.window->height});
+}
+
 void update_record(ku_event_t ev)
 {
     update(ev);
 
     evrec_record(ev);
 
-    if (ev.type == KU_EVENT_KDOWN && ev.keycode == XKB_KEY_Print)
-    {
-	static int shotindex = 0;
-
-	char* name = cstr_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
-	char* path = path_new_append(config_get("rec_path"), name);          // REL 2
-
-	if (mmfm.use_software_renderer)
-	{
-	    coder_write_png(path, &mmfm.window->bitmap);
-	}
-	else
-	{
-	    ku_bitmap_t* bitmap = ku_bitmap_new(mmfm.window->width, mmfm.window->height);
-	    ku_gl_save_framebuffer(bitmap);
-	    ku_bitmap_t* flipped = bm_new_flip_y(bitmap); // REL 3
-	    coder_write_png(path, flipped);
-	    REL(flipped);
-	    REL(bitmap);
-	}
-    }
+    if (ev.type == KU_EVENT_KDOWN && ev.keycode == XKB_KEY_Print) update_screenshot();
+    else ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10});
 }
 
 void update_replay(ku_event_t ev)
@@ -167,6 +172,9 @@ void update_replay(ku_event_t ev)
 	while ((recev = evrec_replay(ev.time)) != NULL)
 	{
 	    update(*recev);
+
+	    if (recev->type == KU_EVENT_KDOWN && recev->keycode == XKB_KEY_Print) update_screenshot();
+	    else ui_update_cursor((ku_rect_t){recev->x, recev->y, 10, 10});
 	}
     }
 
@@ -217,6 +225,7 @@ int main(int argc, char* argv[])
 	"  -h, --help                          Show help message and quit.\n"
 	"  -v                                  Increase verbosity of messages, defaults to errors and warnings only.\n"
 	"  -c --config= [config file] \t use config file for session\n"
+	"  -d --directory= [config file] \t start with directory\n"
 	"  -r --resources= [resources folder] \t use resources dir for session\n"
 	"  -s --record= [recorder file] \t record session to file\n"
 	"  -p --replay= [recorder file] \t replay session from file\n"
@@ -229,6 +238,7 @@ int main(int argc, char* argv[])
 	    {"help", no_argument, NULL, 'h'},
 	    {"verbose", no_argument, NULL, 'v'},
 	    {"resources", optional_argument, 0, 'r'},
+	    {"directory", optional_argument, 0, 'd'},
 	    {"record", optional_argument, 0, 's'},
 	    {"software_renderer", optional_argument, 0, 0},
 	    {"replay", optional_argument, 0, 'p'},
@@ -240,11 +250,12 @@ int main(int argc, char* argv[])
     char* rec_par = NULL;
     char* rep_par = NULL;
     char* frm_par = NULL;
+    char* dir_par = NULL;
 
     int option       = 0;
     int option_index = 0;
 
-    while ((option = getopt_long(argc, argv, "vhr:s:p:c:f:", long_options, &option_index)) != -1)
+    while ((option = getopt_long(argc, argv, "vhr:s:p:c:f:d:", long_options, &option_index)) != -1)
     {
 	switch (option)
 	{
@@ -259,6 +270,7 @@ int main(int argc, char* argv[])
 	    case 's': rec_par = cstr_new_cstring(optarg); break; // REL 2
 	    case 'p': rep_par = cstr_new_cstring(optarg); break; // REL 3
 	    case 'f': frm_par = cstr_new_cstring(optarg); break; // REL 4
+	    case 'd': dir_par = cstr_new_cstring(optarg); break; // REL 4
 	    case 'v': zc_log_inc_verbosity(); break;
 	    default: fprintf(stderr, "%s", usage); return EXIT_FAILURE;
 	}
@@ -281,12 +293,14 @@ int main(int argc, char* argv[])
     char* per_path    = path_new_append(cfgdir_path, "state.kvl");                                                              // REL 13
     char* rec_path    = rec_par ? path_new_normalize(rec_par, wrk_path) : NULL;                                                 // REL 14
     char* rep_path    = rep_par ? path_new_normalize(rep_par, wrk_path) : NULL;                                                 // REL 15
+    char* dir_path    = dir_par ? path_new_normalize(dir_par, wrk_path) : NULL;                                                 // REL 15
 
     // print path info to console
 
     zc_log_debug("working path  : %s", wrk_path);
     zc_log_debug("resource path : %s", res_path);
     zc_log_debug("config path   : %s", cfg_path);
+    zc_log_debug("directory path   : %s", dir_path);
     zc_log_debug("state path   : %s", per_path);
     zc_log_debug("css path      : %s", css_path);
     zc_log_debug("html path     : %s", html_path);
@@ -309,6 +323,7 @@ int main(int argc, char* argv[])
 
     // init non-configurable defaults
 
+    config_set("top_path", dir_path ? dir_path : wrk_path);
     config_set("wrk_path", wrk_path);
     config_set("cfg_path", cfg_path);
     config_set("per_path", per_path);

@@ -571,6 +571,7 @@ struct wl_window* ku_wayland_create_window(char* title, int width, int height)
     xdg_toplevel_add_listener(info->xdg_toplevel, &xdg_toplevel_listener, info);
 
     xdg_toplevel_set_title(info->xdg_toplevel, title);
+    xdg_toplevel_set_app_id(info->xdg_toplevel, title);
 
     /* wl_display_roundtrip(wlc.display); */
 
@@ -603,6 +604,7 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
     info->xdg_toplevel = xdg_surface_get_toplevel(info->xdg_surface);
     xdg_toplevel_add_listener(info->xdg_toplevel, &xdg_toplevel_listener, info);
     xdg_toplevel_set_title(info->xdg_toplevel, title);
+    xdg_toplevel_set_app_id(info->xdg_toplevel, title);
 
     wl_surface_commit(info->surface);
 
@@ -1030,7 +1032,6 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 		ku_event_t event = init_event();
 		event.keycode    = sym;
 		event.type       = KU_EVENT_TEXT;
-		event.time       = time;
 		event.ctrl_down  = wlc.keyboard.control;
 		event.shift_down = wlc.keyboard.shift;
 
@@ -1056,7 +1057,6 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
     ku_event_t event = init_event();
     event.keycode    = sym;
     event.type       = key_state == WL_KEYBOARD_KEY_STATE_PRESSED ? KU_EVENT_KDOWN : KU_EVENT_KUP;
-    event.time       = time;
     event.ctrl_down  = wlc.keyboard.control;
     event.shift_down = wlc.keyboard.shift;
     (*wlc.update)(event);
@@ -1462,7 +1462,6 @@ void ku_wayland_init(
 		    {
 			ku_event_t event = init_event();
 			event.type       = KU_EVENT_STDIN;
-			event.time       = 0;
 			event.text[0]    = buffer[0];
 			event.text[1]    = '\0';
 

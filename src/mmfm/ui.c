@@ -1111,7 +1111,7 @@ void ui_add_cursor()
     ui.cursor->style.background_color = 0xFF000099;
     ui.cursor->needs_touch            = 0;
     tg_css_add(ui.cursor);
-    /* ku_window_add_to_top(ui.window,ui.cursor); */
+    ku_window_add(ui.window, ui.cursor);
 }
 
 void ui_update_cursor(ku_rect_t frame)

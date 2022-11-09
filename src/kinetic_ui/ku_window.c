@@ -143,11 +143,11 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	    }
 	}
 
-	if (ev.type == KU_EVENT_MDOWN)
-	{
-	    vec_reset(win->explqueue);
-	    ku_view_coll_touched(win->root, ev, win->explqueue);
-	}
+	/* if (ev.type == KU_EVENT_MDOWN) */
+	/* { */
+	vec_reset(win->explqueue);
+	ku_view_coll_touched(win->root, ev, win->explqueue);
+	/* } */
 
 	for (int i = win->explqueue->length - 1; i > -1; i--)
 	{

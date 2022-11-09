@@ -926,6 +926,7 @@ void ku_wayland_pointer_handle_button(void* data, struct wl_pointer* wl_pointer,
     else
     {
 	event.type = KU_EVENT_MUP;
+	event.drag = drag;
 	drag       = 0;
     }
 

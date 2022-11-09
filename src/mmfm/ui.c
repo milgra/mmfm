@@ -384,9 +384,56 @@ void ui_delete_selected()
 
 void on_table_event(ku_table_event_t event)
 {
+    if (event.id == KU_TABLE_EVENT_KEY_DOWN)
+    {
+	if (event.ev.keycode == XKB_KEY_Down || event.ev.keycode == XKB_KEY_Up)
+	{
+	    int32_t index = event.selected_index;
+
+	    if (event.ev.keycode == XKB_KEY_Down) index += 1;
+	    if (event.ev.keycode == XKB_KEY_Up) index -= 1;
+
+	    ku_table_select(event.table, index);
+
+	    if (event.table == ui.filetable || event.table == ui.cliptable)
+	    {
+		if (event.ev.repeat == 0 || index == event.table->items->length - 1)
+		{
+		    map_t* info = event.selected_items->data[0];
+		    char*  path = MGET(info, "file/path");
+		    char*  type = MGET(info, "file/type");
+
+		    if (strcmp(type, "directory") != 0) ui_open(path);
+		    ui_show_info(info);
+
+		    if (index < ui.file_list_data->length)
+		    {
+			ku_view_t*     filetable = ku_view_get_subview(ui.view_base, "filetablebody");
+			vh_tbl_body_t* vh        = filetable->handler_data;
+			int            rel_index = index - vh->head_index;
+			ku_view_t*     sel_item  = vh->items->data[rel_index];
+
+			ui.rowview_for_context_menu = sel_item;
+		    }
+		}
+	    }
+	}
+	else if (event.ev.keycode == XKB_KEY_Return)
+	{
+	    if (event.table == ui.filetable || event.table == ui.cliptable)
+	    {
+		map_t* info = event.selected_items->data[0];
+
+		char* type = MGET(info, "file/type");
+		char* path = MGET(info, "file/path");
+
+		if (strcmp(type, "directory") == 0) ui_load_folder(path);
+	    }
+	}
+    }
+
     if (event.table == ui.filetable)
     {
-
 	if (event.id == KU_TABLE_EVENT_FIELDS_UPDATE)
 	{
 	    zc_log_debug("fields update %s", event.table->id);
@@ -415,9 +462,9 @@ void on_table_event(ku_table_event_t event)
 	}
 	else if (event.id == KU_TABLE_EVENT_DRAG)
 	{
-	    ku_view_t* docview              = ku_view_new("dragged_view", ((ku_rect_t){.x = 0, .y = 0, .w = 50, .h = 50}));
-	    char*      imagepath            = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png");
-	    docview->style.background_image = imagepath;
+	    ku_view_t* docview = ku_view_new("dragged_view", ((ku_rect_t){.x = 0, .y = 0, .w = 50, .h = 50}));
+	    /* char*      imagepath            = cstr_new_format(100, "%s/img/%s", config_get("res_path"), "freebsd.png"); */
+	    docview->style.background_color = 0x00FF00FF;
 	    tg_css_add(docview);
 
 	    ku_view_insert_subview(ui.view_base, docview, ui.view_base->views->length - 2);
@@ -428,46 +475,9 @@ void on_table_event(ku_table_event_t event)
 	    ui.drag_data = event.selected_items;
 	    ui.view_doc  = docview;
 	}
-	else if (event.id == KU_TABLE_EVENT_KEY_DOWN)
+	else if (event.id == KU_TABLE_EVENT_DROP)
 	{
-	    if (event.ev.keycode == XKB_KEY_Down || event.ev.keycode == XKB_KEY_Up)
-	    {
-		int32_t index = event.selected_index;
-
-		if (event.ev.keycode == XKB_KEY_Down) index += 1;
-		if (event.ev.keycode == XKB_KEY_Up) index -= 1;
-
-		ku_table_select(event.table, index);
-
-		if (event.ev.repeat == 0 || index == event.table->items->length - 1)
-		{
-		    map_t* info = event.selected_items->data[0];
-		    char*  path = MGET(info, "file/path");
-		    char*  type = MGET(info, "file/type");
-
-		    if (strcmp(type, "directory") != 0) ui_open(path);
-		    ui_show_info(info);
-
-		    if (index < ui.file_list_data->length)
-		    {
-			ku_view_t*     filetable = ku_view_get_subview(ui.view_base, "filetablebody");
-			vh_tbl_body_t* vh        = filetable->handler_data;
-			int            rel_index = index - vh->head_index;
-			ku_view_t*     sel_item  = vh->items->data[rel_index];
-
-			ui.rowview_for_context_menu = sel_item;
-		    }
-		}
-	    }
-	    else if (event.ev.keycode == XKB_KEY_Return)
-	    {
-		map_t* info = event.selected_items->data[0];
-
-		char* type = MGET(info, "file/type");
-		char* path = MGET(info, "file/path");
-
-		if (strcmp(type, "directory") == 0) ui_load_folder(path);
-	    }
+	    printf("FILE DROP\n");
 	}
 	else if (event.id == KU_TABLE_EVENT_CONTEXT)
 	{
@@ -525,18 +535,13 @@ void on_table_event(ku_table_event_t event)
 	}
 	else if (event.id == KU_TABLE_EVENT_DROP)
 	{
+	    printf("CLIP DROP\n");
 	    if (ui.drag_data)
 	    {
 		size_t index = (size_t) event.selected_index;
-		zc_log_debug("DROP %i %i", index, ui.drag_data->length);
 		vec_add_in_vector(ui.clip_list_data, ui.drag_data);
-		ui.drag_data = NULL;
-		ku_table_set_data(ui.cliptable, ui.clip_list_data);
 
-		if (ui.view_doc)
-		{
-		    ku_view_remove_from_parent(ui.view_doc);
-		}
+		ku_table_set_data(ui.cliptable, ui.clip_list_data);
 	    }
 	}
     }
@@ -1092,6 +1097,7 @@ void ui_on_text_event(vh_textinput_event_t event)
 
 void ui_on_drag(vh_drag_event_t event)
 {
+    printf("ON DRAG\n");
     if (event.dragged_view == ui.left_dragger)
     {
 	ku_view_t* cbox    = ku_view_get_subview(ui.view_base, "cliptablebox");
@@ -1100,8 +1106,12 @@ void ui_on_drag(vh_drag_event_t event)
 	ku_view_t* top     = ku_view_get_subview(ui.view_base, "top_container");
 	cbox->style.height = lft->frame.global.h - event.dragged_view->frame.global.y + 28.0;
 	fbox->style.width  = top->frame.global.w - event.dragged_view->frame.global.x - 9;
-	zc_log_debug("height %i width %i", cbox->style.height, fbox->style.width);
 	ku_view_layout(top);
+    }
+
+    if (event.id == VH_DRAG_DROP)
+    {
+	if (ui.view_doc) ku_view_remove_from_parent(ui.view_doc);
     }
 }
 

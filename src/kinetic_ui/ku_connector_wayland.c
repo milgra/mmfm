@@ -435,6 +435,7 @@ void xdg_toplevel_configure(void* data, struct xdg_toplevel* xdg_toplevel, int32
 void xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel)
 {
     zc_log_debug("xdg toplevel close");
+    ku_wayland_exit_flag = 1;
 }
 
 void xdg_toplevel_configure_bounds(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height)

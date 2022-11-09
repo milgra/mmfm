@@ -349,21 +349,28 @@ void ui_load_folder(char* folder)
 	map_values(files, ui.file_list_data);
 	vec_sort(ui.file_list_data, ui_comp_entry);
 
+	int prev_selected = ui.filetable->selected_index;
 	ku_table_set_data(ui.filetable, ui.file_list_data);
+	ku_table_select(ui.filetable, prev_selected);
 	REL(files);
 
 	/* jump to item if there is a last visited item */
 	char* last_visited = MGET(ui.last_visited_folders, ui.current_folder);
 	if (last_visited)
 	{
-	    int index;
+	    int index = 0;
+	    int found = 0;
 	    for (index = 0; index < ui.file_list_data->length; index++)
 	    {
 		map_t* info = ui.file_list_data->data[index];
 		char*  path = MGET(info, "file/path");
-		if (strcmp(path, last_visited) == 0) break;
+		if (strcmp(path, last_visited) == 0)
+		{
+		    found = 1;
+		    break;
+		}
 	    }
-	    ku_table_select(ui.filetable, index);
+	    if (found) ku_table_select(ui.filetable, index);
 	}
 
 	ui_show_progress("Directory loaded");

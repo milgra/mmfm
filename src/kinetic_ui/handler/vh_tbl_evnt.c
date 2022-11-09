@@ -213,18 +213,19 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
 			    vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_SELECT, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
 			    if (vh->on_event) (*vh->on_event)(event);
 			}
+			if (ev.button == 3)
+			{
+			    vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_CONTEXT, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
+			    if (vh->on_event) (*vh->on_event)(event);
+			}
 		    }
 		    else
 		    {
 			vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_OPEN, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
 			if (vh->on_event) (*vh->on_event)(event);
 		    }
+
 		    break;
-		}
-		if (ev.button == 3)
-		{
-		    vh_tbl_evnt_event_t event = {.id = VH_TBL_EVENT_CONTEXT, .view = view, .rowview = vh->selected_item, .index = bvh->head_index + index, .ev = ev, .userdata = vh->userdata};
-		    if (vh->on_event) (*vh->on_event)(event);
 		}
 	    }
 	}

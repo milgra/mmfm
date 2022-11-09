@@ -165,6 +165,20 @@
     blocks: no;
 }
 
+.acceptbtn {
+    margin: auto;
+    bottom: 5px;
+    width: 30px;
+    height: 30px;
+}
+
+.accepticon {
+    width: 30px;
+    height: 30px;
+    background-image: url("accept.png");
+    blocks: no;
+}
+
 #previcon {
     width: 28px;
     height: 28px;
@@ -301,6 +315,12 @@
 #contextpopup {
     width: 200px;
     height: 250px;
+    margin: auto;
+}
+
+#okaypopup {
+    width: 400px;
+    height: 150px;
     margin: auto;
 }
 

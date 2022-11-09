@@ -123,6 +123,7 @@ struct _ui_t
 
     ku_view_t* settingspopupcont;
     ku_view_t* contextpopupcont;
+    ku_view_t* okaypopupcont;
 
     /* TODO textstyles should be auto generated in tg_text/vh_textinput */
 
@@ -144,6 +145,8 @@ struct _ui_t
     float timestate;
 
     map_t* last_visited_folders;
+
+    map_t* filetodelete;
 
     int pdf_page_count;
     int pdf_page;
@@ -382,10 +385,12 @@ void ui_delete_selected()
 {
     if (ui.filetable->selected_items->length > 0)
     {
-	map_t* file = ui.filetable->selected_items->data[0];
-	char*  path = MGET(file, "file/path");
-	fm_delete(path);
-	ui_load_folder(ui.current_folder);
+	ui.filetodelete = ui.filetable->selected_items->data[0];
+	if (ui.okaypopupcont->parent == NULL)
+	{
+	    ku_view_add_subview(ui.view_base, ui.okaypopupcont);
+	    ku_view_layout(ui.view_base);
+	}
     }
 }
 
@@ -554,7 +559,6 @@ void on_table_event(ku_table_event_t event)
     }
     else if (event.table == ui.contexttable)
     {
-
 	ku_view_remove_from_parent(ui.contextpopupcont);
 	if (event.id == KU_TABLE_EVENT_SELECT)
 	{
@@ -1000,6 +1004,18 @@ void ui_on_btn_event(vh_button_event_t event)
     {
 	ku_view_t* evview = ku_view_get_subview(ui.view_base, "previewevnt");
 	vh_cv_evnt_zoom(evview, -0.1);
+    }
+    else if (strcmp(event.view->id, "okayacceptbtn") == 0)
+    {
+	ku_view_remove_from_parent(ui.okaypopupcont);
+	map_t* file = ui.filetodelete;
+	char*  path = MGET(file, "file/path");
+	fm_delete(path);
+	ui_load_folder(ui.current_folder);
+    }
+    else if (strcmp(event.view->id, "okayclosebtn") == 0)
+    {
+	ku_view_remove_from_parent(ui.okaypopupcont);
     }
 }
 
@@ -1454,6 +1470,19 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     vh_touch_add(ui.contextpopupcont, ui_on_touch);
     ku_view_remove_from_parent(ui.contextpopupcont);
+
+    /* okay popup */
+
+    ku_view_t* okaypopupcont = ku_view_get_subview(ui.view_base, "okaypopupcont");
+    ku_view_t* okaypopup     = ku_view_get_subview(ui.view_base, "okaypopup");
+
+    okaypopup->blocks_touch  = 1;
+    okaypopup->blocks_scroll = 1;
+
+    ui.okaypopupcont = RET(okaypopupcont);
+
+    vh_touch_add(ui.okaypopupcont, ui_on_touch);
+    ku_view_remove_from_parent(ui.okaypopupcont);
 
     // info textfield
 

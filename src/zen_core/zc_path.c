@@ -150,6 +150,8 @@ char* path_new_normalize1(char* path)
 	    result      = cstr_append(result, "/");
 	    result      = cstr_append(result, token);
 	}
+
+	if (newtok->length == 0) result = cstr_new_cstring("/");
     }
     else
     {

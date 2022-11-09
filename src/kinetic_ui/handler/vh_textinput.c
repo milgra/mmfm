@@ -37,6 +37,7 @@ struct _vh_textinput_t
     char        active;
 
     int mouse_out_deact;
+    int new_glyph_index;
 
     void (*on_event)(vh_textinput_event_t);
 };
@@ -136,6 +137,8 @@ void vh_textinput_upd(ku_view_t* view)
 		    ku_rect_t f  = gv->frame.local;
 		    ku_rect_t nf = (ku_rect_t){g.x, g.y, g.w, g.h};
 
+		    ku_view_set_frame(gv, nf);
+
 		    if (f.w == 0 || f.h == 0)
 		    {
 			ku_bitmap_t* texture = ku_bitmap_new(g.w, g.h); // REL 0
@@ -148,8 +151,6 @@ void vh_textinput_upd(ku_view_t* view)
 
 			ku_view_add_subview(view, gv);
 
-			ku_view_set_frame(gv, nf);
-
 			// open
 			ku_rect_t sf = nf;
 			sf.x         = 0.0;
@@ -158,8 +159,15 @@ void vh_textinput_upd(ku_view_t* view)
 			nf.y         = 0.0;
 			sf.w         = 0.0;
 
-			vh_anim_region(gv, sf, nf, 10, AT_EASE);
-
+			if (i == data->new_glyph_index)
+			{
+			    vh_anim_region(gv, sf, nf, 0, 10, AT_LINEAR);
+			    data->new_glyph_index = 0;
+			}
+			else
+			{
+			    vh_anim_region(gv, sf, nf, 0, 10, AT_LINEAR);
+			}
 			ku_view_set_region(gv, sf);
 		    }
 		    else
@@ -172,7 +180,7 @@ void vh_textinput_upd(ku_view_t* view)
 			if (!ku_rect_equals(rf, gv->frame.region))
 			{
 			    vh_anim_finish(gv);
-			    vh_anim_frame(gv, gv->frame.local, nf, 10, AT_EASE);
+			    vh_anim_frame(gv, gv->frame.local, nf, 0, 10, AT_EASE);
 			}
 		    }
 		}
@@ -193,7 +201,7 @@ void vh_textinput_upd(ku_view_t* view)
 	crsr_f.h         = last.asc;
 
 	vh_anim_finish(data->cursor_v);
-	vh_anim_frame(data->cursor_v, data->cursor_v->frame.local, crsr_f, 10, AT_EASE);
+	vh_anim_frame(data->cursor_v, data->cursor_v->frame.local, crsr_f, 0, 10, AT_EASE);
 
 	// ku_view_set_frame(data->cursor_v, crsr_f);
 
@@ -237,7 +245,7 @@ void vh_textinput_upd(ku_view_t* view)
 	}
 
 	vh_anim_finish(data->cursor_v);
-	vh_anim_frame(data->cursor_v, data->cursor_v->frame.local, crsr_f, 10, AT_EASE);
+	vh_anim_frame(data->cursor_v, data->cursor_v->frame.local, crsr_f, 0, 10, AT_EASE);
     }
 
     // textinput_render_glyphs(glyphs, text->length, style, bitmap);
@@ -341,6 +349,8 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
 
 	REL(glyph_view); // REL 0
 
+	data->new_glyph_index = data->glyph_v->length - 1;
+
 	// append or break-insert new glyph(s)
 
 	vh_textinput_upd(view);
@@ -381,7 +391,7 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
 	    ef.y         = 0.0;
 	    ef.w         = 0.0;
 
-	    vh_anim_region(glyph_view, sf, ef, 10, AT_EASE);
+	    vh_anim_region(glyph_view, sf, ef, 0, 10, AT_EASE);
 
 	    vh_textinput_upd(view);
 
@@ -408,6 +418,10 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
     else if (ev.type == KU_EVENT_UNFOCUS)
     {
 	vh_textinput_activate(view, 0);
+    }
+    else if (ev.type == KU_EVENT_RESIZE)
+    {
+	/* vh_textinput_upd(view); */
     }
 }
 
@@ -540,7 +554,7 @@ void vh_textinput_set_text(ku_view_t* view, char* text)
 	/* ef.y    = 0.0; */
 	/* ef.w    = 0.0; */
 
-	/* vh_anim_region(gv, sf, ef, 10 + i, AT_EASE); */
+	/* vh_anim_region(gv, sf, ef, 0,10 + i, AT_EASE); */
 	/* vh_anim_set_event(gv, view, vh_textinput_on_glyph_close); */
     }
     vec_reset(data->glyph_v);

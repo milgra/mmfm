@@ -46,18 +46,20 @@ typedef struct _vh_anim_t
     int asteps;
     int rstep;
     int rsteps;
+    int rstart;
     int fstep;
     int fsteps;
+    int fstart;
 
     void* userdata;
     void (*on_event)(vh_anim_event_t event);
 } vh_anim_t;
 
-void vh_anim_frame(ku_view_t* view, ku_rect_t sf, ku_rect_t ef, int steps, animtype_t type);
+void vh_anim_frame(ku_view_t* view, ku_rect_t sf, ku_rect_t ef, int start, int steps, animtype_t type);
 
 void vh_anim_alpha(ku_view_t* view, float sa, float ea, int steps, animtype_t type);
 
-void vh_anim_region(ku_view_t* view, ku_rect_t sr, ku_rect_t er, int steps, animtype_t type);
+void vh_anim_region(ku_view_t* view, ku_rect_t sr, ku_rect_t er, int start, int steps, animtype_t type);
 
 void vh_anim_finish(ku_view_t* view);
 
@@ -71,14 +73,20 @@ void vh_anim_add(ku_view_t* view, void (*on_event)(vh_anim_event_t), void* userd
 
 void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 {
+    vh_anim_t* vh = view->handler_data;
     if (ev.type == KU_EVENT_FRAME)
     {
-	vh_anim_t* vh = view->handler_data;
-
 	if (vh->anim_frame)
 	{
-	    if (vh->fstep < vh->fsteps)
+	    if (vh->fstep < vh->fstart)
 	    {
+		view->frame.pos_changed = 1;
+		vh->fstep += 1;
+	    }
+	    else if (vh->fstep < vh->fstart + vh->fsteps)
+	    {
+		int delta = vh->fstep - vh->fstart;
+
 		ku_rect_t sf = vh->sf;
 		ku_rect_t cf = sf;
 		ku_rect_t ef = vh->ef;
@@ -86,15 +94,15 @@ void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 		if (vh->type == AT_LINEAR)
 		{
 		    // just increase current with delta
-		    cf.x = sf.x + ((ef.x - sf.x) / vh->fsteps) * vh->fstep;
-		    cf.y = sf.y + ((ef.y - sf.y) / vh->fsteps) * vh->fstep;
-		    cf.w = sf.w + ((ef.w - sf.w) / vh->fsteps) * vh->fstep;
-		    cf.h = sf.h + ((ef.h - sf.h) / vh->fsteps) * vh->fstep;
+		    cf.x = sf.x + ((ef.x - sf.x) / vh->fsteps) * delta;
+		    cf.y = sf.y + ((ef.y - sf.y) / vh->fsteps) * delta;
+		    cf.w = sf.w + ((ef.w - sf.w) / vh->fsteps) * delta;
+		    cf.h = sf.h + ((ef.h - sf.h) / vh->fsteps) * delta;
 		}
 		else if (vh->type == AT_EASE)
 		{
 		    // speed function based on cosine ( half circle )
-		    float angle = 3.14 + (3.14 / vh->fsteps) * vh->fstep;
+		    float angle = 3.14 + (3.14 / vh->fsteps) * delta;
 		    float delta = (cos(angle) + 1.0) / 2.0;
 
 		    cf.x = sf.x + (ef.x - sf.x) * delta;
@@ -103,13 +111,13 @@ void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 		    cf.h = sf.h + (ef.h - sf.h) * delta;
 		}
 
-		if (vh->fstep == vh->fsteps - 1) cf = ef;
+		if (delta == vh->fsteps - 1) cf = ef;
 
 		ku_view_set_frame(view, cf);
 
 		vh->fstep += 1;
 
-		if (vh->fstep == vh->fsteps)
+		if (delta == vh->fsteps)
 		{
 		    vh->anim_frame        = 0;
 		    vh_anim_event_t event = {.id = VH_ANIM_END, .view = view, .userdata = vh->userdata};
@@ -120,8 +128,15 @@ void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 
 	if (vh->anim_region)
 	{
-	    if (vh->rstep < vh->rsteps)
+	    if (vh->rstep < vh->rstart)
 	    {
+		view->frame.pos_changed = 1;
+		vh->rstep += 1;
+	    }
+	    else if (vh->rstep < vh->rstart + vh->rsteps)
+	    {
+		int delta = vh->rstep - vh->rstart;
+
 		ku_rect_t sr = vh->sr;
 		ku_rect_t cr = sr;
 		ku_rect_t er = vh->er;
@@ -129,15 +144,15 @@ void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 		if (vh->type == AT_LINEAR)
 		{
 		    // just increase current with delta
-		    cr.x = sr.x + ((er.x - sr.x) / vh->rsteps) * vh->rstep;
-		    cr.y = sr.y + ((er.y - sr.y) / vh->rsteps) * vh->rstep;
-		    cr.w = sr.w + ((er.w - sr.w) / vh->rsteps) * vh->rstep;
-		    cr.h = sr.h + ((er.h - sr.h) / vh->rsteps) * vh->rstep;
+		    cr.x = sr.x + ((er.x - sr.x) / vh->rsteps) * delta;
+		    cr.y = sr.y + ((er.y - sr.y) / vh->rsteps) * delta;
+		    cr.w = sr.w + ((er.w - sr.w) / vh->rsteps) * delta;
+		    cr.h = sr.h + ((er.h - sr.h) / vh->rsteps) * delta;
 		}
 		else if (vh->type == AT_EASE)
 		{
 		    // speed function based on cosine ( half circle )
-		    float angle = 3.14 + (3.14 / vh->rsteps) * vh->rstep;
+		    float angle = 3.14 + (3.14 / vh->rsteps) * delta;
 		    float delta = (cos(angle) + 1.0) / 2.0;
 
 		    cr.x = sr.x + (er.x - sr.x) * delta;
@@ -146,13 +161,13 @@ void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 		    cr.h = sr.h + (er.h - sr.h) * delta;
 		}
 
-		if (vh->rstep == vh->rsteps - 1) cr = er;
+		if (delta == vh->rsteps - 1) cr = er;
 
 		ku_view_set_region(view, cr);
 
 		vh->rstep += 1;
 
-		if (vh->rstep == vh->rsteps)
+		if (delta == vh->rsteps)
 		{
 		    ku_view_set_region(view, (ku_rect_t){-1, -1, -1. - 1});
 		    vh_anim_event_t event = {.id = VH_ANIM_END, .view = view, .userdata = vh->userdata};
@@ -199,13 +214,14 @@ void vh_anim_evt(ku_view_t* view, ku_event_t ev)
     }
 }
 
-void vh_anim_frame(ku_view_t* view, ku_rect_t sf, ku_rect_t ef, int steps, animtype_t type)
+void vh_anim_frame(ku_view_t* view, ku_rect_t sf, ku_rect_t ef, int start, int steps, animtype_t type)
 {
     vh_anim_t* vh = view->handler_data;
     if (vh->fstep == vh->fsteps)
     {
 	vh->sf         = sf;
 	vh->ef         = ef;
+	vh->fstart     = start;
 	vh->fstep      = 0;
 	vh->type       = type;
 	vh->fsteps     = steps;
@@ -213,7 +229,7 @@ void vh_anim_frame(ku_view_t* view, ku_rect_t sf, ku_rect_t ef, int steps, animt
     }
 }
 
-void vh_anim_region(ku_view_t* view, ku_rect_t sr, ku_rect_t er, int steps, animtype_t type)
+void vh_anim_region(ku_view_t* view, ku_rect_t sr, ku_rect_t er, int start, int steps, animtype_t type)
 {
     vh_anim_t* vh = view->handler_data;
     if (vh->rstep == vh->rsteps)
@@ -221,6 +237,7 @@ void vh_anim_region(ku_view_t* view, ku_rect_t sr, ku_rect_t er, int steps, anim
 	vh->sr          = sr;
 	vh->er          = er;
 	vh->rstep       = 0;
+	vh->rstart      = start;
 	vh->type        = type;
 	vh->rsteps      = steps;
 	vh->anim_region = 1;

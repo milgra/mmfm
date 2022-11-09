@@ -90,10 +90,11 @@ void update(ku_event_t ev)
 {
     /* printf("UPDATE %i %i %i\n", ev.type, ev.w, ev.h); */
 
-    ku_window_event(mmfm.kuwindow, ev);
     /* if (ev.type == KU_EVENT_RESIZE) ku_view_describe(mmfm.kuwindow->root, 0); */
     if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
     if (ev.type == KU_EVENT_FRAME) ui_update_player();
+
+    ku_window_event(mmfm.kuwindow, ev);
 
     if (mmfm.window->frame_cb == NULL)
     {

@@ -89,6 +89,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	    win->width  = ev.w;
 	    win->height = ev.h;
 	}
+	ku_view_evt(win->root, ev);
     }
     else if (ev.type == KU_EVENT_MMOVE)
     {

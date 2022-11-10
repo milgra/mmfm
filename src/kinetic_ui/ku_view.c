@@ -201,6 +201,7 @@ void       ku_view_set_texture_page(ku_view_t* view, uint32_t page);
 void       ku_view_set_texture_type(ku_view_t* view, textype_t type);
 void       ku_view_set_texture_alpha(ku_view_t* view, float alpha, char recur);
 void       ku_view_invalidate_texture(ku_view_t* view);
+void       ku_view_upload_texture(ku_view_t* view);
 void       ku_view_layout(ku_view_t* view);
 
 void ku_view_describe(void* pointer, int level);
@@ -518,6 +519,11 @@ void ku_view_set_texture_alpha(ku_view_t* view, float alpha, char recur)
 void ku_view_invalidate_texture(ku_view_t* view)
 {
     view->texture.state = TS_BLANK;
+}
+
+void ku_view_upload_texture(ku_view_t* view)
+{
+    view->texture.changed = 1;
 }
 
 void ku_view_set_style(ku_view_t* view, vstyle_t style)

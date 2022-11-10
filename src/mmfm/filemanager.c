@@ -252,13 +252,10 @@ void fm_detail(map_t* file)
 
     MPUTR(file, "file/username", cstr_new_format(100, "%s", pws->pw_name));
 
-    /* printf("FILE\n"); */
-    /* mem_describe(file, 0); */
+    struct group* grp;
+    grp = getgrgid(atoi(gid));
 
-    /* struct group* grp; */
-    /* grp = getgrgid(atoi(gid)); */
-
-    /* MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name)); */
+    MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name));
 
     // get mime type with file command
 

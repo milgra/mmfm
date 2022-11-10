@@ -93,9 +93,14 @@
     font-family: "Terminus (TTF):style=Bold";
 }
 
-.infotf {
+.statustf {
     blocks: no;
     color: #DEDEDEFF;
+}
+
+.timetf {
+    blocks: no;
+    color: #FFFFFFFF;
 }
 
 .settingstable {

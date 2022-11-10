@@ -539,8 +539,7 @@ static void wl_surface_enter(void* userData, struct wl_surface* surface, struct 
 
 static void wl_surface_leave(void* userData, struct wl_surface* surface, struct wl_output* output)
 {
-    struct wl_window* info = userData;
-    zc_log_debug("wl surface leave");
+    /* struct wl_window* info = userData; */
 }
 
 static const struct wl_surface_listener wl_surface_listener = {
@@ -621,11 +620,7 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
     info->eglwindow = egl_window;
 
-    if (egl_window == EGL_NO_SURFACE)
-    {
-	printf("No window !?\n");
-    }
-    else printf("Window created !\n");
+    if (egl_window == EGL_NO_SURFACE) zc_log_error("Cannot create EGL surface");
 
     EGLint     numConfigs;
     EGLint     majorVersion;
@@ -679,10 +674,10 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 	printf("No configuration...\n");
     }
 
-    EGLint sfAttribs[] = {
-	EGL_RENDER_BUFFER,
-	EGL_SINGLE_BUFFER,
-	EGL_NONE};
+    /* EGLint sfAttribs[] = { */
+    /* 	EGL_RENDER_BUFFER, */
+    /* 	EGL_SINGLE_BUFFER, */
+    /* 	EGL_NONE}; */
 
     // Create a surface
     surface = eglCreateWindowSurface(display, config, (EGLNativeWindowType) egl_window, NULL);
@@ -802,32 +797,32 @@ int px   = 0;
 int py   = 0;
 int drag = 0;
 
-static void
-gesture_hold_begin(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
-{
-    /* GdkWaylandSeat* seat = data; */
+/* static void */
+/* gesture_hold_begin(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers) */
+/* { */
+/* GdkWaylandSeat* seat = data; */
 
-    /* emit_gesture_hold_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_BEGIN, time, fingers); */
-    /* seat->gesture_n_fingers = fingers; */
+/* emit_gesture_hold_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_BEGIN, time, fingers); */
+/* seat->gesture_n_fingers = fingers; */
 
-    zc_log_debug("hold start");
-}
+/*     zc_log_debug("hold start"); */
+/* } */
 
-static void
-gesture_hold_end(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, int32_t cancelled)
-{
-    /* GdkWaylandSeat*         seat = data; */
-    /* GdkTouchpadGesturePhase phase; */
+/* static void */
+/* gesture_hold_end(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, int32_t cancelled) */
+/* { */
+/* GdkWaylandSeat*         seat = data; */
+/* GdkTouchpadGesturePhase phase; */
 
-    /* phase = (cancelled) ? GDK_TOUCHPAD_GESTURE_PHASE_CANCEL : GDK_TOUCHPAD_GESTURE_PHASE_END; */
+/* phase = (cancelled) ? GDK_TOUCHPAD_GESTURE_PHASE_CANCEL : GDK_TOUCHPAD_GESTURE_PHASE_END; */
 
-    /* emit_gesture_hold_event(seat, phase, time, seat->gesture_n_fingers); */
-    zc_log_debug("hold end");
-}
+/* emit_gesture_hold_event(seat, phase, time, seat->gesture_n_fingers); */
+/*     zc_log_debug("hold end"); */
+/* } */
 
-static const struct zwp_pointer_gesture_hold_v1_listener gesture_hold_listener = {
-    gesture_hold_begin,
-    gesture_hold_end};
+/* static const struct zwp_pointer_gesture_hold_v1_listener gesture_hold_listener = { */
+/*     gesture_hold_begin, */
+/*     gesture_hold_end}; */
 
 static void
 gesture_pinch_begin(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
@@ -1397,7 +1392,6 @@ void ku_wayland_init(
 
 	if (wlc.compositor)
 	{
-	    printf("POLL 1\n");
 	    struct _wl_event_t event = {.id = WL_EVENT_OUTPUT_ADDED, .monitors = wlc.monitors, .monitor_count = wlc.monitor_count};
 
 	    (*wlc.init)(event);

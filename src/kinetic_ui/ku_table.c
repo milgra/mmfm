@@ -621,7 +621,6 @@ void ku_table_select(
 
     if (uit->scrl_v)
     {
-	vh_tbl_scrl_t* svh = uit->scrl_v->handler_data;
 	vh_tbl_scrl_update(uit->scrl_v);
     }
 }

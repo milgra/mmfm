@@ -42,7 +42,7 @@ struct _vh_textinput_t
     void (*on_event)(vh_textinput_event_t);
 };
 
-void vh_textinput_add(ku_view_t* view, char* text, char* phtext, textstyle_t textstyle, void (*on_event)(vh_textinput_event_t));
+void vh_textinput_add(ku_view_t* view, char* text, char* phtext, void (*on_event)(vh_textinput_event_t));
 
 char* vh_textinput_get_text(ku_view_t* view);
 void  vh_textinput_set_text(ku_view_t* view, char* text);
@@ -55,6 +55,7 @@ void  vh_textinput_activate(ku_view_t* view, char state);
 
 #include "ku_bitmap.c"
 #include "ku_draw.c"
+#include "ku_util.c"
 #include "tg_css.c"
 #include "tg_text.c"
 #include "utf8.h"
@@ -439,7 +440,7 @@ void vh_textinput_desc(void* p, int level)
     printf("vh_textinput");
 }
 
-void vh_textinput_add(ku_view_t* view, char* text, char* phtext, textstyle_t textstyle, void (*on_event)(vh_textinput_event_t))
+void vh_textinput_add(ku_view_t* view, char* text, char* phtext, void (*on_event)(vh_textinput_event_t))
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 
@@ -448,12 +449,10 @@ void vh_textinput_add(ku_view_t* view, char* text, char* phtext, textstyle_t tex
 
     vh_textinput_t* data = CAL(sizeof(vh_textinput_t), vh_textinput_del, vh_textinput_desc);
 
-    textstyle.backcolor = 0;
-
     data->text    = cstr_new_cstring(""); // REL 2
     data->glyph_v = VNEW();               // REL 3
 
-    data->style = textstyle;
+    data->style = ku_util_gen_textstyle(view);
 
     data->on_event = on_event;
 
@@ -468,6 +467,8 @@ void vh_textinput_add(ku_view_t* view, char* text, char* phtext, textstyle_t tex
     view->handler      = vh_textinput_evt;
     view->handler_data = data;
 
+    data->style.backcolor = 0;
+
     // cursor
 
     data->cursor_v                         = ku_view_new(id_c, (ku_rect_t){50, 12, 2, 0}); // REL 4
@@ -481,7 +482,7 @@ void vh_textinput_add(ku_view_t* view, char* text, char* phtext, textstyle_t tex
 
     // placeholder
 
-    textstyle_t phts = textstyle;
+    textstyle_t phts = data->style;
     phts.align       = TA_CENTER;
     phts.textcolor   = 0x888888FF;
 

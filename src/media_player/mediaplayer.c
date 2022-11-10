@@ -178,7 +178,7 @@ void          mp_unmute(MediaState_t* ms);
 void          mp_set_volume(MediaState_t* ms, float volume);
 void          mp_set_position(MediaState_t* ms, float ratio);
 void          mp_set_visutype(MediaState_t* ms, int visutype);
-void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, ku_bitmap_t* bm, int force);
+void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, ku_bitmap_t* bm);
 void          mp_audio_refresh(MediaState_t* opaque, ku_bitmap_t* bml, ku_bitmap_t* bmr);
 double        mp_get_master_clock(MediaState_t* ms);
 
@@ -1311,9 +1311,9 @@ MediaState_t* mp_open(char* path, void (*on_event)(ms_event_t event))
 		    clock_init(&ms->vidclk, &ms->vidpq.serial);
 		    clock_init(&ms->audclk, &ms->audpq.serial);
 		    clock_init(&ms->extclk, &ms->extclk.serial);
-		    printf("VIDCLK %zu\n", (size_t) &ms->vidclk);
-		    printf("AUDCLK %zu\n", (size_t) &ms->audclk);
-		    printf("EXTCLK %zu\n", (size_t) &ms->extclk);
+		    /* printf("VIDCLK %zu\n", (size_t) &ms->vidclk); */
+		    /* printf("AUDCLK %zu\n", (size_t) &ms->audclk); */
+		    /* printf("EXTCLK %zu\n", (size_t) &ms->extclk); */
 
 		    ms->on_event     = on_event;
 		    ms->audio_volume = 100;
@@ -1481,7 +1481,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
     return ret;
 }
 
-void video_image_display(MediaState_t* ms, ku_bitmap_t* bm, int force)
+void video_image_display(MediaState_t* ms, ku_bitmap_t* bm)
 {
     Frame* vp;
     // Frame*   sp = NULL;
@@ -1489,8 +1489,9 @@ void video_image_display(MediaState_t* ms, ku_bitmap_t* bm, int force)
 
     vp = frame_queue_peek_last(&ms->vidfq);
 
-    if (!vp->uploaded || force)
+    if (!vp->uploaded)
     {
+	printf("UPLOAD TEXTURE %i %i\n", bm->w, bm->h);
 	if (upload_texture(NULL, vp->frame, &ms->img_convert_ctx, bm) < 0)
 	{
 	    return;
@@ -1501,13 +1502,13 @@ void video_image_display(MediaState_t* ms, ku_bitmap_t* bm, int force)
 }
 
 /* display the current picture, if any */
-void video_display(MediaState_t* ms, ku_bitmap_t* bm, int force)
+void video_display(MediaState_t* ms, ku_bitmap_t* bm)
 {
-    if (ms->vidst) video_image_display(ms, bm, force);
+    if (ms->vidst) video_image_display(ms, bm);
 }
 
 /* called to display each frame */
-void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm, int force)
+void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm)
 {
     double time;
 
@@ -1516,7 +1517,7 @@ void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm,
     time = av_gettime_relative() / 1000000.0;
     if (ms->force_refresh || ms->last_vis_time + rdftspeed1 < time)
     {
-	video_display(ms, bm, force);
+	video_display(ms, bm);
 	ms->last_vis_time = time;
     }
     *remaining_time = FFMIN(*remaining_time, ms->last_vis_time + rdftspeed1 - time);
@@ -1586,7 +1587,7 @@ void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm,
 	}
     display:
 	/* display picture */
-	if (ms->force_refresh && ms->vidfq.rindex_shown) video_display(ms, bm, force);
+	if (ms->force_refresh && ms->vidfq.rindex_shown) video_display(ms, bm);
     }
     ms->force_refresh = 0;
 }

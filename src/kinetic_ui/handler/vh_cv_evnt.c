@@ -135,10 +135,7 @@ void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_PINCH)
     {
-	vh_cv_body_t* body = vh->tbody_view->handler_data;
-
 	vh->zoom += ev.ratio;
-
 	// cause dirty rect which causes frame events to flow for later animation
 	vh->tbody_view->frame.dim_changed = 1;
     }

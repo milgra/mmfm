@@ -71,8 +71,17 @@ ku_bitmap_t* coder_load_image(const char* path)
 
 		static unsigned sws_flags = SWS_BICUBIC;
 
-		struct SwsContext* img_convert_ctx = sws_getContext(frame->width, frame->height, frame->format, frame->width, frame->height, AV_PIX_FMT_RGBA, sws_flags, NULL, NULL,
-								    NULL); // FREE 4
+		struct SwsContext* img_convert_ctx = sws_getContext(
+		    frame->width,
+		    frame->height,
+		    frame->format,
+		    frame->width,
+		    frame->height,
+		    AV_PIX_FMT_RGBA,
+		    sws_flags,
+		    NULL,
+		    NULL,
+		    NULL); // FREE 4
 
 		if (img_convert_ctx != NULL)
 		{
@@ -147,8 +156,17 @@ void coder_load_image_into(const char* path, ku_bitmap_t* bitmap)
 
 		static unsigned sws_flags = SWS_BICUBIC;
 
-		struct SwsContext* img_convert_ctx = sws_getContext(frame->width, frame->height, frame->format, bitmap->w, bitmap->h, AV_PIX_FMT_ARGB, sws_flags, NULL, NULL,
-								    NULL); // FREE 4
+		struct SwsContext* img_convert_ctx = sws_getContext(
+		    frame->width,
+		    frame->height,
+		    frame->format,
+		    bitmap->w,
+		    bitmap->h,
+		    AV_PIX_FMT_ARGB,
+		    sws_flags,
+		    NULL,
+		    NULL,
+		    NULL); // FREE 4
 
 		if (img_convert_ctx != NULL)
 		{
@@ -188,33 +206,20 @@ int coder_load_cover_into(const char* path, ku_bitmap_t* bitmap)
 {
     assert(path != NULL);
 
-    printf("coder_get_album %s %i %i\n", path, bitmap->w, bitmap->h);
-
     int i   = 0;
     int ret = 0;
 
     AVFormatContext* src_ctx = avformat_alloc_context(); // FREE 0
 
-    /* // open the specified path */
-    if (avformat_open_input(&src_ctx, path, NULL, NULL) != 0)
-    {
-	printf("avformat_open_input() failed");
-    }
-
-    // ku_bitmap_t* result = NULL;
+    if (avformat_open_input(&src_ctx, path, NULL, NULL) != 0) zc_log_error("avformat_open_input() failed");
 
     // find the first attached picture, if available
     for (i = 0; i < src_ctx->nb_streams; i++)
     {
 	if (src_ctx->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
 	{
-	    AVPacket pkt = src_ctx->streams[i]->attached_pic;
-
-	    printf("ALBUM ART SIZE %i\n", pkt.size);
-
+	    AVPacket           pkt   = src_ctx->streams[i]->attached_pic;
 	    AVCodecParameters* param = src_ctx->streams[i]->codecpar;
-
-	    printf("Resolution %d x %d codec %i\n", param->width, param->height, param->codec_id);
 
 	    const AVCodec*  codec        = avcodec_find_decoder(param->codec_id);
 	    AVCodecContext* codecContext = avcodec_alloc_context3(codec); // FREE 1
@@ -229,15 +234,24 @@ int coder_load_cover_into(const char* path, ku_bitmap_t* bitmap)
 
 	    static unsigned sws_flags = SWS_BICUBIC;
 
-	    struct SwsContext* img_convert_ctx = sws_getContext(frame->width, frame->height, frame->format, bitmap->w, bitmap->h, AV_PIX_FMT_ARGB, sws_flags, NULL, NULL,
-								NULL); // FREE 3
+	    struct SwsContext* img_convert_ctx = sws_getContext(
+		frame->width,
+		frame->height,
+		frame->format,
+		bitmap->w,
+		bitmap->h,
+		AV_PIX_FMT_ARGB,
+		sws_flags,
+		NULL,
+		NULL,
+		NULL); // FREE 3
 
 	    if (img_convert_ctx != NULL)
 	    {
 		uint8_t* scaledpixels[1];
 		scaledpixels[0] = malloc(bitmap->w * bitmap->h * 4);
 
-		printf("converting...\n");
+		zc_log_debug("converting...\n");
 
 		// uint8_t* pixels[4];
 		int pitch[4];
@@ -245,10 +259,7 @@ int coder_load_cover_into(const char* path, ku_bitmap_t* bitmap)
 		pitch[0] = bitmap->w * 4;
 		sws_scale(img_convert_ctx, (const uint8_t* const*) frame->data, frame->linesize, 0, frame->height, scaledpixels, pitch);
 
-		if (bitmap)
-		{
-		    ku_draw_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
-		}
+		if (bitmap) ku_draw_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
 
 		sws_freeContext(img_convert_ctx); // FREE 3
 		free(scaledpixels[0]);
@@ -329,17 +340,20 @@ int coder_load_metadata_into(const char* path, map_t* map)
 
 		if (retv >= 0)
 		{
-		    int   dur   = pFormatCtx->duration / 1000000;
-		    char* dur_s = CAL(10, NULL, cstr_describe);
-		    snprintf(dur_s, 10, "%i:%.2i", (short) dur / 60, dur - (short) (dur / 60) * 60);
+		    int dur = pFormatCtx->duration / 1000000;
+		    if (dur < 0) dur = 0;
+		    char* dur_s = CAL(20, NULL, cstr_describe);
+		    snprintf(dur_s, 20, "%i:%.2i", (short) dur / 60, dur - (short) (dur / 60) * 60);
 		    MPUT(map, "media/duration", dur_s);
 		    REL(dur_s);
 		}
 		else
 		{
-		    printf("coder_get_metadata no stream information found!!!\n");
+		    zc_log_debug("coder_get_metadata no stream information found!!!\n");
 		    MPUTR(map, "media/duration", cstr_new_cstring("0"));
 		}
+
+		MPUTR(map, "media/streams", cstr_new_format(10, "%i", pFormatCtx->nb_streams));
 
 		for (unsigned i = 0; i < pFormatCtx->nb_streams; i++)
 		{
@@ -347,6 +361,8 @@ int coder_load_metadata_into(const char* path, map_t* map)
 		    const AVCodec*     codec = avcodec_find_encoder(pFormatCtx->streams[i]->codecpar->codec_id);
 		    if (codec)
 		    {
+			char key[100] = {0};
+
 			if (param->codec_type == AVMEDIA_TYPE_AUDIO)
 			{
 			    char* channels   = CAL(10, NULL, cstr_describe); // REL 0
@@ -357,9 +373,12 @@ int coder_load_metadata_into(const char* path, map_t* map)
 			    snprintf(bitrate, 10, "%li", param->bit_rate);
 			    snprintf(samplerate, 10, "%i", param->sample_rate);
 
-			    MPUTR(map, "media/channels", channels);     // REL 0
-			    MPUTR(map, "media/bitrate", bitrate);       // REL 1
-			    MPUTR(map, "media/samplerate", samplerate); // REL 2
+			    snprintf(key, 100, "audio_%i/channels", i);
+			    MPUTR(map, key, channels); // REL 0
+			    snprintf(key, 100, "audio_%i/bitrate", i);
+			    MPUTR(map, key, bitrate); // REL 1
+			    snprintf(key, 100, "audio_%i/samplerate", i);
+			    MPUTR(map, key, samplerate); // REL 2
 			}
 			else if (param->codec_type == AVMEDIA_TYPE_VIDEO)
 			{
@@ -375,33 +394,26 @@ int coder_load_metadata_into(const char* path, map_t* map)
 			    snprintf(width, 10, "%i", param->width);
 			    snprintf(height, 10, "%i", param->height);
 
-			    printf("width %s", width);
-
-			    MPUTR(map, "media/channels", channels);     // REL 0
-			    MPUTR(map, "media/bitrate", bitrate);       // REL 1
-			    MPUTR(map, "media/samplerate", samplerate); // REL 2
-			    MPUTR(map, "media/width", width);           // REL 2
-			    MPUTR(map, "media/height", height);         // REL 2
+			    snprintf(key, 100, "video_%i/channels", i);
+			    MPUTR(map, key, channels); // REL 0
+			    snprintf(key, 100, "video_%i/bitrate", i);
+			    MPUTR(map, key, bitrate); // REL 1
+			    snprintf(key, 100, "video_%i/samplerate", i);
+			    MPUTR(map, key, samplerate); // REL 2
+			    snprintf(key, 100, "video_%i/d_width", i);
+			    MPUTR(map, key, width); // REL 2
+			    snprintf(key, 100, "video_%i/d_height", i);
+			    MPUTR(map, key, height); // REL 2
 			}
 		    }
 		}
 	    }
-	    /* else */
-	    /* { */
-	    /* 	printf("cannot guess format for %s\n", path); */
-	    /* } */
 	}
-	else
-	{
-	    zc_log_info("coder : skpping %s, no media context present", path);
-	}
+	else zc_log_info("coder : skpping %s, no media context present", path);
 
 	avformat_close_input(&pFormatCtx); // CLOSE 0
     }
-    else
-    {
-	zc_log_info("coder : skipping %s, probably not a media file", path);
-    }
+    else zc_log_info("coder : skipping %s, probably not a media file", path);
 
     if (format_opts) av_dict_free(&format_opts);
 
@@ -412,7 +424,6 @@ int coder_load_metadata_into(const char* path, map_t* map)
 
 coder_media_type_t coder_get_type(const char* path)
 {
-    printf("coder get type %s\n", path);
     assert(path != NULL);
 
     coder_media_type_t type = CODER_MEDIA_TYPE_OTHER;
@@ -428,42 +439,10 @@ coder_media_type_t coder_get_type(const char* path)
     {
 	if (pFormatCtx)
 	{
-	    /* const AVOutputFormat* format = av_guess_format(NULL, path, NULL); */
-
-	    /* if (format && format->mime_type) */
-	    /* { */
-	    /* 	printf("mime type %s\n", format->mime_type); */
-
-	    retv = 0;
-
-	    av_dict_set(&format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
-
-	    AVDictionaryEntry* tag = NULL;
-
-	    while ((tag = av_dict_get(pFormatCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
-	    {
-		char* value = cstr_new_cstring(tag->value); // REL 0
-		/* char* key   = cstr_new_format(100, "%s/%s", "meta", tag->key); // REL 1 */
-		/* MPUT(map, tag->key, value); */
-
-		/* printf("%s : %s\n", tag->key, value); */
-		/* REL(key);   // REL 0 */
-		REL(value); // REL 1
-	    }
+	    if (pFormatCtx->duration < 0) type = CODER_MEDIA_TYPE_IMAGE;
 
 	    // Retrieve stream information
 	    retv = avformat_find_stream_info(pFormatCtx, NULL);
-
-	    if (retv >= 0)
-	    {
-		int dur = pFormatCtx->duration / 1000000;
-		/* printf("duration %i\n", dur); */
-		if (dur <= 0) type = CODER_MEDIA_TYPE_IMAGE;
-	    }
-	    else
-	    {
-		/* printf("coder_get_metadata no stream information found!!!\n"); */
-	    }
 
 	    for (unsigned i = 0; i < pFormatCtx->nb_streams; i++)
 	    {
@@ -473,40 +452,17 @@ coder_media_type_t coder_get_type(const char* path)
 		{
 		    if (param->codec_type == AVMEDIA_TYPE_AUDIO)
 		    {
-			/* printf("audio stream\n"); */
-			/* printf("channels %i\n", param->ch_layout.nb_channels); */
-			/* printf("bitrate %i\n", param->bit_rate); */
-			/* printf("samplerate %i\n", param->sample_rate); */
-
 			if (type == CODER_MEDIA_TYPE_OTHER) type = CODER_MEDIA_TYPE_AUDIO;
 		    }
 		    else if (param->codec_type == AVMEDIA_TYPE_VIDEO)
 		    {
-			/* printf("video stream\n"); */
-			/* printf("channels %i\n", param->ch_layout.nb_channels); */
-			/* printf("bitrate %i\n", param->bit_rate); */
-			/* printf("samplerate %i\n", param->sample_rate); */
-
 			if (type != CODER_MEDIA_TYPE_IMAGE) type = CODER_MEDIA_TYPE_VIDEO;
 		    }
 		}
 	    }
-	    /* } */
-	    /* else */
-	    /* { */
-	    /* 	printf("cannot guess format for %s\n", path); */
-	    /* } */
-	}
-	else
-	{
-	    /* zc_log_info("coder : skpping %s, no media context present", path); */
 	}
 
 	avformat_close_input(&pFormatCtx); // CLOSE 0
-    }
-    else
-    {
-	/* zc_log_info("coder : skipping %s, probably not a media file", path); */
     }
 
     if (format_opts) av_dict_free(&format_opts);
@@ -529,9 +485,6 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
     char* old_path = cstr_new_format(PATH_MAX + NAME_MAX, "%s/%s", libpath, path);     // REL 3
     char* new_path = cstr_new_format(PATH_MAX + NAME_MAX, "%s/%s.tmp", libpath, path); // REL 4
 
-    printf("old_path %s\n", old_path);
-    printf("new_path %s\n", new_path);
-
     REL(name); // REL 1
     REL(ext);  // REL 0
 
@@ -541,32 +494,32 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 
     if (avformat_open_input(&dec_ctx, old_path, 0, 0) >= 0)
     {
-	printf("Input opened for decoding\n");
+	zc_log_debug("Input opened for decoding");
 
 	if (avformat_find_stream_info(dec_ctx, 0) >= 0)
 	{
-	    printf("Input stream info found, stream count %i\n", dec_ctx->nb_streams);
+	    zc_log_debug("Input stream info found, stream count %i\n", dec_ctx->nb_streams);
 
 	    AVFormatContext*      enc_ctx;
 	    const AVOutputFormat* enc_fmt = av_guess_format(NULL, old_name, NULL);
 
 	    if (avformat_alloc_output_context2(&enc_ctx, enc_fmt, NULL, new_path) >= 0) // FREE 1
 	    {
-		printf("Output context allocated\n");
+		zc_log_debug("Output context allocated\n");
 
 		if (!(enc_ctx->oformat->flags & AVFMT_NOFILE))
 		{
-		    printf("Output file will be provided by caller.\n");
+		    zc_log_debug("Output file will be provided by caller.\n");
 
 		    if (avio_open(&enc_ctx->pb, new_path, AVIO_FLAG_WRITE) >= 0) // CLOSE 0
 		    {
-			printf("Output file created.\n");
+			zc_log_debug("Output file created.\n");
 
 			//
 			// create all streams in the encoder context that are present in the decoder context
 			//
 
-			printf("Copying stream structure...\n");
+			zc_log_debug("Copying stream structure...\n");
 
 			int dec_enc_strm[10]   = {0};
 			int dec_cov_strm_index = -1;
@@ -579,19 +532,19 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 
 			    if (codec)
 			    {
-				printf("Stream no %i Codec %s ID %d bit_rate %ld\n", si, codec->long_name, codec->id, param->bit_rate);
+				zc_log_debug("Stream no %i Codec %s ID %d bit_rate %ld\n", si, codec->long_name, codec->id, param->bit_rate);
 
 				switch (param->codec_type)
 				{
-				    case AVMEDIA_TYPE_VIDEO: printf("Video Codec: resolution %d x %d\n", param->width, param->height); break;
-				    case AVMEDIA_TYPE_AUDIO: printf("Audio Codec: %d channels, sample rate %d\n", param->ch_layout.nb_channels, param->sample_rate); break;
-				    default: printf("Other codec: %i\n", param->codec_type); break;
+				    case AVMEDIA_TYPE_VIDEO: zc_log_debug("Video Codec: resolution %d x %d\n", param->width, param->height); break;
+				    case AVMEDIA_TYPE_AUDIO: zc_log_debug("Audio Codec: %d channels, sample rate %d\n", param->ch_layout.nb_channels, param->sample_rate); break;
+				    default: zc_log_debug("Other codec: %i\n", param->codec_type); break;
 				}
 
 				if (cover_path && cover)
 				{
 				    dec_cov_strm_index = si;
-				    printf("Skipping cover stream, index : %i\n", dec_cov_strm_index);
+				    zc_log_debug("Skipping cover stream, index : %i\n", dec_cov_strm_index);
 				}
 				else
 				{
@@ -605,11 +558,10 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 
 				    dec_enc_strm[si] = enc_stream->index;
 
-				    printf("Mapping decoder stream index %i to encoder stream index %i\n", si, enc_stream->index);
+				    zc_log_debug("Mapping decoder stream index %i to encoder stream index %i\n", si, enc_stream->index);
 				}
 			    }
-			    else
-				printf("No encoder found for stream no %i\n", si);
+			    else zc_log_error("No encoder found for stream no %i\n", si);
 			}
 
 			//
@@ -626,11 +578,11 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 
 			    if (avformat_open_input(&cov_ctx, cover_path, 0, 0) >= 0)
 			    {
-				printf("Cover opened for decoding\n");
+				zc_log_debug("Cover opened for decoding\n");
 
 				if (avformat_find_stream_info(cov_ctx, 0) >= 0)
 				{
-				    printf("Cover stream info found, stream count %i\n", cov_ctx->nb_streams);
+				    zc_log_debug("Cover stream info found, stream count %i\n", cov_ctx->nb_streams);
 
 				    // find stream info
 
@@ -641,13 +593,13 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 
 					if (codec)
 					{
-					    printf("Cover stream no %i Codec %s ID %d bit_rate %ld\n", si, codec->long_name, codec->id, param->bit_rate);
+					    zc_log_debug("Cover stream no %i Codec %s ID %d bit_rate %ld\n", si, codec->long_name, codec->id, param->bit_rate);
 
 					    switch (param->codec_type)
 					    {
-						case AVMEDIA_TYPE_VIDEO: printf("Video Codec: resolution %d x %d\n", param->width, param->height); break;
-						case AVMEDIA_TYPE_AUDIO: printf("Audio Codec: %d channels, sample rate %d\n", param->ch_layout.nb_channels, param->sample_rate); break;
-						default: printf("Other codec: %i\n", param->codec_type); break;
+						case AVMEDIA_TYPE_VIDEO: zc_log_debug("Video Codec: resolution %d x %d\n", param->width, param->height); break;
+						case AVMEDIA_TYPE_AUDIO: zc_log_debug("Audio Codec: %d channels, sample rate %d\n", param->ch_layout.nb_channels, param->sample_rate); break;
+						default: zc_log_debug("Other codec: %i\n", param->codec_type); break;
 					    }
 
 					    // create stream in encoder context with codec
@@ -662,11 +614,10 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 						cov_dec_index = si;
 						cov_enc_index = enc_stream->index;
 
-						printf("Mapping cover stream index %i to encoder stream index %i\n", cov_dec_index, cov_enc_index);
+						zc_log_debug("Mapping cover stream index %i to encoder stream index %i\n", cov_dec_index, cov_enc_index);
 					    }
 					}
-					else
-					    printf("No encoder found for stream no %i\n", si);
+					else zc_log_error("No encoder found for stream no %i\n", si);
 				    }
 				}
 			    }
@@ -681,8 +632,8 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 			AVDictionaryEntry* tag    = NULL;
 			vec_t*             fields = VNEW(); // REL 0
 
-			printf("Existing tags:\n");
-			while ((tag = av_dict_get(enc_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) printf("%s : %s\n", tag->key, tag->value);
+			zc_log_debug("Existing tags:\n");
+			while ((tag = av_dict_get(enc_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) zc_log_debug("%s : %s\n", tag->key, tag->value);
 
 			map_keys(changed, fields);
 
@@ -691,7 +642,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 			    char* field = fields->data[fi];
 			    char* value = MGET(changed, field);
 			    av_dict_set(&enc_ctx->metadata, field, value, 0);
-			    printf("added/updated %s to %s\n", field, value);
+			    zc_log_debug("added/updated %s to %s\n", field, value);
 			}
 
 			REL(fields);
@@ -700,18 +651,18 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 			{
 			    char* field = drop->data[fi];
 			    av_dict_set(&enc_ctx->metadata, field, NULL, 0);
-			    printf("removed %s\n", field);
+			    zc_log_debug("removed %s\n", field);
 			}
 
 			if (avformat_init_output(enc_ctx, NULL) > 0)
 			{
-			    printf("Output inited.\n");
+			    zc_log_debug("Output inited.\n");
 
 			    // write header
 
 			    if (avformat_write_header(enc_ctx, NULL) >= 0)
 			    {
-				printf("Header written\n");
+				zc_log_debug("Header written\n");
 
 				// copy packets from decoder context to encoder context
 
@@ -733,7 +684,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 				{
 				    if (cover_path && dec_pkt->stream_index == dec_cov_strm_index)
 				    {
-					printf("Skipping original cover packets.\n");
+					zc_log_debug("Skipping original cover packets.\n");
 				    }
 				    else
 				    {
@@ -750,7 +701,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 					}
 					else
 					{
-					    printf("Stream written, dec index : %i enc index : %i packets : %i sum : %i bytes\n", last_di, last_ei, last_pc, last_by);
+					    zc_log_debug("Stream written, dec index : %i enc index : %i packets : %i sum : %i bytes\n", last_di, last_ei, last_pc, last_by);
 					    last_di = dec_pkt->stream_index;
 					    last_ei = enc_index;
 					    last_pc = 0;
@@ -764,7 +715,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 				    }
 				}
 
-				printf("Stream written, dec index : %i enc index : %i packets : %i sum : %i bytes\n", last_di, last_ei, last_pc, last_by);
+				zc_log_debug("Stream written, dec index : %i enc index : %i packets : %i sum : %i bytes\n", last_di, last_ei, last_pc, last_by);
 
 				last_pc = 0;
 				last_by = 0;
@@ -786,7 +737,7 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 					dec_pkt->data = NULL;
 					dec_pkt->size = 0;
 				    }
-				    printf("Cover stream written, dec index : %i enc index : %i packets : %i sum : %i bytes\n", cov_dec_index, cov_enc_index, last_pc, last_by);
+				    zc_log_debug("Cover stream written, dec index : %i enc index : %i packets : %i sum : %i bytes\n", cov_dec_index, cov_enc_index, last_pc, last_by);
 				}
 
 				// close output file and cleanup
@@ -796,42 +747,33 @@ int coder_write_metadata(char* libpath, char* path, char* cover_path, map_t* cha
 
 				success = 1;
 			    }
-			    else
-				printf("Cannot write header.\n");
+			    else zc_log_error("Cannot write header.\n");
 			}
-			else
-			    printf("Cannot init output.\n");
+			else zc_log_error("Cannot init output.\n");
 
 			if (cov_ctx) avformat_free_context(cov_ctx);
 
-			if (avio_close(enc_ctx->pb) >= 0) printf("Closed target file.\n"); // CLOSE 0
+			if (avio_close(enc_ctx->pb) >= 0) zc_log_debug("Closed target file.\n"); // CLOSE 0
 
 			if (success)
 			{
-			    if (rename(new_path, old_path) == 0)
-				printf("Temporary file renamed to original file.\n");
-			    else
-				printf("Couldn't rename temporary file to original file.\n");
+			    if (rename(new_path, old_path) == 0) zc_log_debug("Temporary file renamed to original file.\n");
+			    else zc_log_error("Couldn't rename temporary file to original file.\n");
 			}
 		    }
-		    else
-			printf("Cannot open file for encode %s\n", new_path);
+		    else zc_log_error("Cannot open file for encode %s\n", new_path);
 		}
-		else
-		    printf("Output is a fileless codec.");
+		else zc_log_error("Output is a fileless codec.");
 
 		avformat_free_context(enc_ctx); // FREE 1
 	    }
-	    else
-		printf("Cannot allocate output context for %s\n", old_name);
+	    else zc_log_error("Cannot allocate output context for %s\n", old_name);
 	}
-	else
-	    printf("Cannot find stream info\n");
+	else zc_log_error("Cannot find stream info\n");
 
 	avformat_close_input(&dec_ctx);
     }
-    else
-	printf("Cannot open file for decode %s\n", old_path);
+    else zc_log_error("Cannot open file for decode %s\n", old_path);
 
     avformat_free_context(dec_ctx); // FREE 0
 
@@ -879,25 +821,20 @@ int coder_write_png(char* path, ku_bitmap_t* bm)
 			fclose(file);
 			av_packet_free(&pkt);
 		    }
-		    else
-			printf("Error during encoding\n");
+		    else zc_log_error("Error during encoding\n");
 		}
-		else
-		    printf("Error during encoding\n");
+		else zc_log_error("Error during encoding\n");
 
 		av_frame_free(&frame_in); // FREE 1
 		avcodec_close(enc_ctx);   // CLOSE 0
 	    }
-	    else
-		printf("Could not open codec\n");
+	    else zc_log_error("Could not open codec\n");
 
 	    av_free(enc_ctx); // FREE 0
 	}
-	else
-	    printf("Could not allocate video codec context\n");
+	else zc_log_error("Could not allocate video codec context\n");
     }
-    else
-	printf("Codec not found\n");
+    else zc_log_error("Codec not found\n");
 
     if (success)
 	return 0;

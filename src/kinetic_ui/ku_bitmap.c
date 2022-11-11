@@ -33,16 +33,21 @@ struct _bmr_t
 typedef struct _ku_bitmap_t ku_bitmap_t;
 struct _ku_bitmap_t
 {
-    int w;
-    int h;
+    int      w;
+    int      h;
+    uint32_t size;
+
+    int      dw; // backing buffer row width
+    int      dh; // backing buffer row height
+    uint32_t dsize;
 
     uint8_t*              data;
-    uint32_t              size;
     enum ku_bitmap_format type;
 };
 
 ku_bitmap_t* ku_bitmap_new(int the_w, int the_h);
 ku_bitmap_t* ku_bitmap_new_clone(ku_bitmap_t* bm);
+ku_bitmap_t* ku_bitmap_new_aligned(int the_w, int the_h, int align);
 void         ku_bitmap_reset(ku_bitmap_t* bm);
 void         ku_bitmap_describe(void* p, int level);
 bmr_t        ku_bitmap_is(bmr_t l, bmr_t r);
@@ -91,7 +96,8 @@ void ku_bitmap_del(void* pointer)
 {
     ku_bitmap_t* bm = pointer;
 
-    if (bm->data != NULL) REL(bm->data); // REL 1
+    /* if (bm->data != NULL) REL(bm->data); // REL 1 */
+    if (bm->data != NULL) free(bm->data); // REL 1
 }
 
 ku_bitmap_t* ku_bitmap_new(int the_w, int the_h)
@@ -103,9 +109,39 @@ ku_bitmap_t* ku_bitmap_new(int the_w, int the_h)
     bm->w = the_w;
     bm->h = the_h;
 
-    bm->size = 4 * the_w * the_h;
-    bm->data = CAL(bm->size * sizeof(unsigned char), NULL, ku_bitmap_describe_data); // REL 1
+    bm->dw = the_w;
+    bm->dh = the_h;
+
+    bm->size  = 4 * the_w * the_h;
+    bm->dsize = bm->size;
+    bm->data  = calloc(sizeof(unsigned char), bm->size); // REL 1
+    bm->type  = KU_BITMAP_ARGB;
+
+    return bm;
+}
+
+ku_bitmap_t* ku_bitmap_new_aligned(int the_w, int the_h, int align)
+{
+    assert(the_w > 0 && the_h > 0);
+
+    ku_bitmap_t* bm = CAL(sizeof(ku_bitmap_t), ku_bitmap_del, ku_bitmap_describe); // REL 0
+
+    bm->w = the_w;
+    bm->h = the_h;
+
+    bm->dw = align;
+    bm->dh = bm->h;
+    while (bm->dw < bm->w * 4) bm->dw += 16;
+
+    bm->size  = 4 * bm->w * bm->h;
+    bm->dsize = bm->dw * bm->dh + 16 + 16 - 1; // alignment + stride for sws scale
+    /* bm->data = CAL(bm->size * sizeof(unsigned char), NULL, ku_bitmap_describe_data); // REL 1 */
+
+    posix_memalign((void**) &bm->data, 16, bm->dsize * sizeof(unsigned char));
+    memset(bm->data, 0, bm->dsize);
     bm->type = KU_BITMAP_ARGB;
+
+    printf("bitmap w %i h %i s %i dw %i dh %i ds %i\n", bm->w, bm->h, bm->size, bm->dw, bm->dh, bm->dsize);
 
     return bm;
 }

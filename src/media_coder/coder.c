@@ -36,6 +36,8 @@ int                coder_write_png(char* path, ku_bitmap_t* bm);
 #include "zc_path.c"
 #include <limits.h>
 
+struct SwsContext* coder_sws_context = NULL;
+
 ku_bitmap_t* coder_load_image(const char* path)
 {
     ku_bitmap_t* bitmap  = NULL;
@@ -56,62 +58,104 @@ ku_bitmap_t* coder_load_image(const char* path)
 		const AVCodec*  codec        = avcodec_find_decoder(param->codec_id);
 		AVCodecContext* codecContext = avcodec_alloc_context3(codec); // FREE 1
 
-		avcodec_parameters_to_context(codecContext, param);
-		avcodec_open2(codecContext, codec, NULL); // CLOSE 1
-
-		AVPacket* packet = av_packet_alloc(); // FREE 2
-		AVFrame*  frame  = av_frame_alloc();  // FREE 3
-
-		while (av_read_frame(src_ctx, packet) >= 0)
+		if (codecContext != NULL)
 		{
-		    avcodec_send_packet(codecContext, packet);
+		    avcodec_parameters_to_context(codecContext, param);
+		    avcodec_open2(codecContext, codec, NULL); // CLOSE 1
+
+		    AVPacket* packet = av_packet_alloc(); // FREE 2
+		    AVFrame*  frame  = av_frame_alloc();  // FREE 3
+
+		    while (av_read_frame(src_ctx, packet) >= 0)
+		    {
+			avcodec_send_packet(codecContext, packet);
+		    }
+
+		    avcodec_receive_frame(codecContext, frame);
+
+		    enum AVPixelFormat pixFormat;
+		    switch (frame->format)
+		    {
+			case AV_PIX_FMT_YUVJ420P:
+			    pixFormat = AV_PIX_FMT_YUV420P;
+			    break;
+			case AV_PIX_FMT_YUVJ422P:
+			    pixFormat = AV_PIX_FMT_YUV422P;
+			    break;
+			case AV_PIX_FMT_YUVJ444P:
+			    pixFormat = AV_PIX_FMT_YUV444P;
+			    break;
+			case AV_PIX_FMT_YUVJ440P:
+			    pixFormat = AV_PIX_FMT_YUV440P;
+			    break;
+			default:
+			    pixFormat = frame->format;
+			    break;
+		    }
+
+		    coder_sws_context = sws_getCachedContext(
+			coder_sws_context,
+			frame->width,
+			frame->height,
+			pixFormat,
+			frame->width,
+			frame->height,
+			AV_PIX_FMT_RGBA,
+			SWS_POINT,
+			NULL,
+			NULL,
+			NULL); // FREE 4
+
+		    if (coder_sws_context != NULL)
+		    {
+			int stride[4] = {0};
+			/* stride[0]     = bitmap->w * 4; */
+
+			av_image_fill_linesizes(stride, AV_PIX_FMT_RGBA, frame->width);
+
+			stride[0] = FFALIGN(stride[0], 16);
+			printf("WIDTH %i LINESIZE %i\n", frame->width, stride[0]);
+			/* if (res < 0) */
+			/* { */
+			/*     fprintf(stderr, "av_image_fill_linesizes failed\n"); */
+			/*     goto end; */
+			/* } */
+			/* for (p = 0; p < 4; p++) */
+			/* { */
+			/*     srcStride[p] = FFALIGN(srcStride[p], 16); */
+			/*     if (srcStride[p]) */
+			/* 	src[p] = av_mallocz(srcStride[p] * srcH + 16); */
+			/*     if (srcStride[p] && !src[p]) */
+			/*     { */
+			/* 	perror("Malloc"); */
+			/* 	res = -1; */
+			/* 	goto end; */
+			/*     } */
+
+			bitmap    = ku_bitmap_new_aligned(frame->width, frame->height, 16); // REL 0
+			stride[0] = bitmap->w * 4;
+
+			uint8_t* scaledpixels[1];
+			scaledpixels[0] = bitmap->data;
+
+			sws_scale(
+			    coder_sws_context,
+			    (const uint8_t* const*) frame->data,
+			    frame->linesize,
+			    0,
+			    bitmap->h,
+			    scaledpixels,
+			    stride);
+
+			success = 1;
+		    }
+
+		    av_frame_free(&frame);   // FREE 0
+		    av_packet_free(&packet); // FREE 1
+
+		    avcodec_free_context(&codecContext);
 		}
-
-		avcodec_receive_frame(codecContext, frame);
-
-		static unsigned sws_flags = SWS_BICUBIC;
-
-		struct SwsContext* img_convert_ctx = sws_getContext(
-		    frame->width,
-		    frame->height,
-		    frame->format,
-		    frame->width,
-		    frame->height,
-		    AV_PIX_FMT_RGBA,
-		    sws_flags,
-		    NULL,
-		    NULL,
-		    NULL); // FREE 4
-
-		if (img_convert_ctx != NULL)
-		{
-		    bitmap = ku_bitmap_new(frame->width, frame->height); // REL 0
-
-		    uint8_t* scaledpixels[1];
-		    scaledpixels[0] = malloc(bitmap->w * bitmap->h * 4);
-
-		    // uint8_t* pixels[4];
-		    int pitch[4];
-
-		    pitch[0] = bitmap->w * 4;
-		    sws_scale(img_convert_ctx, (const uint8_t* const*) frame->data, frame->linesize, 0, frame->height, scaledpixels, pitch);
-
-		    ku_draw_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x00000000, 0);
-
-		    ku_draw_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
-
-		    free(scaledpixels[0]);
-
-		    sws_freeContext(img_convert_ctx); // FREE 4
-
-		    success = 1;
-		}
-
-		av_frame_free(&frame);   // FREE 0
-		av_packet_free(&packet); // FREE 1
-
-		avcodec_free_context(&codecContext);
-		avcodec_close(codecContext);
+		else zc_log_error("Cannot allocate context");
 	    }
 	}
 
@@ -171,7 +215,7 @@ void coder_load_image_into(const char* path, ku_bitmap_t* bitmap)
 		if (img_convert_ctx != NULL)
 		{
 		    uint8_t* scaledpixels[1];
-		    scaledpixels[0] = malloc(bitmap->w * bitmap->h * 4);
+		    scaledpixels[0] = bitmap->data;
 
 		    // uint8_t* pixels[4];
 		    int pitch[4];
@@ -179,11 +223,6 @@ void coder_load_image_into(const char* path, ku_bitmap_t* bitmap)
 		    pitch[0] = bitmap->w * 4;
 		    sws_scale(img_convert_ctx, (const uint8_t* const*) frame->data, frame->linesize, 0, frame->height, scaledpixels, pitch);
 
-		    ku_draw_rect(bitmap, 0, 0, bitmap->w, bitmap->h, 0x000000FF, 0);
-
-		    ku_draw_insert_argb(bitmap, scaledpixels[0], bitmap->w, bitmap->h, 0, 0);
-
-		    free(scaledpixels[0]);
 		    sws_freeContext(img_convert_ctx); // FREE 4
 		}
 

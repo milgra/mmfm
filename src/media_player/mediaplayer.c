@@ -1466,7 +1466,27 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
 
     if (frame->width > 0 && frame->height > 0)
     {
-	*img_convert_ctx = sws_getCachedContext(*img_convert_ctx, frame->width, frame->height, frame->format, bm->w, bm->h, AV_PIX_FMT_RGBA, sws_flags, NULL, NULL, NULL);
+	enum AVPixelFormat pixFormat;
+	switch (frame->format)
+	{
+	    case AV_PIX_FMT_YUVJ420P:
+		pixFormat = AV_PIX_FMT_YUV420P;
+		break;
+	    case AV_PIX_FMT_YUVJ422P:
+		pixFormat = AV_PIX_FMT_YUV422P;
+		break;
+	    case AV_PIX_FMT_YUVJ444P:
+		pixFormat = AV_PIX_FMT_YUV444P;
+		break;
+	    case AV_PIX_FMT_YUVJ440P:
+		pixFormat = AV_PIX_FMT_YUV440P;
+		break;
+	    default:
+		pixFormat = frame->format;
+		break;
+	}
+
+	*img_convert_ctx = sws_getCachedContext(*img_convert_ctx, frame->width, frame->height, pixFormat, bm->w, bm->h, AV_PIX_FMT_RGBA, sws_flags, NULL, NULL, NULL);
 
 	if (*img_convert_ctx != NULL)
 	{
@@ -1491,7 +1511,6 @@ void video_image_display(MediaState_t* ms, ku_bitmap_t* bm)
 
     if (!vp->uploaded)
     {
-	printf("UPLOAD TEXTURE %i %i\n", bm->w, bm->h);
 	if (upload_texture(NULL, vp->frame, &ms->img_convert_ctx, bm) < 0)
 	{
 	    return;

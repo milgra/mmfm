@@ -38,7 +38,7 @@ void tg_scaledimg_gen(ku_view_t* view)
 	bm->w != (int) gen->w ||
 	bm->h != (int) gen->h)
     {
-	bm = ku_bitmap_new((int) gen->w, (int) gen->h); // REL 0
+	bm = ku_bitmap_new_aligned((int) gen->w, (int) gen->h, 16); // REL 0
 
 	ku_view_set_texture_bmp(view, bm);
 

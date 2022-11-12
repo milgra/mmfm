@@ -47,6 +47,8 @@ void vh_tbl_body_vjump(
     int        topindex,
     int        aligntop);
 
+ku_view_t* vh_tbl_body_item_for_index(ku_view_t* view, int index);
+
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
@@ -342,6 +344,16 @@ void vh_tbl_body_vjump(
     }
 
     vh_tbl_body_move(view, 0, 0);
+}
+
+ku_view_t* vh_tbl_body_item_for_index(ku_view_t* view, int index)
+{
+    vh_tbl_body_t* vh = view->handler_data;
+
+    if (index < vh->head_index || index > vh->tail_index) return NULL;
+    if (vh->head_index + index > vh->items->length - 1) return NULL;
+
+    return vh->items->data[vh->head_index + index];
 }
 
 #endif

@@ -43,8 +43,7 @@ struct _vh_button_t
 
 void vh_button_add(ku_view_t* view, vh_button_type_t type, void (*on_event)(vh_button_event_t));
 void vh_button_set_state(ku_view_t* view, vh_button_state_t state);
-void vh_button_enable(ku_view_t* view);
-void vh_button_disable(ku_view_t* view);
+void vh_button_set_enabled(ku_view_t* view, int flag);
 
 #endif
 
@@ -181,25 +180,20 @@ void vh_button_add(ku_view_t* view, vh_button_type_t type, void (*on_event)(vh_b
     view->blocks_touch = 1;
 }
 
-void vh_button_enable(ku_view_t* view)
+void vh_button_set_enabled(ku_view_t* view, int flag)
 {
     vh_button_t* vh = view->handler_data;
 
-    if (vh->enabled == 0)
+    if (flag)
     {
-	vh->enabled = 1;
-	if (vh->offview) vh_anim_alpha(vh->offview, 0.3, 1.0, 10, AT_LINEAR);
+	if (vh->enabled == 0 && vh->offview) vh_anim_alpha(vh->offview, 0.3, 1.0, 10, AT_LINEAR);
     }
-}
-void vh_button_disable(ku_view_t* view)
-{
-    vh_button_t* vh = view->handler_data;
+    else
+    {
+	if (vh->enabled == 1 && vh->offview) vh_anim_alpha(vh->offview, 1.0, 0.3, 10, AT_LINEAR);
+    }
 
-    if (vh->enabled == 1)
-    {
-	vh->enabled = 0;
-	if (vh->offview) vh_anim_alpha(vh->offview, 1.0, 0.3, 10, AT_LINEAR);
-    }
+    vh->enabled = flag;
 }
 
 #endif

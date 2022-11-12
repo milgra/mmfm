@@ -52,7 +52,7 @@ void ku_renderer_egl_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty)
 	    /* printf("%s masked, dirty %f %f %f %f\n", view->id, dirty.x, dirty.y, dirty.w, dirty.h); */
 	}
 
-	if (view->texture.bitmap)
+	if (view->texture.bitmap || view->texture.full)
 	{
 	    bmr_t mask = (bmr_t){(int) dirty.x, (int) dirty.y, (int) (dirty.x + dirty.w), (int) (dirty.y + dirty.h)};
 

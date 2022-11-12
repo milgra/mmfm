@@ -22,8 +22,7 @@ struct _vh_slider_t
 void  vh_slider_add(ku_view_t* view, void (*on_event)(vh_slider_event_t));
 void  vh_slider_set(ku_view_t* view, float ratio);
 float vh_slider_get_ratio(ku_view_t* view);
-void  vh_slider_enable(ku_view_t* view);
-void  vh_slider_disable(ku_view_t* view);
+void  vh_slider_set_enabled(ku_view_t* view, int flag);
 
 #endif
 
@@ -111,26 +110,28 @@ void vh_slider_add(ku_view_t* view, void (*on_event)(vh_slider_event_t))
     vh_anim_add(bar, NULL, NULL);
 }
 
-void vh_slider_enable(ku_view_t* view)
+void vh_slider_set_enabled(ku_view_t* view, int flag)
 {
     vh_slider_t* vh = view->handler_data;
 
-    if (vh->enabled == 0)
+    if (flag)
     {
-	vh->enabled    = 1;
-	ku_view_t* bar = view->views->data[0];
-	vh_anim_alpha(bar, 0.3, 1.0, 10, AT_LINEAR);
+	if (vh->enabled == 0)
+	{
+	    ku_view_t* bar = view->views->data[0];
+	    vh_anim_alpha(bar, 0.3, 1.0, 10, AT_LINEAR);
+	}
     }
-}
-void vh_slider_disable(ku_view_t* view)
-{
-    vh_slider_t* vh = view->handler_data;
-    if (vh->enabled == 1)
+    else
     {
-	vh->enabled    = 0;
-	ku_view_t* bar = view->views->data[0];
-	vh_anim_alpha(bar, 1.0, 0.3, 10, AT_LINEAR);
+	if (vh->enabled == 1)
+	{
+	    ku_view_t* bar = view->views->data[0];
+	    vh_anim_alpha(bar, 1.0, 0.3, 10, AT_LINEAR);
+	}
     }
+
+    vh->enabled = flag;
 }
 
 #endif

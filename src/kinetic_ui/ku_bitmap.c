@@ -141,8 +141,6 @@ ku_bitmap_t* ku_bitmap_new_aligned(int the_w, int the_h, int align)
     memset(bm->data, 0, bm->dsize);
     bm->type = KU_BITMAP_ARGB;
 
-    printf("bitmap w %i h %i s %i dw %i dh %i ds %i\n", bm->w, bm->h, bm->size, bm->dw, bm->dh, bm->dsize);
-
     return bm;
 }
 

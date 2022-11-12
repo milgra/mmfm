@@ -353,6 +353,14 @@ void ku_gl_add_vertexes(vec_t* views)
 	    rect.h += 2 * view->style.shadow_blur;
 	}
 
+	if (view->texture.full)
+	{
+	    text.ltx = 0.0;
+	    text.lty = 0.0;
+	    text.rbx = 1.0;
+	    text.rby = 1.0;
+	}
+
 	float data[36];
 
 	data[0] = (int) rect.x;

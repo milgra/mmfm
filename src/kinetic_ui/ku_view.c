@@ -7,6 +7,8 @@
 #include "zc_vector.c"
 #include <math.h>
 
+#define GETV(V, ID) ku_view_get_subview(V, ID)
+
 typedef enum _laypos_t // layout position
 {
     LP_STATIC = 0,

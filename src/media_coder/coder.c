@@ -7,10 +7,10 @@
 
 typedef enum _coder_media_type_t
 {
+    CODER_MEDIA_TYPE_OTHER,
     CODER_MEDIA_TYPE_VIDEO,
     CODER_MEDIA_TYPE_AUDIO,
     CODER_MEDIA_TYPE_IMAGE,
-    CODER_MEDIA_TYPE_OTHER
 } coder_media_type_t;
 
 ku_bitmap_t*       coder_load_image(const char* path);
@@ -109,12 +109,11 @@ ku_bitmap_t* coder_load_image(const char* path)
 		    if (coder_sws_context != NULL)
 		    {
 			int stride[4] = {0};
-			/* stride[0]     = bitmap->w * 4; */
 
 			av_image_fill_linesizes(stride, AV_PIX_FMT_RGBA, frame->width);
 
 			stride[0] = FFALIGN(stride[0], 16);
-			printf("WIDTH %i LINESIZE %i\n", frame->width, stride[0]);
+
 			/* if (res < 0) */
 			/* { */
 			/*     fprintf(stderr, "av_image_fill_linesizes failed\n"); */

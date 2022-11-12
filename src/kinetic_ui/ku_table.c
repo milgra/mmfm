@@ -92,6 +92,7 @@ vec_t* ku_table_get_fields(ku_table_t* uit);
 #include "zc_log.c"
 #include "zc_memory.c"
 #include "zc_number.c"
+#include <xkbcommon/xkbcommon.h>
 
 void ku_table_head_align(ku_table_t* uit, int fixed_index, int fixed_pos)
 {
@@ -433,10 +434,31 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
     {
 	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_KEY_DOWN, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
 	(*uit->on_event)(tevent);
+
+	if (event.ev.keycode == XKB_KEY_Down || event.ev.keycode == XKB_KEY_Up)
+	{
+	    if (event.ev.keycode == XKB_KEY_Down) ku_table_select(uit, uit->selected_index + 1);
+	    if (event.ev.keycode == XKB_KEY_Up) ku_table_select(uit, uit->selected_index - 1);
+
+	    tevent = (ku_table_event_t){
+		.table          = uit,
+		.id             = KU_TABLE_EVENT_SELECT,
+		.selected_items = uit->selected_items,
+		.selected_index = uit->selected_index,
+		.rowview        = vh_tbl_body_item_for_index(uit->body_v, uit->selected_index)};
+
+	    (*uit->on_event)(tevent);
+	}
+
+	if (event.ev.keycode == XKB_KEY_Return)
+	{
+	    tevent = (ku_table_event_t){.table = uit, .id = KU_TABLE_EVENT_OPEN, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	    (*uit->on_event)(tevent);
+	}
     }
     else if (event.id == VH_TBL_EVENT_KEY_UP)
     {
-	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_KEY_UP, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
+	ku_table_event_t tevent = (ku_table_event_t){.table = uit, .id = KU_TABLE_EVENT_KEY_UP, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
 	(*uit->on_event)(tevent);
     }
 }
@@ -619,10 +641,7 @@ void ku_table_select(
 	}
     }
 
-    if (uit->scrl_v)
-    {
-	vh_tbl_scrl_update(uit->scrl_v);
-    }
+    if (uit->scrl_v) vh_tbl_scrl_update(uit->scrl_v);
 }
 
 vec_t* ku_table_get_fields(ku_table_t* uit)

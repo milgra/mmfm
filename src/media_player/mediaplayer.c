@@ -7,6 +7,7 @@
   a frame available, it gets copied to the given bitmap.
   Sound streams are played by SDL audio.
 
+  TODO refactor further
  */
 
 #ifndef mediaplayer_h

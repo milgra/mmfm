@@ -9,7 +9,13 @@ typedef struct _glsha_t
     GLint  uni_loc[13];
 } glsha_t;
 
-glsha_t ku_gl_shader_create(const char* vertex_source, const char* fragment_source, int attribute_locations_length, const char** attribute_structure, int uniform_locations_length, const char** uniform_structure);
+glsha_t ku_gl_shader_create(
+    const char*  vertex_source,
+    const char*  fragment_source,
+    int          attribute_locations_length,
+    const char** attribute_structure,
+    int          uniform_locations_length,
+    const char** uniform_structure);
 
 #endif
 

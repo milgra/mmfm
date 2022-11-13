@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* TODO separate unit tests */
+/* TODO rethink debugging, current file and line numbers say nothing, cannot investigate double release */
+
 #define CAL(X, Y, Z) mem_calloc(X, Y, Z, __FILE__, __LINE__);
 #define RET(X) mem_retain(X, __FILE__, __LINE__)
 #define REL(X) mem_release(X, __FILE__, __LINE__)

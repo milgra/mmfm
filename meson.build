@@ -190,10 +190,11 @@ com_sources = ['src/mmfm/ui.c',
 	       'src/kinetic_ui/ku_fontconfig.c',
 	       'src/kinetic_ui/ku_connector_wayland.c',
 	       'src/kinetic_ui/ku_window.c',
+	       'src/kinetic_ui/ku_png.c',
 	       'src/kinetic_ui/ku_draw.c',
 	       'src/kinetic_ui/ku_text.c',
 	       'src/kinetic_ui/ku_table.c',
-	       'src/kinetic_ui/ku_util.c'] + protos_src + protos_headers
+	       'src/kinetic_ui/ku_gen_textstyle.c'] + protos_src + protos_headers
 
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
 install_data('res/html/main.html', install_dir : pkg_datadir / 'html' )

@@ -55,7 +55,7 @@ void  vh_textinput_activate(ku_view_t* view, char state);
 
 #include "ku_bitmap.c"
 #include "ku_draw.c"
-#include "ku_util.c"
+#include "ku_gen_textstyle.c"
 #include "tg_css.c"
 #include "tg_text.c"
 #include "utf8.h"
@@ -452,7 +452,7 @@ void vh_textinput_add(ku_view_t* view, char* text, char* phtext, void (*on_event
     data->text    = cstr_new_cstring(""); // REL 2
     data->glyph_v = VNEW();               // REL 3
 
-    data->style = ku_util_gen_textstyle(view);
+    data->style = ku_gen_textstyle_parse(view);
 
     data->on_event = on_event;
 

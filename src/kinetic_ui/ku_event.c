@@ -37,6 +37,7 @@ typedef struct _ku_event_t
     int y; // mouse coord y
 
     int drag;   // mouse drag
+    int dclick; // double click
     int button; // mouse button id
 
     /* keyboard modifiers */
@@ -60,15 +61,12 @@ typedef struct _ku_event_t
     struct timespec time_unix;  // unix timestamp
     float           time_frame; // elapsed time since last frame
 
+    /* keyboard */
+
     char     text[8];
-    int      dclick;
     uint32_t keycode;
     int      repeat; // key event is coming from repeat
 
 } ku_event_t;
-
-#endif
-
-#if __INCLUDE_LEVEL__ == 0
 
 #endif

@@ -1,4 +1,9 @@
-# Zen Media development roadmap
+# MultiMedia File Manager
+
+increase fault tolerance of css and html parser
+increase standards compatibility of css and html
+figure out how to use dirty rects with double buffering in ku_renderer_egl
+update software renderer, cur out dirty rect, implement image zoom
 
 0.2
 

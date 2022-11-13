@@ -36,10 +36,10 @@ void ui_load_folder(char* folder);
 #include "ku_fontconfig.c"
 #include "ku_gen_css.c"
 #include "ku_gen_html.c"
+#include "ku_gen_textstyle.c"
 #include "ku_gen_type.c"
 #include "ku_gl.c"
 #include "ku_table.c"
-#include "ku_util.c"
 #include "mediaplayer.c"
 #include "pdf.c"
 #include "tg_css.c"
@@ -873,7 +873,7 @@ void ui_on_btn_event(vh_button_event_t event)
     }
     else if (strcmp(event.view->id, "maxbtn") == 0)
     {
-	ku_wayland_toggle_fullscreen(ui.window);
+	ku_wayland_toggle_fullscreen();
     }
     else if (strcmp(event.view->id, "sidebarbtn") == 0)
     {
@@ -1046,10 +1046,10 @@ ku_table_t* ui_create_table(ku_view_t* view, vec_t* fields)
 	row_s  = body->views->data[2];
     }
 
-    textstyle_t rowastyle = ku_util_gen_textstyle(row_a);
-    textstyle_t rowbstyle = ku_util_gen_textstyle(row_b);
-    textstyle_t rowsstyle = ku_util_gen_textstyle(row_s);
-    textstyle_t headstyle = headrow == NULL ? (textstyle_t){0} : ku_util_gen_textstyle(headrow);
+    textstyle_t rowastyle = ku_gen_textstyle_parse(row_a);
+    textstyle_t rowbstyle = ku_gen_textstyle_parse(row_b);
+    textstyle_t rowsstyle = ku_gen_textstyle_parse(row_s);
+    textstyle_t headstyle = headrow == NULL ? (textstyle_t){0} : ku_gen_textstyle_parse(headrow);
 
     ku_table_t* table = ku_table_create(
 	view->id,

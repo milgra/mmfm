@@ -1,11 +1,13 @@
 #ifndef zc_wrapper_h
 #define zc_wrapper_h
 
+/* TODO separate unit tests */
+
 #include <stdint.h>
 
 typedef struct
 {
-  void* data;
+    void* data;
 } wrapper_t;
 
 wrapper_t* wrapper_new(void* pointer);
@@ -18,9 +20,9 @@ wrapper_t* wrapper_new(void* pointer);
 
 wrapper_t* wrapper_new(void* pointer)
 {
-  wrapper_t* res = CAL(sizeof(wrapper_t), NULL, NULL);
-  res->data      = pointer;
-  return res;
+    wrapper_t* res = CAL(sizeof(wrapper_t), NULL, NULL);
+    res->data      = pointer;
+    return res;
 }
 
 #endif

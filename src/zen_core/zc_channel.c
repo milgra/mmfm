@@ -7,6 +7,8 @@
 #ifndef zc_channel_h
 #define zc_channel_h
 
+/* TODO separate unit tests */
+
 #include "zc_memory.c"
 #include <assert.h>
 #include <pthread.h>

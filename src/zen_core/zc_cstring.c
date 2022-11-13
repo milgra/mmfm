@@ -1,6 +1,8 @@
 #ifndef zc_cstring_h
 #define zc_cstring_h
 
+/* TODO separate unit tests */
+
 #include "zc_vector.c"
 #include <stdarg.h>
 #include <stdint.h>

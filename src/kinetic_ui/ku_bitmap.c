@@ -13,8 +13,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// TODO use this
+/* TODO write test */
 
+/* TODO use this */
 enum ku_bitmap_format
 {
     KU_BITMAP_ARGB,

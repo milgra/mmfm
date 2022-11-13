@@ -1,6 +1,8 @@
 #ifndef ku_draw_h
 #define ku_draw_h
 
+/* TODO cleanup, rewrite, move functions into ku_bitmap, write tests */
+
 #include "ku_bitmap.c"
 #include <math.h>
 #include <stdint.h>

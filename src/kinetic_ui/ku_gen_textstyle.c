@@ -1,10 +1,10 @@
-#ifndef ku_util_h
-#define ku_util_h
+#ifndef ku_gen_textstyle_h
+#define ku_gen_textstyle_h
 
 #include "ku_text.c"
 #include "ku_view.c"
 
-textstyle_t ku_util_gen_textstyle(ku_view_t* view);
+textstyle_t ku_gen_textstyle_parse(ku_view_t* view);
 
 #endif
 
@@ -14,7 +14,7 @@ textstyle_t ku_util_gen_textstyle(ku_view_t* view);
 #include "zc_log.c"
 #include <limits.h>
 
-textstyle_t ku_util_gen_textstyle(ku_view_t* view)
+textstyle_t ku_gen_textstyle_parse(ku_view_t* view)
 {
     textstyle_t style = {0};
 

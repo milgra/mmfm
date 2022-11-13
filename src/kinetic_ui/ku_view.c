@@ -68,8 +68,6 @@ struct _vstyle_t
 
     int border_radius;
 
-    int shadow_h;
-    int shadow_w;
     int shadow_blur;
     int shadow_color;
 
@@ -99,40 +97,20 @@ struct _vstyle_t
     char unmask; /* masking should be stopped, helper variable */
 };
 
-typedef enum _texst_t // texture loading state
-{
-    TS_BLANK,   /* texture is empty */
-    TS_PENDING, /* texture is under generation */
-    TS_READY,   /* texture is generated */
-    TS_STORED,  /* texture is stored in texmap */
-} texst_t;
-
-typedef enum _textype_t
-{
-    TT_MANAGED,
-    TT_EXTERNAL
-} textype_t;
-
 typedef struct _texture_t
 {
-    textype_t type; /* managed or external */
-    uint32_t  page; /* texture page */
-    float     alpha;
-    char      resizable; /* if view is resized initiate texture re-rendering */
+    float alpha;       /* alpha value of the view */
+    char  resizable;   /* don't resize on frame animation TODO do something with this */
+    char  transparent; /* indicates if view contains transparent image to optimize alpha blending */
 
-    char transparent;
-    // internal texture
+    char ready;         /* texture is generated */
+    char changed;       /* texture is changed */
+    char uploaded;      /* texture is uploaded, used by renderers */
+    char alpha_changed; /* alpha channel is changed */
 
-    texst_t      state;         /* render state of texture */
-    ku_bitmap_t* bitmap;        /* texture bitmap */
-    char         changed;       /* texture is changed */
-    char         uploaded;      /* texture is uploaded, used by renderes */
-    char         alpha_changed; /* alpha channel is changed */
+    ku_bitmap_t* bitmap; /* texture bitmap */
 
-    // decoration
-
-    char full;
-    char blur;
+    char full; /* view wants to show the full texture atlas in case of egl */
 } texture_t;
 
 typedef struct _frame_t
@@ -199,8 +177,6 @@ void       ku_view_set_region(ku_view_t* view, ku_rect_t frame);
 void       ku_view_set_style(ku_view_t* view, vstyle_t style);
 void       ku_view_set_block_touch(ku_view_t* view, char block, char recursive);
 void       ku_view_set_texture_bmp(ku_view_t* view, ku_bitmap_t* tex);
-void       ku_view_set_texture_page(ku_view_t* view, uint32_t page);
-void       ku_view_set_texture_type(ku_view_t* view, textype_t type);
 void       ku_view_set_texture_alpha(ku_view_t* view, float alpha, char recur);
 void       ku_view_invalidate_texture(ku_view_t* view);
 void       ku_view_upload_texture(ku_view_t* view);
@@ -249,7 +225,6 @@ ku_view_t* ku_view_new(char* id, ku_rect_t frame)
     view->views             = VNEW();
     view->frame.local       = frame;
     view->frame.global      = frame;
-    view->texture.page      = -1;
     view->texture.alpha     = 1.0;
     view->texture.resizable = 1;
     view->needs_touch       = 1;
@@ -453,9 +428,9 @@ void ku_view_set_frame(ku_view_t* view, ku_rect_t frame)
 	view->frame.dim_changed = 1;
 	if (frame.w >= 1.0 && frame.h >= 1.0)
 	{
-	    if (view->texture.type == TT_MANAGED && view->texture.resizable == 1)
+	    if (view->texture.resizable == 1)
 	    {
-		view->texture.state = TS_BLANK;
+		view->texture.ready = 0;
 	    }
 	}
     }
@@ -489,18 +464,8 @@ void ku_view_set_texture_bmp(ku_view_t* view, ku_bitmap_t* bitmap)
 {
     if (view->texture.bitmap) REL(view->texture.bitmap);
     view->texture.bitmap  = RET(bitmap);
-    view->texture.state   = TS_READY;
+    view->texture.ready   = 1;
     view->texture.changed = 1;
-}
-
-void ku_view_set_texture_page(ku_view_t* view, uint32_t page)
-{
-    view->texture.page = page;
-}
-
-void ku_view_set_texture_type(ku_view_t* view, textype_t type)
-{
-    view->texture.type = type;
 }
 
 void ku_view_set_texture_alpha(ku_view_t* view, float alpha, char recur)
@@ -520,7 +485,7 @@ void ku_view_set_texture_alpha(ku_view_t* view, float alpha, char recur)
 
 void ku_view_invalidate_texture(ku_view_t* view)
 {
-    view->texture.state = TS_BLANK;
+    view->texture.ready = 0;
 }
 
 void ku_view_upload_texture(ku_view_t* view)
@@ -730,7 +695,7 @@ void ku_view_describe(void* pointer, int level)
 	printf("%s", arrow);
     }
 
-    printf("%s [x:%.2f y:%.2f w:%.2f h:%.2f tx:%i eh:%i tg:%i rc:%zu]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->texture.page, view->handler != NULL, view->tex_gen != NULL, mem_retaincount(view));
+    printf("%s [x:%.2f y:%.2f w:%.2f h:%.2f eh:%i tg:%i rc:%zu]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->handler != NULL, view->tex_gen != NULL, mem_retaincount(view));
 
     for (int i = 0; i < view->views->length; i++) ku_view_describe(view->views->data[i], level + 1);
 }

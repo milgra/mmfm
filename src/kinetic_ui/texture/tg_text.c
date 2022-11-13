@@ -27,7 +27,7 @@ void  tg_text_set_style(ku_view_t* view, textstyle_t style);
 
 #include "ku_bitmap.c"
 #include "ku_draw.c"
-#include "ku_util.c"
+#include "ku_gen_textstyle.c"
 #include "tg_css.c"
 #include "zc_cstring.c"
 
@@ -86,12 +86,12 @@ void tg_text_set1(ku_view_t* view, char* text)
 {
     tg_text_t* gen = view->tex_gen_data;
 
-    gen->style = ku_util_gen_textstyle(view);
+    gen->style = ku_gen_textstyle_parse(view);
 
     if (gen->text) REL(gen->text);
     if (text) gen->text = cstr_new_cstring(text);
 
-    view->texture.state = TS_BLANK;
+    view->texture.ready = 0;
 }
 
 void tg_text_set(ku_view_t* view, char* text, textstyle_t style)
@@ -102,7 +102,7 @@ void tg_text_set(ku_view_t* view, char* text, textstyle_t style)
     if (text) gen->text = cstr_new_cstring(text);
 
     gen->style          = style;
-    view->texture.state = TS_BLANK;
+    view->texture.ready = 0;
 }
 
 void tg_text_set_style(ku_view_t* view, textstyle_t style)
@@ -110,7 +110,7 @@ void tg_text_set_style(ku_view_t* view, textstyle_t style)
     tg_text_t* gen = view->tex_gen_data;
 
     gen->style          = style;
-    view->texture.state = TS_BLANK;
+    view->texture.ready = 0;
 }
 
 char* tg_text_get(ku_view_t* view)

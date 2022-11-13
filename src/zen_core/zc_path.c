@@ -1,6 +1,8 @@
 #ifndef zc_path_h
 #define zc_path_h
 
+/* TODO separate unit tests */
+
 #include "zc_cstring.c"
 
 char* path_new_append(char* root, char* component);

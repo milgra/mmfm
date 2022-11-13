@@ -28,11 +28,6 @@ void ku_gl_save_framebuffer(ku_bitmap_t* bitmap);
 #include "zc_log.c"
 #include "zc_util3.c"
 
-EGLDisplay glDisplay;
-EGLConfig  glConfig;
-EGLContext glContext;
-EGLSurface glSurface;
-
 typedef struct _glbuf_t
 {
     GLuint vbo;
@@ -48,15 +43,16 @@ typedef struct _gltex_t
     GLuint h;
 } gltex_t;
 
-glsha_t           shader;
-glbuf_t           buffer;
-gltex_t           tex_atlas;
-gltex_t           tex_frame;
-ku_gl_atlas_t*    atlas       = NULL;
-ku_floatbuffer_t* floatbuffer = NULL;
-ku_bitmap_t*      pixelmap;
+struct ku_gl_t
+{
+    glsha_t shader;
+    glbuf_t buffer;
+    gltex_t texture;
 
-int texture_size = 0;
+    ku_gl_atlas_t*    atlas;
+    ku_floatbuffer_t* floatbuffer;
+    int               texturesize;
+} kugl = {0};
 
 glsha_t ku_gl_create_texture_shader()
 {
@@ -75,8 +71,6 @@ glsha_t ku_gl_create_texture_shader()
     char* fsh =
 	"#version 100\n"
 	"uniform sampler2D sampler[10];"
-	"uniform int domask;"
-	"uniform highp vec2 texdim;"
 	"varying highp vec4 vUv;"
 	"void main( )"
 	"{"
@@ -86,22 +80,21 @@ glsha_t ku_gl_create_texture_shader()
 	" gl_FragColor = col;"
 	"}";
 
-    glsha_t sha = ku_gl_shader_create(vsh, fsh, 2, ((const char*[]){"position", "texcoord"}), 13, ((const char*[]){"projection", "sampler[0]", "sampler[1]", "sampler[2]", "sampler[3]", "sampler[4]", "sampler[5]", "sampler[6]", "sampler[7]", "sampler[8]", "sampler[9]", "domask", "texdim"}));
+    glsha_t sha = ku_gl_shader_create(
+	vsh,
+	fsh,
+	2,
+	((const char*[]){"position", "texcoord"}),
+	13,
+	((const char*[]){"projection", "sampler[0]", "sampler[1]", "sampler[2]", "sampler[3]", "sampler[4]", "sampler[5]", "sampler[6]", "sampler[7]", "sampler[8]", "sampler[9]"}));
 
     glUseProgram(sha.name);
-
     glUniform1i(sha.uni_loc[1], 0);
-    glUniform1i(sha.uni_loc[2], 1);
-    glUniform1i(sha.uni_loc[3], 2);
-    glUniform1i(sha.uni_loc[4], 3);
-    glUniform1i(sha.uni_loc[5], 4);
-    glUniform1i(sha.uni_loc[6], 5);
-    glUniform1i(sha.uni_loc[7], 6);
-    glUniform1i(sha.uni_loc[8], 7);
-    glUniform1i(sha.uni_loc[9], 8);
 
     return sha;
 }
+
+/* creates vertex buffer and vertex array object */
 
 glbuf_t ku_gl_create_vertex_buffer()
 {
@@ -121,11 +114,15 @@ glbuf_t ku_gl_create_vertex_buffer()
     return vb;
 }
 
+/* deletes vertex buffer */
+
 void ku_gl_delete_vertex_buffer(glbuf_t buf)
 {
     glDeleteBuffers(1, &buf.vbo);
     glDeleteVertexArrays(1, &buf.vao);
 }
+
+/* create texture */
 
 gltex_t ku_gl_create_texture(int index, uint32_t w, uint32_t h)
 {
@@ -146,6 +143,7 @@ gltex_t ku_gl_create_texture(int index, uint32_t w, uint32_t h)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    /* generate framebuffer for texture */
     /* glGenFramebuffers(1, &tex.fb); // DEL 1 */
 
     /* glBindFramebuffer(GL_FRAMEBUFFER, tex.fb); */
@@ -157,79 +155,30 @@ gltex_t ku_gl_create_texture(int index, uint32_t w, uint32_t h)
     return tex;
 }
 
+/* deltes texture */
+
 void ku_gl_delete_texture(gltex_t tex)
 {
     glDeleteTextures(1, &tex.tx);     // DEL 0
     glDeleteFramebuffers(1, &tex.fb); // DEL 1
 }
 
+/* TODO move gl initialization code here from wayland connector */
+
 void ku_gl_init(int max_dev_width, int max_dev_height)
 {
-    /* EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY); */
-    /* if (display == EGL_NO_DISPLAY) */
-    /* { */
-    /* 	printf("ERROR 0\n"); */
-    /* } */
-
-    /* if (eglInitialize(display, NULL, NULL) != EGL_TRUE) */
-    /* { */
-    /* 	printf("ERROR 1\n"); */
-    /* } */
-
-    /* EGLConfig config; */
-    /* EGLint    num_config = 0; */
-    /* if (eglChooseConfig(display, NULL, &config, 1, &num_config) != EGL_TRUE) */
-    /* { */
-    /* 	printf("ERROR 2\n"); */
-    /* } */
-    /* if (num_config == 0) */
-    /* { */
-    /* 	printf("ERROR 3\n"); */
-    /* } */
-
-    /* eglBindAPI(EGL_OPENGL_API); */
-    /* EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, NULL); */
-    /* if (eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, context) != EGL_TRUE) */
-    /* { */
-    /* 	printf("ERROR 4\n"); */
-    /* } */
-
     GLenum err = glewInit();
     if (GLEW_OK != err)
     {
 	printf("ERROR 5 %s\n", glewGetErrorString(err));
     }
 
-    shader = ku_gl_create_texture_shader();
-    buffer = ku_gl_create_vertex_buffer();
+    kugl.shader = ku_gl_create_texture_shader();
+    kugl.buffer = ku_gl_create_vertex_buffer();
 
-    floatbuffer = ku_floatbuffer_new();
-
-    /* glbuf_t vb = {0}; */
-
-    /* glGenBuffers(1, &pbo1); // DEL 0 */
-    /* glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo1); */
-    /* glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 4096 * 4096, 0, GL_STREAM_READ); */
-
-    /* glGenBuffers(1, &pbo2); // DEL 0 */
-    /* glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo2); */
-    /* glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(GLuint) * 4096 * 4096, 0, GL_STREAM_READ); */
-
-    /* glBindBuffer(GL_PIXEL_PACK_BUFFER, 0); */
-
-    /* pbos[0] = pbo1; */
-    /* pbos[1] = pbo2; */
-
-    /* pbindex  = 0; */
-    /* pbnindex = 1; */
-
-    /* pixelmap = ku_bitmap_new(4096, 4096); */
-    /* REL(pixelmap->data); */
-
-    glDisable(GL_DEPTH_TEST);
+    kugl.floatbuffer = ku_floatbuffer_new();
 
     glEnable(GL_BLEND);
-    /* glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); */
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 
     /* calculate needed texture size, should be four times bigger than the highest resolution display */
@@ -239,49 +188,61 @@ void ku_gl_init(int max_dev_width, int max_dev_height)
     int binsize = 2;
     while (binsize < size) binsize *= 2;
 
+    /* get max texture size */
+
     int value;
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &value); // Returns 1 value
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &value);
+
+    /* don't let it be bigger than max size */
 
     if (binsize > value) binsize = value;
 
     zc_log_info("Texture size will be %i", binsize);
 
-    texture_size = binsize;
+    kugl.texturesize = binsize;
 
-    atlas = ku_gl_atlas_new(texture_size, texture_size);
-
-    tex_atlas = ku_gl_create_texture(0, texture_size, texture_size);
+    kugl.atlas   = ku_gl_atlas_new(kugl.texturesize, kugl.texturesize);
+    kugl.texture = ku_gl_create_texture(0, kugl.texturesize, kugl.texturesize);
 
     glClearColor(0.0, 0.0, 0.0, 0.6);
 }
 
+/* destroy ku gl */
+
 void ku_gl_destroy()
 {
-    REL(floatbuffer);
-    REL(atlas);
+    REL(kugl.floatbuffer);
+    REL(kugl.atlas);
 
-    ku_gl_delete_texture(tex_atlas);
-    ku_gl_delete_vertex_buffer(buffer);
+    ku_gl_delete_texture(kugl.texture);
+    ku_gl_delete_vertex_buffer(kugl.buffer);
 
-    glDeleteProgram(shader.name);
+    glDeleteProgram(kugl.shader.name);
 }
+
+/* upload textures */
 
 void ku_gl_add_textures(vec_t* views, int force)
 {
     /* reset atlas */
     if (force)
     {
-	if (texture_size != atlas->width)
+	if (kugl.texturesize != kugl.atlas->width)
 	{
-	    ku_gl_delete_texture(tex_atlas);
-	    tex_atlas = ku_gl_create_texture(0, texture_size, texture_size);
+	    /* resize texture if needed */
+
+	    ku_gl_delete_texture(kugl.texture);
+	    kugl.texture = ku_gl_create_texture(0, kugl.texturesize, kugl.texturesize);
 	}
-	if (atlas) REL(atlas);
-	atlas = ku_gl_atlas_new(texture_size, texture_size);
+
+	/* reset atlas */
+
+	if (kugl.atlas) REL(kugl.atlas);
+	kugl.atlas = ku_gl_atlas_new(kugl.texturesize, kugl.texturesize);
     }
 
-    glBindTexture(GL_TEXTURE_2D, tex_atlas.tx);
-    glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
+    glBindTexture(GL_TEXTURE_2D, kugl.texture.tx);
+    glActiveTexture(GL_TEXTURE0 + kugl.texture.index);
 
     int reset = 0;
 
@@ -293,30 +254,43 @@ void ku_gl_add_textures(vec_t* views, int force)
 	/* does it fit into the texture atlas? */
 	if (view->texture.bitmap)
 	{
-	    if (view->texture.bitmap->w < texture_size &&
-		view->texture.bitmap->h < texture_size)
+	    if (view->texture.bitmap->w < kugl.texturesize &&
+		view->texture.bitmap->h < kugl.texturesize)
 	    {
 		/* do we have to upload it? */
 		if (view->texture.uploaded == 0 || force)
 		{
-		    ku_gl_atlas_coords_t coords = ku_gl_atlas_get(atlas, view->id);
+		    ku_gl_atlas_coords_t coords = ku_gl_atlas_get(kugl.atlas, view->id);
 
-		    /* did it's size change or is it zero yet? */
+		    /* did it's size change */
 		    if (view->texture.bitmap->w != coords.w || view->texture.bitmap->h != coords.h || force)
 		    {
-			int success = ku_gl_atlas_put(atlas, view->id, view->texture.bitmap->w, view->texture.bitmap->h);
+			int success = ku_gl_atlas_put(kugl.atlas, view->id, view->texture.bitmap->w, view->texture.bitmap->h);
 
 			if (success < 0)
 			{
+			    /* force reset */
+
 			    zc_log_debug("Texture Atlas Reset\n");
 			    if (force == 0) reset = 1;
 			    break;
 			}
 
-			coords = ku_gl_atlas_get(atlas, view->id);
+			coords = ku_gl_atlas_get(kugl.atlas, view->id);
 		    }
 
-		    glTexSubImage2D(GL_TEXTURE_2D, 0, coords.x, coords.y, coords.w, coords.h, GL_RGBA, GL_UNSIGNED_BYTE, view->texture.bitmap->data);
+		    /* upload texture */
+
+		    glTexSubImage2D(
+			GL_TEXTURE_2D,
+			0,
+			coords.x,
+			coords.y,
+			coords.w,
+			coords.h,
+			GL_RGBA,
+			GL_UNSIGNED_BYTE,
+			view->texture.bitmap->data);
 
 		    view->texture.uploaded = 1;
 		}
@@ -327,8 +301,9 @@ void ku_gl_add_textures(vec_t* views, int force)
 		{
 		    /* increase texture and atlas size to fit texture */
 
-		    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texture_size); // Returns 1 value
-		    zc_log_info("Texture size will be %i", texture_size);
+		    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &kugl.texturesize);
+
+		    zc_log_info("Texture size will be %i", kugl.texturesize);
 
 		    reset = 1;
 		}
@@ -340,12 +315,16 @@ void ku_gl_add_textures(vec_t* views, int force)
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    /* in case of reset do the whole thing once again with forced reset*/
+
     if (reset == 1) ku_gl_add_textures(views, 1);
 }
 
+/* upload vertexes */
+
 void ku_gl_add_vertexes(vec_t* views)
 {
-    ku_floatbuffer_reset(floatbuffer);
+    ku_floatbuffer_reset(kugl.floatbuffer);
 
     /* add vertexes to buffer */
     for (int index = 0; index < views->length; index++)
@@ -353,7 +332,7 @@ void ku_gl_add_vertexes(vec_t* views)
 	ku_view_t* view = views->data[index];
 
 	ku_rect_t            rect = view->frame.global;
-	ku_gl_atlas_coords_t text = ku_gl_atlas_get(atlas, view->id);
+	ku_gl_atlas_coords_t text = ku_gl_atlas_get(kugl.atlas, view->id);
 
 	/* expand with blur thickness */
 
@@ -364,6 +343,8 @@ void ku_gl_add_vertexes(vec_t* views)
 	    rect.w += 2 * view->style.shadow_blur;
 	    rect.h += 2 * view->style.shadow_blur;
 	}
+
+	/* use full texture if needed */
 
 	if (view->texture.full)
 	{
@@ -425,52 +406,56 @@ void ku_gl_add_vertexes(vec_t* views)
 	data[29] = view->texture.alpha;
 	data[35] = view->texture.alpha;
 
-	ku_floatbuffer_add(floatbuffer, data, 36);
+	ku_floatbuffer_add(kugl.floatbuffer, data, 36);
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * floatbuffer->pos, floatbuffer->data, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, kugl.buffer.vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * kugl.floatbuffer->pos, kugl.floatbuffer->data, GL_DYNAMIC_DRAW);
 }
+
+/* render all vertexes */
 
 void ku_gl_render(ku_bitmap_t* bitmap)
 {
     /* glBindFramebuffer(GL_FRAMEBUFFER, tex_frame.fb); */
-    glBindVertexArray(buffer.vao);
+    glBindVertexArray(kugl.buffer.vao);
 
-    glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
-    glBindTexture(GL_TEXTURE_2D, tex_atlas.tx);
+    glActiveTexture(GL_TEXTURE0 + kugl.texture.index);
+    glBindTexture(GL_TEXTURE_2D, kugl.texture.tx);
 
     glClearColor(1.0, 1.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(shader.name);
+    glUseProgram(kugl.shader.name);
 
     matrix4array_t projection;
     projection.matrix = m4_defaultortho(0.0, bitmap->w, bitmap->h, 0, 0.0, 1.0);
 
-    glUniformMatrix4fv(shader.uni_loc[0], 1, 0, projection.array);
+    glUniformMatrix4fv(kugl.shader.uni_loc[0], 1, 0, projection.array);
     glViewport(0, 0, bitmap->w, bitmap->h);
 
-    glDrawArrays(GL_TRIANGLES, 0, floatbuffer->pos);
+    glDrawArrays(GL_TRIANGLES, 0, kugl.floatbuffer->pos);
     glBindVertexArray(0);
 }
+
+/* render one quad */
 
 void ku_gl_render_quad(ku_bitmap_t* bitmap, uint32_t index, bmr_t mask)
 {
     /* glBindFramebuffer(GL_FRAMEBUFFER, tex_frame.fb); */
-    glBindVertexArray(buffer.vao);
+    glBindVertexArray(kugl.buffer.vao);
 
-    glActiveTexture(GL_TEXTURE0 + tex_atlas.index);
-    glBindTexture(GL_TEXTURE_2D, tex_atlas.tx);
+    glActiveTexture(GL_TEXTURE0 + kugl.texture.index);
+    glBindTexture(GL_TEXTURE_2D, kugl.texture.tx);
 
-    glUseProgram(shader.name);
+    glUseProgram(kugl.shader.name);
 
     /* draw masked region only */
 
     matrix4array_t projection;
     projection.matrix = m4_defaultortho(mask.x, mask.z, mask.w, mask.y, 0.0, 1.0);
 
-    glUniformMatrix4fv(shader.uni_loc[0], 1, 0, projection.array);
+    glUniformMatrix4fv(kugl.shader.uni_loc[0], 1, 0, projection.array);
 
     /* viewport origo is in the left bottom corner */
 
@@ -482,6 +467,8 @@ void ku_gl_render_quad(ku_bitmap_t* bitmap, uint32_t index, bmr_t mask)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+/* clear one rect */
+
 void ku_gl_clear_rect(ku_bitmap_t* bitmap, int x, int y, int w, int h)
 {
     glEnable(GL_SCISSOR_TEST);
@@ -492,6 +479,8 @@ void ku_gl_clear_rect(ku_bitmap_t* bitmap, int x, int y, int w, int h)
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_SCISSOR_TEST);
 }
+
+/* save framebuffer to bitmap */
 
 void ku_gl_save_framebuffer(ku_bitmap_t* bitmap)
 {

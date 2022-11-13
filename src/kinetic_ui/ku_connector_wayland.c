@@ -34,13 +34,6 @@
 
 #define MAX_MONITOR_NAME_LEN 255
 
-enum wl_event_id_t
-{
-    WL_EVENT_OUTPUT_ADDED,
-    WL_EVENT_OUTPUT_REMOVED,
-    WL_EVENT_OUTPUT_CHANGED
-};
-
 struct monitor_info
 {
     int32_t physical_width;
@@ -57,6 +50,49 @@ struct monitor_info
     struct wl_output*       wl_output;
 };
 
+struct keyboard_info
+{
+    struct wl_keyboard* kbd;
+    struct xkb_context* xkb_context;
+    struct xkb_keymap*  xkb_keymap;
+    struct xkb_state*   xkb_state;
+    bool                control;
+    bool                shift;
+
+    /* key repeater config */
+
+    int        rep_period;
+    int        rep_delay;
+    int        rep_timer_fd;
+    ku_event_t rep_event;
+};
+
+struct pointer_info
+{
+    int   px;
+    int   py;
+    int   drag;
+    float scale;
+    uint  lastdown;
+};
+
+/* TODO use added, removed and changed events */
+
+enum wl_event_id
+{
+    WL_EVENT_OUTPUT_ADDED,
+    WL_EVENT_OUTPUT_REMOVED,
+    WL_EVENT_OUTPUT_CHANGED
+};
+
+typedef struct _wl_event_t wl_event_t;
+struct _wl_event_t
+{
+    enum wl_event_id      id;
+    struct monitor_info** monitors;
+    int                   monitor_count;
+};
+
 enum wl_window_type
 {
     WL_WINDOW_NATIVE,
@@ -65,69 +101,68 @@ enum wl_window_type
 
 struct wl_window
 {
-    enum wl_window_type type;
-
-    struct xdg_surface*  xdg_surface;  // window surface
-    struct xdg_toplevel* xdg_toplevel; // window info
-    struct wl_surface*   surface;      // wl surface for window
-    struct wl_buffer*    buffer;       // wl buffer for surface
-    void*                shm_data;     // active bufferdata
-    int                  shm_size;     // active bufferdata size
-    ku_bitmap_t          bitmap;
-
     int scale;
     int width;
     int height;
+    int fullscreen;
+
+    enum wl_window_type type;
+
+    struct monitor_info* monitor;      /* related monitor */
+    struct wl_surface*   surface;      /* wl surface for window */
+    struct wl_callback*  frame_cb;     /* frame done callback */
+    struct xdg_surface*  xdg_surface;  /* window surface */
+    struct xdg_toplevel* xdg_toplevel; /* window info */
+
+    /* backing buffer for native window */
+
+    struct wl_buffer* buffer; /* wl buffer for surface */
+
+    void* shm_data; /* active bufferdata */
+    int   shm_size; /* active bufferdata size */
+
+    /* backing bitmap for native window, also holds size data for egl drawing */
+    /* TODO don't use this bitmap for egl drawing */
+
+    ku_bitmap_t bitmap;
+
+    /* needed for resize events */
+
     int new_scale;
     int new_width;
     int new_height;
 
-    struct wl_callback* frame_cb;
-
-    struct monitor_info* monitor;
+    /* egl window related */
 
     struct wl_egl_window* eglwindow;
-
-    struct wl_region* region;
+    struct wl_region*     region;
 
     EGLDisplay egldisplay;
     EGLSurface eglsurface;
+    EGLContext eglcontext;
 };
 
 struct layer_info
 {
-    struct zwlr_layer_shell_v1*   layer_shell;   // active layer shell
-    struct zwlr_layer_surface_v1* layer_surface; // active layer surface
+    struct zwlr_layer_shell_v1*   layer_shell;   /* active layer shell */
+    struct zwlr_layer_surface_v1* layer_surface; /* active layer surface */
 
-    struct wl_surface* surface;  // wl surface for window
-    struct wl_buffer*  buffer;   // wl buffer for surface
-    void*              shm_data; // active bufferdata
-    int                shm_size; // active bufferdata size
-    ku_bitmap_t        bitmap;
+    struct monitor_info* monitor; /* related monitor */
+    struct wl_surface*   surface; /* wl surface for layer */
+
+    struct wl_buffer* buffer;   /* wl buffer for surface */
+    void*             shm_data; /* active bufferdata */
+    int               shm_size; /* active bufferdata size */
+    ku_bitmap_t       bitmap;   /* backing bitmap */
 };
 
-typedef struct _wl_event_t wl_event_t;
-struct _wl_event_t
-{
-    enum wl_event_id_t    id;
-    struct monitor_info** monitors;
-    int                   monitor_count;
-};
-
-void ku_wayland_init(
-    void (*init)(wl_event_t event),
-    void (*update)(ku_event_t),
-    void (*destroy)(),
-    int time_event_delay);
-
-void ku_wayland_draw();
-void wl_hide();
+void ku_wayland_init(void (*init)(wl_event_t event), void (*update)(ku_event_t), void (*destroy)(), int time_event_delay);
 
 struct wl_window* ku_wayland_create_window(char* title, int width, int height);
-void              ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h);
-void              ku_wayland_delete_window(struct wl_window* info);
-
 struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height);
+
+void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h);
+void ku_wayland_delete_window(struct wl_window* info);
 
 void ku_wayland_create_layer();
 void ku_wayland_delete_layer();
@@ -140,66 +175,69 @@ void ku_wayland_set_time_event_delay(int ms);
 
 #if __INCLUDE_LEVEL__ == 0
 
-struct keyboard_info
-{
-    struct wl_keyboard* kbd;
-    struct xkb_context* xkb_context;
-    struct xkb_keymap*  xkb_keymap;
-    struct xkb_state*   xkb_state;
-    bool                control;
-    bool                shift;
-};
+void ku_wayland_resize_window_buffer(struct wl_window* info);
+
 struct wlc_t
 {
-    struct wl_display* display; // global display object
+    void (*init)(wl_event_t event);
+    void (*update)(ku_event_t);
+    void (*destroy)();
 
-    struct wl_compositor* compositor; // active compositor
-    struct wl_pointer*    pointer;    // active pointer for seat
-    struct wl_seat*       seat;       // active seat
+    struct wl_display* display; /* global display object */
 
-    struct wl_shm* shm; // active shared memory buffer
+    struct wl_compositor* compositor; /* active compositor */
+    struct wl_pointer*    ipointer;   /* active pointer interface */
+    struct wl_seat*       seat;       /* active seat interface */
+    struct wl_shm*        shm;        /* active shared memory interface */
 
-    struct zxdg_output_manager_v1* xdg_output_manager; // active xdg output manager
-    struct zwlr_layer_shell_v1*    layer_shell;        // active layer shell
-    struct zwlr_layer_surface_v1*  layer_surface;      // active layer surface
+    struct zxdg_output_manager_v1* xdg_output_manager; /* active output manager */
+    struct xdg_wm_base*            xdg_wm_base;        /* active wm base interface */
 
     struct zwp_pointer_gestures_v1*      pointer_manager;
     struct zwp_pointer_gesture_pinch_v1* pinch_gesture;
     struct zwp_pointer_gesture_hold_v1*  hold_gesture;
 
+    int pointer_manager_version;
+
+    /* TODO move this into layer info objects */
+
+    struct zwlr_layer_shell_v1*   layer_shell;   /* active layer shell */
+    struct zwlr_layer_surface_v1* layer_surface; /* active layer surface */
+
+    /* TODO store these in vec_t */
+
     int                   monitor_count;
+    int                   window_count;
     struct monitor_info** monitors;
-    struct monitor_info*  monitor;
-    struct keyboard_info  keyboard;
+    struct wl_window**    windows;
 
-    struct wl_window** windows;
+    /* TODO remove current monitor */
 
-    // window state
+    struct monitor_info* monitor; /* current monitor */
 
-    void (*init)(wl_event_t event);
-    void (*update)(ku_event_t);
-    void (*destroy)();
+    struct keyboard_info keyboard; /* keyboard state */
+    struct pointer_info  pointer;  /* pointer state */
 
-    struct xdg_wm_base* xdg_wm_base;
-
-    int        key_repeat_period;
-    int        key_repeat_delay;
-    int        key_repeat_timer_fd;
-    ku_event_t key_repeat_event;
-
-    float last_scale;
+    /* time event control */
 
     int             time_event_interval;
     int             time_event_timer_fd;
     struct timespec time_start;
 
+    /* framerate related */
+
+    uint32_t last_frame;
+    uint32_t frame_count;
+    uint32_t frame_rate;
+
+    /* last frame event to calculate delay */
+
     ku_event_t frame_event;
+
+    int exit_flag;
 } wlc = {0};
 
-int ku_wayland_exit_flag = 0;
-
-void ku_wayland_create_buffer();
-void ku_wayland_resize_window_buffer(struct wl_window* info);
+/* init event with time data */
 
 ku_event_t init_event()
 {
@@ -232,6 +270,10 @@ int32_t round_to_int(double val)
     return (int32_t) (val + 0.5);
 }
 
+/* surface buffer related */
+
+/* open posix shared memory object */
+
 int ku_wayland_shm_create()
 {
     int  shmid = -1;
@@ -251,18 +293,20 @@ int ku_wayland_shm_create()
 
     if (shmid < 0)
     {
-	zc_log_debug("shm_open() failed: %s", strerror(errno));
+	zc_log_error("shm_open() failed: %s", strerror(errno));
 	return -1;
     }
 
     if (shm_unlink(shm_name) != 0)
     {
-	zc_log_debug("shm_unlink() failed: %s", strerror(errno));
+	zc_log_error("shm_unlink() failed: %s", strerror(errno));
 	return -1;
     }
 
     return shmid;
 }
+
+/* allocate shared memory at previously created object */
 
 void* ku_wayland_shm_alloc(const int shmid, const size_t size)
 {
@@ -292,11 +336,9 @@ static const struct wl_buffer_listener buffer_listener = {
 
 void ku_wayland_create_buffer(struct wl_window* info, int width, int height)
 {
-    zc_log_debug("create buffer %i %i", width, height);
-
     if (info->buffer)
     {
-	// delete old buffer and bitmap
+	/* delete old buffer and bitmap */
 	wl_buffer_destroy(info->buffer);
 	munmap(info->shm_data, info->shm_size);
 	info->bitmap.data = NULL;
@@ -308,16 +350,11 @@ void ku_wayland_create_buffer(struct wl_window* info, int width, int height)
     int fd = ku_wayland_shm_create();
     if (fd < 0)
     {
-	zc_log_error("creating a buffer file for %d B failed: %m", size);
+	zc_log_error("Shm create failed");
 	return;
     }
 
     info->shm_data = ku_wayland_shm_alloc(fd, size);
-
-    info->bitmap.w    = width;
-    info->bitmap.h    = height;
-    info->bitmap.size = size;
-    info->bitmap.data = info->shm_data;
 
     if (info->shm_data == MAP_FAILED)
     {
@@ -325,6 +362,13 @@ void ku_wayland_create_buffer(struct wl_window* info, int width, int height)
 	close(fd);
 	return;
     }
+
+    /* TODO don't use bitmap, use void* for data */
+
+    info->bitmap.w    = width;
+    info->bitmap.h    = height;
+    info->bitmap.size = size;
+    info->bitmap.data = info->shm_data;
 
     struct wl_shm_pool* pool   = wl_shm_create_pool(wlc.shm, fd, size);
     struct wl_buffer*   buffer = wl_shm_pool_create_buffer(pool, 0, width, height, stride, WL_SHM_FORMAT_ARGB8888);
@@ -335,59 +379,40 @@ void ku_wayland_create_buffer(struct wl_window* info, int width, int height)
     info->shm_size = size;
 
     wl_buffer_add_listener(buffer, &buffer_listener, NULL);
-    zc_log_debug("buffer listener added");
 }
 
 /* frame listener */
 
 static const struct wl_callback_listener wl_surface_frame_listener;
 
-static uint32_t lasttime  = 0;
-static uint32_t lastcount = 0;
-
 static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t time)
 {
-    /* zc_log_debug("*************************wl surface frame done %u", time); */
-
     struct wl_window* info = data;
+
+    /* Count framerate */
+    if (time - wlc.last_frame > 1000)
+    {
+	wlc.frame_rate  = wlc.frame_count;
+	wlc.frame_count = 1;
+	wlc.last_frame  = time;
+    }
+    else wlc.frame_count++;
+
     /* Destroy this callback */
     wl_callback_destroy(cb);
-
     info->frame_cb = NULL;
 
-    if (time - lasttime > 1000)
-    {
-	/* printf("FRAME PER SEC : %u\n", lastcount); */
-	lastcount = 0;
-	lasttime  = time;
-    }
-
-    lastcount++;
-
+    /* Dispatch frame event to trigger rendering */
     ku_event_t event = init_event();
 
     event.type       = KU_EVENT_FRAME;
     event.time_frame = (float) (event.time - wlc.frame_event.time) / 1000.0;
 
+    /* Store event to be able to calculate frame delta */
     wlc.frame_event = event;
 
-    // TODO refresh rate can differ so animations should be time based
+    /* TODO refresh rate can differ so animations should be time based */
     (*wlc.update)(event);
-
-    /* info->frame_cb = wl_surface_frame(info->surface); */
-    /* wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info); */
-
-    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
-    /* glClear(GL_COLOR_BUFFER_BIT); */
-
-    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
-
-    /* ku_wayland_draw(); */
-    /* Submit a frame for this event */
-
-    /* wl_surface_attach(wlc.surface, buffer, 0, 0); */
-    /* wl_surface_damage_buffer(wlc.surface, 0, 0, INT32_MAX, INT32_MAX); */
-    /* wl_surface_commit(wlc.surface); */
 }
 
 static const struct wl_callback_listener wl_surface_frame_listener = {
@@ -398,14 +423,14 @@ static const struct wl_callback_listener wl_surface_frame_listener = {
 
 static void ku_wayland_layer_surface_configure(void* data, struct zwlr_layer_surface_v1* surface, uint32_t serial, uint32_t width, uint32_t height)
 {
-    zc_log_debug("layer surface configure serial %u width %i height %i", serial, width, height);
+    /* zc_log_debug("layer surface configure serial %u width %i height %i", serial, width, height); */
 
     zwlr_layer_surface_v1_ack_configure(surface, serial);
 }
 
 static void ku_wayland_layer_surface_closed(void* _data, struct zwlr_layer_surface_v1* surface)
 {
-    zc_log_debug("layer surface configure");
+    /* zc_log_debug("layer surface configure"); */
 }
 
 struct zwlr_layer_surface_v1_listener layer_surface_listener = {
@@ -417,7 +442,7 @@ struct zwlr_layer_surface_v1_listener layer_surface_listener = {
 
 void xdg_toplevel_configure(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height, struct wl_array* states)
 {
-    zc_log_debug("xdg toplevel configure w %i h %i", width, height);
+    /* zc_log_debug("xdg toplevel configure w %i h %i", width, height); */
 
     struct wl_window* info = data;
 
@@ -430,18 +455,18 @@ void xdg_toplevel_configure(void* data, struct xdg_toplevel* xdg_toplevel, int32
 
 void xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel)
 {
-    zc_log_debug("xdg toplevel close");
-    ku_wayland_exit_flag = 1;
+    /* zc_log_debug("xdg toplevel close"); */
+    wlc.exit_flag = 1;
 }
 
 void xdg_toplevel_configure_bounds(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height)
 {
-    zc_log_debug("xdg toplevel configure bounds w %i h %i", width, height);
+    /* zc_log_debug("xdg toplevel configure bounds w %i h %i", width, height); */
 }
 
 void xdg_toplevel_wm_capabilities(void* data, struct xdg_toplevel* xdg_toplevel, struct wl_array* capabilities)
 {
-    zc_log_debug("xdg toplevel wm capabilities");
+    /* zc_log_debug("xdg toplevel wm capabilities"); */
 }
 
 static const struct xdg_toplevel_listener xdg_toplevel_listener = {
@@ -454,11 +479,11 @@ static const struct xdg_toplevel_listener xdg_toplevel_listener = {
 
 static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, uint32_t serial)
 {
-    zc_log_debug("xdg surface configure");
-
-    struct wl_window* info = data;
+    /* zc_log_debug("xdg surface configure"); */
 
     xdg_surface_ack_configure(xdg_surface, serial);
+
+    struct wl_window* info = data;
 
     if (info->width != info->new_width && info->height != info->new_height)
     {
@@ -470,10 +495,15 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 	(*wlc.update)(event);
     }
 
-    if (info->type == WL_WINDOW_NATIVE) ku_wayland_resize_window_buffer(info);
+    if (info->type == WL_WINDOW_NATIVE)
+    {
+	/* resize native buffer */
+	ku_wayland_resize_window_buffer(info);
+    }
     else
     {
-	if (info->width != info->new_width && info->height != info->new_height)
+	if (info->width != info->new_width &&
+	    info->height != info->new_height)
 	{
 	    info->width  = info->new_width;
 	    info->height = info->new_height;
@@ -481,19 +511,23 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 	    info->bitmap.w = info->width;
 	    info->bitmap.h = info->height;
 
+	    /* resize egl window */
 	    wl_egl_window_resize(info->eglwindow, info->width, info->height, 0, 0);
 
+	    /* set opaque */
 	    wl_region_add(info->region, 0, 0, info->width, info->height);
 	    wl_surface_set_opaque_region(info->surface, info->region);
 
-	    /* glClear(GL_COLOR_BUFFER_BIT); */
-	    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
-	    /* glClear(GL_COLOR_BUFFER_BIT); */
+	    /* swap buffers */
 	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
 
+	    /* dispath frame event to render */
 	    ku_event_t event = init_event();
 	    event.type       = KU_EVENT_FRAME;
-	    wlc.frame_event  = event;
+	    event.time_frame = (float) (event.time - wlc.frame_event.time) / 1000.0;
+
+	    /* Store event to be able to calculate frame delta */
+	    wlc.frame_event = event;
 	}
     }
 
@@ -508,26 +542,27 @@ static const struct xdg_surface_listener xdg_surface_listener = {
 
 static void wl_surface_enter(void* userData, struct wl_surface* surface, struct wl_output* output)
 {
-    zc_log_debug("wl surface enter");
+    /* zc_log_debug("wl surface enter"); */
+
     struct wl_window* info = userData;
 
-    if (info->type == WL_WINDOW_NATIVE)
+    for (int index = 0; index < wlc.monitor_count; index++)
     {
+	struct monitor_info* monitor = wlc.monitors[index];
 
-	for (int index = 0; index < wlc.monitor_count; index++)
+	if (monitor->wl_output == output)
 	{
-	    struct monitor_info* monitor = wlc.monitors[index];
+	    zc_log_debug("output name %s %i %i", monitor->name, monitor->scale, info->scale);
 
-	    if (monitor->wl_output == output)
+	    if (monitor->scale != info->scale)
 	    {
-		zc_log_debug("output name %s %i %i", monitor->name, monitor->scale, info->scale);
+		info->monitor   = monitor;
+		info->new_scale = monitor->scale;
 
-		if (monitor->scale != info->scale)
-		{
-		    info->monitor   = monitor;
-		    info->new_scale = monitor->scale;
-		    ku_wayland_resize_window_buffer(info);
-		}
+		/* request re-scale with resizing */
+		if (info->type == WL_WINDOW_NATIVE) ku_wayland_resize_window_buffer(info);
+
+		/* TODO re-scale in case of EGL window also */
 	    }
 	}
     }
@@ -535,7 +570,7 @@ static void wl_surface_enter(void* userData, struct wl_surface* surface, struct 
 
 static void wl_surface_leave(void* userData, struct wl_surface* surface, struct wl_output* output)
 {
-    /* struct wl_window* info = userData; */
+    /* zc_log_debug("wl surface leave"); */
 }
 
 static const struct wl_surface_listener wl_surface_listener = {
@@ -543,35 +578,40 @@ static const struct wl_surface_listener wl_surface_listener = {
     .leave = wl_surface_leave,
 };
 
-/* creates xdg surface and toplevel */
-
-struct wl_window* ku_wayland_create_window(char* title, int width, int height)
+struct wl_window* ku_wayland_create_generic_window(char* title, int width, int height)
 {
     struct wl_window* info = CAL(sizeof(struct wl_window), NULL, NULL);
-
-    info->type = WL_WINDOW_NATIVE;
-
-    wlc.windows[0] = info;
 
     info->new_scale  = 1;
     info->new_width  = width;
     info->new_height = height;
 
-    info->surface = wl_compositor_create_surface(wlc.compositor);
-    wl_surface_add_listener(info->surface, &wl_surface_listener, info);
-
-    info->xdg_surface = xdg_wm_base_get_xdg_surface(wlc.xdg_wm_base, info->surface);
-    xdg_surface_add_listener(info->xdg_surface, &xdg_surface_listener, info);
-
+    info->surface      = wl_compositor_create_surface(wlc.compositor);
+    info->xdg_surface  = xdg_wm_base_get_xdg_surface(wlc.xdg_wm_base, info->surface);
     info->xdg_toplevel = xdg_surface_get_toplevel(info->xdg_surface);
+
+    wl_surface_add_listener(info->surface, &wl_surface_listener, info);
+    xdg_surface_add_listener(info->xdg_surface, &xdg_surface_listener, info);
     xdg_toplevel_add_listener(info->xdg_toplevel, &xdg_toplevel_listener, info);
 
     xdg_toplevel_set_title(info->xdg_toplevel, title);
     xdg_toplevel_set_app_id(info->xdg_toplevel, title);
 
-    /* wl_display_roundtrip(wlc.display); */
-
     wl_surface_commit(info->surface);
+
+    return info;
+}
+
+/* creates xdg surface and toplevel */
+
+struct wl_window* ku_wayland_create_window(char* title, int width, int height)
+{
+    struct wl_window* info = ku_wayland_create_generic_window(title, width, height);
+
+    info->type     = WL_WINDOW_NATIVE;
+    wlc.windows[0] = info;
+
+    /* start frame listening */
 
     info->frame_cb = wl_surface_frame(info->surface);
     wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
@@ -581,36 +621,24 @@ struct wl_window* ku_wayland_create_window(char* title, int width, int height)
 
 struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height)
 {
-    struct wl_window* info = CAL(sizeof(struct wl_window), NULL, NULL);
+    struct wl_window* info = ku_wayland_create_generic_window(title, width, height);
 
-    info->type = WL_WINDOW_EGL;
-
+    info->type     = WL_WINDOW_EGL;
     wlc.windows[0] = info;
 
-    info->new_scale  = 1;
-    info->new_width  = width;
-    info->new_height = height;
-
-    info->surface = wl_compositor_create_surface(wlc.compositor);
-    wl_surface_add_listener(info->surface, &wl_surface_listener, info);
-
-    info->xdg_surface = xdg_wm_base_get_xdg_surface(wlc.xdg_wm_base, info->surface);
-    xdg_surface_add_listener(info->xdg_surface, &xdg_surface_listener, info);
-
-    info->xdg_toplevel = xdg_surface_get_toplevel(info->xdg_surface);
-    xdg_toplevel_add_listener(info->xdg_toplevel, &xdg_toplevel_listener, info);
-    xdg_toplevel_set_title(info->xdg_toplevel, title);
-    xdg_toplevel_set_app_id(info->xdg_toplevel, title);
-
-    wl_surface_commit(info->surface);
+    /* start frame listening */
 
     info->frame_cb = wl_surface_frame(info->surface);
     wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
 
-    info->region = wl_compositor_create_region(wlc.compositor);
+    /* set opaque region */
 
+    info->region = wl_compositor_create_region(wlc.compositor);
     wl_region_add(info->region, 0, 0, width, height);
     wl_surface_set_opaque_region(info->surface, info->region);
+
+    /* setup egl */
+    /* TODO move this into ku_gl */
 
     struct wl_egl_window* egl_window = wl_egl_window_create(info->surface, width, height);
 
@@ -652,19 +680,19 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
     info->egldisplay = display;
 
-    // Initialize EGL
+    /* Initialize EGL */
     if (!eglInitialize(display, &majorVersion, &minorVersion))
     {
 	printf("No Initialisation...\n");
     }
 
-    // Get configs
+    /* Get configs */
     if ((eglGetConfigs(display, NULL, 0, &numConfigs) != EGL_TRUE) || (numConfigs == 0))
     {
 	printf("No configuration...\n");
     }
 
-    // Choose config
+    /* Choose config */
     if ((eglChooseConfig(display, fbAttribs, &config, 1, &numConfigs) != EGL_TRUE) || (numConfigs != 1))
     {
 	printf("No configuration...\n");
@@ -675,7 +703,7 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
     /* 	EGL_SINGLE_BUFFER, */
     /* 	EGL_NONE}; */
 
-    // Create a surface
+    /* Create a surface */
     surface = eglCreateWindowSurface(display, config, (EGLNativeWindowType) egl_window, NULL);
     if (surface == EGL_NO_SURFACE)
     {
@@ -686,42 +714,20 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
     info->eglsurface = surface;
 
-    // Create a GL context
+    /* Create a GL context */
     context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttribs);
     if (context == EGL_NO_CONTEXT)
     {
 	printf("No context...\n");
     }
 
-    // Make the context current
+    info->eglcontext = context;
+
+    /* Make the context current */
     if (!eglMakeCurrent(display, surface, surface, context))
     {
 	printf("Could not make the current window current !\n");
     }
-
-    printf("dispatch pending\n");
-
-    /* glDrawBuffer(GL_FRONT); */
-    /* wl_display_dispatch_pending(wlc.display); */
-
-    /* this space deliberately left blank */
-
-    /* glClearColor(0.5, 0.3, 0.0, 1.0); */
-    /* glClear(GL_COLOR_BUFFER_BIT); */
-
-    /* eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface); */
-
-    /* wl_surface_commit(info->surface); */
-
-    /* while (1) */
-    /* { */
-    /* 	wl_display_dispatch_pending(wlc.display); */
-
-    /* 	glClearColor(0.5, 0.3, 0.0, 1.0); */
-    /* 	glClear(GL_COLOR_BUFFER_BIT); */
-
-    /* 	eglSwapBuffers(display, surface); */
-    /* } */
 
     return info;
 }
@@ -730,6 +736,15 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
 void ku_wayland_delete_window(struct wl_window* info)
 {
+    if (info->type == WL_WINDOW_NATIVE)
+    {
+    }
+    else if (info->type == WL_WINDOW_EGL)
+    {
+	eglDestroyContext(info->egldisplay, info->eglcontext);
+	eglDestroySurface(info->egldisplay, info->eglsurface);
+    }
+
     xdg_surface_destroy(info->xdg_surface);
     wl_surface_destroy(info->surface);
     xdg_toplevel_destroy(info->xdg_toplevel);
@@ -743,8 +758,6 @@ void ku_wayland_resize_window_buffer(struct wl_window* info)
 {
     if (info->new_width != info->width || info->new_height != info->height || info->new_scale != info->scale)
     {
-	zc_log_debug("BUFFER RESIZE w %i h %i s %i", info->new_width, info->new_height, info->new_scale);
-
 	int32_t nwidth  = round_to_int(info->new_width * info->new_scale);
 	int32_t nheight = round_to_int(info->new_height * info->new_scale);
 
@@ -777,9 +790,6 @@ void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h)
 	}
 	else if (info->type == WL_WINDOW_EGL)
 	{
-	    /* glClearColor(0.5, 0.0, 0.0, 1.0); */
-	    /* glClear(GL_COLOR_BUFFER_BIT); */
-
 	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
 	}
     }
@@ -788,65 +798,41 @@ void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h)
 
 /* gesture listener */
 
-// TODO differentiate these by wl_pointer address
-int px   = 0;
-int py   = 0;
-int drag = 0;
+static void gesture_hold_begin(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
+{
+    zc_log_debug("hold start");
+}
 
-/* static void */
-/* gesture_hold_begin(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers) */
-/* { */
-/* GdkWaylandSeat* seat = data; */
+static void gesture_hold_end(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, int32_t cancelled)
+{
+    zc_log_debug("hold end");
+}
 
-/* emit_gesture_hold_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_BEGIN, time, fingers); */
-/* seat->gesture_n_fingers = fingers; */
+static const struct zwp_pointer_gesture_hold_v1_listener gesture_hold_listener = {
+    gesture_hold_begin,
+    gesture_hold_end};
 
-/*     zc_log_debug("hold start"); */
-/* } */
-
-/* static void */
-/* gesture_hold_end(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, int32_t cancelled) */
-/* { */
-/* GdkWaylandSeat*         seat = data; */
-/* GdkTouchpadGesturePhase phase; */
-
-/* phase = (cancelled) ? GDK_TOUCHPAD_GESTURE_PHASE_CANCEL : GDK_TOUCHPAD_GESTURE_PHASE_END; */
-
-/* emit_gesture_hold_event(seat, phase, time, seat->gesture_n_fingers); */
-/*     zc_log_debug("hold end"); */
-/* } */
-
-/* static const struct zwp_pointer_gesture_hold_v1_listener gesture_hold_listener = { */
-/*     gesture_hold_begin, */
-/*     gesture_hold_end}; */
-
-static void
-gesture_pinch_begin(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
+static void gesture_pinch_begin(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
 {
     /* GdkWaylandSeat* seat = data; */
 
     /* emit_gesture_pinch_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_BEGIN, time, fingers, 0, 0, 1, 0); */
     /* seat->gesture_n_fingers = fingers; */
 
-    wlc.last_scale = 1.0;
+    wlc.pointer.scale = 1.0;
 }
 
-static void
-gesture_pinch_update(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t time, wl_fixed_t dx, wl_fixed_t dy, wl_fixed_t scale, wl_fixed_t rotation)
+static void gesture_pinch_update(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t time, wl_fixed_t dx, wl_fixed_t dy, wl_fixed_t scale, wl_fixed_t rotation)
 {
-    /* GdkWaylandSeat* seat = data; */
-
-    /* emit_gesture_pinch_event(seat, GDK_TOUCHPAD_GESTURE_PHASE_UPDATE, time, seat->gesture_n_fingers, wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation)); */
-
     /* zc_log_debug("pinch dx %f dy %f scale %f rotation %f", wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation)); */
 
-    float delta    = wl_fixed_to_double(scale) - wlc.last_scale;
-    wlc.last_scale = wl_fixed_to_double(scale);
+    float delta       = wl_fixed_to_double(scale) - wlc.pointer.scale;
+    wlc.pointer.scale = wl_fixed_to_double(scale);
 
     ku_event_t event = init_event();
     event.type       = KU_EVENT_PINCH;
-    event.x          = px;
-    event.y          = py;
+    event.x          = wlc.pointer.px;
+    event.y          = wlc.pointer.py;
     event.ratio      = delta;
     event.ctrl_down  = wlc.keyboard.control;
     event.shift_down = wlc.keyboard.shift;
@@ -854,15 +840,9 @@ gesture_pinch_update(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uin
     (*wlc.update)(event);
 }
 
-static void
-gesture_pinch_end(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, int32_t cancelled)
+static void gesture_pinch_end(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, int32_t cancelled)
 {
-    /* GdkWaylandSeat*         seat = data; */
-    /* GdkTouchpadGesturePhase phase; */
-
-    /* phase = (cancelled) ? GDK_TOUCHPAD_GESTURE_PHASE_CANCEL : GDK_TOUCHPAD_GESTURE_PHASE_END; */
-
-    /* emit_gesture_pinch_event(seat, phase, time, seat->gesture_n_fingers, 0, 0, 1, 0); */
+    /* zc_log_debug("pinch end"); */
 }
 
 static const struct zwp_pointer_gesture_pinch_v1_listener gesture_pinch_listener = {
@@ -874,11 +854,13 @@ static const struct zwp_pointer_gesture_pinch_v1_listener gesture_pinch_listener
 
 void ku_wayland_pointer_handle_enter(void* data, struct wl_pointer* wl_pointer, uint serial, struct wl_surface* surface, wl_fixed_t surface_x, wl_fixed_t surface_y)
 {
-    zc_log_debug("pointer handle enter");
+    /* zc_log_debug("pointer handle enter"); */
+    /* TODO assign pointer to surface and dispatch to corresponding window/layer */
 }
 void ku_wayland_pointer_handle_leave(void* data, struct wl_pointer* wl_pointer, uint serial, struct wl_surface* surface)
 {
-    zc_log_debug("pointer handle leave");
+    /* zc_log_debug("pointer handle leave"); */
+    /* TODO assign pointer to surface and dispatch to corresponding window/layer */
 }
 void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer, uint time, wl_fixed_t surface_x, wl_fixed_t surface_y)
 {
@@ -886,55 +868,56 @@ void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer,
 
     ku_event_t event = init_event();
     event.type       = KU_EVENT_MMOVE;
-    event.drag       = drag;
+    event.drag       = wlc.pointer.drag;
     event.x          = (int) wl_fixed_to_double(surface_x) * wlc.monitor->scale;
     event.y          = (int) wl_fixed_to_double(surface_y) * wlc.monitor->scale;
     event.ctrl_down  = wlc.keyboard.control;
     event.shift_down = wlc.keyboard.shift;
 
-    px = event.x;
-    py = event.y;
+    wlc.pointer.px = event.x;
+    wlc.pointer.py = event.y;
 
     (*wlc.update)(event);
 }
 
-uint lasttouch = 0;
 void ku_wayland_pointer_handle_button(void* data, struct wl_pointer* wl_pointer, uint serial, uint time, uint button, uint state)
 {
-    zc_log_debug("pointer handle button %u state %u time %u", button, state, time);
+    /* zc_log_debug("pointer handle button %u state %u time %u", button, state, time); */
 
     ku_event_t event = init_event();
-    event.x          = px;
-    event.y          = py;
+    event.x          = wlc.pointer.px;
+    event.y          = wlc.pointer.py;
     event.button     = button == 272 ? 1 : 3;
     event.ctrl_down  = wlc.keyboard.control;
     event.shift_down = wlc.keyboard.shift;
 
     if (state)
     {
-	uint delay = time - lasttouch;
-	lasttouch  = time;
+	uint delay           = time - wlc.pointer.lastdown;
+	wlc.pointer.lastdown = time;
 
-	event.dclick = delay < 300;
-	event.type   = KU_EVENT_MDOWN;
-	drag         = 1;
+	event.dclick     = delay < 300;
+	event.type       = KU_EVENT_MDOWN;
+	wlc.pointer.drag = 1;
     }
     else
     {
-	event.type = KU_EVENT_MUP;
-	event.drag = drag;
-	drag       = 0;
+	event.type       = KU_EVENT_MUP;
+	event.drag       = wlc.pointer.drag;
+	wlc.pointer.drag = 0;
     }
 
     (*wlc.update)(event);
 }
+
 void ku_wayland_pointer_handle_axis(void* data, struct wl_pointer* wl_pointer, uint time, uint axis, wl_fixed_t value)
 {
     /* zc_log_debug("pointer handle axis %u %i", axis, value); */
+
     ku_event_t event = init_event();
     event.type       = KU_EVENT_SCROLL;
-    event.x          = px;
-    event.y          = py;
+    event.x          = wlc.pointer.px;
+    event.y          = wlc.pointer.py;
     event.dx         = axis == 1 ? (float) value / 200.0 : 0;
     event.dy         = axis == 0 ? (float) -value / 200.0 : 0;
     event.ctrl_down  = wlc.keyboard.control;
@@ -942,21 +925,25 @@ void ku_wayland_pointer_handle_axis(void* data, struct wl_pointer* wl_pointer, u
 
     (*wlc.update)(event);
 }
+
 void ku_wayland_pointer_handle_frame(void* data, struct wl_pointer* wl_pointer)
 {
-    zc_log_debug("pointer handle frame");
+    /* zc_log_debug("pointer handle frame"); */
 }
+
 void ku_wayland_pointer_handle_axis_source(void* data, struct wl_pointer* wl_pointer, uint axis_source)
 {
-    zc_log_debug("pointer handle axis source");
+    /* zc_log_debug("pointer handle axis source"); */
 }
+
 void ku_wayland_pointer_handle_axis_stop(void* data, struct wl_pointer* wl_pointer, uint time, uint axis)
 {
-    zc_log_debug("pointer handle axis stop");
+    /* zc_log_debug("pointer handle axis stop"); */
 }
+
 void ku_wayland_pointer_handle_axis_discrete(void* data, struct wl_pointer* wl_pointer, uint axis, int discrete)
 {
-    zc_log_debug("pointer handle axis discrete");
+    /* zc_log_debug("pointer handle axis discrete"); */
 }
 
 struct wl_pointer_listener pointer_listener =
@@ -976,7 +963,7 @@ struct wl_pointer_listener pointer_listener =
 
 static void keyboard_keymap(void* data, struct wl_keyboard* wl_keyboard, uint32_t format, int32_t fd, uint32_t size)
 {
-    zc_log_debug("keyboard keymap");
+    /* zc_log_debug("keyboard keymap"); */
 
     wlc.keyboard.xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
@@ -991,6 +978,7 @@ static void keyboard_keymap(void* data, struct wl_keyboard* wl_keyboard, uint32_
 	close(fd);
 	exit(1);
     }
+
     wlc.keyboard.xkb_keymap = xkb_keymap_new_from_string(wlc.keyboard.xkb_context, map_shm, XKB_KEYMAP_FORMAT_TEXT_V1, 0);
     munmap(map_shm, size);
     close(fd);
@@ -1000,18 +988,19 @@ static void keyboard_keymap(void* data, struct wl_keyboard* wl_keyboard, uint32_
 
 static void keyboard_enter(void* data, struct wl_keyboard* wl_keyboard, uint32_t serial, struct wl_surface* surface, struct wl_array* keys)
 {
-    zc_log_debug("keyboard enter");
+    /* zc_log_debug("keyboard enter"); */
 }
 
 static void keyboard_leave(void* data, struct wl_keyboard* wl_keyboard, uint32_t serial, struct wl_surface* surface)
 {
-    zc_log_debug("keyboard leave");
+    /* zc_log_debug("keyboard leave"); */
 }
 
 static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t _key_state)
 {
     enum wl_keyboard_key_state key_state = _key_state;
-    xkb_keysym_t               sym       = xkb_state_key_get_one_sym(wlc.keyboard.xkb_state, key + 8);
+
+    xkb_keysym_t sym = xkb_state_key_get_one_sym(wlc.keyboard.xkb_state, key + 8);
 
     /* switch (xkb_keysym_to_lower(sym)) */
 
@@ -1021,6 +1010,8 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 	  sym == XKB_KEY_Print ||
 	  sym == XKB_KEY_Tab))
     {
+	/* send text event */
+
 	char buf[8];
 	if (xkb_keysym_to_utf8(sym, buf, 8))
 	{
@@ -1038,18 +1029,24 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 	}
     }
 
-    if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED && wlc.key_repeat_period > 0)
+    if (key_state == WL_KEYBOARD_KEY_STATE_PRESSED && wlc.keyboard.rep_period > 0)
     {
+	/* start repeater */
+
 	struct itimerspec spec = {0};
-	spec.it_value.tv_sec   = wlc.key_repeat_delay / 1000;
-	spec.it_value.tv_nsec  = (wlc.key_repeat_delay % 1000) * 1000000l;
-	timerfd_settime(wlc.key_repeat_timer_fd, 0, &spec, NULL);
+	spec.it_value.tv_sec   = wlc.keyboard.rep_delay / 1000;
+	spec.it_value.tv_nsec  = (wlc.keyboard.rep_delay % 1000) * 1000000l;
+	timerfd_settime(wlc.keyboard.rep_timer_fd, 0, &spec, NULL);
     }
     else if (key_state == WL_KEYBOARD_KEY_STATE_RELEASED)
     {
+	/* stop repeater */
+
 	struct itimerspec spec = {0};
-	timerfd_settime(wlc.key_repeat_timer_fd, 0, &spec, NULL);
+	timerfd_settime(wlc.keyboard.rep_timer_fd, 0, &spec, NULL);
     }
+
+    /* send key down/up event */
 
     ku_event_t event = init_event();
     event.keycode    = sym;
@@ -1058,37 +1055,41 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
     event.shift_down = wlc.keyboard.shift;
     (*wlc.update)(event);
 
-    wlc.key_repeat_event = event;
+    wlc.keyboard.rep_event = event;
 }
 
 static void keyboard_repeat()
 {
-    ku_event_t event = wlc.key_repeat_event;
-    event.repeat     = 1;
+    /* resend last key event */
+    ku_event_t event = wlc.keyboard.rep_event;
+
+    event.repeat = 1;
     (*wlc.update)(event);
 
+    /* reset timer */
     struct itimerspec spec = {0};
-    spec.it_value.tv_sec   = wlc.key_repeat_period / 1000;
-    spec.it_value.tv_nsec  = (wlc.key_repeat_period % 1000) * 1000000l;
-    timerfd_settime(wlc.key_repeat_timer_fd, 0, &spec, NULL);
+    spec.it_value.tv_sec   = wlc.keyboard.rep_period / 1000;
+    spec.it_value.tv_nsec  = (wlc.keyboard.rep_period % 1000) * 1000000l;
+    timerfd_settime(wlc.keyboard.rep_timer_fd, 0, &spec, NULL);
 }
 
 static void keyboard_repeat_info(void* data, struct wl_keyboard* wl_keyboard, int32_t rate, int32_t delay)
 {
-    wlc.key_repeat_delay = delay;
+    /* store systems key repeat time */
+    wlc.keyboard.rep_delay = delay;
     if (rate > 0)
     {
-	wlc.key_repeat_period = 1000 / rate;
+	wlc.keyboard.rep_period = 1000 / rate;
     }
     else
     {
-	wlc.key_repeat_period = -1;
+	wlc.keyboard.rep_period = -1;
     }
 }
 
 static void keyboard_modifiers(void* data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group)
 {
-    zc_log_debug("keyboard modifiers");
+    /* zc_log_debug("keyboard modifiers"); */
     xkb_state_update_mask(wlc.keyboard.xkb_state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
     wlc.keyboard.control = xkb_state_mod_name_is_active(wlc.keyboard.xkb_state, XKB_MOD_NAME_CTRL, XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED);
     wlc.keyboard.shift   = xkb_state_mod_name_is_active(wlc.keyboard.xkb_state, XKB_MOD_NAME_SHIFT, XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED);
@@ -1118,14 +1119,14 @@ static const struct xdg_wm_base_listener xdg_wm_base_listener = {
 
 static void ku_wayland_xdg_output_handle_logical_position(void* data, struct zxdg_output_v1* xdg_output, int32_t x, int32_t y)
 {
-    struct monitor_info* monitor = data;
-    zc_log_debug("xdg output handle logical position, %i %i for monitor %i", x, y, monitor->index);
+    /* struct monitor_info* monitor = data; */
+    /* zc_log_debug("xdg output handle logical position, %i %i for monitor %i", x, y, monitor->index); */
 }
 
 static void ku_wayland_xdg_output_handle_logical_size(void* data, struct zxdg_output_v1* xdg_output, int32_t width, int32_t height)
 {
     struct monitor_info* monitor = data;
-    zc_log_debug("xdg output handle logical size, %i %i for monitor %i", width, height, monitor->index);
+    /* zc_log_debug("xdg output handle logical size, %i %i for monitor %i", width, height, monitor->index); */
 
     monitor->logical_width  = width;
     monitor->logical_height = height;
@@ -1133,8 +1134,8 @@ static void ku_wayland_xdg_output_handle_logical_size(void* data, struct zxdg_ou
 
 static void ku_wayland_xdg_output_handle_done(void* data, struct zxdg_output_v1* xdg_output)
 {
-    struct monitor_info* monitor = data;
-    zc_log_debug("xdg output handle done, for monitor %i", monitor->index);
+    /* struct monitor_info* monitor = data; */
+    /* zc_log_debug("xdg output handle done, for monitor %i", monitor->index); */
 }
 
 static void ku_wayland_xdg_output_handle_name(void* data, struct zxdg_output_v1* xdg_output, const char* name)
@@ -1142,13 +1143,13 @@ static void ku_wayland_xdg_output_handle_name(void* data, struct zxdg_output_v1*
     struct monitor_info* monitor = data;
     strncpy(monitor->name, name, MAX_MONITOR_NAME_LEN);
 
-    zc_log_debug("xdg output handle name, %s for monitor %i", name, monitor->index);
+    /* zc_log_debug("xdg output handle name, %s for monitor %i", name, monitor->index); */
 }
 
 static void ku_wayland_xdg_output_handle_description(void* data, struct zxdg_output_v1* xdg_output, const char* description)
 {
-    struct monitor_info* monitor = data;
-    zc_log_debug("xdg output handle description for monitor %i", description, monitor->index);
+    /* struct monitor_info* monitor = data; */
+    /* zc_log_debug("xdg output handle description for monitor %i", description, monitor->index); */
 }
 
 struct zxdg_output_v1_listener xdg_output_listener = {
@@ -1175,17 +1176,17 @@ static void ku_wayland_wl_output_handle_geometry(
 {
     struct monitor_info* monitor = data;
 
-    zc_log_debug(
-	"wl output handle geometry x %i y %i width_mm %i height_mm %i subpixel %i make %s model %s transform %i for monitor %i",
-	x,
-	y,
-	width_mm,
-	height_mm,
-	subpixel,
-	make,
-	model,
-	transform,
-	monitor->index);
+    /* zc_log_debug( */
+    /* 	"wl output handle geometry x %i y %i width_mm %i height_mm %i subpixel %i make %s model %s transform %i for monitor %i", */
+    /* 	x, */
+    /* 	y, */
+    /* 	width_mm, */
+    /* 	height_mm, */
+    /* 	subpixel, */
+    /* 	make, */
+    /* 	model, */
+    /* 	transform, */
+    /* 	monitor->index); */
 
     monitor->subpixel = subpixel;
 }
@@ -1200,12 +1201,12 @@ static void ku_wayland_wl_output_handle_mode(
 {
     struct monitor_info* monitor = data;
 
-    zc_log_debug(
-	"wl output handle mode flags %u width %i height %i for monitor %i",
-	flags,
-	width,
-	height,
-	monitor->index);
+    /* zc_log_debug( */
+    /* 	"wl output handle mode flags %u width %i height %i for monitor %i", */
+    /* 	flags, */
+    /* 	width, */
+    /* 	height, */
+    /* 	monitor->index); */
 
     monitor->physical_width  = width;
     monitor->physical_height = height;
@@ -1215,14 +1216,14 @@ static void ku_wayland_wl_output_handle_done(void* data, struct wl_output* wl_ou
 {
     struct monitor_info* monitor = data;
 
-    zc_log_debug("wl output handle done for monitor %i", monitor->index);
+    /* zc_log_debug("wl output handle done for monitor %i", monitor->index); */
 }
 
 static void ku_wayland_wl_output_handle_scale(void* data, struct wl_output* wl_output, int32_t factor)
 {
     struct monitor_info* monitor = data;
 
-    zc_log_debug("wl output handle scale %i for monitor %i", factor, monitor->index);
+    /* zc_log_debug("wl output handle scale %i for monitor %i", factor, monitor->index); */
 
     monitor->scale = factor;
 }
@@ -1238,7 +1239,8 @@ struct wl_output_listener wl_output_listener = {
 
 static void ku_wayland_seat_handle_capabilities(void* data, struct wl_seat* wl_seat, enum wl_seat_capability caps)
 {
-    zc_log_debug("seat handle capabilities %i", caps);
+    /* zc_log_debug("seat handle capabilities %i", caps); */
+
     if (caps & WL_SEAT_CAPABILITY_KEYBOARD)
     {
 	wlc.keyboard.kbd = wl_seat_get_keyboard(wl_seat);
@@ -1247,23 +1249,26 @@ static void ku_wayland_seat_handle_capabilities(void* data, struct wl_seat* wl_s
 
     if (caps & WL_SEAT_CAPABILITY_POINTER)
     {
-	wlc.pointer = wl_seat_get_pointer(wl_seat);
-	wl_pointer_add_listener(wlc.pointer, &pointer_listener, NULL);
+	wlc.ipointer = wl_seat_get_pointer(wl_seat);
+	wl_pointer_add_listener(wlc.ipointer, &pointer_listener, NULL);
 
 	if (wlc.pointer_manager)
 	{
-	    wlc.pinch_gesture = zwp_pointer_gestures_v1_get_pinch_gesture(wlc.pointer_manager, wlc.pointer);
+	    wlc.pinch_gesture = zwp_pointer_gestures_v1_get_pinch_gesture(wlc.pointer_manager, wlc.ipointer);
 	    zwp_pointer_gesture_pinch_v1_add_listener(wlc.pinch_gesture, &gesture_pinch_listener, wl_seat);
 
-	    /* wlc.hold_gesture = zwp_pointer_gestures_v1_get_hold_gesture(wlc.pointer_manager, wlc.pointer); */
-	    /* zwp_pointer_gesture_hold_v1_add_listener(wlc.hold_gesture, &gesture_hold_listener, wl_seat); */
+	    if (wlc.pointer_manager_version >= ZWP_POINTER_GESTURES_V1_GET_HOLD_GESTURE_SINCE_VERSION)
+	    {
+		wlc.hold_gesture = zwp_pointer_gestures_v1_get_hold_gesture(wlc.pointer_manager, wlc.ipointer);
+		zwp_pointer_gesture_hold_v1_add_listener(wlc.hold_gesture, &gesture_hold_listener, wl_seat);
+	    }
 	}
     }
 }
 
 static void ku_wayland_seat_handle_name(void* data, struct wl_seat* wl_seat, const char* name)
 {
-    zc_log_debug("seat handle name %s", name);
+    /* zc_log_debug("seat handle name %s", name); */
 }
 
 const struct wl_seat_listener seat_listener = {
@@ -1272,6 +1277,7 @@ const struct wl_seat_listener seat_listener = {
 };
 
 /* global events */
+/* TODO check if we can use newer versions of the interfaces */
 
 static void ku_wayland_handle_global(
     void*               data,
@@ -1304,10 +1310,10 @@ static void ku_wayland_handle_global(
 	monitor->wl_output = wl_registry_bind(registry, name, &wl_output_interface, 2);
 	monitor->index     = wlc.monitor_count;
 
-	// get wl_output events
+	/* get wl_output events */
 	wl_output_add_listener(monitor->wl_output, &wl_output_listener, monitor);
 
-	// set up output if it comes after xdg_output_manager_init
+	/* set up output if it comes after xdg_output_manager_init */
 	if (wlc.xdg_output_manager != NULL)
 	{
 	    monitor->xdg_output = zxdg_output_manager_v1_get_xdg_output(wlc.xdg_output_manager, monitor->wl_output);
@@ -1324,7 +1330,7 @@ static void ku_wayland_handle_global(
     {
 	wlc.xdg_output_manager = wl_registry_bind(registry, name, &zxdg_output_manager_v1_interface, 2);
 
-	// set up outputs if event comes after interface setup
+	/* set up outputs if event comes after interface setup */
 	for (int index = 0; index < wlc.monitor_count; index++)
 	{
 	    wlc.monitors[index]->xdg_output = zxdg_output_manager_v1_get_xdg_output(wlc.xdg_output_manager, wlc.monitors[index]->wl_output);
@@ -1338,13 +1344,17 @@ static void ku_wayland_handle_global(
     }
     else if (strcmp(interface, zwp_pointer_gestures_v1_interface.name) == 0)
     {
-	wlc.pointer_manager = wl_registry_bind(registry, name, &zwp_pointer_gestures_v1_interface, 1);
+	if (version >= 3)
+	{
+	    wlc.pointer_manager_version = version;
+	    wlc.pointer_manager         = wl_registry_bind(registry, name, &zwp_pointer_gestures_v1_interface, 3);
+	}
     }
 }
 
 static void ku_wayland_handle_global_remove(void* data, struct wl_registry* registry, uint32_t name)
 {
-    zc_log_debug("handle global remove");
+    /* zc_log_debug("handle global remove"); */
 }
 
 static const struct wl_registry_listener registry_listener =
@@ -1372,31 +1382,37 @@ void ku_wayland_init(
 
     if (wlc.display)
     {
-	wlc.key_repeat_timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-	wlc.time_event_timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+	wlc.time_event_timer_fd   = timerfd_create(CLOCK_MONOTONIC, 0);
+	wlc.keyboard.rep_timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
 
-	if (wlc.key_repeat_timer_fd < 0) zc_log_error("cannot create key repeat timer");
+	if (wlc.keyboard.rep_timer_fd < 0) zc_log_error("cannot create key repeat timer");
 
 	struct wl_registry* registry = wl_display_get_registry(wlc.display);
 	wl_registry_add_listener(registry, &registry_listener, NULL);
 
-	// first roundtrip triggers global events
+	/* first roundtrip triggers global events */
 	wl_display_roundtrip(wlc.display);
 
-	// second roundtrip triggers events attached in global events
+	/* second roundtrip triggers events attached in global events */
 	wl_display_roundtrip(wlc.display);
 
 	if (wlc.compositor)
 	{
-	    struct _wl_event_t event = {.id = WL_EVENT_OUTPUT_ADDED, .monitors = wlc.monitors, .monitor_count = wlc.monitor_count};
+	    /* dispatch init event */
+	    struct _wl_event_t event = {
+		.id            = WL_EVENT_OUTPUT_ADDED,
+		.monitors      = wlc.monitors,
+		.monitor_count = wlc.monitor_count};
 
 	    (*wlc.init)(event);
 
+	    /* TODO remove this after binding pointer events to surfaces */
 	    wlc.monitor = wlc.monitors[0];
 
+	    /* file descriptors */
 	    struct pollfd fds[] = {
 		{.fd = wl_display_get_fd(wlc.display), .events = POLLIN},
-		{.fd = wlc.key_repeat_timer_fd, .events = POLLIN},
+		{.fd = wlc.keyboard.rep_timer_fd, .events = POLLIN},
 		{.fd = wlc.time_event_timer_fd, .events = POLLIN},
 		{.fd = STDIN_FILENO, .events = POLLIN}};
 
@@ -1411,12 +1427,14 @@ void ku_wayland_init(
 		if (wl_display_flush(wlc.display) < 0)
 		{
 		    if (errno == EAGAIN) continue;
+		    zc_log_error("wayland display flush error");
 		    break;
 		}
 
 		if (poll(fds, nfds, -1) < 0)
 		{
 		    if (errno == EAGAIN) continue;
+		    zc_log_error("poll error");
 		    break;
 		}
 
@@ -1424,6 +1442,7 @@ void ku_wayland_init(
 		{
 		    if (wl_display_dispatch(wlc.display) < 0)
 		    {
+			zc_log_error("wayland display dispatch error");
 			break;
 		    }
 		}
@@ -1435,7 +1454,6 @@ void ku_wayland_init(
 
 		if (fds[2].revents & POLLIN) /* time event timer events */
 		{
-
 		    struct itimerspec spec = {0};
 		    spec.it_value.tv_sec   = wlc.time_event_interval / 1000;
 		    spec.it_value.tv_nsec  = (wlc.time_event_interval % 1000) * 1000000l;
@@ -1461,12 +1479,12 @@ void ku_wayland_init(
 		    }
 		}
 
-		if (ku_wayland_exit_flag) break;
+		if (wlc.exit_flag) break;
 	    }
 
 	    wl_display_disconnect(wlc.display);
 	}
-	else zc_log_debug("compositor not received");
+	else zc_log_error("compositor not found");
     }
     else zc_log_debug("cannot open display");
 
@@ -1478,14 +1496,32 @@ void ku_wayland_init(
     (*wlc.destroy)();
 }
 
+/* request exit */
+
 void ku_wayland_exit()
 {
-    ku_wayland_exit_flag = 1;
+    wlc.exit_flag = 1;
 }
-void ku_wayland_toggle_fullscreen(struct wl_window* window)
+
+/* request fullscreen */
+/* TODO connect this with the corresponding window */
+
+void ku_wayland_toggle_fullscreen()
 {
-    xdg_toplevel_set_fullscreen(window->xdg_toplevel, NULL);
+    if (wlc.windows[0]->fullscreen == 0)
+    {
+	xdg_toplevel_set_fullscreen(wlc.windows[0]->xdg_toplevel, wlc.monitor->wl_output);
+	wlc.windows[0]->fullscreen = 1;
+    }
+    else
+    {
+	xdg_toplevel_unset_fullscreen(wlc.windows[0]->xdg_toplevel);
+	wlc.windows[0]->fullscreen = 0;
+    }
+    wl_display_flush(wlc.display);
 }
+
+/* set timer delay */
 
 void ku_wayland_set_time_event_delay(int ms)
 {

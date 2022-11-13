@@ -1,6 +1,8 @@
 #ifndef ku_html_h
 #define ku_html_h
 
+/* TODO write tests */
+
 #include "zc_cstring.c"
 #include "zc_map.c"
 #include "zc_vector.c"

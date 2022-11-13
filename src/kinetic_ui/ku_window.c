@@ -17,19 +17,17 @@ struct _ku_window_t
     int height;
 
     vec_t* implqueue; // views selected by roll over
-    vec_t* explqueue; // views selected by click
+    vec_t* explqueue; // views selected by click or activation
 };
 
 ku_window_t* ku_window_create(int width, int height);
-void         ku_window_event(ku_window_t* window, ku_event_t event);
 void         ku_window_add(ku_window_t* window, ku_view_t* view);
 void         ku_window_remove(ku_window_t* window, ku_view_t* view);
 void         ku_window_activate(ku_window_t* window, ku_view_t* view);
 void         ku_window_deactivate(ku_window_t* window, ku_view_t* view);
-ku_view_t*   ku_window_get_root(ku_window_t* window);
-ku_rect_t    ku_window_update(ku_window_t* window, uint32_t time);
-void         ku_window_resize_to_root(ku_window_t* window, ku_view_t* view);
 void         ku_window_set_focusable(ku_window_t* window, vec_t* views);
+void         ku_window_event(ku_window_t* window, ku_event_t event);
+ku_rect_t    ku_window_update(ku_window_t* window, uint32_t time);
 
 #endif
 
@@ -48,7 +46,7 @@ void ku_window_del(void* p)
 {
     ku_window_t* win = p;
 
-    REL(win->root); // REL 0
+    REL(win->root);
     REL(win->views);
     REL(win->implqueue);
     REL(win->explqueue);
@@ -66,9 +64,37 @@ ku_window_t* ku_window_create(int width, int height)
 
     win->width  = width;
     win->height = height;
-    /* ku_gl_init(); */
 
     return win;
+}
+
+void ku_window_add(ku_window_t* win, ku_view_t* view)
+{
+    ku_view_add_subview(win->root, view);
+
+    // layout, window could be resized since
+    ku_view_layout(win->root);
+}
+
+void ku_window_remove(ku_window_t* win, ku_view_t* view)
+{
+    ku_view_remove_from_parent(view);
+}
+
+void ku_window_activate(ku_window_t* win, ku_view_t* view)
+{
+    vec_add_unique_data(win->explqueue, view);
+}
+
+void ku_window_deactivate(ku_window_t* win, ku_view_t* view)
+{
+    vec_rem(win->explqueue, view);
+}
+
+void ku_window_set_focusable(ku_window_t* window, vec_t* views)
+{
+    if (window->focusable) REL(window->focusable);
+    window->focusable = RET(views);
 }
 
 void ku_window_event(ku_window_t* win, ku_event_t ev)
@@ -254,29 +280,6 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     }
 }
 
-void ku_window_add(ku_window_t* win, ku_view_t* view)
-{
-    ku_view_add_subview(win->root, view);
-
-    // layout, window could be resized since
-    ku_view_layout(win->root);
-}
-
-void ku_window_remove(ku_window_t* win, ku_view_t* view)
-{
-    ku_view_remove_from_parent(view);
-}
-
-void ku_window_activate(ku_window_t* win, ku_view_t* view)
-{
-    vec_add_unique_data(win->explqueue, view);
-}
-
-void ku_window_deactivate(ku_window_t* win, ku_view_t* view)
-{
-    vec_rem(win->explqueue, view);
-}
-
 void ku_window_rearrange(ku_window_t* win, ku_view_t* view, vec_t* views)
 {
     VADD(views, view);
@@ -308,7 +311,7 @@ ku_rect_t ku_window_update(ku_window_t* win, uint32_t time)
     {
 	ku_view_t* view = win->views->data[i];
 
-	if (view->texture.type == TT_MANAGED && view->texture.state == TS_BLANK) ku_view_gen_texture(view);
+	if (view->texture.ready == 0) ku_view_gen_texture(view);
 
 	if (view->texture.changed)
 	{
@@ -339,25 +342,6 @@ ku_rect_t ku_window_update(ku_window_t* win, uint32_t time)
     }
 
     return result;
-}
-
-ku_view_t* ku_window_get_root(ku_window_t* win)
-{
-    return win->root;
-}
-
-void ku_window_resize_to_root(ku_window_t* win, ku_view_t* view)
-{
-    ku_rect_t f = win->root->frame.local;
-
-    ku_view_set_frame(view, (ku_rect_t){0.0, 0.0, (float) f.w, (float) f.h});
-    ku_view_layout(view);
-}
-
-void ku_window_set_focusable(ku_window_t* window, vec_t* views)
-{
-    if (window->focusable) REL(window->focusable);
-    window->focusable = RET(views);
 }
 
 #endif

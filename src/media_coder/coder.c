@@ -131,7 +131,8 @@ ku_bitmap_t* coder_load_image(const char* path)
 			/* 	goto end; */
 			/*     } */
 
-			bitmap    = ku_bitmap_new_aligned(frame->width, frame->height, 16); // REL 0
+			bitmap = ku_bitmap_new_aligned(frame->width, frame->height, 16); // REL 0
+			/* TODO compare with fill linesizes, show error */
 			stride[0] = bitmap->w * 4;
 
 			uint8_t* scaledpixels[1];

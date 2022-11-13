@@ -167,7 +167,15 @@ int ku_gl_atlas_put(ku_gl_atlas_t* tm, char* id, int w, int h)
 	int rby = ncy + h;
 
 	ku_gl_atlas_coords_t* coords = HEAP(
-	    ((ku_gl_atlas_coords_t){.ltx = (float) ncx / (float) tm->width, .lty = (float) ncy / (float) tm->height, .rbx = (float) rbx / (float) tm->width, .rby = (float) rby / (float) tm->height, .x = ncx, .y = ncy, .w = w, .h = h}));
+	    ((ku_gl_atlas_coords_t){
+		.ltx = (float) ncx / (float) tm->width,
+		.lty = (float) ncy / (float) tm->height,
+		.rbx = (float) rbx / (float) tm->width,
+		.rby = (float) rby / (float) tm->height,
+		.x   = ncx,
+		.y   = ncy,
+		.w   = w,
+		.h   = h}));
 
 	MPUTR(tm->coords, id, coords);
     }

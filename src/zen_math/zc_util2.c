@@ -1,6 +1,8 @@
 #ifndef zm_util2_h
 #define zm_util2_h
 
+/* TODO rename, it is confusing */
+
 #include "zc_vec2.c"
 #include <float.h>
 #include <stdint.h>

@@ -47,7 +47,7 @@ void tg_scaledimg_gen(ku_view_t* view)
 	REL(bm);
     }
 
-    view->texture.state = TS_READY;
+    view->texture.ready = 1;
 }
 
 void tg_scaledimg_set_content_size(ku_view_t* view, int w, int h)

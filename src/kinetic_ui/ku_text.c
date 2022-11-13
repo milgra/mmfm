@@ -1,6 +1,8 @@
 #ifndef ku_text_h
 #define ku_text_h
 
+/* TODO refactor, remove unused functions */
+
 #include "ku_bitmap.c"
 #include <linux/limits.h>
 #include <stdint.h>
@@ -176,7 +178,6 @@ void ku_text_font_load(char* path)
 
 void ku_text_break_glyphs(glyph_t* glyphs, int count, textstyle_t style, int wth, int hth, int* nwth, int* nhth)
 {
-
     wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
     if (facewrp == NULL)
     {

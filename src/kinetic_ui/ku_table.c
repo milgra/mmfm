@@ -35,11 +35,13 @@ typedef struct _ku_table_event_t
 
 struct _ku_table_t
 {
-    char*      id;             // unique id for item generation
-    uint32_t   cnt;            // item count for item generation
-    vec_t*     items;          // data items
-    vec_t*     cache;          // item cache
-    vec_t*     fields;         // field name field size interleaved vector
+    char*    id;  // unique id for item generation
+    uint32_t cnt; // item count for item generation
+
+    vec_t* items;  // data items
+    vec_t* cache;  // item cache
+    vec_t* fields; // field name field size interleaved vector
+
     vec_t*     selected_items; // selected items
     int32_t    selected_index; // index of last selected
     ku_view_t* body_v;
@@ -82,7 +84,7 @@ vec_t* ku_table_get_fields(ku_table_t* uit);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "config.c"
-#include "ku_util.c"
+#include "ku_gen_textstyle.c"
 #include "tg_css.c"
 #include "tg_text.c"
 #include "vh_tbl_body.c"
@@ -95,7 +97,9 @@ vec_t* ku_table_get_fields(ku_table_t* uit);
 #include "zc_number.c"
 #include <xkbcommon/xkbcommon.h>
 
-void ku_table_head_align(ku_table_t* uit, int fixed_index, int fixed_pos)
+/* header order/size change, update cells */
+
+void ku_table_head_update_cells(ku_table_t* uit, int fixed_index, int fixed_pos)
 {
     for (int ri = 0; ri < uit->body_v->views->length; ri++)
     {
@@ -119,12 +123,16 @@ void ku_table_head_align(ku_table_t* uit, int fixed_index, int fixed_pos)
     }
 }
 
+/* header field moved, update cells */
+
 void ku_table_head_move(ku_view_t* hview, int index, int pos, void* userdata)
 {
     ku_table_t* uit = (ku_table_t*) userdata;
 
-    ku_table_head_align(uit, index, pos);
+    ku_table_head_update_cells(uit, index, pos);
 }
+
+/* header field resized, update cells */
 
 void ku_table_head_resize(ku_view_t* hview, int index, int size, void* userdata)
 {
@@ -135,7 +143,7 @@ void ku_table_head_resize(ku_view_t* hview, int index, int size, void* userdata)
 	num_t* sizep = uit->fields->data[index * 2 + 1];
 	sizep->intv  = size;
 
-	ku_table_head_align(uit, -1, 0);
+	ku_table_head_update_cells(uit, -1, 0);
     }
     else
     {
@@ -144,13 +152,15 @@ void ku_table_head_resize(ku_view_t* hview, int index, int size, void* userdata)
     }
 }
 
+/* header field reordered, update cells */
+
 void ku_table_head_reorder(ku_view_t* hview, int ind1, int ind2, void* userdata)
 {
     ku_table_t* uit = (ku_table_t*) userdata;
 
     if (ind1 == -1)
     {
-	// self click, dispatch event
+	/* self click, dispatch event */
 	char*            field = uit->fields->data[ind2 * 2];
 	ku_table_event_t event = {.id = KU_TABLE_EVENT_FIELD_SELECT, .field = field};
 	(*uit->on_event)(event);
@@ -184,12 +194,14 @@ void ku_table_head_reorder(ku_view_t* hview, int ind1, int ind2, void* userdata)
 	    REL(cell2);
 	}
 
-	ku_table_head_align(uit, -1, 0);
+	ku_table_head_update_cells(uit, -1, 0);
 
 	ku_table_event_t event = {.table = uit, .id = KU_TABLE_EVENT_FIELDS_UPDATE, .fields = uit->fields};
 	(*uit->on_event)(event);
     }
 }
+
+/* ceeate header */
 
 ku_view_t* ku_table_head_create(
     ku_view_t* head_v,
@@ -200,9 +212,11 @@ ku_view_t* ku_table_head_create(
     char*      headid   = cstr_new_format(100, "%s_header", uit->id); // REL 0
     ku_view_t* headview = ku_view_new(headid, (ku_rect_t){0, 0, 100, uit->headstyle.line_height});
 
-    REL(headid); // REL 0
+    REL(headid);
 
     int wth = 0;
+
+    /* create header fields/cells */
 
     for (int i = 0; i < uit->fields->length; i += 2)
     {
@@ -218,14 +232,16 @@ ku_view_t* ku_table_head_create(
 
 	ku_view_add_subview(headview, cellview);
 
-	REL(cellid);   // REL 2
-	REL(cellview); // REL 3
+	REL(cellid);
+	REL(cellview);
     }
 
     ku_view_set_frame(headview, (ku_rect_t){0, 0, wth, uit->headstyle.line_height});
 
     return headview;
 }
+
+/* create item */
 
 ku_view_t* ku_table_item_create(
     ku_view_t* table_v,
@@ -244,22 +260,24 @@ ku_view_t* ku_table_item_create(
 
 	    if (uit->cache->length > 0)
 	    {
+		/* get cached item */
 		rowview = RET(uit->cache->data[0]);
 		vec_rem_at_index(uit->cache, 0);
 	    }
 	    else
 	    {
-		char* rowid = cstr_new_format(100, "%s_rowitem_%i", uit->id, uit->cnt++); // REL 0
+		/* create new item */
+		char* rowid = cstr_new_format(100, "%s_rowitem_%i", uit->id, uit->cnt++);
 		rowview     = ku_view_new(rowid, (ku_rect_t){0, 0, table_v->frame.local.w, uit->rowastyle.line_height});
-		REL(rowid); // REL 0
+		REL(rowid);
 
+		/* create cells */
 		int wth = 0;
 
 		for (int i = 0; i < uit->fields->length; i += 2)
 		{
-		    char*  field = uit->fields->data[i];
-		    num_t* size  = uit->fields->data[i + 1];
-		    // char*   value    = MGET(data, field);
+		    char*      field    = uit->fields->data[i];
+		    num_t*     size     = uit->fields->data[i + 1];
 		    char*      cellid   = cstr_new_format(100, "%s_cell_%s", rowview->id, field);                           // REL 2
 		    ku_view_t* cellview = ku_view_new(cellid, (ku_rect_t){wth, 0, size->intv, uit->rowastyle.line_height}); // REL 3
 
@@ -269,20 +287,21 @@ ku_view_t* ku_table_item_create(
 
 		    ku_view_add_subview(rowview, cellview);
 
-		    REL(cellid);   // REL 2
-		    REL(cellview); // REL 3
+		    REL(cellid);
+		    REL(cellview);
 		}
 	    }
 
+	    /* select style */
 	    textstyle_t style = index % 2 == 0 ? uit->rowastyle : uit->rowbstyle;
 
 	    if (uit->selected_items->length > 0)
 	    {
 		uint32_t pos = vec_index_of_data(uit->selected_items, data);
-
 		if (pos < UINT32_MAX) style = uit->rowsstyle;
 	    }
 
+	    /* update cells */
 	    int wth = 0;
 
 	    for (int i = 0; i < uit->fields->length; i += 2)
@@ -310,6 +329,8 @@ ku_view_t* ku_table_item_create(
     return rowview;
 }
 
+/* add item to cache */
+
 void ku_table_item_recycle(
     ku_view_t* table_v,
     ku_view_t* item_v,
@@ -318,6 +339,8 @@ void ku_table_item_recycle(
     ku_table_t* uit = (ku_table_t*) userdata;
     VADD(uit->cache, item_v);
 }
+
+/* table event */
 
 void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 {
@@ -333,7 +356,8 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 
 	if (pos == UINT32_MAX)
 	{
-	    // reset selected if control is not down
+	    /* reset selected if control is not down */
+
 	    if (!event.ev.ctrl_down)
 	    {
 		vec_reset(uit->selected_items);
@@ -374,7 +398,13 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 	    }
 	}
 
-	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_SELECT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ku_table_event_t tevent = {
+	    .table          = uit,
+	    .id             = KU_TABLE_EVENT_SELECT,
+	    .selected_items = uit->selected_items,
+	    .selected_index = event.index,
+	    .rowview        = event.rowview};
+
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_CONTEXT)
@@ -387,7 +417,7 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 
 	if (pos == UINT32_MAX)
 	{
-	    // reset selected if control is not down
+	    /* reset selected if control is not down */
 	    if (!event.ev.ctrl_down)
 	    {
 		vec_reset(uit->selected_items);
@@ -413,27 +443,54 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 	    }
 	}
 
-	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_CONTEXT, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview, .ev = event.ev};
+	ku_table_event_t tevent = {
+	    .table          = uit,
+	    .id             = KU_TABLE_EVENT_CONTEXT,
+	    .selected_items = uit->selected_items,
+	    .selected_index = event.index,
+	    .rowview        = event.rowview,
+	    .ev             = event.ev};
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_OPEN)
     {
-	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_OPEN, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ku_table_event_t tevent = {
+	    .table          = uit,
+	    .id             = KU_TABLE_EVENT_OPEN,
+	    .selected_items = uit->selected_items,
+	    .selected_index = event.index,
+	    .rowview        = event.rowview};
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_DRAG)
     {
-	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_DRAG, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ku_table_event_t tevent = {
+	    .table          = uit,
+	    .id             = KU_TABLE_EVENT_DRAG,
+	    .selected_items = uit->selected_items,
+	    .selected_index = event.index,
+	    .rowview        = event.rowview};
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_DROP)
     {
-	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_DROP, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	ku_table_event_t tevent = {
+	    .table          = uit,
+	    .id             = KU_TABLE_EVENT_DROP,
+	    .selected_items = uit->selected_items,
+	    .selected_index = event.index,
+	    .rowview        = event.rowview};
 	(*uit->on_event)(tevent);
     }
     else if (event.id == VH_TBL_EVENT_KEY_DOWN)
     {
-	ku_table_event_t tevent = {.table = uit, .id = KU_TABLE_EVENT_KEY_DOWN, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
+	ku_table_event_t tevent = {
+	    .table          = uit,
+	    .id             = KU_TABLE_EVENT_KEY_DOWN,
+	    .selected_items = uit->selected_items,
+	    .selected_index = uit->selected_index,
+	    .rowview        = event.rowview,
+	    .ev             = event.ev};
 	(*uit->on_event)(tevent);
 
 	if (event.ev.keycode == XKB_KEY_Down || event.ev.keycode == XKB_KEY_Up)
@@ -453,13 +510,24 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 
 	if (event.ev.keycode == XKB_KEY_Return)
 	{
-	    tevent = (ku_table_event_t){.table = uit, .id = KU_TABLE_EVENT_OPEN, .selected_items = uit->selected_items, .selected_index = event.index, .rowview = event.rowview};
+	    tevent = (ku_table_event_t){
+		.table          = uit,
+		.id             = KU_TABLE_EVENT_OPEN,
+		.selected_items = uit->selected_items,
+		.selected_index = event.index,
+		.rowview        = event.rowview};
 	    (*uit->on_event)(tevent);
 	}
     }
     else if (event.id == VH_TBL_EVENT_KEY_UP)
     {
-	ku_table_event_t tevent = (ku_table_event_t){.table = uit, .id = KU_TABLE_EVENT_KEY_UP, .selected_items = uit->selected_items, .selected_index = uit->selected_index, .rowview = event.rowview, .ev = event.ev};
+	ku_table_event_t tevent = (ku_table_event_t){
+	    .table          = uit,
+	    .id             = KU_TABLE_EVENT_KEY_UP,
+	    .selected_items = uit->selected_items,
+	    .selected_index = uit->selected_index,
+	    .rowview        = event.rowview,
+	    .ev             = event.ev};
 	(*uit->on_event)(tevent);
     }
 }
@@ -469,7 +537,6 @@ void ku_table_del(
 {
     ku_table_t* uit = p;
 
-    // remove items from view
     REL(uit->id);             // REL S0
     REL(uit->cache);          // REL S1
     REL(uit->fields);         // REL S2
@@ -506,10 +573,10 @@ ku_table_t* ku_table_create(
     assert(body != NULL);
 
     ku_table_t* uit     = CAL(sizeof(ku_table_t), ku_table_del, ku_table_desc);
-    uit->id             = cstr_new_cstring(id); // REL S0
-    uit->cache          = VNEW();               // REL S1
-    uit->fields         = RET(fields);          // REL S2
-    uit->selected_items = VNEW();               // REL S3
+    uit->id             = cstr_new_cstring(id);
+    uit->cache          = VNEW();
+    uit->fields         = RET(fields);
+    uit->selected_items = VNEW();
     uit->on_event       = on_event;
 
     uit->rowastyle = rowastyle;
@@ -605,7 +672,7 @@ void ku_table_select(
 
 	if (bvh->tail_index == bvh->bot_index)
 	{
-	    // check if bottom item is out of bounds
+	    /* check if bottom item is out of bounds */
 	    ku_view_t* lastitem = vec_tail(bvh->items);
 	    ku_rect_t  iframe   = lastitem->frame.local;
 	    ku_rect_t  vframe   = uit->body_v->frame.local;

@@ -1,6 +1,7 @@
-/* Kinetic UI rectangle */
 #ifndef ku_rect_h
 #define ku_rect_h
+
+/* TODO write tests */
 
 typedef struct _ku_rect_t ku_rect_t;
 struct _ku_rect_t

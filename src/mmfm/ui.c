@@ -41,6 +41,12 @@ void ui_load_folder(char* folder);
 #include "ku_gl.c"
 #include "ku_table.c"
 #include "mediaplayer.c"
+#include "mt_log.c"
+#include "mt_map_ext.c"
+#include "mt_number.c"
+#include "mt_path.c"
+#include "mt_string.c"
+#include "mt_time.c"
 #include "pdf.c"
 #include "tg_css.c"
 #include "tg_scaledimg.c"
@@ -55,12 +61,6 @@ void ui_load_folder(char* folder);
 #include "vh_tbl_scrl.c"
 #include "vh_textinput.c"
 #include "vh_touch.c"
-#include "zc_cstring.c"
-#include "zc_log.c"
-#include "zc_map_ext.c"
-#include "zc_number.c"
-#include "zc_path.c"
-#include "zc_time.c"
 #include <limits.h>
 
 struct _ui_t
@@ -101,9 +101,9 @@ struct _ui_t
     ku_table_t* contexttable;
     ku_table_t* settingstable;
 
-    vec_t* focusable_filelist; /* focusable views in file list only mode */
-    vec_t* focusable_infolist; /* focusable views in file + info list mode */
-    vec_t* focusable_cliplist; /* focusable views in file + clipboard list mode */
+    mt_vector_t* focusable_filelist; /* focusable views in file list only mode */
+    mt_vector_t* focusable_infolist; /* focusable views in file + info list mode */
+    mt_vector_t* focusable_cliplist; /* focusable views in file + clipboard list mode */
 
     /* text editing */
 
@@ -111,14 +111,14 @@ struct _ui_t
 
     /* data containers */
 
-    vec_t* filedatav; /* files table data */
-    vec_t* clipdatav; /* clipboard table data */
-    vec_t* dragdatav; /* dragged files data */
+    mt_vector_t* filedatav; /* files table data */
+    mt_vector_t* clipdatav; /* clipboard table data */
+    mt_vector_t* dragdatav; /* dragged files data */
 
     /* file browser state */
 
     char*      current_folder;
-    map_t*     folder_history;
+    mt_map_t*  folder_history;
     ku_view_t* rowview_for_context_menu; /* TODO do we need this? */
 
     /* media state */
@@ -282,8 +282,8 @@ void ui_on_mp_event(ms_event_t event)
 
 int ui_comp_entry(void* left, void* right)
 {
-    map_t* l = left;
-    map_t* r = right;
+    mt_map_t* l = left;
+    mt_map_t* r = right;
 
     char* la = MGET(l, "file/basename");
     char* ra = MGET(r, "file/basename");
@@ -320,7 +320,7 @@ void ui_load_folder(char* folder)
 	if (ui.current_folder) MPUT(ui.folder_history, ui.current_folder, folder);
 	if (ui.current_folder) REL(ui.current_folder);
 
-	ui.current_folder = path_new_normalize1(folder);
+	ui.current_folder = mt_path_new_normalize1(folder);
 
 	/* show in path bar */
 
@@ -328,12 +328,12 @@ void ui_load_folder(char* folder)
 
 	/* read folder */
 
-	map_t* files = MNEW();
+	mt_map_t* files = MNEW();
 	fm_list(ui.current_folder, files);
 
-	vec_reset(ui.filedatav);
-	map_values(files, ui.filedatav);
-	vec_sort(ui.filedatav, ui_comp_entry);
+	mt_vector_reset(ui.filedatav);
+	mt_map_values(files, ui.filedatav);
+	mt_vector_sort(ui.filedatav, ui_comp_entry);
 
 	ku_table_set_data(ui.filetable, ui.filedatav);
 	ku_table_select(ui.filetable, prev_selected, 0);
@@ -347,8 +347,8 @@ void ui_load_folder(char* folder)
 	    int found = 0;
 	    for (index = 0; index < ui.filedatav->length; index++)
 	    {
-		map_t* info = ui.filedatav->data[index];
-		char*  path = MGET(info, "file/path");
+		mt_map_t* info = ui.filedatav->data[index];
+		char*     path = MGET(info, "file/path");
 		if (strcmp(path, last_visited) == 0)
 		{
 		    found = 1;
@@ -362,7 +362,7 @@ void ui_load_folder(char* folder)
     }
 }
 
-void ui_open_folder(map_t* info)
+void ui_open_folder(mt_map_t* info)
 {
     char* type = MGET(info, "file/type");
     char* path = MGET(info, "file/path");
@@ -392,7 +392,7 @@ void ui_update_control_bar()
 
 /* open media/document file */
 
-void ui_open_file(map_t* info)
+void ui_open_file(mt_map_t* info)
 {
     char* path = MGET(info, "file/path");
     char* type = MGET(info, "file/type");
@@ -452,19 +452,19 @@ void ui_open_file(map_t* info)
 
 /* show file information in info table */
 
-void ui_show_info(map_t* info)
+void ui_show_info(mt_map_t* info)
 {
     if (!MGET(info, "file/mime")) fm_detail(info); /* request more info if file not yet detailed */
 
-    vec_t* keys = VNEW();
-    map_keys(info, keys);
-    vec_sort(keys, ((int (*)(void*, void*)) strcmp));
+    mt_vector_t* keys = VNEW();
+    mt_map_keys(info, keys);
+    mt_vector_sort(keys, ((int (*)(void*, void*)) strcmp));
 
-    vec_t* items = VNEW();
+    mt_vector_t* items = VNEW();
     for (int index = 0; index < keys->length; index++)
     {
-	char*  key = keys->data[index];
-	map_t* map = MNEW();
+	char*     key = keys->data[index];
+	mt_map_t* map = MNEW();
 	MPUT(map, "key", key);
 	MPUT(map, "value", MGET(info, key));
 	VADDR(items, map);
@@ -498,8 +498,8 @@ void ui_delete_selected_files()
     {
 	for (int index = 0; index < ui.filetable->selected_items->length; index++)
 	{
-	    map_t* file = ui.filetable->selected_items->data[index];
-	    char*  path = MGET(file, "file/path");
+	    mt_map_t* file = ui.filetable->selected_items->data[index];
+	    char*     path = MGET(file, "file/path");
 	    fm_delete(path);
 	}
 	ui_load_folder(ui.current_folder);
@@ -627,7 +627,7 @@ void on_table_event(ku_table_event_t event)
 
 	    if (ui.dragdatav)
 	    {
-		vec_add_in_vector(ui.clipdatav, ui.dragdatav);
+		mt_vector_add_in_vector(ui.clipdatav, ui.dragdatav);
 		ku_table_set_data(ui.cliptable, ui.clipdatav);
 	    }
 	}
@@ -649,8 +649,8 @@ void on_table_event(ku_table_event_t event)
 		    ui.inputmode     = UI_IM_RENAME;
 		    ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
 
-		    map_t* info  = ui.filetable->selected_items->data[0];
-		    char*  value = MGET(info, "file/basename");
+		    mt_map_t* info  = ui.filetable->selected_items->data[0];
+		    char*     value = MGET(info, "file/basename");
 
 		    ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
 		}
@@ -665,7 +665,7 @@ void on_table_event(ku_table_event_t event)
 	    {
 		/* send items to clipboard table */
 
-		vec_add_in_vector(ui.clipdatav, ui.filetable->selected_items);
+		mt_vector_add_in_vector(ui.clipdatav, ui.filetable->selected_items);
 		ku_table_set_data(ui.cliptable, ui.clipdatav);
 	    }
 	    else if (event.selected_index == 3)
@@ -676,10 +676,10 @@ void on_table_event(ku_table_event_t event)
 		{
 		    for (int index = 0; index < ui.clipdatav->length; index++)
 		    {
-			map_t* data    = ui.clipdatav->data[index];
-			char*  path    = MGET(data, "file/path");
-			char*  name    = MGET(data, "file/basename");
-			char*  newpath = cstr_new_format(PATH_MAX, "%s/%s", ui.current_folder, name);
+			mt_map_t* data    = ui.clipdatav->data[index];
+			char*     path    = MGET(data, "file/path");
+			char*     name    = MGET(data, "file/basename");
+			char*     newpath = STRNF(PATH_MAX, "%s/%s", ui.current_folder, name);
 
 			int res = fm_copy(path, newpath);
 
@@ -701,10 +701,10 @@ void on_table_event(ku_table_event_t event)
 
 		for (int index = 0; index < ui.clipdatav->length; index++)
 		{
-		    map_t* data    = ui.clipdatav->data[index];
-		    char*  path    = MGET(data, "file/path");
-		    char*  name    = MGET(data, "file/basename");
-		    char*  newpath = cstr_new_format(PATH_MAX, "%s/%s", ui.current_folder, name);
+		    mt_map_t* data    = ui.clipdatav->data[index];
+		    char*     path    = MGET(data, "file/path");
+		    char*     name    = MGET(data, "file/basename");
+		    char*     newpath = STRNF(PATH_MAX, "%s/%s", ui.current_folder, name);
 
 		    int res = fm_rename1(path, newpath);
 
@@ -718,14 +718,14 @@ void on_table_event(ku_table_event_t event)
 		    }
 		}
 		ui_load_folder(ui.current_folder);
-		vec_reset(ui.clipdatav);
+		mt_vector_reset(ui.clipdatav);
 		ku_table_set_data(ui.cliptable, ui.clipdatav);
 	    }
 	    else if (event.selected_index == 5)
 	    {
 		/* reset clipboard */
 
-		vec_reset(ui.clipdatav);
+		mt_vector_reset(ui.clipdatav);
 		ku_table_set_data(ui.cliptable, ui.clipdatav);
 	    }
 	}
@@ -788,7 +788,7 @@ void ui_on_key_down(vh_key_event_t event)
 
     if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
     {
-	vec_add_in_vector(ui.clipdatav, ui.filetable->selected_items);
+	mt_vector_add_in_vector(ui.clipdatav, ui.filetable->selected_items);
 	ku_table_set_data(ui.cliptable, ui.clipdatav);
     }
 
@@ -946,11 +946,11 @@ void ui_on_text_event(vh_textinput_event_t event)
 
 	    if (ui.filetable->selected_items->length > 0)
 	    {
-		map_t* file   = ui.filetable->selected_items->data[0];
-		char*  parent = MGET(file, "file/parent");
+		mt_map_t* file   = ui.filetable->selected_items->data[0];
+		char*     parent = MGET(file, "file/parent");
 
 		char* oldpath = MGET(file, "file/path");
-		char* newpath = path_new_append(parent, event.text);
+		char* newpath = mt_path_new_append(parent, event.text);
 
 		fm_rename(oldpath, newpath, NULL);
 
@@ -968,13 +968,13 @@ void ui_on_text_event(vh_textinput_event_t event)
 	    vh_textinput_activate(ui.pathtv, 0);
 	    ku_window_deactivate(ui.window, ui.pathtv);
 
-	    char* valid_path = cstr_new_cstring(event.text);
+	    char* valid_path = STRNC(event.text);
 	    for (;;)
 	    {
 		if (fm_exists(valid_path)) break;
 		else
 		{
-		    char* prev_path = path_new_remove_last_component(valid_path);
+		    char* prev_path = mt_path_new_remove_last_component(valid_path);
 		    REL(valid_path);
 		    valid_path = prev_path;
 		}
@@ -996,7 +996,7 @@ void ui_on_drag(vh_drag_event_t event)
 /* creates a table from layer structure */
 /* TODO move this maybe to ku_gen_type? */
 
-ku_table_t* ui_create_table(ku_view_t* view, vec_t* fields)
+ku_table_t* ui_create_table(ku_view_t* view, mt_vector_t* fields)
 {
     /* <div id="filetable" class="colflex marginlt4"> */
     /*   <div id="filetablehead" class="tablehead overflowhidden"/> */
@@ -1084,13 +1084,13 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     /* generate views from descriptors */
 
-    vec_t* view_list = VNEW();
+    mt_vector_t* view_list = VNEW();
 
     ku_gen_html_parse(config_get("html_path"), view_list);
     ku_gen_css_apply(view_list, config_get("css_path"), config_get("res_path"), 1.0);
     ku_gen_type_apply(view_list, ui_on_btn_event, ui_on_slider_event);
 
-    ku_view_t* bv = vec_head(view_list);
+    ku_view_t* bv = mt_vector_head(view_list);
 
     ui.basev = RET(bv);
     ku_window_add(ui.window, ui.basev);
@@ -1141,17 +1141,17 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     /* files table */
 
-    vec_t* fields = VNEW();
-    VADDR(fields, cstr_new_cstring("file/basename"));
-    VADDR(fields, num_new_int(400));
-    VADDR(fields, cstr_new_cstring("file/size"));
-    VADDR(fields, num_new_int(120));
-    VADDR(fields, cstr_new_cstring("file/last_access"));
-    VADDR(fields, num_new_int(180));
-    VADDR(fields, cstr_new_cstring("file/last_modification"));
-    VADDR(fields, num_new_int(180));
-    VADDR(fields, cstr_new_cstring("file/last_status"));
-    VADDR(fields, num_new_int(180));
+    mt_vector_t* fields = VNEW();
+    VADDR(fields, STRNC("file/basename"));
+    VADDR(fields, mt_number_new_int(400));
+    VADDR(fields, STRNC("file/size"));
+    VADDR(fields, mt_number_new_int(120));
+    VADDR(fields, STRNC("file/last_access"));
+    VADDR(fields, mt_number_new_int(180));
+    VADDR(fields, STRNC("file/last_modification"));
+    VADDR(fields, mt_number_new_int(180));
+    VADDR(fields, STRNC("file/last_status"));
+    VADDR(fields, mt_number_new_int(180));
 
     ui.filetable = ui_create_table(GETV(bv, "filetable"), fields);
     ku_window_activate(ui.window, GETV(bv, "filetableevt")); /* start with file list listening for key up and down */
@@ -1166,10 +1166,10 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     fields = VNEW();
 
-    VADDR(fields, cstr_new_cstring("key"));
-    VADDR(fields, num_new_int(150));
-    VADDR(fields, cstr_new_cstring("value"));
-    VADDR(fields, num_new_int(400));
+    VADDR(fields, STRNC("key"));
+    VADDR(fields, mt_number_new_int(150));
+    VADDR(fields, STRNC("value"));
+    VADDR(fields, mt_number_new_int(400));
 
     ui.infotable = ui_create_table(GETV(bv, "infotable"), fields);
 
@@ -1179,21 +1179,21 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     fields = VNEW();
 
-    VADDR(fields, cstr_new_cstring("value"));
-    VADDR(fields, num_new_int(200));
+    VADDR(fields, STRNC("value"));
+    VADDR(fields, mt_number_new_int(200));
 
     ui.contexttable = ui_create_table(GETV(bv, "contexttable"), fields);
 
     REL(fields);
 
-    vec_t* items = VNEW();
+    mt_vector_t* items = VNEW();
 
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Rename")}));
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Delete")}));
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Send to clipboard")}));
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Paste using copy")}));
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Paste using move")}));
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(50, "Reset clipboard")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Rename")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Delete")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Send to clipboard")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Paste using copy")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Paste using move")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Reset clipboard")}));
 
     ku_table_set_data(ui.contexttable, items);
     REL(items);
@@ -1202,8 +1202,8 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     fields = VNEW();
 
-    VADDR(fields, cstr_new_cstring("value"));
-    VADDR(fields, num_new_int(510));
+    VADDR(fields, STRNC("value"));
+    VADDR(fields, mt_number_new_int(510));
 
     ui.settingstable = ui_create_table(GETV(bv, "settingstable"), fields);
 
@@ -1211,10 +1211,10 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     items = VNEW();
 
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "MultiMedia File Manager v%s beta by Milan Toth", MMFM_VERSION)}));
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "Free and Open Source Software")}));
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "")}));
-    VADDR(items, mapu_pair((mpair_t){"value", cstr_new_format(200, "Donate on Paypal")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "MultiMedia File Manager v%s beta by Milan Toth", MMFM_VERSION)}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Free and Open Source Software")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Donate on Paypal")}));
 
     ku_table_set_data(ui.settingstable, items);
     REL(items);
@@ -1238,7 +1238,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 	vh_cv_evnt_attach(previewevnt, previewbody, previewscrl, NULL, on_cv_event);
     }
     else
-	zc_log_debug("preview not found");
+	mt_log_debug("preview not found");
 
     /* get main bottom for layout change */
 

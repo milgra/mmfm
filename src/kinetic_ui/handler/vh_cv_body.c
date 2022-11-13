@@ -53,7 +53,6 @@ void vh_cv_body_vjump(
 #if __INCLUDE_LEVEL__ == 0
 
 #include "tg_scaledimg.c"
-#include "zc_log.c"
 
 void vh_cv_body_del(void* p)
 {

@@ -1,23 +1,23 @@
 #ifndef cstr_util_h
 #define cstr_util_h
 
-#include "zc_cstring.c"
-#include "zc_vector.c"
+#include "mt_string.c"
+#include "mt_vector.c"
 #include <ctype.h>
 #include <string.h>
 
-char*    cstr_new_file(char* path);
-uint32_t cstr_color_from_cstring(char* string);
-char*    cstr_new_readablec(uint32_t length);
-char*    cstr_new_alphanumeric(uint32_t length);
-void     cstr_tolower(char* str);
-vec_t*   cstr_split(char* str, char* del);
+char*        mt_string_new_file(char* path);
+uint32_t     mt_string_color_from_cstring(char* string);
+char*        mt_string_new_readablec(uint32_t length);
+char*        mt_string_new_alphanumeric(uint32_t length);
+void         mt_string_tolower(char* str);
+mt_vector_t* mt_string_split(char* str, char* del);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_memory.c"
+#include "mt_memory.c"
 
 static char hexa[] =
     {
@@ -126,7 +126,7 @@ static char hexa[] =
 
 /* returns uint value based on digits */
 
-uint32_t cstr_color_from_cstring(char* string)
+uint32_t mt_string_color_from_cstring(char* string)
 {
     uint32_t result = 0;
     while (*string != 0)
@@ -136,7 +136,7 @@ uint32_t cstr_color_from_cstring(char* string)
 
 /* reads up text file */
 
-char* cstr_new_file(char* path)
+char* mt_string_new_file(char* path)
 {
     char* buffer = NULL;
     int   string_size, read_size;
@@ -152,7 +152,7 @@ char* cstr_new_file(char* path)
 	rewind(handler);
 
 	// Allocate a string that can hold it all
-	buffer = (char*) CAL(sizeof(char) * (string_size + 1), NULL, cstr_describe);
+	buffer = (char*) CAL(sizeof(char) * (string_size + 1), NULL, mt_string_describe);
 
 	// Read it all in one operation
 	read_size = fread(buffer, sizeof(char), string_size, handler);
@@ -181,9 +181,9 @@ char* cstr_new_file(char* path)
 char* vowels     = "aeiou";
 char* consonants = "bcdefghijklmnpqrstvwxyz";
 
-char* cstr_new_readablec(uint32_t length)
+char* mt_string_new_readablec(uint32_t length)
 {
-    char* result = CAL(sizeof(char) * (length + 1), NULL, cstr_describe);
+    char* result = CAL(sizeof(char) * (length + 1), NULL, mt_string_describe);
     for (int index = 0; index < length; index += 2)
     {
 	result[index] = consonants[rand() % strlen(consonants)];
@@ -192,7 +192,7 @@ char* cstr_new_readablec(uint32_t length)
     return result;
 }
 
-void cstr_tolower(char* str)
+void mt_string_tolower(char* str)
 {
     for (int index = 0; index < strlen(str); index++)
     {
@@ -202,31 +202,31 @@ void cstr_tolower(char* str)
 
 /* generates alphanumeric string */
 
-char* cstr_alphanumeric =
+char* mt_string_alphanumeric =
     "0123456789"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz";
 
-char* cstr_new_alphanumeric(uint32_t length)
+char* mt_string_new_alphanumeric(uint32_t length)
 {
-    char* result = CAL(sizeof(char) * (length + 1), NULL, cstr_describe);
+    char* result = CAL(sizeof(char) * (length + 1), NULL, mt_string_describe);
     for (int index = 0; index < length; index++)
     {
-	result[index] = cstr_alphanumeric[rand() % strlen(cstr_alphanumeric)];
+	result[index] = mt_string_alphanumeric[rand() % strlen(mt_string_alphanumeric)];
     }
     return result;
 }
 
-vec_t* cstr_split(char* str, char* del)
+mt_vector_t* mt_string_split(char* str, char* del)
 {
-    char*  token;
-    vec_t* result = VNEW();
+    char*        token;
+    mt_vector_t* result = VNEW();
 
     token = strtok(str, del);
 
     while (token != NULL)
     {
-	char* txt = CAL(strlen(token) + 1, NULL, cstr_describe);
+	char* txt = CAL(strlen(token) + 1, NULL, mt_string_describe);
 	memcpy(txt, token, strlen(token));
 
 	VADDR(result, txt);

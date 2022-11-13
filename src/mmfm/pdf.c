@@ -10,7 +10,7 @@ ku_bitmap_t* pdf_render(char* filename, int page);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_log.c"
+#include "mt_log.c"
 #include <mupdf/fitz.h>
 
 int pdf_count(char* filename)
@@ -28,14 +28,14 @@ int pdf_count(char* filename)
 
     /* Create a context to hold the exception stack and various caches. */
     ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
-    if (!ctx) zc_log_error("cannot create mupdf context\n");
+    if (!ctx) mt_log_error("cannot create mupdf context\n");
 
     /* Register the default file types to handle. */
     fz_try(ctx)
 	fz_register_document_handlers(ctx);
     fz_catch(ctx)
     {
-	zc_log_error("cannot register document handlers: %s", fz_caught_message(ctx));
+	mt_log_error("cannot register document handlers: %s", fz_caught_message(ctx));
 	fz_drop_context(ctx);
     }
 
@@ -44,7 +44,7 @@ int pdf_count(char* filename)
 	doc = fz_open_document(ctx, input);
     fz_catch(ctx)
     {
-	zc_log_error("cannot open document: %s", fz_caught_message(ctx));
+	mt_log_error("cannot open document: %s", fz_caught_message(ctx));
 	fz_drop_context(ctx);
     }
 
@@ -53,7 +53,7 @@ int pdf_count(char* filename)
 	page_count = fz_count_pages(ctx, doc);
     fz_catch(ctx)
     {
-	zc_log_error("cannot count number of pages: %s", fz_caught_message(ctx));
+	mt_log_error("cannot count number of pages: %s", fz_caught_message(ctx));
 	fz_drop_document(ctx, doc);
 	fz_drop_context(ctx);
     }
@@ -77,14 +77,14 @@ ku_bitmap_t* pdf_render(char* filename, int page_number)
 
     /* Create a context to hold the exception stack and various caches. */
     ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
-    if (!ctx) zc_log_error("cannot create mupdf context");
+    if (!ctx) mt_log_error("cannot create mupdf context");
 
     /* Register the default file types to handle. */
     fz_try(ctx)
 	fz_register_document_handlers(ctx);
     fz_catch(ctx)
     {
-	zc_log_error("cannot register document handlers: %s", fz_caught_message(ctx));
+	mt_log_error("cannot register document handlers: %s", fz_caught_message(ctx));
 	fz_drop_context(ctx);
     }
 
@@ -93,7 +93,7 @@ ku_bitmap_t* pdf_render(char* filename, int page_number)
 	doc = fz_open_document(ctx, input);
     fz_catch(ctx)
     {
-	zc_log_error("cannot open document: %s", fz_caught_message(ctx));
+	mt_log_error("cannot open document: %s", fz_caught_message(ctx));
 	fz_drop_context(ctx);
     }
 
@@ -107,7 +107,7 @@ ku_bitmap_t* pdf_render(char* filename, int page_number)
 	pix = fz_new_pixmap_from_page_number(ctx, doc, page_number, ctm, fz_device_rgb(ctx), 0);
     fz_catch(ctx)
     {
-	zc_log_error("cannot render page: %s", fz_caught_message(ctx));
+	mt_log_error("cannot render page: %s", fz_caught_message(ctx));
 	fz_drop_document(ctx, doc);
 	fz_drop_context(ctx);
     }

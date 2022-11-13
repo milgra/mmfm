@@ -8,9 +8,9 @@
 
 /* TODO write tests */
 
-#include "zc_cstring.c"
-#include "zc_map.c"
-#include "zc_vector.c"
+#include "mt_map.c"
+#include "mt_string.c"
+#include "mt_vector.c"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,13 +28,13 @@ typedef struct _prop_t
     css_range_t value;
 } prop_t;
 
-map_t* ku_css_new(char* path);
+mt_map_t* ku_css_new(char* path);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_cstr_ext.c"
+#include "mt_string_ext.c"
 
 uint32_t ku_css_count_props(char* css)
 {
@@ -117,25 +117,25 @@ prop_t* ku_css_new_parse(char* css)
     return props;
 }
 
-map_t* ku_css_new(char* filepath)
+mt_map_t* ku_css_new(char* filepath)
 {
-    char*   css         = cstr_new_file(filepath); // REL 0
-    prop_t* view_styles = ku_css_new_parse(css);   // REL 1
-    map_t*  styles      = MNEW();                  // REL 2
-    prop_t* props       = view_styles;
+    char*     css         = mt_string_new_file(filepath); // REL 0
+    prop_t*   view_styles = ku_css_new_parse(css);        // REL 1
+    mt_map_t* styles      = MNEW();                       // REL 2
+    prop_t*   props       = view_styles;
 
     while ((*props).class.len > 0)
     {
 	prop_t t   = *props;
-	char*  cls = CAL(sizeof(char) * t.class.len + 1, NULL, cstr_describe); // REL 3
-	char*  key = CAL(sizeof(char) * t.key.len + 1, NULL, cstr_describe);   // REL 4
-	char*  val = CAL(sizeof(char) * t.value.len + 1, NULL, cstr_describe); // REL 5
+	char*  cls = CAL(sizeof(char) * t.class.len + 1, NULL, mt_string_describe); // REL 3
+	char*  key = CAL(sizeof(char) * t.key.len + 1, NULL, mt_string_describe);   // REL 4
+	char*  val = CAL(sizeof(char) * t.value.len + 1, NULL, mt_string_describe); // REL 5
 
 	memcpy(cls, css + t.class.pos, t.class.len);
 	memcpy(key, css + t.key.pos, t.key.len);
 	memcpy(val, css + t.value.pos, t.value.len);
 
-	map_t* style = MGET(styles, cls);
+	mt_map_t* style = MGET(styles, cls);
 	if (style == NULL)
 	{
 	    style = MNEW(); // REL 6

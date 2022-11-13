@@ -39,8 +39,6 @@ int  decoder_decode_frame(Decoder* d, AVFrame* frame);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_log.c"
-
 // do we need this?
 
 static int decoder_reorder_pts = -1;

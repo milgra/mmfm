@@ -1,7 +1,7 @@
 #ifndef filemanager_h
 #define filemanager_h
 
-#include "zc_map.c"
+#include "mt_map.c"
 #define __USE_XOPEN 1
 #define __USE_XOPEN_EXTENDED 1 // needed for linux
 #include <ftw.h>
@@ -12,9 +12,9 @@ int  fm_rename(char* old, char* new, char* new_dirs);
 int  fm_rename1(char* old, char* new);
 int  fm_copy(char* old, char* new);
 int  fm_exists(char* path);
-void fm_list(char* fmpath, map_t* db);
-void fm_listdir(char* fm_path, map_t* files);
-void fm_detail(map_t* file);
+void fm_list(char* fmpath, mt_map_t* db);
+void fm_listdir(char* fm_path, mt_map_t* files);
+void fm_detail(mt_map_t* file);
 
 #endif
 
@@ -39,17 +39,17 @@ void fm_detail(map_t* file);
 #include <unistd.h>
 
 #include "coder.c"
-#include "zc_cstr_ext.c"
-#include "zc_cstring.c"
-#include "zc_log.c"
-#include "zc_path.c"
+#include "mt_log.c"
+#include "mt_path.c"
+#include "mt_string.c"
+#include "mt_string_ext.c"
 
 struct fm_t
 {
-    map_t* files;
-    vec_t* paths;
-    char   lock;
-    char*  path;
+    mt_map_t*    files;
+    mt_vector_t* paths;
+    char         lock;
+    char*        path;
 } fm = {0};
 
 int fm_create(char* file_path, mode_t mode)
@@ -77,7 +77,7 @@ int fm_remove_cb(const char* fpath, const struct stat* sb, int typeflag, struct 
 {
     int rv = remove(fpath);
 
-    zc_log_debug("removing %s\n", fpath);
+    mt_log_debug("removing %s\n", fpath);
     if (rv)
 	perror(fpath);
 
@@ -88,14 +88,14 @@ void fm_delete(char* path)
 {
     int error = nftw(path, fm_remove_cb, 64, FTW_DEPTH | FTW_PHYS);
     if (error)
-	zc_log_error("fm : cannot remove path %s : %s", path, strerror(errno));
+	mt_log_error("fm : cannot remove path %s : %s", path, strerror(errno));
     else
-	zc_log_debug("fm : path %s removed.", path);
+	mt_log_debug("fm : path %s removed.", path);
 }
 
 int fm_rename(char* old_path, char* new_path, char* new_dirs)
 {
-    zc_log_info("fm : renaming %s to %s", old_path, new_path);
+    mt_log_info("fm : renaming %s to %s", old_path, new_path);
 
     int error = 0;
     if (new_dirs) error = fm_create(new_dirs, 0777);
@@ -110,7 +110,7 @@ int fm_rename(char* old_path, char* new_path, char* new_dirs)
 
 int fm_rename1(char* old_path, char* new_path)
 {
-    zc_log_info("fm : renaming %s to %s", old_path, new_path);
+    mt_log_info("fm : renaming %s to %s", old_path, new_path);
 
     int error = 0;
 
@@ -120,11 +120,11 @@ int fm_rename1(char* old_path, char* new_path)
 
 int fm_copy(char* old_path, char* new_path)
 {
-    char* command = cstr_new_format(7 + PATH_MAX * 2, "cp -r %s %s", old_path, new_path);
+    char* command = mt_string_new_format(7 + PATH_MAX * 2, "cp -r %s %s", old_path, new_path);
 
     int res = system(command);
 
-    zc_log_debug("%s result : %i", command, res);
+    mt_log_debug("%s result : %i", command, res);
 
     return res;
 }
@@ -139,7 +139,7 @@ int fm_exists(char* path)
 	return 0;
 }
 
-void fm_list(char* fm_path, map_t* files)
+void fm_list(char* fm_path, mt_map_t* files)
 {
     DIR* dirp = opendir(fm_path);
     chdir(fm_path);
@@ -198,34 +198,34 @@ void fm_list(char* fm_path, map_t* files)
 		    default: type = "unknown"; break;
 		}
 
-		map_t* file = MNEW();
+		mt_map_t* file = MNEW();
 
-		MPUTR(file, "file/type", cstr_new_cstring(type));
-		MPUTR(file, "file/parent", cstr_new_cstring(fm_path));
-		MPUTR(file, "file/path", cstr_new_format(PATH_MAX + NAME_MAX, "%s", path));
-		MPUTR(file, "file/basename", cstr_new_cstring(dp->d_name));
-		MPUTR(file, "file/device", cstr_new_format(20, "%li", sb.st_dev));
-		MPUTR(file, "file/size", cstr_new_format(20, "%li", sb.st_size));
-		MPUTR(file, "file/inode", cstr_new_format(20, "%li", sb.st_ino));
-		MPUTR(file, "file/links", cstr_new_format(20, "%li", sb.st_nlink));
-		MPUTR(file, "file/userid", cstr_new_format(20, "%li", sb.st_uid));
-		MPUTR(file, "file/groupid", cstr_new_format(20, "%li", sb.st_gid));
-		MPUTR(file, "file/deviceid", cstr_new_format(20, "%li", sb.st_rdev));
-		MPUTR(file, "file/blocksize", cstr_new_format(20, "%li", sb.st_blksize));
-		MPUTR(file, "file/blocks", cstr_new_format(20, "%li", sb.st_blocks));
+		MPUTR(file, "file/type", mt_string_new_cstring(type));
+		MPUTR(file, "file/parent", mt_string_new_cstring(fm_path));
+		MPUTR(file, "file/path", mt_string_new_format(PATH_MAX + NAME_MAX, "%s", path));
+		MPUTR(file, "file/basename", mt_string_new_cstring(dp->d_name));
+		MPUTR(file, "file/device", mt_string_new_format(20, "%li", sb.st_dev));
+		MPUTR(file, "file/size", mt_string_new_format(20, "%li", sb.st_size));
+		MPUTR(file, "file/inode", mt_string_new_format(20, "%li", sb.st_ino));
+		MPUTR(file, "file/links", mt_string_new_format(20, "%li", sb.st_nlink));
+		MPUTR(file, "file/userid", mt_string_new_format(20, "%li", sb.st_uid));
+		MPUTR(file, "file/groupid", mt_string_new_format(20, "%li", sb.st_gid));
+		MPUTR(file, "file/deviceid", mt_string_new_format(20, "%li", sb.st_rdev));
+		MPUTR(file, "file/blocksize", mt_string_new_format(20, "%li", sb.st_blksize));
+		MPUTR(file, "file/blocks", mt_string_new_format(20, "%li", sb.st_blocks));
 		struct tm* at = localtime(&sb.st_atime);
-		MPUTR(file, "file/last_access", cstr_new_format(100, "%i/%.2i/%.2i %.2i:%.2i:%.2i", 1900 + at->tm_year, at->tm_mon, at->tm_mday, at->tm_hour, at->tm_min, at->tm_sec));
+		MPUTR(file, "file/last_access", mt_string_new_format(100, "%i/%.2i/%.2i %.2i:%.2i:%.2i", 1900 + at->tm_year, at->tm_mon, at->tm_mday, at->tm_hour, at->tm_min, at->tm_sec));
 		struct tm* mt = localtime(&sb.st_mtime);
-		MPUTR(file, "file/last_modification", cstr_new_format(100, "%i/%.2i/%.2i %.2i:%.2i:%.2i", 1900 + mt->tm_year, mt->tm_mon, mt->tm_mday, mt->tm_hour, mt->tm_min, mt->tm_sec));
+		MPUTR(file, "file/last_modification", mt_string_new_format(100, "%i/%.2i/%.2i %.2i:%.2i:%.2i", 1900 + mt->tm_year, mt->tm_mon, mt->tm_mday, mt->tm_hour, mt->tm_min, mt->tm_sec));
 		struct tm* ct = localtime(&sb.st_ctime);
-		MPUTR(file, "file/last_status", cstr_new_format(100, "%i/%.2i/%.2i %.2i:%.2i:%.2i", 1900 + ct->tm_year, ct->tm_mon, ct->tm_mday, ct->tm_hour, ct->tm_min, ct->tm_sec));
+		MPUTR(file, "file/last_status", mt_string_new_format(100, "%i/%.2i/%.2i %.2i:%.2i:%.2i", 1900 + ct->tm_year, ct->tm_mon, ct->tm_mday, ct->tm_hour, ct->tm_min, ct->tm_sec));
 
 		if (strcmp(dp->d_name, ".") != 0) MPUT(files, path, file); // use relative path as path
 
 		REL(file);
 	    }
 	    else
-		zc_log_error("CANNOT STAT %s, status %i errno %i", path, status, errno);
+		mt_log_error("CANNOT STAT %s, status %i errno %i", path, status, errno);
 
 	    dp = readdir(dirp);
 	}
@@ -234,7 +234,7 @@ void fm_list(char* fm_path, map_t* files)
     }
 }
 
-void fm_detail(map_t* file)
+void fm_detail(mt_map_t* file)
 {
     char* parent = MGET(file, "file/parent");
     char* path   = MGET(file, "file/path");
@@ -250,23 +250,23 @@ void fm_detail(map_t* file)
     struct passwd* pws;
     pws = getpwuid(atoi(uid));
 
-    MPUTR(file, "file/username", cstr_new_format(100, "%s", pws->pw_name));
+    MPUTR(file, "file/username", mt_string_new_format(100, "%s", pws->pw_name));
 
     /* address crashes here */
 #ifndef DEBUG
     struct group* grp;
     grp = getgrgid(atoi(gid));
 
-    MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name));
+    MPUTR(file, "file/groupname", mt_string_new_format(100, "%s", grp->gr_name));
 #endif
 
     // get mime type with file command
 
     char  buff[500];
-    char* mime    = cstr_new_cstring("");                        // REL L0
-    char* command = cstr_new_format(80, "file -b \"%s\"", name); // REL L1
-    FILE* pipe    = popen(command, "r");                         // CLOSE 0
-    while (fgets(buff, sizeof(buff), pipe) != NULL) mime = cstr_append(mime, buff);
+    char* mime    = mt_string_new_cstring("");                        // REL L0
+    char* command = mt_string_new_format(80, "file -b \"%s\"", name); // REL L1
+    FILE* pipe    = popen(command, "r");                              // CLOSE 0
+    while (fgets(buff, sizeof(buff), pipe) != NULL) mime = mt_string_append(mime, buff);
     pclose(pipe); // CLOSE 0
     REL(command); // REL L1
 

@@ -60,8 +60,6 @@ void vh_tbl_evnt_attach(
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_log.c"
-
 #define SCROLLBAR 20.0
 
 void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
@@ -76,8 +74,8 @@ void vh_tbl_evnt_evt(ku_view_t* view, ku_event_t ev)
 	{
 	    if (vh->sy > 0.0001 || vh->sy < -0.0001 || vh->sx > 0.0001 || vh->sx < -0.0001)
 	    {
-		ku_view_t* head = vec_head(bvh->items);
-		ku_view_t* tail = vec_tail(bvh->items);
+		ku_view_t* head = mt_vector_head(bvh->items);
+		ku_view_t* tail = mt_vector_tail(bvh->items);
 
 		float top = head->frame.local.y;
 		float bot = tail->frame.local.y + tail->frame.local.h;

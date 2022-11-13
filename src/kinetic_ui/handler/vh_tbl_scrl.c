@@ -34,8 +34,6 @@ void vh_tbl_scrl_scroll_h(ku_view_t* view, int x);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_log.c"
-
 void vh_tbl_scrl_del(void* p)
 {
     vh_tbl_scrl_t* vh = p;
@@ -84,8 +82,8 @@ void vh_tbl_scrl_update(ku_view_t* view)
 
     if (bvh->items->length > 0 && vh->item_cnt > 0)
     {
-	ku_view_t* head = vec_head(bvh->items);
-	ku_view_t* tail = vec_tail(bvh->items);
+	ku_view_t* head = mt_vector_head(bvh->items);
+	ku_view_t* tail = mt_vector_tail(bvh->items);
 
 	int vert_pos = bvh->top_index;
 	int vert_vis = bvh->bot_index - bvh->top_index + 1;

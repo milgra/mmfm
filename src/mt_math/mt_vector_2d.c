@@ -1,7 +1,5 @@
-#ifndef zm_vec2_h
-#define zm_vec2_h
-
-/* TODO rename, it is confusing */
+#ifndef mt_vector_2d_h
+#define mt_vector_2d_h
 
 #include <math.h>
 #include <stdio.h>

@@ -1,9 +1,9 @@
 #ifndef ku_gen_html_h
 #define ku_gen_html_h
 
-#include "zc_vector.c"
+#include "mt_vector.c"
 
-void ku_gen_html_parse(char* htmlpath, vec_t* views);
+void ku_gen_html_parse(char* htmlpath, mt_vector_t* views);
 
 #endif
 
@@ -11,12 +11,12 @@ void ku_gen_html_parse(char* htmlpath, vec_t* views);
 
 #include "ku_html.c"
 #include "ku_view.c"
-#include "zc_cstr_ext.c"
+#include "mt_string_ext.c"
 
-void ku_gen_html_parse(char* htmlpath, vec_t* views)
+void ku_gen_html_parse(char* htmlpath, mt_vector_t* views)
 {
-    char*  html = cstr_new_file(htmlpath); // REL 0
-    tag_t* tags = ku_html_new(html);       // REL 1
+    char*  html = mt_string_new_file(htmlpath); // REL 0
+    tag_t* tags = ku_html_new(html);            // REL 1
     tag_t* head = tags;
 
     while ((*tags).len > 0)
@@ -25,7 +25,7 @@ void ku_gen_html_parse(char* htmlpath, vec_t* views)
 	if (t.id.len > 0)
 	{
 	    // extract id
-	    char* id = CAL(sizeof(char) * t.id.len + 1, NULL, cstr_describe); // REL 0
+	    char* id = CAL(sizeof(char) * t.id.len + 1, NULL, mt_string_describe); // REL 0
 	    memcpy(id, html + t.id.pos + 1, t.id.len);
 	    ku_view_t* view = ku_view_new(id, (ku_rect_t){0}); // REL 1
 
@@ -39,7 +39,7 @@ void ku_gen_html_parse(char* htmlpath, vec_t* views)
 	    if (t.class.len > 0)
 	    {
 		// store css classes
-		char* class = CAL(sizeof(char) * t.class.len + 1, NULL, cstr_describe); // REL 0
+		char* class = CAL(sizeof(char) * t.class.len + 1, NULL, mt_string_describe); // REL 0
 		memcpy(class, html + t.class.pos + 1, t.class.len);
 		ku_view_set_class(view, class);
 		REL(class);
@@ -48,7 +48,7 @@ void ku_gen_html_parse(char* htmlpath, vec_t* views)
 	    if (t.type.len > 0)
 	    {
 		// store html stype
-		char* type = CAL(sizeof(char) * t.type.len + 1, NULL, cstr_describe); // REL 2
+		char* type = CAL(sizeof(char) * t.type.len + 1, NULL, mt_string_describe); // REL 2
 		memcpy(type, html + t.type.pos + 1, t.type.len);
 		ku_view_set_type(view, type);
 		REL(type); // REL 2
@@ -57,7 +57,7 @@ void ku_gen_html_parse(char* htmlpath, vec_t* views)
 	    if (t.text.len > 0)
 	    {
 		// store html stype
-		char* text = CAL(sizeof(char) * t.text.len + 1, NULL, cstr_describe); // REL 2
+		char* text = CAL(sizeof(char) * t.text.len + 1, NULL, mt_string_describe); // REL 2
 		memcpy(text, html + t.text.pos + 1, t.text.len);
 		ku_view_set_text(view, text);
 		REL(text); // REL 2
@@ -66,7 +66,7 @@ void ku_gen_html_parse(char* htmlpath, vec_t* views)
 	    if (t.script.len > 0)
 	    {
 		// store html stype
-		char* script = CAL(sizeof(char) * t.script.len + 1, NULL, cstr_describe); // REL 2
+		char* script = CAL(sizeof(char) * t.script.len + 1, NULL, mt_string_describe); // REL 2
 		memcpy(script, html + t.script.pos + 1, t.script.len);
 		ku_view_set_script(view, script);
 		REL(script); // REL 2
@@ -80,7 +80,7 @@ void ku_gen_html_parse(char* htmlpath, vec_t* views)
 	else
 	{
 	    static int divcnt = 0;
-	    char*      divid  = cstr_new_format(10, "div%i", divcnt++);
+	    char*      divid  = mt_string_new_format(10, "div%i", divcnt++);
 	    // idless view, probably </div>
 	    ku_view_t* view = ku_view_new(divid, (ku_rect_t){0});
 	    VADD(views, view);

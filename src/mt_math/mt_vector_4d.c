@@ -1,8 +1,7 @@
+#ifndef mt_vector_4d_h
+#define mt_vector_4d_h
 
-#ifndef zc_vec4_h
-#define zc_vec4_h
-
-#include "zc_vec3.c"
+#include "mt_vector_3d.c"
 
 typedef struct _v4_t v4_t;
 struct _v4_t

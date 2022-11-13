@@ -27,9 +27,9 @@
 #include "libavutil/time.h"
 #include "libswresample/swresample.h"
 #include "libswscale/swscale.h"
+#include "mt_log.c"
+#include "mt_vector_2d.c"
 #include "packetqueue.c"
-#include "zc_log.c"
-#include "zc_vec2.c"
 #include <SDL.h>
 #include <SDL_thread.h>
 
@@ -309,7 +309,7 @@ void mp_step_to_next_frame(MediaState_t* ms)
 
 int mp_video_decode_thread(void* arg)
 {
-    zc_log_debug("Video decoder thread started.");
+    mt_log_debug("Video decoder thread started.");
 
     MediaState_t* ms    = arg;
     AVFrame*      frame = av_frame_alloc();
@@ -320,7 +320,7 @@ int mp_video_decode_thread(void* arg)
     AVRational tb         = ms->vidst->time_base;
     AVRational frame_rate = av_guess_frame_rate(ms->format, ms->vidst, NULL);
 
-    zc_log_debug("time base %f framerate %f", (float) tb.num / (float) tb.den, (float) frame_rate.num / (float) frame_rate.den);
+    mt_log_debug("time base %f framerate %f", (float) tb.num / (float) tb.den, (float) frame_rate.num / (float) frame_rate.den);
 
     if (frame)
     {
@@ -651,7 +651,7 @@ static void mp_sdl_audio_callback(void* opaque, Uint8* stream, int len)
 
 int mp_audio_open(void* opaque, AVChannelLayout* wanted_channel_layout, int wanted_sample_rate, struct AudioParams* audio_hw_params)
 {
-    zc_log_debug("viewer audio open");
+    mt_log_debug("viewer audio open");
 
     SDL_AudioSpec    wanted_spec, spec;
     const char*      env;
@@ -662,7 +662,7 @@ int mp_audio_open(void* opaque, AVChannelLayout* wanted_channel_layout, int want
 
     env = SDL_getenv("SDL_AUDIO_CHANNELS");
 
-    zc_log_debug("ENV CHANNELS %s", env);
+    mt_log_debug("ENV CHANNELS %s", env);
 
     if (env)
     {
@@ -744,14 +744,14 @@ int mp_audio_open(void* opaque, AVChannelLayout* wanted_channel_layout, int want
 	return -1;
     }
 
-    zc_log_debug("spec size %i channels %i freq %i", spec.size, audio_hw_params->ch_layout.nb_channels, spec.freq);
+    mt_log_debug("spec size %i channels %i freq %i", spec.size, audio_hw_params->ch_layout.nb_channels, spec.freq);
 
     return spec.size;
 }
 
 int mp_audio_decode_thread(void* arg)
 {
-    zc_log_debug("Audio decoder thread started.");
+    mt_log_debug("Audio decoder thread started.");
 
     MediaState_t* is    = arg;
     AVFrame*      frame = av_frame_alloc();
@@ -793,14 +793,14 @@ int mp_audio_decode_thread(void* arg)
 	ret = AVERROR(ENOMEM); // cannot allocate frame
     }
 
-    zc_log_debug("Audio decoder thread finished.");
+    mt_log_debug("Audio decoder thread finished.");
 
     return ret;
 }
 
 int mp_stream_open(MediaState_t* ms, int stream_index)
 {
-    zc_log_debug("Opening stream %i", stream_index);
+    mt_log_debug("Opening stream %i", stream_index);
 
     AVFormatContext* format = ms->format;
     int              ret    = -1;
@@ -821,7 +821,7 @@ int mp_stream_open(MediaState_t* ms, int stream_index)
 
 		const AVCodec* codec = avcodec_find_decoder(codecctx->codec_id);
 
-		zc_log_debug("Timebase : %i/%i Codec type %i Codec id", codecctx->pkt_timebase.num, codecctx->pkt_timebase.den, codecctx->codec_type, codecctx->codec_id);
+		mt_log_debug("Timebase : %i/%i Codec type %i Codec id", codecctx->pkt_timebase.num, codecctx->pkt_timebase.den, codecctx->codec_type, codecctx->codec_id);
 
 		if (codec)
 		{
@@ -858,10 +858,10 @@ int mp_stream_open(MediaState_t* ms, int stream_index)
 				    if (!ms->video_thread)
 				    {
 					ret = -1;
-					zc_log_error("Cannot create thread %s", SDL_GetError());
+					mt_log_error("Cannot create thread %s", SDL_GetError());
 				    }
 				}
-				else zc_log_error("Cannot init decoder");
+				else mt_log_error("Cannot init decoder");
 				break;
 
 			    case AVMEDIA_TYPE_AUDIO:
@@ -910,16 +910,16 @@ int mp_stream_open(MediaState_t* ms, int stream_index)
 					    if (!ms->audio_thread)
 					    {
 						ret = -1;
-						zc_log_error("Cannot create thread %s", SDL_GetError());
+						mt_log_error("Cannot create thread %s", SDL_GetError());
 					    }
 
 					    SDL_PauseAudioDevice(audio_dev, 0);
 					}
-					else zc_log_error("Cannot init decoder");
+					else mt_log_error("Cannot init decoder");
 				    }
-				    else zc_log_error("Cannot open audio output");
+				    else mt_log_error("Cannot open audio output");
 				}
-				else zc_log_error("Cannot copy channel layout");
+				else mt_log_error("Cannot copy channel layout");
 
 				break;
 			    }
@@ -927,23 +927,23 @@ int mp_stream_open(MediaState_t* ms, int stream_index)
 				break;
 			}
 		    }
-		    else zc_log_error("No decoder could be found for codec %s", avcodec_get_name(codecctx->codec_id));
+		    else mt_log_error("No decoder could be found for codec %s", avcodec_get_name(codecctx->codec_id));
 
 		    av_dict_free(&opts);
 		}
 		else
 		{
 		    ret = -1;
-		    zc_log_error("Couldn't open codec");
+		    mt_log_error("Couldn't open codec");
 		}
 	    }
-	    else zc_log_error("Cannot read codec parameters");
+	    else mt_log_error("Cannot read codec parameters");
 	}
 	else ret = AVERROR(ENOMEM);
 
 	if (ret < 0) avcodec_free_context(&codecctx);
     }
-    else zc_log_debug("Invalid stream index");
+    else mt_log_debug("Invalid stream index");
 
     return ret;
 }
@@ -1032,7 +1032,7 @@ int mp_stream_has_enough_packets(AVStream* st, int stream_id, PacketQueue* queue
 /* this thread gets the stream from the disk or the network */
 int mp_read_thread(void* arg)
 {
-    zc_log_debug("Read thread started.");
+    mt_log_debug("Read thread started.");
 
     MediaState_t* ms = arg;
     int           videost;
@@ -1076,7 +1076,7 @@ int mp_read_thread(void* arg)
 
 		    /* find stream info before dump */
 		    ret = avformat_find_stream_info(format, NULL);
-		    if (ret < 0) zc_log_debug("can't find stream info");
+		    if (ret < 0) mt_log_debug("can't find stream info");
 
 		    /* print format info, should be done by coder and shown in preview */
 		    av_dump_format(format, 0, ms->filename, 0);
@@ -1112,16 +1112,16 @@ int mp_read_thread(void* arg)
 		    if (videost >= 0)
 		    {
 			ret = mp_stream_open(ms, videost);
-			if (ret < 0) zc_log_error("Can't open video stream, errno %i", ret);
+			if (ret < 0) mt_log_error("Can't open video stream, errno %i", ret);
 		    }
-		    else zc_log_debug("No video stream.");
+		    else mt_log_debug("No video stream.");
 
 		    if (audiost >= 0)
 		    {
 			ret = mp_stream_open(ms, audiost);
-			if (ret < 0) zc_log_error("Can't open audio stream, errno %i", ret);
+			if (ret < 0) mt_log_error("Can't open audio stream, errno %i", ret);
 		    }
-		    else zc_log_debug("No audio stream.");
+		    else mt_log_debug("No audio stream.");
 
 		    /* read packets forever */
 		    for (;;)
@@ -1189,7 +1189,7 @@ int mp_read_thread(void* arg)
 				    packet_queue_put(&ms->vidpq, pkt);
 				    packet_queue_put_nullpacket(&ms->vidpq, pkt, ms->vidst_index);
 				}
-				else zc_log_error("cannot ref packet");
+				else mt_log_error("cannot ref packet");
 			    }
 			    ms->check_attachment = 0;
 			}
@@ -1266,21 +1266,21 @@ int mp_read_thread(void* arg)
 			}
 		    }
 		}
-		else zc_log_debug("Cannot open input, errno : %i", ret);
+		else mt_log_debug("Cannot open input, errno : %i", ret);
 
 		av_dict_free(&format_opts);
 	    }
-	    else zc_log_debug("Cannot create format context");
+	    else mt_log_debug("Cannot create format context");
 
 	    av_packet_free(&pkt);
 	}
-	else zc_log_debug("Cannot create packet");
+	else mt_log_debug("Cannot create packet");
 
 	SDL_DestroyMutex(wait_mutex);
     }
-    else zc_log_debug("Cannot create mutex %s", SDL_GetError());
+    else mt_log_debug("Cannot create mutex %s", SDL_GetError());
 
-    zc_log_debug("Read thread finished.");
+    mt_log_debug("Read thread finished.");
 
     return 0;
 }
@@ -1289,7 +1289,7 @@ int mp_read_thread(void* arg)
 
 MediaState_t* mp_open(char* path, void (*on_event)(ms_event_t event))
 {
-    zc_log_debug("mp_open %s", path);
+    mt_log_debug("mp_open %s", path);
 
     MediaState_t* ms = av_mallocz(sizeof(MediaState_t));
 
@@ -1323,13 +1323,13 @@ MediaState_t* mp_open(char* path, void (*on_event)(ms_event_t event))
 		    ms->filename     = av_strdup(path);
 		    ms->read_thread  = SDL_CreateThread(mp_read_thread, "read_thread", ms);
 
-		    if (!ms->read_thread) zc_log_error("Cannot create read thread : %s\n", SDL_GetError());
+		    if (!ms->read_thread) mt_log_error("Cannot create read thread : %s\n", SDL_GetError());
 		}
-		else zc_log_error("Cannot create conditional");
+		else mt_log_error("Cannot create conditional");
 	    }
-	    else zc_log_error("Cannot create packet queue.");
+	    else mt_log_error("Cannot create packet queue.");
 	}
-	else zc_log_error("Cannot create frame queues.");
+	else mt_log_error("Cannot create frame queues.");
     }
 
     return ms;
@@ -1339,7 +1339,7 @@ MediaState_t* mp_open(char* path, void (*on_event)(ms_event_t event))
 
 void mp_close(MediaState_t* ms)
 {
-    zc_log_debug("mp_close %s", ms->filename);
+    mt_log_debug("mp_close %s", ms->filename);
 
     ms->abort_request = 1;
     SDL_WaitThread(ms->read_thread, NULL);
@@ -1498,7 +1498,7 @@ int upload_texture(SDL_Texture** tex, AVFrame* frame, struct SwsContext** img_co
 	}
     }
     else
-	zc_log_debug("invalid frame");
+	mt_log_debug("invalid frame");
     return ret;
 }
 

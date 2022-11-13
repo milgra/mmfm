@@ -1,9 +1,7 @@
-#ifndef zm_mat3_h
-#define zm_mat3_h
+#ifndef mt_matrix_3d_h
+#define mt_matrix_3d_h
 
-/* TODO rename, it is confusing */
-
-#include "zc_vec3.c"
+#include "mt_vector_3d.c"
 #include <stdio.h>
 
 typedef struct _m3_t m3_t;

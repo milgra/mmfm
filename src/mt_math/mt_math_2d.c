@@ -1,9 +1,7 @@
-#ifndef zm_util2_h
-#define zm_util2_h
+#ifndef mt_math_2d_h
+#define mt_math_2d_h
 
-/* TODO rename, it is confusing */
-
-#include "zc_vec2.c"
+#include "mt_vector_2d.c"
 #include <float.h>
 #include <stdint.h>
 

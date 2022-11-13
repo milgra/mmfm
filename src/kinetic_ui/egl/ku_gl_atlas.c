@@ -1,9 +1,9 @@
 #ifndef _ku_gl_atlas_h
 #define _ku_gl_atlas_h
 
-#include "zc_map.c"
-#include "zc_mat4.c"
-#include "zc_vec4.c"
+#include "mt_map.c"
+#include "mt_matrix_4d.c"
+#include "mt_vector_4d.c"
 
 typedef struct _ku_gl_atlas_coords_t ku_gl_atlas_coords_t;
 struct _ku_gl_atlas_coords_t
@@ -21,13 +21,13 @@ struct _ku_gl_atlas_coords_t
 typedef struct _ku_gl_atlas_t ku_gl_atlas_t;
 struct _ku_gl_atlas_t
 {
-    map_t* coords;
-    char*  blocks;
-    char   is_full;
-    int    width;
-    int    height;
-    int    cols;
-    int    rows;
+    mt_map_t* coords;
+    char*     blocks;
+    char      is_full;
+    int       width;
+    int       height;
+    int       cols;
+    int       rows;
 };
 
 ku_gl_atlas_t*       ku_gl_atlas_new(int w, int h);
@@ -40,7 +40,7 @@ int                  ku_gl_atlas_put(ku_gl_atlas_t* tm, char* id, int w, int h);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_memory.c"
+#include "mt_memory.c"
 #include <math.h>
 
 void ku_gl_atlas_desc(void* p, int level)
@@ -60,7 +60,7 @@ ku_gl_atlas_t* ku_gl_atlas_new(int w, int h)
     int rows = h / 32;
 
     ku_gl_atlas_t* tm = CAL(sizeof(ku_gl_atlas_t), ku_gl_atlas_del, ku_gl_atlas_desc);
-    tm->coords        = map_new();
+    tm->coords        = mt_map_new();
     tm->blocks        = CAL(sizeof(char) * cols * rows, NULL, ku_gl_atlas_desc_blocks);
     tm->width         = w;
     tm->height        = h;
@@ -79,14 +79,14 @@ void ku_gl_atlas_del(void* p)
 
 char ku_gl_atlas_has(ku_gl_atlas_t* tm, char* id)
 {
-    v4_t* coords = map_get(tm->coords, id);
+    v4_t* coords = mt_map_get(tm->coords, id);
     if (coords) return 1;
     return 0;
 }
 
 ku_gl_atlas_coords_t ku_gl_atlas_get(ku_gl_atlas_t* tm, char* id)
 {
-    ku_gl_atlas_coords_t* coords = map_get(tm->coords, id);
+    ku_gl_atlas_coords_t* coords = mt_map_get(tm->coords, id);
     if (coords) return *coords;
     return (ku_gl_atlas_coords_t){0};
 }

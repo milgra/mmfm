@@ -81,8 +81,8 @@ void ku_text_describe_glyphs(glyph_t* glyphs, int count);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "ku_draw.c"
-#include "zc_map.c"
-#include "zc_wrapper.c"
+#include "mt_map.c"
+#include "mt_wrapper.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -97,8 +97,8 @@ void ku_text_describe_glyphs(glyph_t* glyphs, int count);
 
 struct _txt_ft_t
 {
-    map_t*         libs;
-    map_t*         fonts;
+    mt_map_t*      libs;
+    mt_map_t*      fonts;
     unsigned char* gbytes; // byte array for glyph baking
     size_t         gcount; // byte array size for glyph baking
 } txt_ft;
@@ -113,15 +113,15 @@ void ku_text_init()
 
 void ku_text_destroy()
 {
-    vec_t* paths = VNEW(); // REL 0
-    map_keys(txt_ft.fonts, paths);
+    mt_vector_t* paths = VNEW(); // REL 0
+    mt_map_keys(txt_ft.fonts, paths);
 
     for (int i = 0; i < paths->length; i++)
     {
 	char* path = paths->data[i];
 
-	wrapper_t* face = MGET(txt_ft.fonts, path);
-	wrapper_t* lib  = MGET(txt_ft.libs, path);
+	mt_wrapper_t* face = MGET(txt_ft.fonts, path);
+	mt_wrapper_t* lib  = MGET(txt_ft.libs, path);
 
 	FT_Done_Face(face->data);
 	FT_Done_FreeType(lib->data);
@@ -150,8 +150,8 @@ void ku_text_font_load(char* path)
 	if (error == 0)
 	{
 
-	    wrapper_t* libwrp  = wrapper_new(library);
-	    wrapper_t* facewrp = wrapper_new(face);
+	    mt_wrapper_t* libwrp  = mt_wrapper_new(library);
+	    mt_wrapper_t* facewrp = mt_wrapper_new(face);
 
 	    MPUTR(txt_ft.libs, path, libwrp);
 	    MPUTR(txt_ft.fonts, path, facewrp);
@@ -178,7 +178,7 @@ void ku_text_font_load(char* path)
 
 void ku_text_break_glyphs(glyph_t* glyphs, int count, textstyle_t style, int wth, int hth, int* nwth, int* nhth)
 {
-    wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
+    mt_wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
     if (facewrp == NULL)
     {
 	ku_text_font_load(style.font);
@@ -424,8 +424,8 @@ void ku_text_render_glyph(glyph_t g, textstyle_t style, ku_bitmap_t* bitmap)
 {
     if ((style.backcolor & 0xFF) > 0) ku_draw_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
-    wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
-    wrapper_t* libwrp  = MGET(txt_ft.libs, style.font);
+    mt_wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
+    mt_wrapper_t* libwrp  = MGET(txt_ft.libs, style.font);
     if (facewrp == NULL)
     {
 	ku_text_font_load(style.font);
@@ -483,8 +483,8 @@ void ku_text_render_glyphs(glyph_t* glyphs, int count, textstyle_t style, ku_bit
 {
     if ((style.backcolor & 0xFF) > 0) ku_draw_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
-    wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
-    wrapper_t* libwrp  = MGET(txt_ft.libs, style.font);
+    mt_wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
+    mt_wrapper_t* libwrp  = MGET(txt_ft.libs, style.font);
     if (facewrp == NULL)
     {
 	ku_text_font_load(style.font);

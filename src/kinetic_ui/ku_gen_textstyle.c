@@ -11,7 +11,6 @@ textstyle_t ku_gen_textstyle_parse(ku_view_t* view);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "ku_fontconfig.c"
-#include "zc_log.c"
 #include <limits.h>
 
 textstyle_t ku_gen_textstyle_parse(ku_view_t* view)

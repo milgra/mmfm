@@ -24,8 +24,7 @@ void tg_scaledimg_set_content_size(ku_view_t* view, int w, int h);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "ku_draw.c"
-#include "zc_cstring.c"
-#include "zc_log.c"
+#include "mt_string.c"
 
 void tg_scaledimg_gen(ku_view_t* view)
 {

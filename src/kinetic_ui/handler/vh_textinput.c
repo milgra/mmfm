@@ -26,11 +26,11 @@ typedef struct _vh_textinput_event_t
 
 struct _vh_textinput_t
 {
-    char*      text;     // text string
-    vec_t*     glyph_v;  // glpyh views
-    ku_view_t* cursor_v; // cursor view
-    ku_view_t* holder_v; // placeholder text view
-    ku_rect_t  frame_s;  // starting frame for autosize minimal values
+    char*        text;     // text string
+    mt_vector_t* glyph_v;  // glpyh views
+    ku_view_t*   cursor_v; // cursor view
+    ku_view_t*   holder_v; // placeholder text view
+    ku_rect_t    frame_s;  // starting frame for autosize minimal values
 
     int         glyph_index;
     textstyle_t style;
@@ -56,13 +56,12 @@ void  vh_textinput_activate(ku_view_t* view, char state);
 #include "ku_bitmap.c"
 #include "ku_draw.c"
 #include "ku_gen_textstyle.c"
+#include "mt_string.c"
+#include "mt_vector.c"
 #include "tg_css.c"
 #include "tg_text.c"
 #include "utf8.h"
 #include "vh_anim.c"
-#include "zc_cstring.c"
-#include "zc_log.c"
-#include "zc_vector.c"
 
 glyph_t* vh_textinput_glyphs_from_string(char* text, size_t* count)
 {
@@ -301,7 +300,7 @@ void vh_textinput_on_anim(vh_anim_event_t event)
 
     vh_textinput_t* data = tiview->handler_data;
 
-    if (vec_index_of_data(data->glyph_v, event.view) == UINT32_MAX) ku_view_remove_from_parent(event.view);
+    if (mt_vector_index_of_data(data->glyph_v, event.view) == UINT32_MAX) ku_view_remove_from_parent(event.view);
 }
 
 void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
@@ -335,7 +334,7 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_TEXT)
     {
-	data->text = cstr_append(data->text, ev.text);
+	data->text = mt_string_append(data->text, ev.text);
 
 	// create view for glyph
 
@@ -377,11 +376,11 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
 	    /* 	new_part = utf8catcodepoint(new_part, cp, 4); */
 	    /* } */
 
-	    char* new_text = cstr_new_delete_utf_codepoints(data->text, count - 1, 1);
+	    char* new_text = mt_string_new_delete_utf_codepoints(data->text, count - 1, 1);
 	    if (data->text) REL(data->text);
 	    data->text = new_text;
 
-	    ku_view_t* glyph_view = vec_tail(data->glyph_v);
+	    ku_view_t* glyph_view = mt_vector_tail(data->glyph_v);
 	    VREM(data->glyph_v, glyph_view);
 
 	    ku_rect_t sf = glyph_view->frame.local;
@@ -444,13 +443,13 @@ void vh_textinput_add(ku_view_t* view, char* text, char* phtext, void (*on_event
 {
     assert(view->handler == NULL && view->handler_data == NULL);
 
-    char* id_c = cstr_new_format(100, "%s%s", view->id, "crsr");   // REL 0
-    char* id_h = cstr_new_format(100, "%s%s", view->id, "holder"); // REL 1
+    char* id_c = mt_string_new_format(100, "%s%s", view->id, "crsr");   // REL 0
+    char* id_h = mt_string_new_format(100, "%s%s", view->id, "holder"); // REL 1
 
     vh_textinput_t* data = CAL(sizeof(vh_textinput_t), vh_textinput_del, vh_textinput_desc);
 
-    data->text    = cstr_new_cstring(""); // REL 2
-    data->glyph_v = VNEW();               // REL 3
+    data->text    = mt_string_new_cstring(""); // REL 2
+    data->glyph_v = VNEW();                    // REL 3
 
     data->style = ku_gen_textstyle_parse(view);
 
@@ -509,7 +508,7 @@ void vh_textinput_add(ku_view_t* view, char* text, char* phtext, void (*on_event
 
     if (text)
     {
-	data->text = cstr_append(data->text, text);
+	data->text = mt_string_append(data->text, text);
 
 	for (int i = 0; i < utf8len(data->text); i++)
 	{
@@ -558,7 +557,7 @@ void vh_textinput_set_text(ku_view_t* view, char* text)
 	/* vh_anim_region(gv, sf, ef, 0,10 + i, AT_EASE); */
 	/* vh_anim_set_event(gv, view, vh_textinput_on_glyph_close); */
     }
-    vec_reset(data->glyph_v);
+    mt_vector_reset(data->glyph_v);
 
     // text_s setup
     // TODO create function from this to reuse
@@ -566,7 +565,7 @@ void vh_textinput_set_text(ku_view_t* view, char* text)
     if (text)
     {
 	if (data->text) REL(data->text);
-	data->text = cstr_new_cstring(text);
+	data->text = mt_string_new_cstring(text);
 
 	for (int i = 0; i < utf8len(data->text); i++)
 	{

@@ -1,11 +1,11 @@
 #ifndef ku_gen_type_h
 #define ku_gen_type_h
 
+#include "mt_vector.c"
 #include "vh_button.c"
 #include "vh_slider.c"
-#include "zc_vector.c"
 
-void ku_gen_type_apply(vec_t* views, void (*button_event)(vh_button_event_t), void (*slider_event)(vh_slider_event_t));
+void ku_gen_type_apply(mt_vector_t* views, void (*button_event)(vh_button_event_t), void (*slider_event)(vh_slider_event_t));
 
 #endif
 
@@ -15,7 +15,7 @@ void ku_gen_type_apply(vec_t* views, void (*button_event)(vh_button_event_t), vo
 #include "tg_css.c"
 #include "tg_text.c"
 
-void ku_gen_type_apply(vec_t* views, void (*button_event)(vh_button_event_t), void (*slider_event)(vh_slider_event_t))
+void ku_gen_type_apply(mt_vector_t* views, void (*button_event)(vh_button_event_t), void (*slider_event)(vh_slider_event_t))
 {
     for (int index = 0; index < views->length; index++)
     {

@@ -7,13 +7,13 @@
 #include "ku_renderer_egl.c"
 #include "ku_renderer_soft.c"
 #include "ku_window.c"
+#include "mt_bitmap_ext.c"
+#include "mt_log.c"
+#include "mt_map.c"
+#include "mt_path.c"
+#include "mt_string.c"
+#include "mt_time.c"
 #include "ui.c"
-#include "zc_bitmap_ext.c"
-#include "zc_cstring.c"
-#include "zc_log.c"
-#include "zc_map.c"
-#include "zc_path.c"
-#include "zc_time.c"
 #include <SDL.h>
 #include <getopt.h>
 #include <limits.h>
@@ -63,9 +63,9 @@ void init(wl_event_t event)
 
     mmfm.kuwindow = ku_window_create(monitor->logical_width, monitor->logical_height);
 
-    zc_time(NULL);
+    mt_time(NULL);
     ui_init(monitor->logical_width, monitor->logical_height, monitor->scale, mmfm.kuwindow); // DESTROY 3
-    zc_time("ui init");
+    mt_time("ui init");
 
     if (mmfm.record)
     {
@@ -102,14 +102,14 @@ void update(ku_event_t ev)
 	{
 	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirtyrect);
 
-	    /* zc_log_debug("drt %i %i %i %i", (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h); */
-	    /* zc_log_debug("drt prev %i %i %i %i", (int) mmfm.dirtyrect.x, (int) mmfm.dirtyrect.y, (int) mmfm.dirtyrect.w, (int) mmfm.dirtyrect.h); */
-	    /* zc_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
+	    /* mt_log_debug("drt %i %i %i %i", (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h); */
+	    /* mt_log_debug("drt prev %i %i %i %i", (int) mmfm.dirtyrect.x, (int) mmfm.dirtyrect.y, (int) mmfm.dirtyrect.w, (int) mmfm.dirtyrect.h); */
+	    /* mt_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
-	    /* zc_time(NULL); */
+	    /* mt_time(NULL); */
 	    if (mmfm.softrender) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
 	    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
-	    /* zc_time("Render"); */
+	    /* mt_time("Render"); */
 	    /* nanosleep((const struct timespec[]){{0, 100000000L}}, NULL); */
 
 	    ku_wayland_draw_window(mmfm.wlwindow, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
@@ -125,8 +125,8 @@ void update_screenshot()
 {
     static int shotindex = 0;
 
-    char* name = cstr_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
-    char* path = path_new_append(config_get("rec_path"), name);          // REL 2
+    char* name = mt_string_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
+    char* path = mt_path_new_append(config_get("rec_path"), name);            // REL 2
 
     if (mmfm.softrender)
     {
@@ -193,9 +193,9 @@ void destroy()
 
 int main(int argc, char* argv[])
 {
-    zc_log_use_colors(isatty(STDERR_FILENO));
-    zc_log_level_info();
-    zc_time(NULL);
+    mt_log_use_colors(isatty(STDERR_FILENO));
+    mt_log_level_info();
+    mt_time(NULL);
 
     printf("MultiMedia File Manager v" MMFM_VERSION
 	   " by Milan Toth\n"
@@ -256,13 +256,13 @@ int main(int argc, char* argv[])
 		/* if (optarg) printf(" with arg %s", optarg); */
 		break;
 	    case '?': printf("parsing option %c value: %s\n", option, optarg); break;
-	    case 'c': cfg_par = cstr_new_cstring(optarg); break; // REL 0
-	    case 'r': res_par = cstr_new_cstring(optarg); break; // REL 1
-	    case 's': rec_par = cstr_new_cstring(optarg); break; // REL 2
-	    case 'p': rep_par = cstr_new_cstring(optarg); break; // REL 3
-	    case 'f': frm_par = cstr_new_cstring(optarg); break; // REL 4
-	    case 'd': dir_par = cstr_new_cstring(optarg); break; // REL 4
-	    case 'v': zc_log_inc_verbosity(); break;
+	    case 'c': cfg_par = mt_string_new_cstring(optarg); break; // REL 0
+	    case 'r': res_par = mt_string_new_cstring(optarg); break; // REL 1
+	    case 's': rec_par = mt_string_new_cstring(optarg); break; // REL 2
+	    case 'p': rep_par = mt_string_new_cstring(optarg); break; // REL 3
+	    case 'f': frm_par = mt_string_new_cstring(optarg); break; // REL 4
+	    case 'd': dir_par = mt_string_new_cstring(optarg); break; // REL 4
+	    case 'v': mt_log_inc_verbosity(); break;
 	    default: fprintf(stderr, "%s", usage); return EXIT_FAILURE;
 	}
     }
@@ -275,28 +275,28 @@ int main(int argc, char* argv[])
     char cwd[PATH_MAX] = {"~"};
     getcwd(cwd, sizeof(cwd));
 
-    char* wrk_path    = path_new_normalize(cwd, NULL);                                                                          // REL 5
-    char* res_path    = res_par ? path_new_normalize(res_par, wrk_path) : cstr_new_cstring(PKG_DATADIR);                        // REL 7
-    char* cfgdir_path = cfg_par ? path_new_normalize(cfg_par, wrk_path) : path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 8
-    char* css_path    = path_new_append(res_path, "html/main.css");                                                             // REL 9
-    char* html_path   = path_new_append(res_path, "html/main.html");                                                            // REL 10
-    char* cfg_path    = path_new_append(cfgdir_path, "config.kvl");                                                             // REL 12
-    char* per_path    = path_new_append(cfgdir_path, "state.kvl");                                                              // REL 13
-    char* rec_path    = rec_par ? path_new_normalize(rec_par, wrk_path) : NULL;                                                 // REL 14
-    char* rep_path    = rep_par ? path_new_normalize(rep_par, wrk_path) : NULL;                                                 // REL 15
-    char* dir_path    = dir_par ? path_new_normalize(dir_par, wrk_path) : NULL;                                                 // REL 15
+    char* wrk_path    = mt_path_new_normalize(cwd, NULL);                                                                             // REL 5
+    char* res_path    = res_par ? mt_path_new_normalize(res_par, wrk_path) : mt_string_new_cstring(PKG_DATADIR);                      // REL 7
+    char* cfgdir_path = cfg_par ? mt_path_new_normalize(cfg_par, wrk_path) : mt_path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 8
+    char* css_path    = mt_path_new_append(res_path, "html/main.css");                                                                // REL 9
+    char* html_path   = mt_path_new_append(res_path, "html/main.html");                                                               // REL 10
+    char* cfg_path    = mt_path_new_append(cfgdir_path, "config.kvl");                                                                // REL 12
+    char* per_path    = mt_path_new_append(cfgdir_path, "state.kvl");                                                                 // REL 13
+    char* rec_path    = rec_par ? mt_path_new_normalize(rec_par, wrk_path) : NULL;                                                    // REL 14
+    char* rep_path    = rep_par ? mt_path_new_normalize(rep_par, wrk_path) : NULL;                                                    // REL 15
+    char* dir_path    = dir_par ? mt_path_new_normalize(dir_par, wrk_path) : NULL;                                                    // REL 15
 
     // print path info to console
 
-    zc_log_debug("working path  : %s", wrk_path);
-    zc_log_debug("resource path : %s", res_path);
-    zc_log_debug("config path   : %s", cfg_path);
-    zc_log_debug("directory path   : %s", dir_path);
-    zc_log_debug("state path   : %s", per_path);
-    zc_log_debug("css path      : %s", css_path);
-    zc_log_debug("html path     : %s", html_path);
-    zc_log_debug("record path   : %s", rec_path);
-    zc_log_debug("replay path   : %s", rep_path);
+    mt_log_debug("working path  : %s", wrk_path);
+    mt_log_debug("resource path : %s", res_path);
+    mt_log_debug("config path   : %s", cfg_path);
+    mt_log_debug("directory path   : %s", dir_path);
+    mt_log_debug("state path   : %s", per_path);
+    mt_log_debug("css path      : %s", css_path);
+    mt_log_debug("html path     : %s", html_path);
+    mt_log_debug("record path   : %s", rec_path);
+    mt_log_debug("replay path   : %s", rep_path);
 
     // init config
 
@@ -353,7 +353,7 @@ int main(int argc, char* argv[])
     if (rep_path) REL(rep_path); // REL 15
 
 #ifdef DEBUG
-    mem_stats();
+    mt_memory_stats();
 #endif
 
     return 0;

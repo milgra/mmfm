@@ -8,16 +8,16 @@
 typedef struct _ku_window_t ku_window_t;
 struct _ku_window_t
 {
-    ku_view_t* root;
-    vec_t*     views;
-    vec_t*     focusable;
-    ku_view_t* focused;
+    ku_view_t*   root;
+    mt_vector_t* views;
+    mt_vector_t* focusable;
+    ku_view_t*   focused;
 
     int width;
     int height;
 
-    vec_t* implqueue; // views selected by roll over
-    vec_t* explqueue; // views selected by click or activation
+    mt_vector_t* implqueue; // views selected by roll over
+    mt_vector_t* explqueue; // views selected by click or activation
 };
 
 ku_window_t* ku_window_create(int width, int height);
@@ -25,7 +25,7 @@ void         ku_window_add(ku_window_t* window, ku_view_t* view);
 void         ku_window_remove(ku_window_t* window, ku_view_t* view);
 void         ku_window_activate(ku_window_t* window, ku_view_t* view);
 void         ku_window_deactivate(ku_window_t* window, ku_view_t* view);
-void         ku_window_set_focusable(ku_window_t* window, vec_t* views);
+void         ku_window_set_focusable(ku_window_t* window, mt_vector_t* views);
 void         ku_window_event(ku_window_t* window, ku_event_t event);
 ku_rect_t    ku_window_update(ku_window_t* window, uint32_t time);
 
@@ -34,12 +34,10 @@ ku_rect_t    ku_window_update(ku_window_t* window, uint32_t time);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "ku_gl.c"
-#include "zc_log.c"
-#include "zc_map.c"
-#include "zc_time.c"
-#include "zc_util2.c"
-#include "zc_vec2.c"
-#include "zc_vector.c"
+#include "mt_math_2d.c"
+#include "mt_time.c"
+#include "mt_vector.c"
+#include "mt_vector_2d.c"
 #include <xkbcommon/xkbcommon.h>
 
 void ku_window_del(void* p)
@@ -83,15 +81,15 @@ void ku_window_remove(ku_window_t* win, ku_view_t* view)
 
 void ku_window_activate(ku_window_t* win, ku_view_t* view)
 {
-    vec_add_unique_data(win->explqueue, view);
+    mt_vector_add_unique_data(win->explqueue, view);
 }
 
 void ku_window_deactivate(ku_window_t* win, ku_view_t* view)
 {
-    vec_rem(win->explqueue, view);
+    mt_vector_rem(win->explqueue, view);
 }
 
-void ku_window_set_focusable(ku_window_t* window, vec_t* views)
+void ku_window_set_focusable(ku_window_t* window, mt_vector_t* views)
 {
     if (window->focusable) REL(window->focusable);
     window->focusable = RET(views);
@@ -141,7 +139,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	    }
 	}
 
-	vec_reset(win->implqueue);
+	mt_vector_reset(win->implqueue);
 	ku_view_coll_touched(win->root, ev, win->implqueue);
 
 	for (int i = win->implqueue->length - 1; i > -1; i--)
@@ -172,7 +170,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 
 	/* if (ev.type == KU_EVENT_MDOWN) */
 	/* { */
-	vec_reset(win->explqueue);
+	mt_vector_reset(win->explqueue);
 	ku_view_coll_touched(win->root, ev, win->explqueue);
 	/* } */
 
@@ -188,7 +186,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_SCROLL)
     {
-	vec_reset(win->implqueue);
+	mt_vector_reset(win->implqueue);
 	ku_view_coll_touched(win->root, ev, win->implqueue);
 
 	for (int i = win->implqueue->length - 1; i > -1; i--)
@@ -203,7 +201,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_PINCH)
     {
-	vec_reset(win->implqueue);
+	mt_vector_reset(win->implqueue);
 	ku_view_coll_touched(win->root, ev, win->implqueue);
 
 	for (int i = win->implqueue->length - 1; i > -1; i--)
@@ -225,7 +223,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		ku_view_t* v = win->focusable->data[0];
 		win->focused = v;
 		if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_FOCUS});
-		vec_add_unique_data(win->explqueue, v);
+		mt_vector_add_unique_data(win->explqueue, v);
 	    }
 	    else
 	    {
@@ -239,7 +237,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		    {
 			win->focused = NULL;
 			if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_UNFOCUS});
-			vec_rem(win->explqueue, v);
+			mt_vector_rem(win->explqueue, v);
 			break;
 		    }
 		}
@@ -251,7 +249,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		ku_view_t* v = win->focusable->data[index];
 		win->focused = v;
 		if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_FOCUS});
-		vec_add_unique_data(win->explqueue, v);
+		mt_vector_add_unique_data(win->explqueue, v);
 	    }
 	}
 
@@ -280,11 +278,11 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     }
 }
 
-void ku_window_rearrange(ku_window_t* win, ku_view_t* view, vec_t* views)
+void ku_window_rearrange(ku_window_t* win, ku_view_t* view, mt_vector_t* views)
 {
     VADD(views, view);
     if (view->style.unmask == 1) view->style.unmask = 0; // reset unmasking
-    vec_t* vec = view->views;
+    mt_vector_t* vec = view->views;
     for (int i = 0; i < vec->length; i++) ku_window_rearrange(win, vec->data[i], views);
     if (view->style.masked)
     {
@@ -299,7 +297,7 @@ ku_rect_t ku_window_update(ku_window_t* win, uint32_t time)
 
     if (win->root->rearrange == 1)
     {
-	vec_reset(win->views);
+	mt_vector_reset(win->views);
 	ku_window_rearrange(win, win->root, win->views);
 
 	result = win->root->frame.global;

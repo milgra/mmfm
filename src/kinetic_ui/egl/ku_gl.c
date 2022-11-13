@@ -2,7 +2,7 @@
 #define ku_gl_h
 
 #include "ku_bitmap.c"
-#include "zc_vector.c"
+#include "mt_vector.c"
 /* #include <GL/glew.h> */
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
@@ -12,8 +12,8 @@ void ku_gl_init(int max_dev_width, int max_dev_height);
 void ku_gl_destroy();
 void ku_gl_render(ku_bitmap_t* bitmap);
 void ku_gl_render_quad(ku_bitmap_t* bitmap, uint32_t index, bmr_t mask);
-void ku_gl_add_textures(vec_t* views, int force);
-void ku_gl_add_vertexes(vec_t* views);
+void ku_gl_add_textures(mt_vector_t* views, int force);
+void ku_gl_add_vertexes(mt_vector_t* views);
 void ku_gl_clear_rect(ku_bitmap_t* bitmap, int x, int y, int w, int h);
 void ku_gl_save_framebuffer(ku_bitmap_t* bitmap);
 
@@ -25,8 +25,8 @@ void ku_gl_save_framebuffer(ku_bitmap_t* bitmap);
 #include "ku_gl_floatbuffer.c"
 #include "ku_gl_shader.c"
 #include "ku_view.c"
-#include "zc_log.c"
-#include "zc_util3.c"
+#include "mt_log.c"
+#include "mt_math_3d.c"
 
 typedef struct _glbuf_t
 {
@@ -197,7 +197,7 @@ void ku_gl_init(int max_dev_width, int max_dev_height)
 
     if (binsize > value) binsize = value;
 
-    zc_log_info("Texture size will be %i", binsize);
+    mt_log_info("Texture size will be %i", binsize);
 
     kugl.texturesize = binsize;
 
@@ -222,7 +222,7 @@ void ku_gl_destroy()
 
 /* upload textures */
 
-void ku_gl_add_textures(vec_t* views, int force)
+void ku_gl_add_textures(mt_vector_t* views, int force)
 {
     /* reset atlas */
     if (force)
@@ -271,7 +271,7 @@ void ku_gl_add_textures(vec_t* views, int force)
 			{
 			    /* force reset */
 
-			    zc_log_debug("Texture Atlas Reset\n");
+			    mt_log_debug("Texture Atlas Reset\n");
 			    if (force == 0) reset = 1;
 			    break;
 			}
@@ -303,7 +303,7 @@ void ku_gl_add_textures(vec_t* views, int force)
 
 		    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &kugl.texturesize);
 
-		    zc_log_info("Texture size will be %i", kugl.texturesize);
+		    mt_log_info("Texture size will be %i", kugl.texturesize);
 
 		    reset = 1;
 		}
@@ -322,7 +322,7 @@ void ku_gl_add_textures(vec_t* views, int force)
 
 /* upload vertexes */
 
-void ku_gl_add_vertexes(vec_t* views)
+void ku_gl_add_vertexes(mt_vector_t* views)
 {
     ku_floatbuffer_reset(kugl.floatbuffer);
 

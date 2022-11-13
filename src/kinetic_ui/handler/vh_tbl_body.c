@@ -7,8 +7,8 @@
 
 typedef struct _vh_tbl_body_t
 {
-    void*  userdata;
-    vec_t* items;
+    void*        userdata;
+    mt_vector_t* items;
 
     float head_xpos; // horizontal position of head
 
@@ -52,8 +52,6 @@ ku_view_t* vh_tbl_body_item_for_index(ku_view_t* view, int index);
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
-
-#include "zc_log.c"
 
 #define TBL_BODY_PRELOAD_DISTANCE 100.0
 
@@ -150,7 +148,7 @@ void vh_tbl_body_move(
 	{
 	    // load head items if possible
 
-	    ku_view_t* head = vec_head(vh->items);
+	    ku_view_t* head = mt_vector_head(vh->items);
 
 	    if (head->frame.local.y > 0.0 - TBL_BODY_PRELOAD_DISTANCE)
 	    {
@@ -164,7 +162,7 @@ void vh_tbl_body_move(
 		    vh->full = 0; // there is probably more to come
 		    vh->head_index -= 1;
 
-		    vec_ins(vh->items, item, 0);
+		    mt_vector_ins(vh->items, item, 0);
 		    ku_view_insert_subview(view, item, 0);
 
 		    ku_view_set_frame(item, (ku_rect_t){vh->head_xpos, head->frame.local.y - item->frame.local.h, item->frame.local.w, item->frame.local.h});
@@ -183,7 +181,7 @@ void vh_tbl_body_move(
 
 	    // load tail items if possible
 
-	    ku_view_t* tail = vec_tail(vh->items);
+	    ku_view_t* tail = mt_vector_tail(vh->items);
 
 	    if (tail->frame.local.y + tail->frame.local.h < view->frame.local.h + TBL_BODY_PRELOAD_DISTANCE)
 	    {
@@ -270,7 +268,7 @@ void vh_tbl_body_reset(
 	ku_view_remove_from_parent(iview);
     }
 
-    vec_reset(vh->items);
+    mt_vector_reset(vh->items);
 
     vh->head_index = 0;
     vh->tail_index = 0;
@@ -317,7 +315,7 @@ void vh_tbl_body_vjump(
 	ku_view_remove_from_parent(iview);
     }
 
-    vec_reset(vh->items);
+    mt_vector_reset(vh->items);
 
     // request new items
 

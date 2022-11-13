@@ -33,8 +33,6 @@ void vh_drag_drag(ku_view_t* view, ku_view_t* item);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_log.c"
-
 void vh_drag_evt(ku_view_t* view, ku_event_t ev)
 {
     if (ev.type == KU_EVENT_MMOVE && ev.drag)

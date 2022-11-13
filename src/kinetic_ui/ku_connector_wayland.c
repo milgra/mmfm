@@ -24,13 +24,13 @@
 #include <wayland-egl.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include "mt_log.c"
+#include "mt_memory.c"
+#include "mt_time.c"
 #include "pointer-gestures-unstable-v1-client-protocol.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
-#include "zc_log.c"
-#include "zc_memory.c"
-#include "zc_time.c"
 
 #define MAX_MONITOR_NAME_LEN 255
 
@@ -204,7 +204,7 @@ struct wlc_t
     struct zwlr_layer_shell_v1*   layer_shell;   /* active layer shell */
     struct zwlr_layer_surface_v1* layer_surface; /* active layer surface */
 
-    /* TODO store these in vec_t */
+    /* TODO store these in mt_vector_t */
 
     int                   monitor_count;
     int                   window_count;
@@ -293,13 +293,13 @@ int ku_wayland_shm_create()
 
     if (shmid < 0)
     {
-	zc_log_error("shm_open() failed: %s", strerror(errno));
+	mt_log_error("shm_open() failed: %s", strerror(errno));
 	return -1;
     }
 
     if (shm_unlink(shm_name) != 0)
     {
-	zc_log_error("shm_unlink() failed: %s", strerror(errno));
+	mt_log_error("shm_unlink() failed: %s", strerror(errno));
 	return -1;
     }
 
@@ -312,14 +312,14 @@ void* ku_wayland_shm_alloc(const int shmid, const size_t size)
 {
     if (ftruncate(shmid, size) != 0)
     {
-	zc_log_debug("ftruncate() failed: %s", strerror(errno));
+	mt_log_debug("ftruncate() failed: %s", strerror(errno));
 	return NULL;
     }
 
     void* buffer = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shmid, 0);
     if (buffer == MAP_FAILED)
     {
-	zc_log_debug("mmap() failed: %s", strerror(errno));
+	mt_log_debug("mmap() failed: %s", strerror(errno));
 	return NULL;
     }
 
@@ -328,7 +328,7 @@ void* ku_wayland_shm_alloc(const int shmid, const size_t size)
 
 static void ku_wayland_buffer_release(void* data, struct wl_buffer* wl_buffer)
 {
-    /* zc_log_debug("buffer release"); */
+    /* mt_log_debug("buffer release"); */
 }
 
 static const struct wl_buffer_listener buffer_listener = {
@@ -350,7 +350,7 @@ void ku_wayland_create_buffer(struct wl_window* info, int width, int height)
     int fd = ku_wayland_shm_create();
     if (fd < 0)
     {
-	zc_log_error("Shm create failed");
+	mt_log_error("Shm create failed");
 	return;
     }
 
@@ -358,7 +358,7 @@ void ku_wayland_create_buffer(struct wl_window* info, int width, int height)
 
     if (info->shm_data == MAP_FAILED)
     {
-	zc_log_error("mmap failed: %m");
+	mt_log_error("mmap failed: %m");
 	close(fd);
 	return;
     }
@@ -423,14 +423,14 @@ static const struct wl_callback_listener wl_surface_frame_listener = {
 
 static void ku_wayland_layer_surface_configure(void* data, struct zwlr_layer_surface_v1* surface, uint32_t serial, uint32_t width, uint32_t height)
 {
-    /* zc_log_debug("layer surface configure serial %u width %i height %i", serial, width, height); */
+    /* mt_log_debug("layer surface configure serial %u width %i height %i", serial, width, height); */
 
     zwlr_layer_surface_v1_ack_configure(surface, serial);
 }
 
 static void ku_wayland_layer_surface_closed(void* _data, struct zwlr_layer_surface_v1* surface)
 {
-    /* zc_log_debug("layer surface configure"); */
+    /* mt_log_debug("layer surface configure"); */
 }
 
 struct zwlr_layer_surface_v1_listener layer_surface_listener = {
@@ -442,7 +442,7 @@ struct zwlr_layer_surface_v1_listener layer_surface_listener = {
 
 void xdg_toplevel_configure(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height, struct wl_array* states)
 {
-    /* zc_log_debug("xdg toplevel configure w %i h %i", width, height); */
+    /* mt_log_debug("xdg toplevel configure w %i h %i", width, height); */
 
     struct wl_window* info = data;
 
@@ -455,18 +455,18 @@ void xdg_toplevel_configure(void* data, struct xdg_toplevel* xdg_toplevel, int32
 
 void xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel)
 {
-    /* zc_log_debug("xdg toplevel close"); */
+    /* mt_log_debug("xdg toplevel close"); */
     wlc.exit_flag = 1;
 }
 
 void xdg_toplevel_configure_bounds(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height)
 {
-    /* zc_log_debug("xdg toplevel configure bounds w %i h %i", width, height); */
+    /* mt_log_debug("xdg toplevel configure bounds w %i h %i", width, height); */
 }
 
 void xdg_toplevel_wm_capabilities(void* data, struct xdg_toplevel* xdg_toplevel, struct wl_array* capabilities)
 {
-    /* zc_log_debug("xdg toplevel wm capabilities"); */
+    /* mt_log_debug("xdg toplevel wm capabilities"); */
 }
 
 static const struct xdg_toplevel_listener xdg_toplevel_listener = {
@@ -479,7 +479,7 @@ static const struct xdg_toplevel_listener xdg_toplevel_listener = {
 
 static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, uint32_t serial)
 {
-    /* zc_log_debug("xdg surface configure"); */
+    /* mt_log_debug("xdg surface configure"); */
 
     xdg_surface_ack_configure(xdg_surface, serial);
 
@@ -542,7 +542,7 @@ static const struct xdg_surface_listener xdg_surface_listener = {
 
 static void wl_surface_enter(void* userData, struct wl_surface* surface, struct wl_output* output)
 {
-    /* zc_log_debug("wl surface enter"); */
+    /* mt_log_debug("wl surface enter"); */
 
     struct wl_window* info = userData;
 
@@ -552,7 +552,7 @@ static void wl_surface_enter(void* userData, struct wl_surface* surface, struct 
 
 	if (monitor->wl_output == output)
 	{
-	    zc_log_debug("output name %s %i %i", monitor->name, monitor->scale, info->scale);
+	    mt_log_debug("output name %s %i %i", monitor->name, monitor->scale, info->scale);
 
 	    if (monitor->scale != info->scale)
 	    {
@@ -570,7 +570,7 @@ static void wl_surface_enter(void* userData, struct wl_surface* surface, struct 
 
 static void wl_surface_leave(void* userData, struct wl_surface* surface, struct wl_output* output)
 {
-    /* zc_log_debug("wl surface leave"); */
+    /* mt_log_debug("wl surface leave"); */
 }
 
 static const struct wl_surface_listener wl_surface_listener = {
@@ -644,7 +644,7 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
     info->eglwindow = egl_window;
 
-    if (egl_window == EGL_NO_SURFACE) zc_log_error("Cannot create EGL surface");
+    if (egl_window == EGL_NO_SURFACE) mt_log_error("Cannot create EGL surface");
 
     EGLint     numConfigs;
     EGLint     majorVersion;
@@ -800,12 +800,12 @@ void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h)
 
 static void gesture_hold_begin(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, struct wl_surface* surface, uint32_t fingers)
 {
-    zc_log_debug("hold start");
+    mt_log_debug("hold start");
 }
 
 static void gesture_hold_end(void* data, struct zwp_pointer_gesture_hold_v1* hold, uint32_t serial, uint32_t time, int32_t cancelled)
 {
-    zc_log_debug("hold end");
+    mt_log_debug("hold end");
 }
 
 static const struct zwp_pointer_gesture_hold_v1_listener gesture_hold_listener = {
@@ -824,7 +824,7 @@ static void gesture_pinch_begin(void* data, struct zwp_pointer_gesture_pinch_v1*
 
 static void gesture_pinch_update(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t time, wl_fixed_t dx, wl_fixed_t dy, wl_fixed_t scale, wl_fixed_t rotation)
 {
-    /* zc_log_debug("pinch dx %f dy %f scale %f rotation %f", wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation)); */
+    /* mt_log_debug("pinch dx %f dy %f scale %f rotation %f", wl_fixed_to_double(dx), wl_fixed_to_double(dy), wl_fixed_to_double(scale), wl_fixed_to_double(rotation)); */
 
     float delta       = wl_fixed_to_double(scale) - wlc.pointer.scale;
     wlc.pointer.scale = wl_fixed_to_double(scale);
@@ -842,7 +842,7 @@ static void gesture_pinch_update(void* data, struct zwp_pointer_gesture_pinch_v1
 
 static void gesture_pinch_end(void* data, struct zwp_pointer_gesture_pinch_v1* pinch, uint32_t serial, uint32_t time, int32_t cancelled)
 {
-    /* zc_log_debug("pinch end"); */
+    /* mt_log_debug("pinch end"); */
 }
 
 static const struct zwp_pointer_gesture_pinch_v1_listener gesture_pinch_listener = {
@@ -854,17 +854,17 @@ static const struct zwp_pointer_gesture_pinch_v1_listener gesture_pinch_listener
 
 void ku_wayland_pointer_handle_enter(void* data, struct wl_pointer* wl_pointer, uint serial, struct wl_surface* surface, wl_fixed_t surface_x, wl_fixed_t surface_y)
 {
-    /* zc_log_debug("pointer handle enter"); */
+    /* mt_log_debug("pointer handle enter"); */
     /* TODO assign pointer to surface and dispatch to corresponding window/layer */
 }
 void ku_wayland_pointer_handle_leave(void* data, struct wl_pointer* wl_pointer, uint serial, struct wl_surface* surface)
 {
-    /* zc_log_debug("pointer handle leave"); */
+    /* mt_log_debug("pointer handle leave"); */
     /* TODO assign pointer to surface and dispatch to corresponding window/layer */
 }
 void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer, uint time, wl_fixed_t surface_x, wl_fixed_t surface_y)
 {
-    /* zc_log_debug("pointer handle motion %f %f", wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y)); */
+    /* mt_log_debug("pointer handle motion %f %f", wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y)); */
 
     ku_event_t event = init_event();
     event.type       = KU_EVENT_MMOVE;
@@ -882,7 +882,7 @@ void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer,
 
 void ku_wayland_pointer_handle_button(void* data, struct wl_pointer* wl_pointer, uint serial, uint time, uint button, uint state)
 {
-    /* zc_log_debug("pointer handle button %u state %u time %u", button, state, time); */
+    /* mt_log_debug("pointer handle button %u state %u time %u", button, state, time); */
 
     ku_event_t event = init_event();
     event.x          = wlc.pointer.px;
@@ -912,7 +912,7 @@ void ku_wayland_pointer_handle_button(void* data, struct wl_pointer* wl_pointer,
 
 void ku_wayland_pointer_handle_axis(void* data, struct wl_pointer* wl_pointer, uint time, uint axis, wl_fixed_t value)
 {
-    /* zc_log_debug("pointer handle axis %u %i", axis, value); */
+    /* mt_log_debug("pointer handle axis %u %i", axis, value); */
 
     ku_event_t event = init_event();
     event.type       = KU_EVENT_SCROLL;
@@ -928,22 +928,22 @@ void ku_wayland_pointer_handle_axis(void* data, struct wl_pointer* wl_pointer, u
 
 void ku_wayland_pointer_handle_frame(void* data, struct wl_pointer* wl_pointer)
 {
-    /* zc_log_debug("pointer handle frame"); */
+    /* mt_log_debug("pointer handle frame"); */
 }
 
 void ku_wayland_pointer_handle_axis_source(void* data, struct wl_pointer* wl_pointer, uint axis_source)
 {
-    /* zc_log_debug("pointer handle axis source"); */
+    /* mt_log_debug("pointer handle axis source"); */
 }
 
 void ku_wayland_pointer_handle_axis_stop(void* data, struct wl_pointer* wl_pointer, uint time, uint axis)
 {
-    /* zc_log_debug("pointer handle axis stop"); */
+    /* mt_log_debug("pointer handle axis stop"); */
 }
 
 void ku_wayland_pointer_handle_axis_discrete(void* data, struct wl_pointer* wl_pointer, uint axis, int discrete)
 {
-    /* zc_log_debug("pointer handle axis discrete"); */
+    /* mt_log_debug("pointer handle axis discrete"); */
 }
 
 struct wl_pointer_listener pointer_listener =
@@ -963,7 +963,7 @@ struct wl_pointer_listener pointer_listener =
 
 static void keyboard_keymap(void* data, struct wl_keyboard* wl_keyboard, uint32_t format, int32_t fd, uint32_t size)
 {
-    /* zc_log_debug("keyboard keymap"); */
+    /* mt_log_debug("keyboard keymap"); */
 
     wlc.keyboard.xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
@@ -988,12 +988,12 @@ static void keyboard_keymap(void* data, struct wl_keyboard* wl_keyboard, uint32_
 
 static void keyboard_enter(void* data, struct wl_keyboard* wl_keyboard, uint32_t serial, struct wl_surface* surface, struct wl_array* keys)
 {
-    /* zc_log_debug("keyboard enter"); */
+    /* mt_log_debug("keyboard enter"); */
 }
 
 static void keyboard_leave(void* data, struct wl_keyboard* wl_keyboard, uint32_t serial, struct wl_surface* surface)
 {
-    /* zc_log_debug("keyboard leave"); */
+    /* mt_log_debug("keyboard leave"); */
 }
 
 static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t _key_state)
@@ -1089,7 +1089,7 @@ static void keyboard_repeat_info(void* data, struct wl_keyboard* wl_keyboard, in
 
 static void keyboard_modifiers(void* data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group)
 {
-    /* zc_log_debug("keyboard modifiers"); */
+    /* mt_log_debug("keyboard modifiers"); */
     xkb_state_update_mask(wlc.keyboard.xkb_state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
     wlc.keyboard.control = xkb_state_mod_name_is_active(wlc.keyboard.xkb_state, XKB_MOD_NAME_CTRL, XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED);
     wlc.keyboard.shift   = xkb_state_mod_name_is_active(wlc.keyboard.xkb_state, XKB_MOD_NAME_SHIFT, XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED);
@@ -1120,13 +1120,13 @@ static const struct xdg_wm_base_listener xdg_wm_base_listener = {
 static void ku_wayland_xdg_output_handle_logical_position(void* data, struct zxdg_output_v1* xdg_output, int32_t x, int32_t y)
 {
     /* struct monitor_info* monitor = data; */
-    /* zc_log_debug("xdg output handle logical position, %i %i for monitor %i", x, y, monitor->index); */
+    /* mt_log_debug("xdg output handle logical position, %i %i for monitor %i", x, y, monitor->index); */
 }
 
 static void ku_wayland_xdg_output_handle_logical_size(void* data, struct zxdg_output_v1* xdg_output, int32_t width, int32_t height)
 {
     struct monitor_info* monitor = data;
-    /* zc_log_debug("xdg output handle logical size, %i %i for monitor %i", width, height, monitor->index); */
+    /* mt_log_debug("xdg output handle logical size, %i %i for monitor %i", width, height, monitor->index); */
 
     monitor->logical_width  = width;
     monitor->logical_height = height;
@@ -1135,7 +1135,7 @@ static void ku_wayland_xdg_output_handle_logical_size(void* data, struct zxdg_ou
 static void ku_wayland_xdg_output_handle_done(void* data, struct zxdg_output_v1* xdg_output)
 {
     /* struct monitor_info* monitor = data; */
-    /* zc_log_debug("xdg output handle done, for monitor %i", monitor->index); */
+    /* mt_log_debug("xdg output handle done, for monitor %i", monitor->index); */
 }
 
 static void ku_wayland_xdg_output_handle_name(void* data, struct zxdg_output_v1* xdg_output, const char* name)
@@ -1143,13 +1143,13 @@ static void ku_wayland_xdg_output_handle_name(void* data, struct zxdg_output_v1*
     struct monitor_info* monitor = data;
     strncpy(monitor->name, name, MAX_MONITOR_NAME_LEN);
 
-    /* zc_log_debug("xdg output handle name, %s for monitor %i", name, monitor->index); */
+    /* mt_log_debug("xdg output handle name, %s for monitor %i", name, monitor->index); */
 }
 
 static void ku_wayland_xdg_output_handle_description(void* data, struct zxdg_output_v1* xdg_output, const char* description)
 {
     /* struct monitor_info* monitor = data; */
-    /* zc_log_debug("xdg output handle description for monitor %i", description, monitor->index); */
+    /* mt_log_debug("xdg output handle description for monitor %i", description, monitor->index); */
 }
 
 struct zxdg_output_v1_listener xdg_output_listener = {
@@ -1176,7 +1176,7 @@ static void ku_wayland_wl_output_handle_geometry(
 {
     struct monitor_info* monitor = data;
 
-    /* zc_log_debug( */
+    /* mt_log_debug( */
     /* 	"wl output handle geometry x %i y %i width_mm %i height_mm %i subpixel %i make %s model %s transform %i for monitor %i", */
     /* 	x, */
     /* 	y, */
@@ -1201,7 +1201,7 @@ static void ku_wayland_wl_output_handle_mode(
 {
     struct monitor_info* monitor = data;
 
-    /* zc_log_debug( */
+    /* mt_log_debug( */
     /* 	"wl output handle mode flags %u width %i height %i for monitor %i", */
     /* 	flags, */
     /* 	width, */
@@ -1216,14 +1216,14 @@ static void ku_wayland_wl_output_handle_done(void* data, struct wl_output* wl_ou
 {
     struct monitor_info* monitor = data;
 
-    /* zc_log_debug("wl output handle done for monitor %i", monitor->index); */
+    /* mt_log_debug("wl output handle done for monitor %i", monitor->index); */
 }
 
 static void ku_wayland_wl_output_handle_scale(void* data, struct wl_output* wl_output, int32_t factor)
 {
     struct monitor_info* monitor = data;
 
-    /* zc_log_debug("wl output handle scale %i for monitor %i", factor, monitor->index); */
+    /* mt_log_debug("wl output handle scale %i for monitor %i", factor, monitor->index); */
 
     monitor->scale = factor;
 }
@@ -1239,7 +1239,7 @@ struct wl_output_listener wl_output_listener = {
 
 static void ku_wayland_seat_handle_capabilities(void* data, struct wl_seat* wl_seat, enum wl_seat_capability caps)
 {
-    /* zc_log_debug("seat handle capabilities %i", caps); */
+    /* mt_log_debug("seat handle capabilities %i", caps); */
 
     if (caps & WL_SEAT_CAPABILITY_KEYBOARD)
     {
@@ -1268,7 +1268,7 @@ static void ku_wayland_seat_handle_capabilities(void* data, struct wl_seat* wl_s
 
 static void ku_wayland_seat_handle_name(void* data, struct wl_seat* wl_seat, const char* name)
 {
-    /* zc_log_debug("seat handle name %s", name); */
+    /* mt_log_debug("seat handle name %s", name); */
 }
 
 const struct wl_seat_listener seat_listener = {
@@ -1286,7 +1286,7 @@ static void ku_wayland_handle_global(
     const char*         interface,
     uint32_t            version)
 {
-    zc_log_debug("handle global : %s, version %u", interface, version);
+    mt_log_debug("handle global : %s, version %u", interface, version);
 
     if (strcmp(interface, wl_compositor_interface.name) == 0)
     {
@@ -1354,7 +1354,7 @@ static void ku_wayland_handle_global(
 
 static void ku_wayland_handle_global_remove(void* data, struct wl_registry* registry, uint32_t name)
 {
-    /* zc_log_debug("handle global remove"); */
+    /* mt_log_debug("handle global remove"); */
 }
 
 static const struct wl_registry_listener registry_listener =
@@ -1385,7 +1385,7 @@ void ku_wayland_init(
 	wlc.time_event_timer_fd   = timerfd_create(CLOCK_MONOTONIC, 0);
 	wlc.keyboard.rep_timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
 
-	if (wlc.keyboard.rep_timer_fd < 0) zc_log_error("cannot create key repeat timer");
+	if (wlc.keyboard.rep_timer_fd < 0) mt_log_error("cannot create key repeat timer");
 
 	struct wl_registry* registry = wl_display_get_registry(wlc.display);
 	wl_registry_add_listener(registry, &registry_listener, NULL);
@@ -1427,14 +1427,14 @@ void ku_wayland_init(
 		if (wl_display_flush(wlc.display) < 0)
 		{
 		    if (errno == EAGAIN) continue;
-		    zc_log_error("wayland display flush error");
+		    mt_log_error("wayland display flush error");
 		    break;
 		}
 
 		if (poll(fds, nfds, -1) < 0)
 		{
 		    if (errno == EAGAIN) continue;
-		    zc_log_error("poll error");
+		    mt_log_error("poll error");
 		    break;
 		}
 
@@ -1442,7 +1442,7 @@ void ku_wayland_init(
 		{
 		    if (wl_display_dispatch(wlc.display) < 0)
 		    {
-			zc_log_error("wayland display dispatch error");
+			mt_log_error("wayland display dispatch error");
 			break;
 		    }
 		}
@@ -1484,9 +1484,9 @@ void ku_wayland_init(
 
 	    wl_display_disconnect(wlc.display);
 	}
-	else zc_log_error("compositor not found");
+	else mt_log_error("compositor not found");
     }
-    else zc_log_debug("cannot open display");
+    else mt_log_debug("cannot open display");
 
     REL(wlc.windows[0]);
 

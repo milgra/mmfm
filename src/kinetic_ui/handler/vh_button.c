@@ -50,7 +50,6 @@ void vh_button_set_enabled(ku_view_t* view, int flag);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "vh_anim.c"
-#include "zc_log.c"
 
 void vh_button_on_anim(vh_anim_event_t event)
 {

@@ -1,7 +1,7 @@
 #ifndef ku_floatbuffer_h
 #define ku_floatbuffer_h
 
-#include "zc_memory.c"
+#include "mt_memory.c"
 #include <GL/glew.h>
 #include <string.h>
 
@@ -58,7 +58,7 @@ void ku_floatbuffer_expand(ku_floatbuffer_t* fb)
 {
     assert(fb->cap < UINT32_MAX / 2);
     fb->cap *= 2;
-    fb->data = mem_realloc(fb->data, sizeof(void*) * fb->cap);
+    fb->data = mt_memory_realloc(fb->data, sizeof(void*) * fb->cap);
 }
 
 void ku_floatbuffer_add(ku_floatbuffer_t* fb, GLfloat* data, size_t count)

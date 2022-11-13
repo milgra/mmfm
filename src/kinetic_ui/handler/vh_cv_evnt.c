@@ -46,8 +46,6 @@ void vh_cv_evnt_zoom(ku_view_t* view, float delta);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_log.c"
-
 #define SCROLLBAR 20.0
 
 void vh_cv_evnt_evt(ku_view_t* view, ku_event_t ev)

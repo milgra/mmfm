@@ -24,8 +24,8 @@ void tg_css_add(ku_view_t* view);
 
 #include "ku_draw.c"
 #include "ku_png.c"
-#include "zc_cstring.c"
-#include "zc_log.c"
+#include "mt_log.c"
+#include "mt_string.c"
 
 void tg_css_gen(ku_view_t* view)
 {
@@ -84,7 +84,7 @@ void tg_css_gen(ku_view_t* view)
 
 void tg_css_add(ku_view_t* view)
 {
-    if (view->tex_gen != NULL) zc_log_debug("Text generator already exist for view, cannot create a new one : %s", view->id);
+    if (view->tex_gen != NULL) mt_log_debug("Text generator already exist for view, cannot create a new one : %s", view->id);
     else
     {
 	view->tex_gen = tg_css_gen;

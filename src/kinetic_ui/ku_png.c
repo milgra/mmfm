@@ -13,8 +13,8 @@ void ku_png_load_into(char* path, ku_bitmap_t* bitmap);
 
 #define PNG_DEBUG 3
 #include "ku_draw.c"
-#include "zc_log.c"
-#include "zc_memory.c"
+#include "mt_log.c"
+#include "mt_memory.c"
 #include <png.h>
 #include <string.h>
 
@@ -49,21 +49,21 @@ void ku_png_get_size(char* path, int* width, int* height)
 			*width  = png_get_image_width(png_ptr, info_ptr);
 			*height = png_get_image_height(png_ptr, info_ptr);
 		    }
-		    else zc_log_error("png init io failed");
+		    else mt_log_error("png init io failed");
 
 		    png_destroy_info_struct(png_ptr, &info_ptr);
 		}
-		else zc_log_error("png_create_info_struct failed");
+		else mt_log_error("png_create_info_struct failed");
 
 		png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 	    }
-	    else zc_log_error("png_create_read_struct failed");
+	    else mt_log_error("png_create_read_struct failed");
 	}
-	else zc_log_error("Not a PNG file");
+	else mt_log_error("Not a PNG file");
 
 	fclose(fp);
     }
-    else zc_log_error("Cannot open %s for read", path);
+    else mt_log_error("Cannot open %s for read", path);
 }
 
 void ku_png_load_into(char* path, ku_bitmap_t* bitmap)
@@ -127,23 +127,23 @@ void ku_png_load_into(char* path, ku_bitmap_t* bitmap)
 
 			    REL(rawbm);
 			}
-			else zc_log_error("Cannot read PNG");
+			else mt_log_error("Cannot read PNG");
 		    }
-		    else zc_log_error("png init io failed");
+		    else mt_log_error("png init io failed");
 
 		    png_destroy_info_struct(png_ptr, &info_ptr);
 		}
-		else zc_log_error("png_create_info_struct failed");
+		else mt_log_error("png_create_info_struct failed");
 
 		png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 	    }
-	    else zc_log_error("png_create_read_struct failed");
+	    else mt_log_error("png_create_read_struct failed");
 	}
-	else zc_log_error("Not a PNG file");
+	else mt_log_error("Not a PNG file");
 
 	fclose(fp);
     }
-    else zc_log_error("Cannot open %s for read", path);
+    else mt_log_error("Cannot open %s for read", path);
 }
 
 #endif

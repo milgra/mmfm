@@ -4,7 +4,7 @@
 #include "ku_bitmap.c"
 #include "ku_event.c"
 #include "ku_rect.c"
-#include "zc_vector.c"
+#include "mt_vector.c"
 #include <math.h>
 
 #define GETV(V, ID) ku_view_get_subview(V, ID)
@@ -137,14 +137,14 @@ struct _ku_view_t
     char blocks_touch;  /* blocks touch events */
     char blocks_scroll; /* blocks scroll events */
 
-    char* id;          /* identifier for handling view */
-    char* class;       /* css class(es) */
-    char*      script; /* script */
-    char*      type;   /* html type (button,checkbox) */
-    char*      text;   /* html text */
-    vec_t*     views;  /* subviews */
-    ku_view_t* parent; /* parent view */
-    uint32_t   index;  /* depth */
+    char* id;            /* identifier for handling view */
+    char* class;         /* css class(es) */
+    char*        script; /* script */
+    char*        type;   /* html type (button,checkbox) */
+    char*        text;   /* html text */
+    mt_vector_t* views;  /* subviews */
+    ku_view_t*   parent; /* parent view */
+    uint32_t     index;  /* depth */
 
     frame_t   frame;
     vstyle_t  style;
@@ -168,7 +168,7 @@ void       ku_view_remove_from_parent(ku_view_t* view);
 void       ku_view_set_parent(ku_view_t* view, ku_view_t* parent);
 
 void       ku_view_evt(ku_view_t* view, ku_event_t ev); /* general event, sending to all views */
-void       ku_view_coll_touched(ku_view_t* view, ku_event_t ev, vec_t* queue);
+void       ku_view_coll_touched(ku_view_t* view, ku_event_t ev, mt_vector_t* queue);
 ku_view_t* ku_view_get_subview(ku_view_t* view, char* id);
 void       ku_view_gen_texture(ku_view_t* view);
 void       ku_view_set_masked(ku_view_t* view, char masked);
@@ -191,9 +191,9 @@ void ku_view_calc_global(ku_view_t* view);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_cstring.c"
-#include "zc_log.c"
-#include "zc_memory.c"
+#include "mt_log.c"
+#include "mt_memory.c"
+#include "mt_string.c"
 #include <limits.h>
 
 int ku_view_cnt = 0;
@@ -221,7 +221,7 @@ void ku_view_del(void* pointer)
 ku_view_t* ku_view_new(char* id, ku_rect_t frame)
 {
     ku_view_t* view         = CAL(sizeof(ku_view_t), ku_view_del, ku_view_desc);
-    view->id                = cstr_new_cstring(id);
+    view->id                = mt_string_new_cstring(id);
     view->views             = VNEW();
     view->frame.local       = frame;
     view->frame.global      = frame;
@@ -317,7 +317,7 @@ void ku_view_insert_subview(ku_view_t* view, ku_view_t* subview, uint32_t index)
 	}
     }
 
-    vec_ins(view->views, subview, index);
+    mt_vector_ins(view->views, subview, index);
 
     /* notify root about rearrange */
     ku_view_t* tview = view;
@@ -354,14 +354,14 @@ void ku_view_set_parent(ku_view_t* view, ku_view_t* parent)
     view->parent = parent;
 }
 
-void ku_view_coll_touched(ku_view_t* view, ku_event_t ev, vec_t* queue)
+void ku_view_coll_touched(ku_view_t* view, ku_event_t ev, mt_vector_t* queue)
 {
     if (ev.x <= view->frame.global.x + view->frame.global.w &&
 	ev.x >= view->frame.global.x &&
 	ev.y <= view->frame.global.y + view->frame.global.h &&
 	ev.y >= view->frame.global.y)
     {
-	vec_add_unique_data(queue, view);
+	mt_vector_add_unique_data(queue, view);
 	for (int i = 0; i < view->views->length; i++)
 	{
 	    ku_view_t* v = view->views->data[i];
@@ -669,7 +669,7 @@ void ku_view_draw_delimiter(ku_view_t* view)
     if (view->parent)
     {
 	ku_view_draw_delimiter(view->parent);
-	uint32_t index = vec_index_of_data(view->parent->views, view);
+	uint32_t index = mt_vector_index_of_data(view->parent->views, view);
 	if (index == view->parent->views->length - 1)
 	    printf("    ");
 	else
@@ -691,11 +691,11 @@ void ku_view_describe(void* pointer, int level)
     if (view->parent)
     {
 	ku_view_draw_delimiter(view->parent);
-	if (vec_index_of_data(view->parent->views, view) == view->parent->views->length - 1) arrow = "└── ";
+	if (mt_vector_index_of_data(view->parent->views, view) == view->parent->views->length - 1) arrow = "└── ";
 	printf("%s", arrow);
     }
 
-    printf("%s [x:%.2f y:%.2f w:%.2f h:%.2f eh:%i tg:%i rc:%zu]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->handler != NULL, view->tex_gen != NULL, mem_retaincount(view));
+    printf("%s [x:%.2f y:%.2f w:%.2f h:%.2f eh:%i tg:%i rc:%zu]\n", view->id, view->frame.local.x, view->frame.local.y, view->frame.local.w, view->frame.local.h, view->handler != NULL, view->tex_gen != NULL, mt_memory_retaincount(view));
 
     for (int i = 0; i < view->views->length; i++) ku_view_describe(view->views->data[i], level + 1);
 }

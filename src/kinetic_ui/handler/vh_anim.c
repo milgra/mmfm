@@ -2,8 +2,8 @@
 #define vh_anim_h
 
 #include "ku_view.c"
-#include "zc_util2.c"
-#include "zc_vec2.c"
+#include "mt_math_2d.c"
+#include "mt_vector_2d.c"
 
 typedef enum _animtype_t
 {
@@ -68,8 +68,6 @@ void vh_anim_add(ku_view_t* view, void (*on_event)(vh_anim_event_t), void* userd
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
-
-#include "zc_log.c"
 
 void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 {

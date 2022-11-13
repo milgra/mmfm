@@ -3,18 +3,18 @@
 
 #include "ku_bitmap.c"
 #include "ku_rect.c"
-#include "zc_vector.c"
+#include "mt_vector.c"
 
-void ku_renderer_software_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty);
+void ku_renderer_software_render(mt_vector_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
 #include "ku_view.c"
-#include "zc_time.c"
+#include "mt_time.c"
 
-void ku_renderer_software_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty)
+void ku_renderer_software_render(mt_vector_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty)
 {
     /* cut out dirty rect */
 

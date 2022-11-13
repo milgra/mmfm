@@ -2,22 +2,22 @@
 #define ku_gen_css_h
 
 #include "ku_view.c"
-#include "zc_vector.c"
+#include "mt_vector.c"
 
-void ku_gen_css_apply(vec_t* views, char* csspath, char* respath, float scale);
+void ku_gen_css_apply(mt_vector_t* views, char* csspath, char* respath, float scale);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
 #include "ku_css.c"
-#include "zc_log.c"
+#include "mt_log.c"
 #include <limits.h>
 
-void ku_gen_css_apply_style(ku_view_t* view, map_t* style, char* respath, float scale)
+void ku_gen_css_apply_style(ku_view_t* view, mt_map_t* style, char* respath, float scale)
 {
-    vec_t* keys = VNEW(); // REL 0
-    map_keys(style, keys);
+    mt_vector_t* keys = VNEW(); // REL 0
+    mt_map_keys(style, keys);
 
     for (int index = 0; index < keys->length; index++)
     {
@@ -33,16 +33,16 @@ void ku_gen_css_apply_style(ku_view_t* view, map_t* style, char* respath, float 
 	{
 	    if (strstr(val, "url") != NULL)
 	    {
-		char* url = CAL(sizeof(char) * strlen(val), NULL, cstr_describe); // REL 0
+		char* url = CAL(sizeof(char) * strlen(val), NULL, mt_string_describe); // REL 0
 		memcpy(url, val + 5, strlen(val) - 7);
-		char* imagepath              = cstr_new_format(100, "%s/img/%s", respath, url);
+		char* imagepath              = mt_string_new_format(100, "%s/img/%s", respath, url);
 		view->style.background_image = imagepath;
 		REL(url); // REL 0
 	    }
 	}
 	else if (strcmp(key, "font-family") == 0)
 	{
-	    char* url = CAL(sizeof(char) * strlen(val), NULL, cstr_describe); // REL 0
+	    char* url = CAL(sizeof(char) * strlen(val), NULL, mt_string_describe); // REL 0
 	    memcpy(url, val + 1, strlen(val) - 2);
 	    view->style.font_family = url;
 	}
@@ -259,10 +259,10 @@ void ku_gen_css_apply_style(ku_view_t* view, map_t* style, char* respath, float 
     REL(keys);
 }
 
-void ku_gen_css_apply(vec_t* views, char* csspath, char* respath, float scale)
+void ku_gen_css_apply(mt_vector_t* views, char* csspath, char* respath, float scale)
 {
-    map_t* styles = ku_css_new(csspath);
-    map_t* style;
+    mt_map_t* styles = ku_css_new(csspath);
+    mt_map_t* style;
 
     for (int index = 0; index < views->length; index++)
     {
@@ -292,7 +292,7 @@ void ku_gen_css_apply(vec_t* views, char* csspath, char* respath, float scale)
 		char cls[100] = {0};
 		snprintf(cls, 100, ".%s", token);
 		style = MGET(styles, cls);
-		// zc_log_debug("applying class %s to %s", cls, view->id);
+		// mt_log_debug("applying class %s to %s", cls, view->id);
 		if (style)
 		{
 		    ku_gen_css_apply_style(view, style, respath, scale);

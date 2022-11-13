@@ -31,8 +31,6 @@ void vh_cv_scrl_scroll_h(ku_view_t* view, int x);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_log.c"
-
 void vh_cv_scrl_del(void* p)
 {
     vh_cv_scrl_t* vh = p;

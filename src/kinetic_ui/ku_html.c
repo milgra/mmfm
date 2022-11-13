@@ -3,9 +3,8 @@
 
 /* TODO write tests */
 
-#include "zc_cstring.c"
-#include "zc_map.c"
-#include "zc_vector.c"
+#include "mt_string.c"
+#include "mt_vector.c"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -2,8 +2,7 @@
 #define vh_tbl_head_h
 
 #include "ku_view.c"
-#include "zc_log.c"
-#include "zc_vector.c"
+#include "mt_vector.c"
 
 typedef struct _vh_tbl_head_t
 {

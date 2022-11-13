@@ -1,39 +1,39 @@
 #ifndef kvlist_h
 #define kvlist_h
 
-#include "zc_map.c"
+#include "mt_map.c"
 #include <stdio.h>
 
-int kvlist_read(char* libpath, map_t* db, char* keyfield);
-int kvlist_write(char* libpath, map_t* db);
+int kvlist_read(char* libpath, mt_map_t* db, char* keyfield);
+int kvlist_write(char* libpath, mt_map_t* db);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_cstr_ext.c"
-#include "zc_cstring.c"
-#include "zc_log.c"
+#include "mt_log.c"
+#include "mt_string.c"
+#include "mt_string_ext.c"
 #include <limits.h>
 
-int kvlist_read(char* libpath, map_t* db, char* keyfield)
+int kvlist_read(char* libpath, mt_map_t* db, char* keyfield)
 {
     int   retv  = -1;
-    char* dbstr = cstr_new_file(libpath); // REL 0
+    char* dbstr = mt_string_new_file(libpath); // REL 0
 
     if (dbstr)
     {
 	retv = 0;
 
-	char*  token = strtok(dbstr, "\n");
-	char*  key   = NULL;
-	map_t* map   = MNEW(); // REL 1
+	char*     token = strtok(dbstr, "\n");
+	char*     key   = NULL;
+	mt_map_t* map   = MNEW(); // REL 1
 
 	while (token)
 	{
 	    if (key)
 	    {
-		char* val = cstr_new_cstring(token);
+		char* val = mt_string_new_cstring(token);
 		MPUT(map, key, val);
 		REL(key);
 		REL(val);
@@ -50,7 +50,7 @@ int kvlist_read(char* libpath, map_t* db, char* keyfield)
 		    key = NULL;
 		}
 		else
-		    key = cstr_new_cstring(token);
+		    key = mt_string_new_cstring(token);
 	    }
 	    token = strtok(NULL, "\n");
 	}
@@ -59,29 +59,29 @@ int kvlist_read(char* libpath, map_t* db, char* keyfield)
 	REL(dbstr); // REL 0
     }
     else
-	zc_log_debug("kvlist_read cannot read file %s", libpath);
+	mt_log_debug("kvlist_read cannot read file %s", libpath);
 
     return retv;
 }
 
-int kvlist_write(char* libpath, map_t* db)
+int kvlist_write(char* libpath, mt_map_t* db)
 {
     int   retv = -1;
-    char* path = cstr_new_format(PATH_MAX + NAME_MAX, "%snew", libpath); // REL 0
-    FILE* file = fopen(path, "w");                                       // CLOSE 0
+    char* path = mt_string_new_format(PATH_MAX + NAME_MAX, "%snew", libpath); // REL 0
+    FILE* file = fopen(path, "w");                                            // CLOSE 0
 
     if (file)
     {
-	retv        = 0;
-	vec_t* vals = VNEW(); // REL 1
-	map_values(db, vals);
+	retv              = 0;
+	mt_vector_t* vals = VNEW(); // REL 1
+	mt_map_values(db, vals);
 
 	for (int vali = 0; vali < vals->length; vali++)
 	{
-	    map_t* entry = vals->data[vali];
-	    vec_t* keys  = VNEW(); // REL 2
+	    mt_map_t*    entry = vals->data[vali];
+	    mt_vector_t* keys  = VNEW(); // REL 2
 
-	    map_keys(entry, keys);
+	    mt_map_keys(entry, keys);
 
 	    for (int keyi = 0; keyi < keys->length; keyi++)
 	    {
@@ -108,10 +108,10 @@ int kvlist_write(char* libpath, map_t* db)
 	    if (rename(path, libpath) != 0) retv = -1;
 	}
 	else
-	    zc_log_error("ERROR kvlist_write cannot write file");
+	    mt_log_error("ERROR kvlist_write cannot write file");
     }
     else
-	zc_log_error("ERROR kvlist_write cannot open file %s", path);
+	mt_log_error("ERROR kvlist_write cannot open file %s", path);
 
     REL(path); // REL 0
 

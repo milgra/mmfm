@@ -84,7 +84,7 @@ void ku_bitmap_blend_rect(ku_bitmap_t* dst, int x, int y, int w, int h, uint32_t
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "zc_memory.c"
+#include "mt_memory.c"
 #include <assert.h>
 #include <string.h>
 

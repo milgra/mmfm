@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 void ku_gl_init(int max_dev_width, int max_dev_height);
+void ku_gl_destroy();
 void ku_gl_render(ku_bitmap_t* bitmap);
 void ku_gl_render_quad(ku_bitmap_t* bitmap, uint32_t index, bmr_t mask);
 void ku_gl_add_textures(vec_t* views, int force);
@@ -252,6 +253,17 @@ void ku_gl_init(int max_dev_width, int max_dev_height)
     tex_atlas = ku_gl_create_texture(0, texture_size, texture_size);
 
     glClearColor(0.0, 0.0, 0.0, 0.6);
+}
+
+void ku_gl_destroy()
+{
+    REL(floatbuffer);
+    REL(atlas);
+
+    ku_gl_delete_texture(tex_atlas);
+    ku_gl_delete_vertex_buffer(buffer);
+
+    glDeleteProgram(shader.name);
 }
 
 void ku_gl_add_textures(vec_t* views, int force)

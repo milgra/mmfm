@@ -52,6 +52,7 @@ void ku_window_del(void* p)
     REL(win->views);
     REL(win->implqueue);
     REL(win->explqueue);
+    if (win->focusable) REL(win->focusable);
 }
 
 ku_window_t* ku_window_create(int width, int height)
@@ -225,8 +226,6 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		win->focused = v;
 		if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_FOCUS});
 		vec_add_unique_data(win->explqueue, v);
-
-		printf("FOCUS %s\n", v->id);
 	    }
 	}
 

@@ -23,9 +23,14 @@ void   cstr_describe(void* p, int level);
 #include <ctype.h>
 #include <string.h>
 
+void cstr_del(void* p)
+{
+    /* printf("DEL %s\n", (char*) p); */
+}
+
 char* cstr_new_format(int size, char* format, ...)
 {
-    char*   result = CAL(sizeof(char) * size, NULL, cstr_describe);
+    char*   result = CAL(sizeof(char) * size, cstr_del, cstr_describe);
     va_list args;
 
     va_start(args, format);
@@ -40,7 +45,7 @@ char* cstr_new_cstring(char* string)
     char* result = NULL;
     if (string != NULL)
     {
-	result = CAL((strlen(string) + 1) * sizeof(char), NULL, cstr_describe);
+	result = CAL((strlen(string) + 1) * sizeof(char), cstr_del, cstr_describe);
 	memcpy(result, string, strlen(string));
     }
     return result;
@@ -103,6 +108,8 @@ vec_t* cstr_tokenize(char* str, char* del)
 
 	token = strtok(NULL, del);
     }
+
+    REL(copy);
 
     return result;
 }

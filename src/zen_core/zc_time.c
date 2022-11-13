@@ -19,7 +19,7 @@ void zc_time(char* id)
     {
 	struct timeval ts;
 	gettimeofday(&ts, NULL);
-	zc_log_info("%s DURATION is %lu us", id, (ts.tv_sec - zc_time_stamp.tv_sec) * 1000000 + ts.tv_usec - zc_time_stamp.tv_usec);
+	zc_log_info("%s time is %lu us", id, (ts.tv_sec - zc_time_stamp.tv_sec) * 1000000 + ts.tv_usec - zc_time_stamp.tv_usec);
 	zc_time_stamp = ts;
     }
     else

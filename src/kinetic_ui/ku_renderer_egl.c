@@ -6,6 +6,7 @@
 #include "zc_vector.c"
 
 void ku_renderer_egl_init(int max_device_width, int max_device_height);
+void ku_renderer_egl_destroy();
 void ku_renderer_egl_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty);
 
 #endif
@@ -21,6 +22,11 @@ void ku_renderer_egl_init(int max_device_width, int max_device_height)
     ku_gl_init(max_device_width, max_device_height);
 
     glClearColor(0.0, 0.0, 0.0, 1.0);
+}
+
+void ku_renderer_egl_destroy()
+{
+    ku_gl_destroy();
 }
 
 void ku_renderer_egl_render(vec_t* views, ku_bitmap_t* bitmap, ku_rect_t dirty)

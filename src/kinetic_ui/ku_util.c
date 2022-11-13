@@ -19,7 +19,7 @@ textstyle_t ku_util_gen_textstyle(ku_view_t* view)
     textstyle_t style = {0};
 
     char* font = ku_fontconfig_path(view->style.font_family);
-    strcpy(style.font, font);
+    if (font) strcpy(style.font, font);
 
     style.size = view->style.font_size > 0 ? view->style.font_size : 15;
 

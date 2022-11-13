@@ -152,12 +152,15 @@ char* path_new_normalize1(char* path)
 	}
 
 	if (newtok->length == 0) result = cstr_new_cstring("/");
+
+	REL(newtok);
     }
     else
     {
 	result = cstr_new_cstring("/");
     }
 
+    REL(tokens);
     return result;
 }
 

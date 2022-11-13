@@ -33,6 +33,7 @@ void ui_load_folder(char* folder);
 #include "config.c"
 #include "filemanager.c"
 #include "ku_connector_wayland.c"
+#include "ku_fontconfig.c"
 #include "ku_gen_css.c"
 #include "ku_gen_html.c"
 #include "ku_gen_type.c"
@@ -335,7 +336,7 @@ void ui_load_folder(char* folder)
 	vec_sort(ui.filedatav, ui_comp_entry);
 
 	ku_table_set_data(ui.filetable, ui.filedatav);
-	ku_table_select(ui.filetable, prev_selected);
+	ku_table_select(ui.filetable, prev_selected, 0);
 	REL(files);
 
 	/* jump to item if there is a last visited item */
@@ -354,7 +355,7 @@ void ui_load_folder(char* folder)
 		    break;
 		}
 	    }
-	    if (found) ku_table_select(ui.filetable, index);
+	    if (found) ku_table_select(ui.filetable, index, 0);
 	}
 
 	ui_show_status("Directory %s loaded", ui.current_folder);
@@ -398,7 +399,6 @@ void ui_open_file(map_t* info)
 
     if (strcmp(type, "directory") != 0)
     {
-
 	if (ui.media_state)
 	{
 	    mp_close(ui.media_state);
@@ -409,6 +409,7 @@ void ui_open_file(map_t* info)
 	{
 	    if (ui.pdf_path) REL(ui.pdf_path);
 	    ui.pdf_path       = RET(path);
+	    ui.pdf_page       = -1;
 	    ui.pdf_page_count = pdf_count(path);
 	    ui.media_type     = UI_MT_DOCUMENT;
 	    ui_show_pdf_page(0);
@@ -500,8 +501,8 @@ void ui_delete_selected_files()
 	    map_t* file = ui.filetable->selected_items->data[index];
 	    char*  path = MGET(file, "file/path");
 	    fm_delete(path);
-	    ui_load_folder(ui.current_folder);
 	}
+	ui_load_folder(ui.current_folder);
     }
 }
 
@@ -771,6 +772,19 @@ void ui_on_key_down(vh_key_event_t event)
     }
 
     if (event.ev.keycode == XKB_KEY_Delete) ui_open_approve_popup();
+    if (event.ev.keycode == XKB_KEY_d && event.ev.ctrl_down) ui_open_approve_popup();
+
+    /* TODO should move these to the okaycv popup or its buttons */
+    if (event.ev.keycode == XKB_KEY_Return && ui.okaycv->parent)
+    {
+	ku_view_remove_from_parent(ui.okaycv);
+	ui_delete_selected_files();
+    }
+
+    if (event.ev.keycode == XKB_KEY_Escape && ui.okaycv->parent)
+    {
+	ku_view_remove_from_parent(ui.okaycv);
+    }
 
     if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
     {
@@ -1080,6 +1094,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     ui.basev = RET(bv);
     ku_window_add(ui.window, ui.basev);
+    ku_window_activate(ui.window, ui.basev);
 
     REL(view_list);
 
@@ -1345,23 +1360,33 @@ void ui_destroy()
 
     if (ui.pdf_path) REL(ui.pdf_path);
 
+    REL(ui.cliptable);
+    REL(ui.infotable);
+    REL(ui.filetable);
+
     REL(ui.cliptablev);
     REL(ui.infotablev);
     REL(ui.folder_history);
+
+    REL(ui.current_folder);
+
+    REL(ui.playbtnv);
+    REL(ui.prevbtnv);
+    REL(ui.nextbtnv);
+    REL(ui.plusbtnv);
+    REL(ui.minusbtnv);
 
     REL(ui.focusable_filelist);
     REL(ui.focusable_infolist);
     REL(ui.focusable_cliplist);
 
-    REL(ui.cliptable);
-    REL(ui.infotable);
-    REL(ui.filetable);
     REL(ui.contexttable);
     REL(ui.settingstable);
 
     REL(ui.settingscv);
     REL(ui.contextcv);
     REL(ui.inputcv);
+    REL(ui.okaycv);
 
     REL(ui.filedatav);
     REL(ui.clipdatav);
@@ -1369,7 +1394,9 @@ void ui_destroy()
     REL(ui.basev);
 
     ku_window_remove(ui.window, ui.basev);
+
     ku_text_destroy();
+    ku_fontconfig_delete();
 }
 
 #endif

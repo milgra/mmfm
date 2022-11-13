@@ -252,10 +252,13 @@ void fm_detail(map_t* file)
 
     MPUTR(file, "file/username", cstr_new_format(100, "%s", pws->pw_name));
 
+    /* address crashes here */
+#ifndef DEBUG
     struct group* grp;
     grp = getgrgid(atoi(gid));
 
     MPUTR(file, "file/groupname", cstr_new_format(100, "%s", grp->gr_name));
+#endif
 
     // get mime type with file command
 

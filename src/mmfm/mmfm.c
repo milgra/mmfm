@@ -27,12 +27,11 @@ struct
 {
     char              replay;
     char              record;
-    struct wl_window* window;
-    ku_rect_t         dirty_prev;
+    struct wl_window* wlwindow;
     ku_window_t*      kuwindow;
 
-    int first_render;
-    int use_software_renderer;
+    ku_rect_t dirtyrect;
+    int       softrender;
 } mmfm = {0};
 
 void init(wl_event_t event)
@@ -42,13 +41,13 @@ void init(wl_event_t event)
 
     struct monitor_info* monitor = event.monitors[0];
 
-    if (mmfm.use_software_renderer)
+    if (mmfm.softrender)
     {
-	mmfm.window = ku_wayland_create_window("mmfm", 1200, 600);
+	mmfm.wlwindow = ku_wayland_create_window("mmfm", 1200, 600);
     }
     else
     {
-	mmfm.window = ku_wayland_create_eglwindow("mmfm", 1200, 600);
+	mmfm.wlwindow = ku_wayland_create_eglwindow("mmfm", 1200, 600);
 
 	int max_width  = 0;
 	int max_height = 0;
@@ -81,54 +80,46 @@ void init(wl_event_t event)
     }
 
     ui_update_layout(monitor->logical_width, monitor->logical_height);
+    ui_load_folder(config_get("top_path"));
 }
 
-void event(wl_event_t event)
-{
-}
+/* window update */
 
 void update(ku_event_t ev)
 {
     /* printf("UPDATE %i %i %i\n", ev.type, ev.w, ev.h); */
 
-    /* if (ev.type == KU_EVENT_RESIZE) ku_view_describe(mmfm.kuwindow->root, 0); */
     if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
     if (ev.type == KU_EVENT_FRAME) ui_update_player();
 
     ku_window_event(mmfm.kuwindow, ev);
 
-    if (mmfm.window->frame_cb == NULL)
+    if (mmfm.wlwindow->frame_cb == NULL)
     {
 	ku_rect_t dirty = ku_window_update(mmfm.kuwindow, 0);
 
 	if (dirty.w > 0 && dirty.h > 0)
 	{
-	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirty_prev);
+	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirtyrect);
 
 	    /* zc_log_debug("drt %i %i %i %i", (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h); */
-	    /* zc_log_debug("drt prev %i %i %i %i", (int) mmfm.dirty_prev.x, (int) mmfm.dirty_prev.y, (int) mmfm.dirty_prev.w, (int) mmfm.dirty_prev.h); */
+	    /* zc_log_debug("drt prev %i %i %i %i", (int) mmfm.dirtyrect.x, (int) mmfm.dirtyrect.y, (int) mmfm.dirtyrect.w, (int) mmfm.dirtyrect.h); */
 	    /* zc_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
 
 	    /* zc_time(NULL); */
-	    if (mmfm.use_software_renderer) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum);
-	    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.window->bitmap, sum);
+	    if (mmfm.softrender) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
+	    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
 	    /* zc_time("Render"); */
 	    /* nanosleep((const struct timespec[]){{0, 100000000L}}, NULL); */
 
-	    ku_wayland_draw_window(mmfm.window, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
+	    ku_wayland_draw_window(mmfm.wlwindow, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
 
-	    mmfm.dirty_prev = dirty;
+	    mmfm.dirtyrect = dirty;
 	}
     }
-
-    // post-first-render init
-
-    if (mmfm.first_render == 0)
-    {
-	mmfm.first_render = 1;
-	ui_load_folder(config_get("top_path"));
-    }
 }
+
+/* save window buffer to png */
 
 void update_screenshot()
 {
@@ -137,31 +128,34 @@ void update_screenshot()
     char* name = cstr_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
     char* path = path_new_append(config_get("rec_path"), name);          // REL 2
 
-    if (mmfm.use_software_renderer)
+    if (mmfm.softrender)
     {
-	coder_write_png(path, &mmfm.window->bitmap);
+	coder_write_png(path, &mmfm.wlwindow->bitmap);
     }
     else
     {
-	ku_bitmap_t* bitmap = ku_bitmap_new(mmfm.window->width, mmfm.window->height);
+	ku_bitmap_t* bitmap = ku_bitmap_new(mmfm.wlwindow->width, mmfm.wlwindow->height);
 	ku_gl_save_framebuffer(bitmap);
 	ku_bitmap_t* flipped = bm_new_flip_y(bitmap); // REL 3
 	coder_write_png(path, flipped);
 	REL(flipped);
 	REL(bitmap);
     }
-    ui_update_cursor((ku_rect_t){0, 0, mmfm.window->width, mmfm.window->height});
+    ui_update_cursor((ku_rect_t){0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height});
 }
+
+/* window update during recording */
 
 void update_record(ku_event_t ev)
 {
     update(ev);
-
     evrec_record(ev);
 
     if (ev.type == KU_EVENT_KDOWN && ev.keycode == XKB_KEY_Print) update_screenshot();
     else ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10});
 }
+
+/* window update during replay */
 
 void update_replay(ku_event_t ev)
 {
@@ -181,24 +175,20 @@ void update_replay(ku_event_t ev)
     update(ev);
 }
 
-void render(uint32_t time, uint32_t index, ku_bitmap_t* bm)
-{
-    /* printf("RENDER\n"); */
-    /* zc_time(NULL); */
-    /* int changed = ku_window_render(mmfm.kuwindow,time, bm); */
-    /* zc_time("render"); */
-}
-
 void destroy()
 {
-    if (mmfm.replay) evrec_destroy(); // DESTROY 5
-    if (mmfm.record) evrec_destroy(); // DESTROY 4
+    if (mmfm.replay) evrec_destroy();
+    if (mmfm.record) evrec_destroy();
 
-    ui_destroy(); // DESTROY 3
+    ui_destroy();
 
     REL(mmfm.kuwindow);
 
-    SDL_Quit(); // QUIT 0
+    if (!mmfm.softrender) ku_renderer_egl_destroy();
+
+    ku_wayland_delete_window(mmfm.wlwindow);
+
+    SDL_Quit();
 }
 
 int main(int argc, char* argv[])
@@ -208,7 +198,7 @@ int main(int argc, char* argv[])
     zc_time(NULL);
 
     printf("MultiMedia File Manager v" MMFM_VERSION
-	   " by Milan Toth ( www.milgra.com )\n"
+	   " by Milan Toth\n"
 	   "If you like this app try :\n"
 	   "- Visual Music Player (github.com/milgra/vmp)\n"
 	   "- Wayland Control Panel ( github.com/milgra/wcp )\n"
@@ -217,7 +207,8 @@ int main(int argc, char* argv[])
 	   "Games :\n"
 	   "- Brawl (github.com/milgra/brawl)\n"
 	   "- Cortex ( github.com/milgra/cortex )\n"
-	   "- Termite (github.com/milgra/termite)\n\n");
+	   "- Termite (github.com/milgra/termite)\n"
+	   "Or donate at www.milgra.com\n\n");
 
     const char* usage =
 	"Usage: sov [options]\n"
@@ -260,7 +251,7 @@ int main(int argc, char* argv[])
 	switch (option)
 	{
 	    case 0:
-		if (option_index == 4) mmfm.use_software_renderer = 1;
+		if (option_index == 4) mmfm.softrender = 1;
 		/* printf("option %i %s", option_index, long_options[option_index].name); */
 		/* if (optarg) printf(" with arg %s", optarg); */
 		break;
@@ -336,9 +327,9 @@ int main(int argc, char* argv[])
     if (rec_path) evrec_init_recorder(rec_path); // DESTROY 4
     if (rep_path) evrec_init_player(rep_path);
 
-    if (rec_path != NULL) ku_wayland_init(init, event, update_record, render, destroy, 0);
-    else if (rep_path != NULL) ku_wayland_init(init, event, update_replay, render, destroy, 16);
-    else ku_wayland_init(init, event, update, render, destroy, 0);
+    if (rec_path != NULL) ku_wayland_init(init, update_record, destroy, 0);
+    else if (rep_path != NULL) ku_wayland_init(init, update_replay, destroy, 16);
+    else ku_wayland_init(init, update, destroy, 0);
 
     config_destroy(); // DESTROY 0
 

@@ -108,8 +108,6 @@ void evrec_record(ku_event_t ev)
     rec.lasttime = ev.time;
     rec.normtime = ev.time - rec.delay;
 
-    printf("normtiem %u\n", rec.normtime);
-
     if (ev.type == KU_EVENT_MMOVE) fprintf(rec.file, "%u mmove\n%i %i %f %f %i\n", rec.normtime, ev.x, ev.y, ev.dx, ev.dy, ev.drag);
     if (ev.type == KU_EVENT_MDOWN) fprintf(rec.file, "%u mdown\n%i %i %i %i %i %i\n", rec.normtime, ev.x, ev.y, ev.button, ev.dclick, ev.ctrl_down, ev.shift_down);
     if (ev.type == KU_EVENT_MUP) fprintf(rec.file, "%u mup\n%i %i %i %i %i %i\n", rec.normtime, ev.x, ev.y, ev.button, ev.dclick, ev.ctrl_down, ev.shift_down);

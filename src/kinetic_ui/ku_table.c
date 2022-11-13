@@ -69,7 +69,8 @@ ku_table_t* ku_table_create(
 
 void ku_table_select(
     ku_table_t* table,
-    int32_t     index);
+    int32_t     index,
+    int         add);
 
 void ku_table_set_data(
     ku_table_t* uit, vec_t* data);
@@ -437,8 +438,8 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 
 	if (event.ev.keycode == XKB_KEY_Down || event.ev.keycode == XKB_KEY_Up)
 	{
-	    if (event.ev.keycode == XKB_KEY_Down) ku_table_select(uit, uit->selected_index + 1);
-	    if (event.ev.keycode == XKB_KEY_Up) ku_table_select(uit, uit->selected_index - 1);
+	    if (event.ev.keycode == XKB_KEY_Down) ku_table_select(uit, uit->selected_index + 1, event.ev.shift_down);
+	    if (event.ev.keycode == XKB_KEY_Up) ku_table_select(uit, uit->selected_index - 1, event.ev.shift_down);
 
 	    tevent = (ku_table_event_t){
 		.table          = uit,
@@ -589,7 +590,8 @@ void ku_table_set_data(
 
 void ku_table_select(
     ku_table_t* uit,
-    int32_t     index)
+    int32_t     index,
+    int         add)
 {
     vh_tbl_body_t* bvh = uit->body_v->handler_data;
 
@@ -620,7 +622,7 @@ void ku_table_select(
 	vh_tbl_body_vjump(uit->body_v, uit->selected_index - 1, 1);
     }
 
-    vec_reset(uit->selected_items);
+    if (add == 0) vec_reset(uit->selected_items);
     map_t* sel = uit->items->data[uit->selected_index];
     VADD(uit->selected_items, sel);
 
@@ -629,10 +631,11 @@ void ku_table_select(
     for (int i = 0; i < bvh->items->length; i++)
     {
 	int        realindex = bvh->head_index + i;
+	map_t*     data      = uit->items->data[realindex];
 	ku_view_t* item      = bvh->items->data[i];
 
 	textstyle_t style = realindex % 2 == 0 ? uit->rowastyle : uit->rowbstyle;
-	if (realindex == uit->selected_index) style = uit->rowsstyle;
+	if (vec_index_of_data(uit->selected_items, data) < UINT32_MAX) style = uit->rowsstyle;
 
 	for (int i = 0; i < item->views->length; i++)
 	{

@@ -103,6 +103,11 @@
     color: #FFFFFFFF;
 }
 
+.okaytf {
+    blocks: no;
+    color: #FFFFFFFF;
+}
+
 .settingstable {
     margin-top: 40px;
     margin-bottom: 40px;

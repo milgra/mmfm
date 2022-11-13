@@ -116,9 +116,7 @@ struct _wl_event_t
 
 void ku_wayland_init(
     void (*init)(wl_event_t event),
-    void (*event)(wl_event_t event),
     void (*update)(ku_event_t),
-    void (*render)(uint32_t time, uint32_t index, ku_bitmap_t* bm),
     void (*destroy)(),
     int time_event_delay);
 
@@ -179,9 +177,7 @@ struct wlc_t
     // window state
 
     void (*init)(wl_event_t event);
-    void (*event)(wl_event_t event);
     void (*update)(ku_event_t);
-    void (*render)(uint32_t time, uint32_t index, ku_bitmap_t* bm);
     void (*destroy)();
 
     struct xdg_wm_base* xdg_wm_base;
@@ -893,6 +889,8 @@ void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer,
     event.drag       = drag;
     event.x          = (int) wl_fixed_to_double(surface_x) * wlc.monitor->scale;
     event.y          = (int) wl_fixed_to_double(surface_y) * wlc.monitor->scale;
+    event.ctrl_down  = wlc.keyboard.control;
+    event.shift_down = wlc.keyboard.shift;
 
     px = event.x;
     py = event.y;
@@ -909,6 +907,8 @@ void ku_wayland_pointer_handle_button(void* data, struct wl_pointer* wl_pointer,
     event.x          = px;
     event.y          = py;
     event.button     = button == 272 ? 1 : 3;
+    event.ctrl_down  = wlc.keyboard.control;
+    event.shift_down = wlc.keyboard.shift;
 
     if (state)
     {
@@ -1355,9 +1355,7 @@ static const struct wl_registry_listener registry_listener =
 
 void ku_wayland_init(
     void (*init)(wl_event_t event),
-    void (*event)(wl_event_t event),
     void (*update)(ku_event_t event),
-    void (*render)(uint32_t time, uint32_t index, ku_bitmap_t* bm),
     void (*destroy)(),
     int time_event_interval)
 {
@@ -1365,8 +1363,6 @@ void ku_wayland_init(
     wlc.windows  = CAL(sizeof(struct wl_window) * 16, NULL, NULL);
 
     wlc.init    = init;
-    wlc.event   = event;
-    wlc.render  = render;
     wlc.update  = update;
     wlc.destroy = destroy;
 
@@ -1473,6 +1469,11 @@ void ku_wayland_init(
 	else zc_log_debug("compositor not received");
     }
     else zc_log_debug("cannot open display");
+
+    REL(wlc.windows[0]);
+
+    REL(wlc.monitors);
+    REL(wlc.windows);
 
     (*wlc.destroy)();
 }

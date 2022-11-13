@@ -745,11 +745,10 @@ void ku_wayland_delete_window(struct wl_window* info)
 	eglDestroySurface(info->egldisplay, info->eglsurface);
     }
 
-    xdg_surface_destroy(info->xdg_surface);
-    wl_surface_destroy(info->surface);
-    xdg_toplevel_destroy(info->xdg_toplevel);
-
-    wl_display_roundtrip(wlc.display);
+    /* xdg_surface_destroy(info->xdg_surface); */
+    /* xdg_toplevel_destroy(info->xdg_toplevel); */
+    /* wl_surface_destroy(info->surface); */
+    /* wl_display_roundtrip(wlc.display); */
 }
 
 /* resizes buffer on surface configure */

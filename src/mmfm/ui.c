@@ -981,6 +981,10 @@ void ui_on_text_event(vh_textinput_event_t event)
 	    }
 	    ui_load_folder(valid_path);
 	    REL(valid_path);
+
+	    /* activate file list */
+	    ku_view_t* filetableevnt = GETV(ui.basev, "filetableevt");
+	    ku_window_activate(ui.window, filetableevnt);
 	}
     }
 }
@@ -1120,19 +1124,19 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ui.focusable_infolist = VNEW();
     ui.focusable_cliplist = VNEW();
 
-    VADDR(ui.focusable_filelist, filetableevnt);
-    VADDR(ui.focusable_filelist, previewevt);
-    VADDR(ui.focusable_filelist, pathtv);
+    VADD(ui.focusable_filelist, filetableevnt);
+    VADD(ui.focusable_filelist, previewevt);
+    VADD(ui.focusable_filelist, pathtv);
 
-    VADDR(ui.focusable_infolist, filetableevnt);
-    VADDR(ui.focusable_infolist, infotableevt);
-    VADDR(ui.focusable_infolist, previewevt);
-    VADDR(ui.focusable_infolist, pathtv);
+    VADD(ui.focusable_infolist, filetableevnt);
+    VADD(ui.focusable_infolist, infotableevt);
+    VADD(ui.focusable_infolist, previewevt);
+    VADD(ui.focusable_infolist, pathtv);
 
-    VADDR(ui.focusable_cliplist, filetableevnt);
-    VADDR(ui.focusable_cliplist, cliptableevt);
-    VADDR(ui.focusable_cliplist, previewevt);
-    VADDR(ui.focusable_cliplist, pathtv);
+    VADD(ui.focusable_cliplist, filetableevnt);
+    VADD(ui.focusable_cliplist, cliptableevt);
+    VADD(ui.focusable_cliplist, previewevt);
+    VADD(ui.focusable_cliplist, pathtv);
 
     /* setup visualizer */
 
@@ -1360,6 +1364,10 @@ void ui_destroy()
 
     if (ui.pdf_path) REL(ui.pdf_path);
 
+    REL(ui.focusable_filelist);
+    REL(ui.focusable_infolist);
+    REL(ui.focusable_cliplist);
+
     REL(ui.cliptable);
     REL(ui.infotable);
     REL(ui.filetable);
@@ -1375,10 +1383,6 @@ void ui_destroy()
     REL(ui.nextbtnv);
     REL(ui.plusbtnv);
     REL(ui.minusbtnv);
-
-    REL(ui.focusable_filelist);
-    REL(ui.focusable_infolist);
-    REL(ui.focusable_cliplist);
 
     REL(ui.contexttable);
     REL(ui.settingstable);

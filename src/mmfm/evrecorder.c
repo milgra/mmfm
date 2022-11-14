@@ -69,6 +69,7 @@ void evrec_init_player(char* path)
 		if (strcmp(type, "mdown") == 0) sscanf(line, "%i %i %i %i %i %i\n", &ev.x, &ev.y, &ev.button, &ev.dclick, &ev.ctrl_down, &ev.shift_down);
 		if (strcmp(type, "mup") == 0) sscanf(line, "%i %i %i %i %i %i\n", &ev.x, &ev.y, &ev.button, &ev.dclick, &ev.ctrl_down, &ev.shift_down);
 		if (strcmp(type, "scroll") == 0) sscanf(line, "%f %f\n", &ev.dx, &ev.dy);
+		if (strcmp(type, "pinch") == 0) sscanf(line, "%f\n", &ev.ratio);
 		if (strcmp(type, "kdown") == 0) sscanf(line, "%u\n", &ev.keycode);
 		if (strcmp(type, "kup") == 0) sscanf(line, "%u\n", &ev.keycode);
 		if (strcmp(type, "text") == 0) memcpy(ev.text, line, strlen(line) - 1);
@@ -78,6 +79,7 @@ void evrec_init_player(char* path)
 		if (strcmp(type, "mdown") == 0) ev.type = KU_EVENT_MDOWN;
 		if (strcmp(type, "mup") == 0) ev.type = KU_EVENT_MUP;
 		if (strcmp(type, "scroll") == 0) ev.type = KU_EVENT_SCROLL;
+		if (strcmp(type, "pinch") == 0) ev.type = KU_EVENT_PINCH;
 		if (strcmp(type, "kdown") == 0) ev.type = KU_EVENT_KDOWN;
 		if (strcmp(type, "kup") == 0) ev.type = KU_EVENT_KUP;
 		if (strcmp(type, "text") == 0) ev.type = KU_EVENT_TEXT;
@@ -112,6 +114,7 @@ void evrec_record(ku_event_t ev)
     if (ev.type == KU_EVENT_MDOWN) fprintf(rec.file, "%u mdown\n%i %i %i %i %i %i\n", rec.normtime, ev.x, ev.y, ev.button, ev.dclick, ev.ctrl_down, ev.shift_down);
     if (ev.type == KU_EVENT_MUP) fprintf(rec.file, "%u mup\n%i %i %i %i %i %i\n", rec.normtime, ev.x, ev.y, ev.button, ev.dclick, ev.ctrl_down, ev.shift_down);
     if (ev.type == KU_EVENT_SCROLL) fprintf(rec.file, "%u scroll\n%f %f\n", rec.normtime, ev.dx, ev.dy);
+    if (ev.type == KU_EVENT_PINCH) fprintf(rec.file, "%u pinch\n%f\n", rec.normtime, ev.ratio);
     if (ev.type == KU_EVENT_KDOWN) fprintf(rec.file, "%u kdown\n%u\n", rec.normtime, ev.keycode);
     if (ev.type == KU_EVENT_KUP) fprintf(rec.file, "%u kup\n%u\n", rec.normtime, ev.keycode);
     if (ev.type == KU_EVENT_TEXT) fprintf(rec.file, "%u text\n%s\n", rec.normtime, ev.text);

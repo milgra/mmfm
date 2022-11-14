@@ -1252,7 +1252,7 @@ static void ku_wayland_wl_output_handle_mode(
 
 static void ku_wayland_wl_output_handle_done(void* data, struct wl_output* wl_output)
 {
-    struct monitor_info* monitor = data;
+    /* struct monitor_info* monitor = data; */
 
     /* mt_log_debug("wl output handle done for monitor %i", monitor->index); */
 }

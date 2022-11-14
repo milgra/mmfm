@@ -127,7 +127,7 @@ ku_event_t* evrec_replay(uint32_t time)
     {
 	ku_event_t* event = rec.events->data[rec.index];
 
-	printf("time %u event time %u event type %i keycode %u\n", time, event->time, event->type, event->keycode);
+	/* printf("time %u event time %u event type %i keycode %u\n", time, event->time, event->type, event->keycode); */
 
 	if (event->time < time)
 	{

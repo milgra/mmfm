@@ -9,7 +9,7 @@
 
 /* TODO separate unit tests */
 
-#define MT_MEMORY_DEBUG
+#undef MT_MEMORY_DEBUG
 #ifdef MT_MEMORY_DEBUG
     #define MT_MEMORY_DEBUG_SIZE 1000000 /* maximum areas to store */
     #define MT_MEMORY_DEBUG_INDEX 0      /* head index to stop at error */

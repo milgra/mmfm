@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <wayland-cursor.h>
 #include <wayland-egl.h>
 #include <xkbcommon/xkbcommon.h>
 
@@ -235,6 +236,13 @@ struct wlc_t
     ku_event_t frame_event;
 
     int exit_flag;
+
+    /* cursor */
+
+    struct wl_cursor_theme* cursor_theme;
+    struct wl_cursor*       default_cursor;
+    struct wl_surface*      cursor_surface;
+
 } wlc = {0};
 
 /* init event with time data */
@@ -749,6 +757,7 @@ void ku_wayland_delete_window(struct wl_window* info)
 	wl_region_destroy(info->region);
 	wl_egl_window_destroy(info->eglwindow);
 
+	/* TODO ask wayland devs how to free up egl display properly because now it leaks */
 	eglTerminate(info->egldisplay);
 	eglReleaseThread();
     }
@@ -863,6 +872,22 @@ void ku_wayland_pointer_handle_enter(void* data, struct wl_pointer* wl_pointer, 
 {
     /* mt_log_debug("pointer handle enter"); */
     /* TODO assign pointer to surface and dispatch to corresponding window/layer */
+
+    struct wl_buffer*       buffer;
+    struct wl_cursor*       cursor = wlc.default_cursor;
+    struct wl_cursor_image* image;
+
+    if (wlc.windows[0]->fullscreen)
+	wl_pointer_set_cursor(wl_pointer, serial, NULL, 0, 0);
+    else if (cursor)
+    {
+	image  = wlc.default_cursor->images[0];
+	buffer = wl_cursor_image_get_buffer(image);
+	wl_pointer_set_cursor(wl_pointer, serial, wlc.cursor_surface, image->hotspot_x, image->hotspot_y);
+	wl_surface_attach(wlc.cursor_surface, buffer, 0, 0);
+	wl_surface_damage(wlc.cursor_surface, 0, 0, image->width, image->height);
+	wl_surface_commit(wlc.cursor_surface);
+    }
 }
 void ku_wayland_pointer_handle_leave(void* data, struct wl_pointer* wl_pointer, uint serial, struct wl_surface* surface)
 {
@@ -1307,6 +1332,9 @@ static void ku_wayland_handle_global(
     else if (strcmp(interface, wl_shm_interface.name) == 0)
     {
 	wlc.shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
+
+	wlc.cursor_theme   = wl_cursor_theme_load(NULL, 32, wlc.shm);
+	wlc.default_cursor = wl_cursor_theme_get_cursor(wlc.cursor_theme, "left_ptr");
     }
     else if (strcmp(interface, wl_output_interface.name) == 0)
     {
@@ -1405,6 +1433,8 @@ void ku_wayland_init(
 
 	if (wlc.compositor)
 	{
+	    wlc.cursor_surface = wl_compositor_create_surface(wlc.compositor);
+
 	    /* dispatch init event */
 	    struct _wl_event_t event = {
 		.id            = WL_EVENT_OUTPUT_ADDED,
@@ -1492,6 +1522,10 @@ void ku_wayland_init(
 	    (*wlc.destroy)();
 	}
 	else mt_log_error("compositor not found");
+
+	wl_surface_destroy(wlc.cursor_surface);
+	if (wlc.cursor_theme)
+	    wl_cursor_theme_destroy(wlc.cursor_theme);
 
 	wl_compositor_destroy(wlc.compositor);
 

@@ -47,6 +47,7 @@ mupdf = cc.find_library('mupdf')
 mupdfthird = cc.find_library('mupdf-third')
 
 wayland_client      = dependency('wayland-client')
+wayland_cursor      = dependency('wayland-cursor')
 wayland_protos      = dependency('wayland-protocols')
 wayland_scanner_dep = dependency('wayland-scanner')
 wayland_scanner     = find_program(
@@ -82,7 +83,7 @@ foreach p : protocols
 endforeach
 
 
-mmfm_dependencies = [wayland_client,png,rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau,xkbcommon,egl,wegl]
+mmfm_dependencies = [wayland_client,wayland_cursor,png,rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau,xkbcommon,egl,wegl]
 
 mmfm_version = '"@0@"'.format(meson.project_version())
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'

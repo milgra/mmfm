@@ -1333,7 +1333,7 @@ static void ku_wayland_handle_global(
     {
 	wlc.shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
 
-	wlc.cursor_theme   = wl_cursor_theme_load(NULL, 32, wlc.shm);
+	wlc.cursor_theme   = wl_cursor_theme_load(NULL, 16, wlc.shm);
 	wlc.default_cursor = wl_cursor_theme_get_cursor(wlc.cursor_theme, "left_ptr");
     }
     else if (strcmp(interface, wl_output_interface.name) == 0)

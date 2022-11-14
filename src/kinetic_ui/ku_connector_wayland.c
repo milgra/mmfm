@@ -741,14 +741,22 @@ void ku_wayland_delete_window(struct wl_window* info)
     }
     else if (info->type == WL_WINDOW_EGL)
     {
+	eglMakeCurrent(info->egldisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+
 	eglDestroyContext(info->egldisplay, info->eglcontext);
 	eglDestroySurface(info->egldisplay, info->eglsurface);
+
+	wl_region_destroy(info->region);
+	wl_egl_window_destroy(info->eglwindow);
+
+	eglTerminate(info->egldisplay);
+	eglReleaseThread();
     }
 
-    /* xdg_surface_destroy(info->xdg_surface); */
-    /* xdg_toplevel_destroy(info->xdg_toplevel); */
-    /* wl_surface_destroy(info->surface); */
-    /* wl_display_roundtrip(wlc.display); */
+    xdg_surface_destroy(info->xdg_surface);
+    xdg_toplevel_destroy(info->xdg_toplevel);
+    wl_surface_destroy(info->surface);
+    wl_display_roundtrip(wlc.display);
 }
 
 /* resizes buffer on surface configure */
@@ -1481,9 +1489,13 @@ void ku_wayland_init(
 		if (wlc.exit_flag) break;
 	    }
 
-	    wl_display_disconnect(wlc.display);
+	    (*wlc.destroy)();
 	}
 	else mt_log_error("compositor not found");
+
+	wl_compositor_destroy(wlc.compositor);
+
+	wl_display_disconnect(wlc.display);
     }
     else mt_log_debug("cannot open display");
 
@@ -1491,8 +1503,6 @@ void ku_wayland_init(
 
     REL(wlc.monitors);
     REL(wlc.windows);
-
-    (*wlc.destroy)();
 }
 
 /* request exit */

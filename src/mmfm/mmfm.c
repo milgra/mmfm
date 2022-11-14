@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
 	switch (option)
 	{
 	    case 0:
-		if (option_index == 4) mmfm.softrender = 1;
+		if (option_index == 5) mmfm.softrender = 1;
 		/* printf("option %i %s", option_index, long_options[option_index].name); */
 		/* if (optarg) printf(" with arg %s", optarg); */
 		break;

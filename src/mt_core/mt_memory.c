@@ -240,14 +240,26 @@ void mt_memory_stats()
 
     // print block statistics
 
+    int problem = 0;
+
     for (int index = 1; index < mt_memory_index; index++)
     {
 	if (MT_MEMORY_DEBUG_INDEX == 0 || MT_MEMORY_DEBUG_INDEX == index)
 	{
-	    if (mt_memory_heads[index]->retaincount < 0) printf("OVERRELEASE at %i : %i\n", index, mt_memory_heads[index]->retaincount);
-	    if (mt_memory_heads[index]->retaincount > 0) printf("LEAK at %i : %i\n", index, mt_memory_heads[index]->retaincount);
+	    if (mt_memory_heads[index]->retaincount < 0)
+	    {
+		problem = 1;
+		printf("OVERRELEASE at %i : %i\n", index, mt_memory_heads[index]->retaincount);
+	    }
+	    if (mt_memory_heads[index]->retaincount > 0)
+	    {
+		problem = 1;
+		printf("LEAK at %i : %i\n", index, mt_memory_heads[index]->retaincount);
+	    }
 	}
     }
+
+    if (problem == 0) printf("Everythin seems all right\n");
 }
 
 #endif

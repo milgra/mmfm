@@ -259,7 +259,7 @@ void mt_memory_stats()
 	}
     }
 
-    if (problem == 0) printf("Everythin seems all right\n");
+    if (problem == 0) printf("Everything seems all right\n");
 }
 
 #endif

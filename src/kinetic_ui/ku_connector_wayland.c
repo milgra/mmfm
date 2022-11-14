@@ -744,6 +744,12 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 
 void ku_wayland_delete_window(struct wl_window* info)
 {
+    if (info->frame_cb)
+    {
+	wl_callback_destroy(info->frame_cb);
+	info->frame_cb = NULL;
+    }
+
     if (info->type == WL_WINDOW_NATIVE)
     {
     }

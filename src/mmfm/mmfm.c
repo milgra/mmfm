@@ -177,6 +177,8 @@ void update_replay(ku_event_t ev)
 
 void destroy()
 {
+    ku_wayland_delete_window(mmfm.wlwindow);
+
     if (mmfm.replay) evrec_destroy();
     if (mmfm.record) evrec_destroy();
 
@@ -185,8 +187,6 @@ void destroy()
     REL(mmfm.kuwindow);
 
     if (!mmfm.softrender) ku_renderer_egl_destroy();
-
-    ku_wayland_delete_window(mmfm.wlwindow);
 
     SDL_Quit();
 }

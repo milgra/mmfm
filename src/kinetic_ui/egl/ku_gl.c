@@ -85,7 +85,7 @@ glsha_t ku_gl_create_texture_shader()
 	fsh,
 	2,
 	((const char*[]){"position", "texcoord"}),
-	13,
+	11,
 	((const char*[]){"projection", "sampler[0]", "sampler[1]", "sampler[2]", "sampler[3]", "sampler[4]", "sampler[5]", "sampler[6]", "sampler[7]", "sampler[8]", "sampler[9]"}));
 
     glUseProgram(sha.name);

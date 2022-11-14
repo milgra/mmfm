@@ -352,7 +352,7 @@ int main(int argc, char* argv[])
     if (rec_path) REL(rec_path); // REL 14
     if (rep_path) REL(rep_path); // REL 15
 
-#ifdef DEBUG
+#ifdef MT_MEMORY_DEBUG
     mt_memory_stats();
 #endif
 

@@ -87,7 +87,7 @@ void init(wl_event_t event)
 
 void update(ku_event_t ev)
 {
-    /* printf("UPDATE %i %i %i\n", ev.type, ev.w, ev.h); */
+    /* printf("UPDATE %i %u %i %i\n", ev.type, ev.time, ev.w, ev.h); */
 
     if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
     if (ev.type == KU_EVENT_FRAME) ui_update_player();
@@ -126,7 +126,7 @@ void update_screenshot()
     static int shotindex = 0;
 
     char* name = mt_string_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
-    char* path = mt_path_new_append(config_get("rec_path"), name);            // REL 2
+    char* path = mt_path_new_append(config_get("top_path"), name);            // REL 2
 
     if (mmfm.softrender)
     {

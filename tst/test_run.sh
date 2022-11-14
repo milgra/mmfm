@@ -3,8 +3,9 @@
 if [ $# -eq 0 ]; then
     echo "PLEASE PROVIDE TEST FOLDER"
 else
-    testdir="$1TESTRUN"
+    testdir="$1_TESTRUN"
     echo "REPLAYING $1, TESTDIR $testdir"
+    rm -rf $testdir
     cp -r $1 $testdir 
     cd $testdir
     rm -rf screenshot*

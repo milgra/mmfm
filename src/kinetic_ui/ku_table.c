@@ -501,6 +501,7 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 	    tevent = (ku_table_event_t){
 		.table          = uit,
 		.id             = KU_TABLE_EVENT_SELECT,
+		.ev             = event.ev,
 		.selected_items = uit->selected_items,
 		.selected_index = uit->selected_index,
 		.rowview        = vh_tbl_body_item_for_index(uit->body_v, uit->selected_index)};
@@ -513,9 +514,11 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 	    tevent = (ku_table_event_t){
 		.table          = uit,
 		.id             = KU_TABLE_EVENT_OPEN,
+		.ev             = event.ev,
 		.selected_items = uit->selected_items,
-		.selected_index = event.index,
-		.rowview        = event.rowview};
+		.selected_index = uit->selected_index,
+		.rowview        = vh_tbl_body_item_for_index(uit->body_v, uit->selected_index),
+	    };
 	    (*uit->on_event)(tevent);
 	}
     }

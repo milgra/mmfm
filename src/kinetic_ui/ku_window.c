@@ -16,8 +16,8 @@ struct _ku_window_t
     int width;
     int height;
 
-    mt_vector_t* implqueue; // views selected by roll over
-    mt_vector_t* explqueue; // views selected by click or activation
+    mt_vector_t* ptrqueue; // views collected by pointer events
+    mt_vector_t* actqueue; // views collected by activation
 };
 
 ku_window_t* ku_window_create(int width, int height);
@@ -46,8 +46,8 @@ void ku_window_del(void* p)
 
     REL(win->root);
     REL(win->views);
-    REL(win->implqueue);
-    REL(win->explqueue);
+    REL(win->ptrqueue);
+    REL(win->actqueue);
     if (win->focusable) REL(win->focusable);
 }
 
@@ -55,10 +55,10 @@ ku_window_t* ku_window_create(int width, int height)
 {
     ku_window_t* win = CAL(sizeof(ku_window_t), ku_window_del, NULL);
 
-    win->root      = ku_view_new("root", (ku_rect_t){0, 0, width, height}); // REL 0
-    win->views     = VNEW();
-    win->implqueue = VNEW();
-    win->explqueue = VNEW();
+    win->root     = ku_view_new("root", (ku_rect_t){0, 0, width, height}); // REL 0
+    win->views    = VNEW();
+    win->ptrqueue = VNEW();
+    win->actqueue = VNEW();
 
     win->width  = width;
     win->height = height;
@@ -81,12 +81,12 @@ void ku_window_remove(ku_window_t* win, ku_view_t* view)
 
 void ku_window_activate(ku_window_t* win, ku_view_t* view)
 {
-    mt_vector_add_unique_data(win->explqueue, view);
+    mt_vector_add_unique_data(win->actqueue, view);
 }
 
 void ku_window_deactivate(ku_window_t* win, ku_view_t* view)
 {
-    mt_vector_rem(win->explqueue, view);
+    mt_vector_rem(win->actqueue, view);
 }
 
 void ku_window_set_focusable(ku_window_t* window, mt_vector_t* views)
@@ -120,9 +120,9 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     {
 	ku_event_t outev = ev;
 	outev.type       = KU_EVENT_MMOVE_OUT;
-	for (int i = win->implqueue->length - 1; i > -1; i--)
+	for (int i = win->ptrqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->implqueue->data[i];
+	    ku_view_t* v = win->ptrqueue->data[i];
 	    if (v->needs_touch)
 	    {
 		if (ev.x > v->frame.global.x &&
@@ -139,12 +139,12 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	    }
 	}
 
-	mt_vector_reset(win->implqueue);
-	ku_view_coll_touched(win->root, ev, win->implqueue);
+	mt_vector_reset(win->ptrqueue);
+	ku_view_coll_touched(win->root, ev, win->ptrqueue);
 
-	for (int i = win->implqueue->length - 1; i > -1; i--)
+	for (int i = win->ptrqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->implqueue->data[i];
+	    ku_view_t* v = win->ptrqueue->data[i];
 	    if (v->needs_touch && v->parent)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
@@ -158,9 +158,9 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	if (ev.type == KU_EVENT_MDOWN) outev.type = KU_EVENT_MDOWN_OUT;
 	if (ev.type == KU_EVENT_MUP) outev.type = KU_EVENT_MUP_OUT;
 
-	for (int i = win->implqueue->length - 1; i > -1; i--)
+	for (int i = win->ptrqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->implqueue->data[i];
+	    ku_view_t* v = win->ptrqueue->data[i];
 	    if (v->needs_touch)
 	    {
 		if (v->handler) (*v->handler)(v, outev);
@@ -168,16 +168,12 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	    }
 	}
 
-	/* MUP removes activated textfield from implqueue */
-	/* if (ev.type == KU_EVENT_MDOWN) */
-	/* { */
-	mt_vector_reset(win->implqueue);
-	ku_view_coll_touched(win->root, ev, win->implqueue);
-	/* } */
+	mt_vector_reset(win->ptrqueue);
+	ku_view_coll_touched(win->root, ev, win->ptrqueue);
 
-	for (int i = win->implqueue->length - 1; i > -1; i--)
+	for (int i = win->ptrqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->implqueue->data[i];
+	    ku_view_t* v = win->ptrqueue->data[i];
 	    if (v->needs_touch && v->parent)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
@@ -187,12 +183,12 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_SCROLL)
     {
-	mt_vector_reset(win->implqueue);
-	ku_view_coll_touched(win->root, ev, win->implqueue);
+	mt_vector_reset(win->ptrqueue);
+	ku_view_coll_touched(win->root, ev, win->ptrqueue);
 
-	for (int i = win->implqueue->length - 1; i > -1; i--)
+	for (int i = win->ptrqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->implqueue->data[i];
+	    ku_view_t* v = win->ptrqueue->data[i];
 	    if (v->needs_touch && v->parent)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
@@ -202,12 +198,12 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_PINCH)
     {
-	mt_vector_reset(win->implqueue);
-	ku_view_coll_touched(win->root, ev, win->implqueue);
+	mt_vector_reset(win->ptrqueue);
+	ku_view_coll_touched(win->root, ev, win->ptrqueue);
 
-	for (int i = win->implqueue->length - 1; i > -1; i--)
+	for (int i = win->ptrqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->implqueue->data[i];
+	    ku_view_t* v = win->ptrqueue->data[i];
 	    if (v->needs_touch && v->parent)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
@@ -224,7 +220,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		ku_view_t* v = win->focusable->data[0];
 		win->focused = v;
 		if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_FOCUS});
-		mt_vector_add_unique_data(win->explqueue, v);
+		mt_vector_add_unique_data(win->actqueue, v);
 	    }
 	    else
 	    {
@@ -238,7 +234,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		    {
 			win->focused = NULL;
 			if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_UNFOCUS});
-			mt_vector_rem(win->explqueue, v);
+			mt_vector_rem(win->actqueue, v);
 			break;
 		    }
 		}
@@ -250,13 +246,13 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		ku_view_t* v = win->focusable->data[index];
 		win->focused = v;
 		if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_FOCUS});
-		mt_vector_add_unique_data(win->explqueue, v);
+		mt_vector_add_unique_data(win->actqueue, v);
 	    }
 	}
 
-	for (int i = win->explqueue->length - 1; i > -1; i--)
+	for (int i = win->actqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->explqueue->data[i];
+	    ku_view_t* v = win->actqueue->data[i];
 
 	    if (v->needs_key)
 	    {
@@ -267,9 +263,9 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_TEXT)
     {
-	for (int i = win->explqueue->length - 1; i > -1; i--)
+	for (int i = win->actqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->explqueue->data[i];
+	    ku_view_t* v = win->actqueue->data[i];
 	    if (v->needs_text)
 	    {
 		if (v->handler) (*v->handler)(v, ev);

@@ -87,6 +87,7 @@ struct _ui_t
     ku_view_t* contextcv;  /* context popup container view */
     ku_view_t* inputcv;    /* input popup container view */
     ku_view_t* okaycv;     /* okay popup container view */
+    ku_view_t* okaypopup;  /* okay popup view for grabbing key events */
 
     ku_view_t* seekbarv;
     ku_view_t* minusbtnv;
@@ -520,6 +521,7 @@ void ui_open_approve_popup()
 	{
 	    ku_view_add_subview(ui.basev, ui.okaycv);
 	    ku_view_layout(ui.basev);
+	    ku_window_activate(ui.window, ui.okaypopup);
 	}
     }
 }
@@ -566,6 +568,9 @@ void ui_show_context_menu(float x, float y)
 	iframe.y                = y;
 	ku_view_set_frame(contextpopup, iframe);
 	ku_view_add_subview(ui.basev, ui.contextcv);
+
+	ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttableevt");
+	ku_window_activate(ui.window, contexttableevt);
     }
 }
 
@@ -573,6 +578,7 @@ void ui_show_context_menu(float x, float y)
 
 void ui_show_input_popup(float x, float y, char* text)
 {
+    printf("SHOW IUNPUT\n");
     ku_rect_t iframe = ui.inputbckv->frame.global;
     iframe.x         = x;
     iframe.y         = y;
@@ -588,6 +594,7 @@ void ui_show_input_popup(float x, float y, char* text)
 
 void ui_cancel_input()
 {
+    printf("CANCEL IUNPUT\n");
     ku_view_remove_subview(ui.basev, ui.inputcv);
     ku_window_deactivate(ui.window, ui.inputtv);
     vh_textinput_activate(ui.inputtv, 0);
@@ -670,10 +677,29 @@ void on_table_event(ku_table_event_t event)
     {
 	/* remove context popup immediately */
 
-	ku_view_remove_from_parent(ui.contextcv);
-
-	if (event.id == KU_TABLE_EVENT_SELECT)
+	if (event.ev.type == KU_EVENT_KUP && event.ev.keycode == XKB_KEY_Escape)
 	{
+	    if (ui.contextcv->parent)
+	    {
+		ku_view_remove_from_parent(ui.contextcv);
+		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttableevt");
+		ku_window_deactivate(ui.window, contexttableevt);
+	    }
+	}
+
+	if ((event.ev.type == KU_EVENT_MDOWN && event.id == KU_TABLE_EVENT_SELECT) ||
+	    (event.ev.type == KU_EVENT_KDOWN && event.id == KU_TABLE_EVENT_OPEN))
+	{
+
+	    printf("%i\n", event.selected_index);
+
+	    if (ui.contextcv->parent)
+	    {
+		ku_view_remove_from_parent(ui.contextcv);
+		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttableevt");
+		ku_window_deactivate(ui.window, contexttableevt);
+	    }
+
 	    if (event.selected_index == 0)
 	    {
 		/* rename, open input popup over rowview */
@@ -1285,7 +1311,9 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     ku_view_t* contextcv    = GETV(bv, "contextpopupcont");
     ku_view_t* contextpopup = GETV(bv, "contextpopup");
+    ku_view_t* contextevt   = GETV(bv, "contexttableevt");
 
+    contextevt->blocks_key      = 1;
     contextpopup->blocks_touch  = 1;
     contextpopup->blocks_scroll = 1;
 
@@ -1299,11 +1327,14 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ku_view_t* okaycv    = GETV(bv, "okaypopupcont");
     ku_view_t* okaypopup = GETV(bv, "okaypopup");
 
+    okaypopup->blocks_key    = 1;
     okaypopup->blocks_touch  = 1;
     okaypopup->blocks_scroll = 1;
 
-    ui.okaycv = RET(okaycv);
+    ui.okaycv    = RET(okaycv);
+    ui.okaypopup = RET(okaypopup);
 
+    vh_key_add(okaypopup, ui_on_key_down);
     vh_touch_add(ui.okaycv, ui_on_touch);
     ku_view_remove_from_parent(ui.okaycv);
 

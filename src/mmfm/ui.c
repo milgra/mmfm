@@ -845,6 +845,7 @@ void ui_on_key_down(vh_key_event_t event)
     {
 	if (ui.okaycv->parent) ku_view_remove_from_parent(ui.okaycv);
 	if (ui.contextcv->parent) ku_view_remove_from_parent(ui.contextcv);
+	if (ui.settingscv->parent) ku_view_remove_from_parent(ui.settingscv);
     }
 
     if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
@@ -1267,6 +1268,16 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Free and Open Source Software")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Donate on Paypal")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Toggle play/pause : SPACE")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Zoom in/out : + / -")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Switch between tables and input fields : TAB")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Context menu/Paste files : CTRL+V")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Send file to clipboard : CTRL+C")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Delete file : CTRL+D")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Toggle info view/clipboard : CTRL+S")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Cancel input : ESC")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Cancel popup : ESC")}));
 
     ku_table_set_data(ui.settingstable, items);
     REL(items);

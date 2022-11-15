@@ -33,6 +33,9 @@ struct
     ku_rect_t    dirtyrect;
     int          softrender;
     mt_vector_t* eventqueue;
+
+    char* rec_path;
+    char* rep_path;
 } mmfm = {0};
 
 void init(wl_event_t event)
@@ -73,13 +76,13 @@ void init(wl_event_t event)
     if (mmfm.record)
     {
 	ui_add_cursor();
-	evrec_init_recorder(config_get("rec_path")); // DESTROY 4
+	evrec_init_recorder(mmfm.rec_path); // DESTROY 4
     }
 
     if (mmfm.replay)
     {
 	ui_add_cursor();
-	evrec_init_player(config_get("rep_path")); // DESTROY 5
+	evrec_init_player(mmfm.rep_path); // DESTROY 5
     }
 
     ui_update_layout(monitor->logical_width, monitor->logical_height);
@@ -143,8 +146,8 @@ void update_screenshot(uint32_t frame)
     char* name = mt_string_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
     char* path = "";
 
-    if (mmfm.record) path = mt_path_new_append(config_get("rec_path"), name); // REL 2
-    if (mmfm.replay) path = mt_path_new_append(config_get("rep_path"), name); // REL 2
+    if (mmfm.record) path = mt_path_new_append(mmfm.rec_path, name); // REL 2
+    if (mmfm.replay) path = mt_path_new_append(mmfm.rep_path, name); // REL 2
 
     if (mmfm.softrender)
     {
@@ -248,6 +251,9 @@ void destroy()
     if (!mmfm.softrender) ku_renderer_egl_destroy();
 
     SDL_Quit();
+
+    if (mmfm.rec_path) REL(mmfm.rec_path); // REL 14
+    if (mmfm.rep_path) REL(mmfm.rep_path); // REL 15
 }
 
 int main(int argc, char* argv[])
@@ -380,8 +386,10 @@ int main(int argc, char* argv[])
     config_set("css_path", css_path);
     config_set("html_path", html_path);
 
-    if (rec_path) config_set("rec_path", rec_path);
-    if (rep_path) config_set("rep_path", rep_path);
+    /* this two shouldn't go into the config file because of record/replay */
+
+    mmfm.rec_path = rec_path;
+    mmfm.rep_path = rep_path;
 
     if (rec_path) evrec_init_recorder(rec_path); // DESTROY 4
     if (rep_path) evrec_init_player(rep_path);
@@ -407,9 +415,6 @@ int main(int argc, char* argv[])
     REL(html_path);   // REL 10
     REL(cfg_path);    // REL 12
     REL(per_path);    // REL 13
-
-    if (rec_path) REL(rec_path); // REL 14
-    if (rep_path) REL(rep_path); // REL 15
 
 #ifdef MT_MEMORY_DEBUG
     mt_memory_stats();

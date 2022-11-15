@@ -589,6 +589,8 @@ void ui_show_input_popup(float x, float y, char* text)
 void ui_cancel_input()
 {
     ku_view_remove_subview(ui.basev, ui.inputcv);
+    ku_window_deactivate(ui.window, ui.inputtv);
+    vh_textinput_activate(ui.inputtv, 0);
 }
 
 /* events from all tables */
@@ -813,9 +815,10 @@ void ui_on_key_down(vh_key_event_t event)
 	ui_delete_selected_files();
     }
 
-    if (event.ev.keycode == XKB_KEY_Escape && ui.okaycv->parent)
+    if (event.ev.keycode == XKB_KEY_Escape)
     {
-	ku_view_remove_from_parent(ui.okaycv);
+	if (ui.okaycv->parent) ku_view_remove_from_parent(ui.okaycv);
+	if (ui.contextcv->parent) ku_view_remove_from_parent(ui.contextcv);
     }
 
     if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
@@ -835,6 +838,16 @@ void ui_on_key_down(vh_key_event_t event)
     if (event.ev.keycode == XKB_KEY_s && event.ev.ctrl_down)
     {
 	ui_rotate_sidebar();
+    }
+    if (event.ev.keycode == XKB_KEY_r && event.ev.ctrl_down)
+    {
+	ui.inputmode     = UI_IM_RENAME;
+	ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
+
+	mt_map_t* info  = ui.filetable->selected_items->data[0];
+	char*     value = MGET(info, "file/basename");
+
+	ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
     }
     if (event.ev.keycode == XKB_KEY_plus || event.ev.keycode == XKB_KEY_KP_Add)
     {

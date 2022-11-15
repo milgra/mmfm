@@ -73,6 +73,7 @@ struct pointer_info
     int   px;
     int   py;
     int   drag;
+    int   down;
     float scale;
     uint  lastdown;
 };
@@ -907,6 +908,8 @@ void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer,
 {
     /* mt_log_debug("pointer handle motion %f %f", wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y)); */
 
+    wlc.pointer.drag = wlc.pointer.down;
+
     ku_event_t event = init_event();
     event.type       = KU_EVENT_MMOVE;
     event.drag       = wlc.pointer.drag;
@@ -939,13 +942,14 @@ void ku_wayland_pointer_handle_button(void* data, struct wl_pointer* wl_pointer,
 
 	event.dclick     = delay < 300;
 	event.type       = KU_EVENT_MDOWN;
-	wlc.pointer.drag = 1;
+	wlc.pointer.down = 1;
     }
     else
     {
 	event.type       = KU_EVENT_MUP;
 	event.drag       = wlc.pointer.drag;
 	wlc.pointer.drag = 0;
+	wlc.pointer.down = 0;
     }
 
     (*wlc.update)(event);

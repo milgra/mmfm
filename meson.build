@@ -36,12 +36,12 @@ egl = cc.find_library('EGL',static:false)
 xkbcommon = dependency('xkbcommon')
 
 # for ffmpeg
-va = cc.find_library('va',static:false)
-x11 = cc.find_library('X11',static:false)
-lvadrm = cc.find_library('va-drm',static:false)
-lvax11 = cc.find_library('va-x11',static:false)
-lzma = cc.find_library('lzma',static:false)
-lvdpau = cc.find_library('vdpau',static:false)
+#va = cc.find_library('va',static:false)
+#x11 = cc.find_library('X11',static:false)
+#lvadrm = cc.find_library('va-drm',static:false)
+#lvax11 = cc.find_library('va-x11',static:false)
+#lzma = cc.find_library('lzma',static:false)
+#lvdpau = cc.find_library('vdpau',static:false)
 
 mupdf = cc.find_library('mupdf')
 mupdfthird = cc.find_library('mupdf-third')
@@ -83,7 +83,36 @@ foreach p : protocols
 endforeach
 
 
-mmfm_dependencies = [wayland_client,wayland_cursor,png,rt,freetype, math,gl,glew,sdl2,avutil,avcodec,avdevice,avformat,avfilter,swresample,swscale,pthread,jpeg,ojpeg,jbig,hb,z,bz2,x11,va,gumbo,mupdf,mupdfthird,lzma,lvadrm,lvax11,lvdpau,xkbcommon,egl,wegl]
+mmfm_dependencies = [
+		  wayland_client,
+		  wayland_cursor,
+		  png,
+		  rt,
+		  freetype,
+		  math,
+		  gl,
+		  glew,
+		  sdl2,
+		  avutil,
+		  avcodec,
+		  avdevice,
+		  avformat,
+		  avfilter,
+		  swresample,
+		  swscale,
+		  pthread,
+		  jpeg,
+		  ojpeg,
+		  jbig,
+		  hb,
+		  z,
+		  bz2,
+		  gumbo,
+		  mupdf,
+		  mupdfthird,
+		  xkbcommon,
+		  egl,
+		  wegl]
 
 mmfm_version = '"@0@"'.format(meson.project_version())
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'

@@ -400,6 +400,7 @@
 }
 
 #inputtf {
+    margin-left: 5px;
     blocks: no;
     color: #232323FF;
 }

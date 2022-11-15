@@ -215,3 +215,9 @@ executable(
   dependencies: mmfm_dependencies,
   install: true,
 )
+
+e = executable('maintest', 'src/tests/test.c')
+testrun = find_program('tst/test_run.sh')
+
+test('MAIN TEST', e)
+test('TESTRUN',testrun)

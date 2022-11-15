@@ -1,11 +1,12 @@
 # Multimedia File Manager
 
-Multimedia File Manager is a modern media viewer and manager for multimedia and document files. It can play and view everything ffmpeg and mupdf can.
+Multimedia File Manager is a modern, lightning fast media viewer and manager for multimedia and document files. It can play and view everything ffmpeg and mupdf can.
 
 Multimedie File Manager was made for SwayOS.
 
 ## Features ##
 
+- It aims to be the fastest & most responsive doc/media viewer out there
 - Optimized for keyboard and touchpad use
 - MacOS-like scroll and pinch smoothness
 - Instant preview for all known media formats and for pdf files

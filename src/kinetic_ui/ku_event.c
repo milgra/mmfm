@@ -2,6 +2,7 @@
 #define ku_event_h
 
 #include <stdint.h>
+#include <stdio.h>
 #include <time.h>
 
 enum evtype
@@ -29,44 +30,115 @@ enum evtype
 
 typedef struct _ku_event_t
 {
-    enum evtype type;
+    int type;
 
     /* poiniter properties */
 
     int x; // mouse coord x
     int y; // mouse coord y
 
-    int drag;   // mouse drag
-    int dclick; // double click
-    int button; // mouse button id
+    /* resize */
 
-    /* keyboard modifiers */
-
-    int ctrl_down;  // modifiers
-    int shift_down; // modifiers
+    int w; // resize width
+    int h; // resize height
 
     /* scroll */
 
     float dx; // scroll x
     float dy; // scroll y
 
-    /* touchpad */
+    /* pinch */
 
     float ratio; // pinch ratio
 
-    int w; // resize width
-    int h; // resize height
+    /* mouse */
+
+    int drag;   // mouse drag
+    int dclick; // double click
+    int button; // mouse button id
+
+    /* time */
 
     uint32_t        time;       // milliseconds since start
     struct timespec time_unix;  // unix timestamp
     float           time_frame; // elapsed time since last frame
+    uint32_t        frame;      // actual frame count
 
     /* keyboard */
 
-    char     text[8];
     uint32_t keycode;
     int      repeat; // key event is coming from repeat
 
+    int ctrl_down;  // modifiers
+    int shift_down; // modifiers
+
+    char text[8];
+
 } ku_event_t;
+
+void       ku_event_write(FILE* file, ku_event_t ev);
+ku_event_t ku_event_read(FILE* file);
+
+#endif
+
+#if __INCLUDE_LEVEL__ == 0
+
+/*                  frame type  x  y  w  h dx dy ratio drag dclick button time time_frame keycode repeat ctrl_down shift_down text */
+char* ku_event_format = "%i %i %i %i %i %i %f %f %f %i %i %i %u %f %u %i %i %i %s\n";
+
+void ku_event_write(FILE* file, ku_event_t ev)
+{
+    fprintf(
+	file,
+	ku_event_format,
+	ev.frame,
+	ev.type,
+	ev.x,
+	ev.y,
+	ev.w,
+	ev.h,
+	ev.dx,
+	ev.dy,
+	ev.ratio,
+	ev.drag,
+	ev.dclick,
+	ev.button,
+	ev.time,
+	ev.time_frame,
+	ev.keycode,
+	ev.repeat,
+	ev.ctrl_down,
+	ev.shift_down,
+	ev.text[0] == '\0' ? "T" : ev.text);
+}
+
+ku_event_t ku_event_read(FILE* file)
+{
+    ku_event_t ev = {0};
+    fscanf(
+	file,
+	ku_event_format,
+	&ev.frame,
+	&ev.type,
+	&ev.x,
+	&ev.y,
+	&ev.w,
+	&ev.h,
+	&ev.dx,
+	&ev.dy,
+	&ev.ratio,
+	&ev.drag,
+	&ev.dclick,
+	&ev.button,
+	&ev.time,
+	&ev.time_frame,
+	&ev.keycode,
+	&ev.repeat,
+	&ev.ctrl_down,
+	&ev.shift_down,
+	&ev.text);
+
+    return ev;
+}
 
 #endif

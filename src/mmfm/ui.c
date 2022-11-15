@@ -162,6 +162,38 @@ void ui_update_layout(int w, int h)
     ku_view_layout(ui.basev);
 }
 
+void ui_rotate_sidebar()
+{
+    ku_view_t* top = ku_view_get_subview(ui.basev, "top_flex");
+
+    if (ui.infotablev->parent)
+    {
+	ku_view_remove_from_parent(ui.infotablev);
+	ku_view_add_subview(top, ui.cliptablev);
+
+	ku_window_set_focusable(ui.window, ui.focusable_cliplist);
+
+	config_set_bool("sidebar_visible", 1);
+    }
+    else if (ui.cliptablev->parent)
+    {
+	ku_view_remove_from_parent(ui.cliptablev);
+	ku_window_set_focusable(ui.window, ui.focusable_filelist);
+
+	config_set_bool("sidebar_visible", 0);
+    }
+    else
+    {
+	ku_view_add_subview(top, ui.infotablev);
+	ku_window_set_focusable(ui.window, ui.focusable_infolist);
+
+	config_set_bool("sidebar_visible", 1);
+    }
+
+    config_write(config_get("cfg_path"));
+    ku_view_layout(top);
+}
+
 /* update player, seek bar position and video textures */
 
 void ui_update_player()
@@ -800,6 +832,10 @@ void ui_on_key_down(vh_key_event_t event)
 	    ui_show_context_menu(frame.x, frame.y);
 	}
     }
+    if (event.ev.keycode == XKB_KEY_s && event.ev.ctrl_down)
+    {
+	ui_rotate_sidebar();
+    }
     if (event.ev.keycode == XKB_KEY_plus || event.ev.keycode == XKB_KEY_KP_Add)
     {
 	ku_view_t* evview = ku_view_get_subview(ui.basev, "previewevt");
@@ -877,34 +913,7 @@ void ui_on_btn_event(vh_button_event_t event)
     }
     else if (strcmp(event.view->id, "sidebarbtn") == 0)
     {
-	ku_view_t* top = ku_view_get_subview(ui.basev, "top_flex");
-
-	if (ui.infotablev->parent)
-	{
-	    ku_view_remove_from_parent(ui.infotablev);
-	    ku_view_add_subview(top, ui.cliptablev);
-
-	    ku_window_set_focusable(ui.window, ui.focusable_cliplist);
-
-	    config_set_bool("sidebar_visible", 1);
-	}
-	else if (ui.cliptablev->parent)
-	{
-	    ku_view_remove_from_parent(ui.cliptablev);
-	    ku_window_set_focusable(ui.window, ui.focusable_filelist);
-
-	    config_set_bool("sidebar_visible", 0);
-	}
-	else
-	{
-	    ku_view_add_subview(top, ui.infotablev);
-	    ku_window_set_focusable(ui.window, ui.focusable_infolist);
-
-	    config_set_bool("sidebar_visible", 1);
-	}
-
-	config_write(config_get("cfg_path"));
-	ku_view_layout(top);
+	ui_rotate_sidebar();
     }
     else if (strcmp(event.view->id, "settingsbtn") == 0)
     {

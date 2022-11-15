@@ -30,14 +30,17 @@ struct
     struct wl_window* wlwindow;
     ku_window_t*      kuwindow;
 
-    ku_rect_t dirtyrect;
-    int       softrender;
+    ku_rect_t    dirtyrect;
+    int          softrender;
+    mt_vector_t* eventqueue;
 } mmfm = {0};
 
 void init(wl_event_t event)
 {
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
     SDL_Init(SDL_INIT_AUDIO);
+
+    mmfm.eventqueue = VNEW();
 
     struct monitor_info* monitor = event.monitors[0];
 
@@ -119,14 +122,29 @@ void update(ku_event_t ev)
     }
 }
 
+void update_session(ku_event_t ev)
+{
+    if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
+    if (ev.type == KU_EVENT_FRAME) ui_update_player();
+
+    ku_window_event(mmfm.kuwindow, ev);
+    ku_window_update(mmfm.kuwindow, 0);
+
+    if (mmfm.softrender) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, mmfm.kuwindow->root->frame.local);
+    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, mmfm.kuwindow->root->frame.local);
+}
+
 /* save window buffer to png */
 
-void update_screenshot()
+void update_screenshot(uint32_t frame)
 {
     static int shotindex = 0;
 
     char* name = mt_string_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
-    char* path = mt_path_new_append(config_get("top_path"), name);            // REL 2
+    char* path = "";
+
+    if (mmfm.record) path = mt_path_new_append(config_get("rec_path"), name); // REL 2
+    if (mmfm.replay) path = mt_path_new_append(config_get("rep_path"), name); // REL 2
 
     if (mmfm.softrender)
     {
@@ -142,37 +160,78 @@ void update_screenshot()
 	REL(bitmap);
     }
     ui_update_cursor((ku_rect_t){0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height});
+
+    printf("SCREENHSOT AT %u : %s\n", frame, path);
 }
 
 /* window update during recording */
 
 void update_record(ku_event_t ev)
 {
-    update(ev);
-    evrec_record(ev);
+    /* normalize floats for deterministic movements during record/replay */
+    ev.dx         = floor(ev.dx * 10000) / 10000;
+    ev.dy         = floor(ev.dy * 10000) / 10000;
+    ev.ratio      = floor(ev.ratio * 10000) / 10000;
+    ev.time_frame = floor(ev.time_frame * 10000) / 10000;
 
-    if (ev.type == KU_EVENT_KDOWN && ev.keycode == XKB_KEY_Print) update_screenshot();
-    else ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10});
+    if (ev.type == KU_EVENT_FRAME)
+    {
+	/* record and send waiting events */
+	for (int index = 0; index < mmfm.eventqueue->length; index++)
+	{
+	    ku_event_t* event = (ku_event_t*) mmfm.eventqueue->data[index];
+	    event->frame      = ev.frame;
+	    evrec_record(*event);
+
+	    update_session(*event);
+
+	    if (event->type == KU_EVENT_KDOWN && event->keycode == XKB_KEY_Print) update_screenshot(ev.frame);
+	    else ui_update_cursor((ku_rect_t){event->x, event->y, 10, 10});
+	}
+
+	mt_vector_reset(mmfm.eventqueue);
+
+	/* send frame event */
+	update_session(ev);
+
+	/* force frame request if needed */
+	if (mmfm.wlwindow->frame_cb == NULL)
+	{
+	    ku_wayland_draw_window(mmfm.wlwindow, 0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height);
+	}
+	else mt_log_error("FRAME CALLBACK NOT NULL!!");
+    }
+    else
+    {
+	/* queue event */
+	void* event = HEAP(ev);
+	VADD(mmfm.eventqueue, event);
+    }
 }
 
 /* window update during replay */
 
 void update_replay(ku_event_t ev)
 {
-    if (ev.type == KU_EVENT_TIME)
+    if (ev.type == KU_EVENT_FRAME)
     {
 	// get recorded events
 	ku_event_t* recev = NULL;
-	while ((recev = evrec_replay(ev.time)) != NULL)
+	while ((recev = evrec_replay(ev.frame)) != NULL)
 	{
-	    update(*recev);
+	    update_session(*recev);
 
-	    if (recev->type == KU_EVENT_KDOWN && recev->keycode == XKB_KEY_Print) update_screenshot();
+	    if (recev->type == KU_EVENT_KDOWN && recev->keycode == XKB_KEY_Print) update_screenshot(ev.frame);
 	    else ui_update_cursor((ku_rect_t){recev->x, recev->y, 10, 10});
 	}
-    }
 
-    update(ev);
+	/* send frame event */
+	update_session(ev);
+
+	/* force frame request if needed */
+	if (mmfm.wlwindow->frame_cb == NULL) ku_wayland_draw_window(mmfm.wlwindow, 0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height);
+	else mt_log_error("FRAME CALLBACK NOT NULL!!");
+    }
 }
 
 void destroy()

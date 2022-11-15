@@ -224,6 +224,7 @@ struct wlc_t
     int             time_event_interval;
     int             time_event_timer_fd;
     struct timespec time_start;
+    uint32_t        frame_index;
 
     /* framerate related */
 
@@ -415,6 +416,7 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
 
     event.type       = KU_EVENT_FRAME;
     event.time_frame = (float) (event.time - wlc.frame_event.time) / 1000.0;
+    event.frame      = wlc.frame_index++;
 
     /* Store event to be able to calculate frame delta */
     wlc.frame_event = event;
@@ -533,6 +535,7 @@ static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, u
 	    ku_event_t event = init_event();
 	    event.type       = KU_EVENT_FRAME;
 	    event.time_frame = (float) (event.time - wlc.frame_event.time) / 1000.0;
+	    event.frame      = wlc.frame_index++;
 
 	    /* Store event to be able to calculate frame delta */
 	    wlc.frame_event = event;

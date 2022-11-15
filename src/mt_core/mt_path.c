@@ -40,7 +40,7 @@ char* mt_path_new_remove_last_component(char* path)
 	    break;
 	}
     }
-    printf("index %i\n", index);
+
     if (index > -1)
     {
 	char* str = CAL(index + 1, NULL, mt_string_describe);

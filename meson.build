@@ -1,7 +1,7 @@
 project(
   'mmfm',
   'c',
-  version: '0.2',
+  version: '0.4b',
   license: 'MIT',
   default_options: ['c_std=gnu99']
 )
@@ -228,14 +228,19 @@ com_sources = ['src/mmfm/ui.c',
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
 install_data('res/html/main.html', install_dir : pkg_datadir / 'html' )
 install_data('res/html/main.css', install_dir : pkg_datadir / 'html' )
+install_data('res/img/accept.png', install_dir : pkg_datadir / 'img' )
 install_data('res/img/close.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/closeblack.png', install_dir : pkg_datadir / 'img' )
 install_data('res/img/max.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/minus.png', install_dir : pkg_datadir / 'img' )
 install_data('res/img/next.png', install_dir : pkg_datadir / 'img' )
 install_data('res/img/pause.png', install_dir : pkg_datadir / 'img' )
 install_data('res/img/play.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/plus.png', install_dir : pkg_datadir / 'img' )
 install_data('res/img/prev.png', install_dir : pkg_datadir / 'img' )
 install_data('res/img/settings.png', install_dir : pkg_datadir / 'img' )
 install_data('res/img/sidebar.png', install_dir : pkg_datadir / 'img' )
+install_data('res/img/up.png', install_dir : pkg_datadir / 'img' )
 
 executable(
   'mmfm',

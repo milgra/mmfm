@@ -11,13 +11,9 @@ else
     rm -rf $testdir
     cp -r $basedir $testdir 
     echo "(RE-)RECORDING $1"
-    cd $savedir
-    rm -rf *.kvl
-    rm -rf screenshot*
-    rm -rf session.rec
-    cd ../../..
     build/mmfm -r res -v -s $savedir -d $testdir -c $savedir
     echo "RECORDING FINISHED"
+    rm -rf $masterdir
     cp -r $testdir $masterdir
     rm -rf $testdir
 fi

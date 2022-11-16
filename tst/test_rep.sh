@@ -11,6 +11,8 @@ else
     # cleanup
     rm -rf $testdir
     cp -r $basedir $testdir 
+    # copy session record
+    cp "$masterdir/record/session.rec" "$savedir/"
     cd $savedir
     rm -rf *.kvl
     rm -rf screenshot*

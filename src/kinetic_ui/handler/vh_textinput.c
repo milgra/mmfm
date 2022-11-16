@@ -36,14 +36,15 @@ struct _vh_textinput_t
     textstyle_t style;
     char        active;
 
+    int limit;
     int mouse_out_deact;
     int new_glyph_index;
 
     void (*on_event)(vh_textinput_event_t);
 };
 
-void vh_textinput_add(ku_view_t* view, char* text, char* phtext, void (*on_event)(vh_textinput_event_t));
-
+void  vh_textinput_add(ku_view_t* view, char* text, char* phtext, void (*on_event)(vh_textinput_event_t));
+void  vh_textinput_set_limit(ku_view_t* view, int limit);
 char* vh_textinput_get_text(ku_view_t* view);
 void  vh_textinput_set_text(ku_view_t* view, char* text);
 void  vh_textinput_set_deactivate_on_mouse_out(ku_view_t* view, int flag);
@@ -340,29 +341,32 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_TEXT)
     {
-	data->text = mt_string_append(data->text, ev.text);
+	if (data->limit > 0 && data->glyph_v->length < data->limit)
+	{
+	    data->text = mt_string_append(data->text, ev.text);
 
-	// create view for glyph
+	    // create view for glyph
 
-	char view_id[100];
-	snprintf(view_id, 100, "%sglyph%i", view->id, data->glyph_index++);
-	ku_view_t* glyph_view = ku_view_new(view_id, (ku_rect_t){0, 0, 0, 0}); // REL 0
+	    char view_id[100];
+	    snprintf(view_id, 100, "%sglyph%i", view->id, data->glyph_index++);
+	    ku_view_t* glyph_view = ku_view_new(view_id, (ku_rect_t){0, 0, 0, 0}); // REL 0
 
-	vh_anim_add(glyph_view, vh_textinput_on_anim, view);
-	glyph_view->texture.resizable = 0;
+	    vh_anim_add(glyph_view, vh_textinput_on_anim, view);
+	    glyph_view->texture.resizable = 0;
 
-	VADD(data->glyph_v, glyph_view);
+	    VADD(data->glyph_v, glyph_view);
 
-	REL(glyph_view); // REL 0
+	    REL(glyph_view); // REL 0
 
-	data->new_glyph_index = data->glyph_v->length - 1;
+	    data->new_glyph_index = data->glyph_v->length - 1;
 
-	// append or break-insert new glyph(s)
+	    // append or break-insert new glyph(s)
 
-	vh_textinput_upd(view);
+	    vh_textinput_upd(view);
 
-	vh_textinput_event_t event = {.id = VH_TEXTINPUT_TEXT, .vh = data, .text = data->text, .view = view};
-	if (data->on_event) (*data->on_event)(event);
+	    vh_textinput_event_t event = {.id = VH_TEXTINPUT_TEXT, .vh = data, .text = data->text, .view = view};
+	    if (data->on_event) (*data->on_event)(event);
+	}
     }
     else if (ev.type == KU_EVENT_KDOWN)
     {
@@ -457,7 +461,8 @@ void vh_textinput_add(ku_view_t* view, char* text, char* phtext, void (*on_event
     data->text    = mt_string_new_cstring(""); // REL 2
     data->glyph_v = VNEW();                    // REL 3
 
-    data->style = ku_gen_textstyle_parse(view);
+    data->style          = ku_gen_textstyle_parse(view);
+    data->style.autosize = AS_AUTO;
 
     data->on_event = on_event;
 
@@ -604,6 +609,12 @@ void vh_textinput_set_deactivate_on_mouse_out(ku_view_t* view, int flag)
 {
     vh_textinput_t* data  = view->handler_data;
     data->mouse_out_deact = flag;
+}
+
+void vh_textinput_set_limit(ku_view_t* view, int limit)
+{
+    vh_textinput_t* data = view->handler_data;
+    data->limit          = limit;
 }
 
 #endif

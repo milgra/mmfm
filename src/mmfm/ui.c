@@ -566,7 +566,7 @@ void ui_show_context_menu(float x, float y)
     {
 	ku_view_t* contextpopup = ui.contextcv->views->data[0];
 	ku_rect_t  iframe       = contextpopup->frame.global;
-	iframe.x                = x;
+	iframe.x                = x + 20.0;
 	iframe.y                = y;
 	ku_view_add_subview(ui.basev, ui.contextcv);
 	ku_view_set_frame(contextpopup, iframe);
@@ -611,6 +611,7 @@ void ui_show_input_popup(float x, float y, char* text)
     ku_window_activate(ui.window, ui.inputtv);
     vh_textinput_activate(ui.inputtv, 1);
     vh_textinput_set_text(ui.inputtv, text);
+    vh_textinput_set_limit(ui.inputtv, 255);
 }
 
 /* cancel input */
@@ -1043,6 +1044,18 @@ void ui_on_text_event(vh_textinput_event_t event)
 {
     if (strcmp(event.view->id, "inputtf") == 0)
     {
+	if (event.id == VH_TEXTINPUT_TEXT)
+	{
+	    // resize input back if needed
+	    ku_rect_t inputrect = ui.inputtv->frame.local;
+	    ku_rect_t backrect  = ui.inputbckv->frame.local;
+
+	    if (inputrect.h > backrect.h)
+	    {
+		backrect.h = inputrect.h + 5;
+		ku_view_set_frame(ui.inputbckv, backrect);
+	    }
+	}
 	if (event.id == VH_TEXTINPUT_DEACTIVATE) ui_cancel_input();
 	if (event.id == VH_TEXTINPUT_RETURN)
 	{

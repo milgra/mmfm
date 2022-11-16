@@ -83,7 +83,7 @@ void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 	    }
 	    else if (vh->fstep < vh->fstart + vh->fsteps)
 	    {
-		int delta = vh->fstep - vh->fstart;
+		int delta = vh->fstep - vh->fstart + 1;
 
 		ku_rect_t sf = vh->sf;
 		ku_rect_t cf = sf;
@@ -133,7 +133,7 @@ void vh_anim_evt(ku_view_t* view, ku_event_t ev)
 	    }
 	    else if (vh->rstep < vh->rstart + vh->rsteps)
 	    {
-		int delta = vh->rstep - vh->rstart;
+		int delta = vh->rstep - vh->rstart + 1;
 
 		ku_rect_t sr = vh->sr;
 		ku_rect_t cr = sr;

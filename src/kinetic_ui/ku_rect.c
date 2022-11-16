@@ -15,10 +15,13 @@ struct _ku_rect_t
 int       ku_rect_equals(ku_rect_t r1, ku_rect_t r2);
 ku_rect_t ku_rect_add(ku_rect_t r1, ku_rect_t r2);
 ku_rect_t ku_rect_is(ku_rect_t l, ku_rect_t r);
+void      ku_rect_describe(ku_rect_t rect);
 
 #endif
 
 #if __INCLUDE_LEVEL__ == 0
+
+#include <stdio.h>
 
 #define VMIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define VMAX(X, Y) (((X) > (Y)) ? (X) : (Y))
@@ -61,6 +64,11 @@ ku_rect_t ku_rect_is(ku_rect_t l, ku_rect_t r)
     }
 
     return f;
+}
+
+void ku_rect_describe(ku_rect_t rect)
+{
+    printf("%f %f %f %f\n", rect.x, rect.y, rect.w, rect.h);
 }
 
 #endif

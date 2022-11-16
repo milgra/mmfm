@@ -668,7 +668,12 @@ void on_table_event(ku_table_event_t event)
 
 	    if (ui.dragdatav)
 	    {
-		mt_vector_add_in_vector(ui.clipdatav, ui.dragdatav);
+		for (int index = 0; index < ui.dragdatav->length; index++)
+		{
+		    mt_map_t* file = ui.dragdatav->data[index];
+		    mt_vector_add_unique_data(ui.clipdatav, file);
+		}
+
 		ku_table_set_data(ui.cliptable, ui.clipdatav);
 	    }
 	}
@@ -724,8 +729,12 @@ void on_table_event(ku_table_event_t event)
 	    else if (event.selected_index == 2)
 	    {
 		/* send items to clipboard table */
+		for (int index = 0; index < ui.filetable->selected_items->length; index++)
+		{
+		    mt_map_t* file = ui.filetable->selected_items->data[index];
+		    mt_vector_add_unique_data(ui.clipdatav, file);
+		}
 
-		mt_vector_add_in_vector(ui.clipdatav, ui.filetable->selected_items);
 		ku_table_set_data(ui.cliptable, ui.clipdatav);
 	    }
 	    else if (event.selected_index == 3)
@@ -850,7 +859,12 @@ void ui_on_key_down(vh_key_event_t event)
 
     if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
     {
-	mt_vector_add_in_vector(ui.clipdatav, ui.filetable->selected_items);
+	for (int index = 0; index < ui.filetable->selected_items->length; index++)
+	{
+	    mt_map_t* file = ui.filetable->selected_items->data[index];
+	    mt_vector_add_unique_data(ui.clipdatav, file);
+	}
+
 	ku_table_set_data(ui.cliptable, ui.clipdatav);
     }
 

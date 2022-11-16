@@ -132,26 +132,28 @@ void vh_textinput_upd(ku_view_t* view)
 	    {
 		ku_view_t* gv = data->glyph_v->data[i];
 
+		/* glyph has dimension */
 		if (g.w > 0 && g.h > 0)
 		{
 		    ku_rect_t f  = gv->frame.local;
 		    ku_rect_t nf = (ku_rect_t){g.x, g.y, g.w, g.h};
 
+		    /* resize glyph view frame to glyph dimensions */
 		    ku_view_set_frame(gv, nf);
 
+		    /* if glyph view is not opened yet */
 		    if (f.w == 0 || f.h == 0)
 		    {
+			/* generate glyph texture */
 			ku_bitmap_t* texture = ku_bitmap_new(g.w, g.h); // REL 0
-
 			ku_text_render_glyph(g, data->style, texture);
-
 			ku_view_set_texture_bmp(gv, texture);
-
 			REL(texture);
 
+			/* add to textinput container */
 			ku_view_add_subview(view, gv);
 
-			// open
+			/* start opening animation */
 			ku_rect_t sf = nf;
 			sf.x         = 0.0;
 			sf.y         = 0.0;
@@ -161,17 +163,21 @@ void vh_textinput_upd(ku_view_t* view)
 
 			if (i == data->new_glyph_index)
 			{
+			    /* glyph is at the end of the text */
 			    vh_anim_region(gv, sf, nf, 0, 10, AT_LINEAR);
 			    data->new_glyph_index = 0;
 			}
 			else
 			{
+			    /* glyph is not at the end */
 			    vh_anim_region(gv, sf, nf, 0, 10, AT_LINEAR);
 			}
+			/* set starting region */
 			ku_view_set_region(gv, sf);
 		    }
 		    else
 		    {
+			/* if glyph is already opened, set frame if not okay */
 			ku_rect_t rf = nf;
 			rf.x         = 0;
 			rf.y         = 0;

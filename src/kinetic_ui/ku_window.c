@@ -179,6 +179,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		if (v->handler) (*v->handler)(v, ev);
 		if (v->blocks_touch) break;
 	    }
+	    if (v->needs_key) mt_vector_add_unique_data(win->actqueue, v);
 	}
     }
     else if (ev.type == KU_EVENT_SCROLL)

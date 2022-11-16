@@ -53,6 +53,14 @@ void ku_renderer_egl_render(mt_vector_t* views, ku_bitmap_t* bitmap, ku_rect_t d
 	if (view->style.masked)
 	{
 	    dirty = view->frame.global;
+	    if (view->style.shadow_blur > 0)
+	    {
+		dirty.x -= view->style.shadow_blur;
+		dirty.y -= view->style.shadow_blur;
+		dirty.w += 2 * view->style.shadow_blur;
+		dirty.h += 2 * view->style.shadow_blur;
+	    }
+
 	    maski++;
 	    masks[maski] = dirty;
 	    /* printf("%s masked, dirty %f %f %f %f\n", view->id, dirty.x, dirty.y, dirty.w, dirty.h); */

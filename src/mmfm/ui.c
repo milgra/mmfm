@@ -7,7 +7,8 @@
 typedef enum _ui_inputmode ui_inputmode;
 enum _ui_inputmode
 {
-    UI_IM_RENAME
+    UI_IM_RENAME,
+    UI_IM_NEWFOLDER,
 };
 
 typedef enum _ui_media_type ui_media_type;
@@ -51,6 +52,7 @@ void ui_load_folder(char* folder);
 #include "tg_css.c"
 #include "tg_scaledimg.c"
 #include "tg_text.c"
+#include "vh_anim.c"
 #include "vh_button.c"
 #include "vh_cv_body.c"
 #include "vh_cv_evnt.c"
@@ -345,22 +347,20 @@ void ui_load_folder(char* folder)
 	int prev_selected = ui.filetable->selected_index;
 
 	/* prev selected should stay after delete */
+	if (folder != ui.current_folder)
+	{
+	    prev_selected = 0;
 
-	if (folder != ui.current_folder) prev_selected = 0;
-
-	/* store folder as last visited */
-
-	if (ui.current_folder) MPUT(ui.folder_history, ui.current_folder, folder);
-	if (ui.current_folder) REL(ui.current_folder);
-
-	ui.current_folder = mt_path_new_normalize1(folder);
+	    /* store folder as last visited */
+	    if (ui.current_folder) MPUT(ui.folder_history, ui.current_folder, folder);
+	    if (ui.current_folder) REL(ui.current_folder);
+	    ui.current_folder = mt_path_new_normalize1(folder);
+	}
 
 	/* show in path bar */
-
 	vh_textinput_set_text(ui.pathtv, ui.current_folder);
 
 	/* read folder */
-
 	mt_map_t* files = MNEW();
 	fm_list(ui.current_folder, files);
 
@@ -382,6 +382,8 @@ void ui_load_folder(char* folder)
 	    {
 		mt_map_t* info = ui.filedatav->data[index];
 		char*     path = MGET(info, "file/path");
+
+		printf("LAST VIS %s PATH %s\n", last_visited, path);
 		if (strcmp(path, last_visited) == 0)
 		{
 		    found = 1;
@@ -566,11 +568,33 @@ void ui_show_context_menu(float x, float y)
 	ku_rect_t  iframe       = contextpopup->frame.global;
 	iframe.x                = x;
 	iframe.y                = y;
-	ku_view_set_frame(contextpopup, iframe);
 	ku_view_add_subview(ui.basev, ui.contextcv);
+	ku_view_set_frame(contextpopup, iframe);
 
 	ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttableevt");
 	ku_window_activate(ui.window, contexttableevt);
+
+	ku_rect_t start = contextpopup->frame.local;
+
+	ku_rect_t end = start;
+
+	start.x += 40;
+	start.w -= 80;
+	start.h = 10;
+	ku_view_set_frame(contextpopup, start);
+
+	vh_anim_frame(contextpopup, start, end, 0, 15, AT_EASE);
+
+	ku_view_t* contexttable = GETV(contextpopup, "contexttable");
+
+	start = contexttable->frame.local;
+	end   = start;
+
+	start.w -= 80;
+	start.h = 10;
+	ku_view_set_frame(contexttable, start);
+
+	vh_anim_frame(contexttable, start, end, 0, 15, AT_EASE);
     }
 }
 
@@ -578,7 +602,6 @@ void ui_show_context_menu(float x, float y)
 
 void ui_show_input_popup(float x, float y, char* text)
 {
-    printf("SHOW IUNPUT\n");
     ku_rect_t iframe = ui.inputbckv->frame.global;
     iframe.x         = x;
     iframe.y         = y;
@@ -594,7 +617,6 @@ void ui_show_input_popup(float x, float y, char* text)
 
 void ui_cancel_input()
 {
-    printf("CANCEL IUNPUT\n");
     ku_view_remove_subview(ui.basev, ui.inputcv);
     ku_window_deactivate(ui.window, ui.inputtv);
     vh_textinput_activate(ui.inputtv, 0);
@@ -707,6 +729,16 @@ void on_table_event(ku_table_event_t event)
 
 	    if (event.selected_index == 0)
 	    {
+		/* create folder */
+		ui.inputmode             = UI_IM_NEWFOLDER;
+		ku_view_t* filetablebody = GETV(ui.basev, "filetablebody");
+
+		ku_rect_t rframe = filetablebody->frame.global;
+
+		ui_show_input_popup(rframe.x, rframe.y - 5, "new folder");
+	    }
+	    else if (event.selected_index == 1)
+	    {
 		/* rename, open input popup over rowview */
 
 		if (event.rowview)
@@ -720,13 +752,13 @@ void on_table_event(ku_table_event_t event)
 		    ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
 		}
 	    }
-	    else if (event.selected_index == 1)
+	    else if (event.selected_index == 2)
 	    {
 		/* delete selected items from file table */
 
 		ui_open_approve_popup();
 	    }
-	    else if (event.selected_index == 2)
+	    else if (event.selected_index == 3)
 	    {
 		/* send items to clipboard table */
 		for (int index = 0; index < ui.filetable->selected_items->length; index++)
@@ -737,7 +769,7 @@ void on_table_event(ku_table_event_t event)
 
 		ku_table_set_data(ui.cliptable, ui.clipdatav);
 	    }
-	    else if (event.selected_index == 3)
+	    else if (event.selected_index == 4)
 	    {
 		/* paste items in clipboard table using copy */
 
@@ -764,7 +796,7 @@ void on_table_event(ku_table_event_t event)
 		    ui_load_folder(ui.current_folder);
 		}
 	    }
-	    else if (event.selected_index == 4)
+	    else if (event.selected_index == 5)
 	    {
 		/* paste items in clipboard table using move */
 
@@ -790,7 +822,7 @@ void on_table_event(ku_table_event_t event)
 		mt_vector_reset(ui.clipdatav);
 		ku_table_set_data(ui.cliptable, ui.clipdatav);
 	    }
-	    else if (event.selected_index == 5)
+	    else if (event.selected_index == 6)
 	    {
 		/* reset clipboard */
 
@@ -889,6 +921,15 @@ void ui_on_key_down(vh_key_event_t event)
 	char*     value = MGET(info, "file/basename");
 
 	ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
+    }
+    if (event.ev.keycode == XKB_KEY_n && event.ev.ctrl_down)
+    {
+	ui.inputmode = UI_IM_NEWFOLDER;
+
+	ku_view_t* filetablebody = GETV(ui.basev, "filetablebody");
+	ku_rect_t  rframe        = filetablebody->frame.global;
+
+	ui_show_input_popup(rframe.x, rframe.y - 5, "new folder");
     }
     if (event.ev.keycode == XKB_KEY_plus || event.ev.keycode == XKB_KEY_KP_Add)
     {
@@ -1007,22 +1048,44 @@ void ui_on_text_event(vh_textinput_event_t event)
 	{
 	    ui_cancel_input();
 
-	    if (ui.filetable->selected_items->length > 0)
+	    if (ui.inputmode == UI_IM_RENAME)
 	    {
-		mt_map_t* file   = ui.filetable->selected_items->data[0];
-		char*     parent = MGET(file, "file/parent");
+		if (ui.filetable->selected_items->length > 0)
+		{
+		    mt_map_t* file   = ui.filetable->selected_items->data[0];
+		    char*     parent = MGET(file, "file/parent");
 
-		char* oldpath = MGET(file, "file/path");
-		char* newpath = mt_path_new_append(parent, event.text);
+		    char* oldpath = MGET(file, "file/path");
+		    char* newpath = mt_path_new_append(parent, event.text);
 
-		fm_rename(oldpath, newpath, NULL);
+		    fm_rename(oldpath, newpath, NULL);
+
+		    REL(newpath);
+
+		    ui_load_folder(ui.current_folder);
+		}
+	    }
+	    if (ui.inputmode == UI_IM_NEWFOLDER)
+	    {
+		char* newpath = mt_path_new_append(ui.current_folder, event.text);
+		char* folpath = mt_path_new_append(newpath, "/");
+
+		int res = fm_create(folpath, 0777);
+
+		if (res == 0)
+		{
+		    if (ui.current_folder) MPUT(ui.folder_history, ui.current_folder, newpath);
+
+		    ui_load_folder(ui.current_folder);
+		}
+		else ui_show_status("Folder creation error");
 
 		REL(newpath);
-
-		ui_load_folder(ui.current_folder);
+		REL(folpath);
 	    }
 	}
     }
+
     else if (strcmp(event.view->id, "pathtf") == 0)
     {
 	if (event.id == VH_TEXTINPUT_DEACTIVATE) vh_textinput_activate(ui.pathtv, 0);
@@ -1255,6 +1318,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     mt_vector_t* items = VNEW();
 
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Create folder")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Rename")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Delete")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Send to clipboard")}));
@@ -1288,6 +1352,8 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Switch between tables and input fields : TAB")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Context menu/Paste files : CTRL+V")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Send file to clipboard : CTRL+C")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Create folder : CTRL+N")}));
+    VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Rename file : CTRL+R")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Delete file : CTRL+D")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Toggle info view/clipboard : CTRL+S")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Cancel input : ESC")}));
@@ -1337,12 +1403,16 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ku_view_t* contextcv    = GETV(bv, "contextpopupcont");
     ku_view_t* contextpopup = GETV(bv, "contextpopup");
     ku_view_t* contextevt   = GETV(bv, "contexttableevt");
+    ku_view_t* contexttable = GETV(bv, "contexttable");
 
     contextevt->blocks_key      = 1;
     contextpopup->blocks_touch  = 1;
     contextpopup->blocks_scroll = 1;
 
     ui.contextcv = RET(contextcv);
+
+    vh_anim_add(contextpopup, NULL, NULL);
+    vh_anim_add(contexttable, NULL, NULL);
 
     vh_touch_add(ui.contextcv, ui_on_touch);
     ku_view_remove_from_parent(ui.contextcv);

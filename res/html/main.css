@@ -111,6 +111,7 @@
 .settingstable {
     margin-top: 40px;
     margin-bottom: 40px;
+    overflow: hidden;
 }
 
 .popupcontainer {
@@ -126,11 +127,11 @@
 .popuptable {
     margin-top: 20px;
     margin-bottom: 20px;
+    overflow: hidden;
 }
 
 .popuptablebody {
     color: #FF0000FF;
-    overflow: hidden;
 }
 
 .slider {
@@ -377,7 +378,7 @@
 
 #contextpopup {
     width: 200px;
-    height: 250px;
+    height: 290px;
     margin: auto;
 }
 

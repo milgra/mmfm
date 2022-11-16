@@ -719,8 +719,6 @@ void on_table_event(ku_table_event_t event)
 	    (event.ev.type == KU_EVENT_KDOWN && event.id == KU_TABLE_EVENT_OPEN))
 	{
 
-	    printf("%i\n", event.selected_index);
-
 	    if (ui.contextcv->parent)
 	    {
 		ku_view_remove_from_parent(ui.contextcv);

@@ -403,7 +403,8 @@ void ku_table_evnt_event(vh_tbl_evnt_event_t event)
 	    .id             = KU_TABLE_EVENT_SELECT,
 	    .selected_items = uit->selected_items,
 	    .selected_index = event.index,
-	    .rowview        = event.rowview};
+	    .rowview        = event.rowview,
+	    .ev             = event.ev};
 
 	(*uit->on_event)(tevent);
     }

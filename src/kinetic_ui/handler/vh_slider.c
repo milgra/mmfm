@@ -52,7 +52,6 @@ void vh_slider_evt(ku_view_t* view, ku_event_t ev)
 	}
 	else if (ev.type == KU_EVENT_SCROLL)
 	{
-
 	    float ratio = vh->ratio - ev.dx / 50.0;
 
 	    if (ratio < 0) ratio = 0;

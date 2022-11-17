@@ -16,7 +16,8 @@ struct _ku_window_t
     int width;
     int height;
 
-    mt_vector_t* ptrqueue; // views collected by pointer events
+    mt_vector_t* ptrqueue; // views collected by mouse uo and down
+    mt_vector_t* movqueue; // views collected by movement events
     mt_vector_t* actqueue; // views collected by activation
 };
 
@@ -47,6 +48,7 @@ void ku_window_del(void* p)
     REL(win->root);
     REL(win->views);
     REL(win->ptrqueue);
+    REL(win->movqueue);
     REL(win->actqueue);
     if (win->focusable) REL(win->focusable);
 }
@@ -58,6 +60,7 @@ ku_window_t* ku_window_create(int width, int height)
     win->root     = ku_view_new("root", (ku_rect_t){0, 0, width, height}); // REL 0
     win->views    = VNEW();
     win->ptrqueue = VNEW();
+    win->movqueue = VNEW();
     win->actqueue = VNEW();
 
     win->width  = width;
@@ -120,9 +123,9 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     {
 	ku_event_t outev = ev;
 	outev.type       = KU_EVENT_MMOVE_OUT;
-	for (int i = win->ptrqueue->length - 1; i > -1; i--)
+	for (int i = win->movqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->ptrqueue->data[i];
+	    ku_view_t* v = win->movqueue->data[i];
 	    if (v->needs_touch)
 	    {
 		if (ev.x > v->frame.global.x &&
@@ -139,12 +142,12 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	    }
 	}
 
-	mt_vector_reset(win->ptrqueue);
-	ku_view_coll_touched(win->root, ev, win->ptrqueue);
+	mt_vector_reset(win->movqueue);
+	ku_view_coll_touched(win->root, ev, win->movqueue);
 
-	for (int i = win->ptrqueue->length - 1; i > -1; i--)
+	for (int i = win->movqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->ptrqueue->data[i];
+	    ku_view_t* v = win->movqueue->data[i];
 	    if (v->needs_touch && v->parent)
 	    {
 		if (v->handler) (*v->handler)(v, ev);

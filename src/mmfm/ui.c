@@ -40,7 +40,6 @@ void ui_load_folder(char* folder);
 #include "ku_gen_textstyle.c"
 #include "ku_gen_type.c"
 #include "ku_gl.c"
-#include "ku_table.c"
 #include "mediaplayer.c"
 #include "mt_log.c"
 #include "mt_map_ext.c"
@@ -59,6 +58,7 @@ void ui_load_folder(char* folder);
 #include "vh_cv_scrl.c"
 #include "vh_drag.c"
 #include "vh_key.c"
+#include "vh_table.c"
 #include "vh_tbl_body.c"
 #include "vh_tbl_scrl.c"
 #include "vh_textinput.c"
@@ -73,8 +73,6 @@ struct _ui_t
     ku_view_t* dragv;       /* drag overlay */
     ku_view_t* cursorv;     /* replay cursor */
     ku_view_t* draggedv;    /* file drag icon */
-    ku_view_t* cliptablev;  /* clipboard table */
-    ku_view_t* infotablev;  /* file info table */
     ku_view_t* prevbodyv;   /* preview boody */
     ku_view_t* prevcontv;   /* preview container */
     ku_view_t* inputbckv;   /* input textfield background for positioning */
@@ -98,11 +96,11 @@ struct _ui_t
     ku_view_t* prevbtnv;
     ku_view_t* nextbtnv;
 
-    ku_table_t* cliptable;
-    ku_table_t* filetable;
-    ku_table_t* infotable;
-    ku_table_t* contexttable;
-    ku_table_t* settingstable;
+    ku_view_t* cliptablev;
+    ku_view_t* filetablev;
+    ku_view_t* infotablev;
+    ku_view_t* contexttablev;
+    ku_view_t* settingstablev;
 
     mt_vector_t* focusable_filelist; /* focusable views in file list only mode */
     mt_vector_t* focusable_infolist; /* focusable views in file + info list mode */
@@ -344,7 +342,8 @@ void ui_load_folder(char* folder)
 {
     if (folder)
     {
-	int prev_selected = ui.filetable->selected_index;
+	vh_table_t* vh            = ui.filetablev->handler_data;
+	int         prev_selected = vh->selected_index;
 
 	/* prev selected should stay after delete */
 	if (folder != ui.current_folder)
@@ -368,8 +367,8 @@ void ui_load_folder(char* folder)
 	mt_map_values(files, ui.filedatav);
 	mt_vector_sort(ui.filedatav, ui_comp_entry);
 
-	ku_table_set_data(ui.filetable, ui.filedatav);
-	ku_table_select(ui.filetable, prev_selected, 0);
+	vh_table_set_data(ui.filetablev, ui.filedatav);
+	vh_table_select(ui.filetablev, prev_selected, 0);
 	REL(files);
 
 	/* jump to item if there is a last visited item */
@@ -390,7 +389,7 @@ void ui_load_folder(char* folder)
 		    break;
 		}
 	    }
-	    if (found) ku_table_select(ui.filetable, index, 0);
+	    if (found) vh_table_select(ui.filetablev, index, 0);
 	}
 
 	ui_show_status("Directory %s loaded", ui.current_folder);
@@ -507,7 +506,7 @@ void ui_show_info(mt_map_t* info)
 
     REL(keys);
 
-    ku_table_set_data(ui.infotable, items);
+    vh_table_set_data(ui.infotablev, items);
     ui_show_status("File info/data loaded for %s", MGET(info, "file/basename"));
 
     REL(items);
@@ -517,7 +516,8 @@ void ui_show_info(mt_map_t* info)
 
 void ui_open_approve_popup()
 {
-    if (ui.filetable->selected_items->length > 0)
+    vh_table_t* vh = ui.filetablev->handler_data;
+    if (vh->selected_items->length > 0)
     {
 	if (ui.okaycv->parent == NULL)
 	{
@@ -530,11 +530,12 @@ void ui_open_approve_popup()
 
 void ui_delete_selected_files()
 {
-    if (ui.filetable->selected_items->length > 0)
+    vh_table_t* vh = ui.filetablev->handler_data;
+    if (vh->selected_items->length > 0)
     {
-	for (int index = 0; index < ui.filetable->selected_items->length; index++)
+	for (int index = 0; index < vh->selected_items->length; index++)
 	{
-	    mt_map_t* file = ui.filetable->selected_items->data[index];
+	    mt_map_t* file = vh->selected_items->data[index];
 	    char*     path = MGET(file, "file/path");
 	    fm_delete(path);
 	}
@@ -571,7 +572,7 @@ void ui_show_context_menu(float x, float y)
 	ku_view_add_subview(ui.basev, ui.contextcv);
 	ku_view_set_frame(contextpopup, iframe);
 
-	ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttableevt");
+	ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
 	ku_window_activate(ui.window, contexttableevt);
 
 	ku_rect_t start = contextpopup->frame.local;
@@ -585,16 +586,16 @@ void ui_show_context_menu(float x, float y)
 
 	vh_anim_frame(contextpopup, start, end, 0, 15, AT_EASE);
 
-	ku_view_t* contexttable = GETV(contextpopup, "contexttable");
+	ku_view_t* contextanim = GETV(contextpopup, "contextpopupanim");
 
-	start = contexttable->frame.local;
+	start = contextanim->frame.local;
 	end   = start;
 
 	start.w -= 80;
 	start.h = 10;
-	ku_view_set_frame(contexttable, start);
+	ku_view_set_frame(contextanim, start);
 
-	vh_anim_frame(contexttable, start, end, 0, 15, AT_EASE);
+	vh_anim_frame(contextanim, start, end, 0, 15, AT_EASE);
     }
 }
 
@@ -625,15 +626,15 @@ void ui_cancel_input()
 
 /* events from all tables */
 
-void on_table_event(ku_table_event_t event)
+void ui_on_table_event(vh_table_event_t event)
 {
-    if (event.table == ui.filetable)
+    if (strcmp(event.view->id, "filetable") == 0)
     {
-	if (event.id == KU_TABLE_EVENT_FIELDS_UPDATE)
+	if (event.id == VH_TABLE_EVENT_FIELDS_UPDATE)
 	{
 	    /* TODO : save field order */
 	}
-	else if (event.id == KU_TABLE_EVENT_SELECT)
+	else if (event.id == VH_TABLE_EVENT_SELECT)
 	{
 	    /* show file info and open immediately if possible on simple select */
 
@@ -642,13 +643,13 @@ void on_table_event(ku_table_event_t event)
 
 	    ui.rowview_for_context_menu = event.rowview;
 	}
-	else if (event.id == KU_TABLE_EVENT_OPEN)
+	else if (event.id == VH_TABLE_EVENT_OPEN)
 	{
 	    /* open folder on enter/double click*/
 
 	    ui_open_folder(event.selected_items->data[0]);
 	}
-	else if (event.id == KU_TABLE_EVENT_DRAG)
+	else if (event.id == VH_TABLE_EVENT_DRAG)
 	{
 	    /* start dragging selected files */
 
@@ -656,7 +657,7 @@ void on_table_event(ku_table_event_t event)
 
 	    ui_show_drag_view();
 	}
-	else if (event.id == KU_TABLE_EVENT_CONTEXT)
+	else if (event.id == VH_TABLE_EVENT_CONTEXT)
 	{
 	    /* show context menu on right click */
 	    if (event.rowview)
@@ -666,26 +667,26 @@ void on_table_event(ku_table_event_t event)
 	    }
 	}
     }
-    else if (event.table == ui.cliptable)
+    else if (strcmp(event.view->id, "cliptable") == 0)
     {
-	if (event.id == KU_TABLE_EVENT_FIELDS_UPDATE)
+	if (event.id == VH_TABLE_EVENT_FIELDS_UPDATE)
 	{
 	    /* TODO save field config */
 	}
-	else if (event.id == KU_TABLE_EVENT_SELECT)
+	else if (event.id == VH_TABLE_EVENT_SELECT)
 	{
 	    /* show file info and open immediately if possible on simple select */
 
 	    ui_open_file(event.selected_items->data[0]);
 	    ui_show_info(event.selected_items->data[0]);
 	}
-	else if (event.id == KU_TABLE_EVENT_OPEN)
+	else if (event.id == VH_TABLE_EVENT_OPEN)
 	{
 	    /* open folder on enter/double click*/
 
 	    ui_open_folder(event.selected_items->data[0]);
 	}
-	else if (event.id == KU_TABLE_EVENT_DROP)
+	else if (event.id == VH_TABLE_EVENT_DROP)
 	{
 	    /* add dragged data to clipboard table */
 
@@ -697,11 +698,11 @@ void on_table_event(ku_table_event_t event)
 		    mt_vector_add_unique_data(ui.clipdatav, file);
 		}
 
-		ku_table_set_data(ui.cliptable, ui.clipdatav);
+		vh_table_set_data(ui.cliptablev, ui.clipdatav);
 	    }
 	}
     }
-    else if (event.table == ui.contexttable)
+    else if (strcmp(event.view->id, "contexttable") == 0)
     {
 	/* remove context popup immediately */
 
@@ -710,19 +711,18 @@ void on_table_event(ku_table_event_t event)
 	    if (ui.contextcv->parent)
 	    {
 		ku_view_remove_from_parent(ui.contextcv);
-		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttableevt");
+		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
 		ku_window_deactivate(ui.window, contexttableevt);
 	    }
 	}
 
-	if ((event.ev.type == KU_EVENT_MDOWN && event.id == KU_TABLE_EVENT_SELECT) ||
-	    (event.ev.type == KU_EVENT_KDOWN && event.id == KU_TABLE_EVENT_OPEN))
+	if ((event.ev.type == KU_EVENT_MDOWN && event.id == VH_TABLE_EVENT_SELECT) ||
+	    (event.ev.type == KU_EVENT_KDOWN && event.id == VH_TABLE_EVENT_OPEN))
 	{
-
 	    if (ui.contextcv->parent)
 	    {
 		ku_view_remove_from_parent(ui.contextcv);
-		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttableevt");
+		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
 		ku_window_deactivate(ui.window, contexttableevt);
 	    }
 
@@ -745,7 +745,9 @@ void on_table_event(ku_table_event_t event)
 		    ui.inputmode     = UI_IM_RENAME;
 		    ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
 
-		    mt_map_t* info  = ui.filetable->selected_items->data[0];
+		    vh_table_t* vh = ui.filetablev->handler_data;
+
+		    mt_map_t* info  = vh->selected_items->data[0];
 		    char*     value = MGET(info, "file/basename");
 
 		    ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
@@ -760,13 +762,14 @@ void on_table_event(ku_table_event_t event)
 	    else if (event.selected_index == 3)
 	    {
 		/* send items to clipboard table */
-		for (int index = 0; index < ui.filetable->selected_items->length; index++)
+		vh_table_t* vh = ui.filetablev->handler_data;
+		for (int index = 0; index < vh->selected_items->length; index++)
 		{
-		    mt_map_t* file = ui.filetable->selected_items->data[index];
+		    mt_map_t* file = vh->selected_items->data[index];
 		    mt_vector_add_unique_data(ui.clipdatav, file);
 		}
 
-		ku_table_set_data(ui.cliptable, ui.clipdatav);
+		vh_table_set_data(ui.cliptablev, ui.clipdatav);
 	    }
 	    else if (event.selected_index == 4)
 	    {
@@ -819,14 +822,14 @@ void on_table_event(ku_table_event_t event)
 		}
 		ui_load_folder(ui.current_folder);
 		mt_vector_reset(ui.clipdatav);
-		ku_table_set_data(ui.cliptable, ui.clipdatav);
+		vh_table_set_data(ui.cliptablev, ui.clipdatav);
 	    }
 	    else if (event.selected_index == 6)
 	    {
 		/* reset clipboard */
 
 		mt_vector_reset(ui.clipdatav);
-		ku_table_set_data(ui.cliptable, ui.clipdatav);
+		vh_table_set_data(ui.cliptablev, ui.clipdatav);
 	    }
 	}
     }
@@ -890,13 +893,15 @@ void ui_on_key_down(vh_key_event_t event)
 
     if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
     {
-	for (int index = 0; index < ui.filetable->selected_items->length; index++)
+	vh_table_t* vh = ui.filetablev->handler_data;
+	for (int index = 0; index < vh->selected_items->length; index++)
 	{
-	    mt_map_t* file = ui.filetable->selected_items->data[index];
+	    vh_table_t* vh   = ui.filetablev->handler_data;
+	    mt_map_t*   file = vh->selected_items->data[index];
 	    mt_vector_add_unique_data(ui.clipdatav, file);
 	}
 
-	ku_table_set_data(ui.cliptable, ui.clipdatav);
+	vh_table_set_data(ui.cliptablev, ui.clipdatav);
     }
 
     if (event.ev.keycode == XKB_KEY_v && event.ev.ctrl_down)
@@ -916,8 +921,9 @@ void ui_on_key_down(vh_key_event_t event)
 	ui.inputmode     = UI_IM_RENAME;
 	ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
 
-	mt_map_t* info  = ui.filetable->selected_items->data[0];
-	char*     value = MGET(info, "file/basename");
+	vh_table_t* vh    = ui.filetablev->handler_data;
+	mt_map_t*   info  = vh->selected_items->data[0];
+	char*       value = MGET(info, "file/basename");
 
 	ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
     }
@@ -1061,9 +1067,10 @@ void ui_on_text_event(vh_textinput_event_t event)
 
 	    if (ui.inputmode == UI_IM_RENAME)
 	    {
-		if (ui.filetable->selected_items->length > 0)
+		vh_table_t* vh = ui.filetablev->handler_data;
+		if (vh->selected_items->length > 0)
 		{
-		    mt_map_t* file   = ui.filetable->selected_items->data[0];
+		    mt_map_t* file   = vh->selected_items->data[0];
 		    char*     parent = MGET(file, "file/parent");
 
 		    char* oldpath = MGET(file, "file/path");
@@ -1120,7 +1127,7 @@ void ui_on_text_event(vh_textinput_event_t event)
 	    REL(valid_path);
 
 	    /* activate file list */
-	    ku_view_t* filetableevnt = GETV(ui.basev, "filetableevt");
+	    ku_view_t* filetableevnt = GETV(ui.basev, "filetable_event");
 	    ku_window_activate(ui.window, filetableevnt);
 	}
     }
@@ -1134,91 +1141,13 @@ void ui_on_drag(vh_drag_event_t event)
 	if (ui.draggedv) ku_view_remove_from_parent(ui.draggedv);
 }
 
-/* creates a table from layer structure */
-/* TODO move this maybe to ku_gen_type? */
-
-ku_table_t* ui_create_table(ku_view_t* view, mt_vector_t* fields)
-{
-    /* <div id="filetable" class="colflex marginlt4"> */
-    /*   <div id="filetablehead" class="tablehead overflowhidden"/> */
-    /*   <div id="filetablelayers" class="fullscaleview overflowhidden"> */
-    /*     <div id="filetablebody" class="tablebody fullscaleview"> */
-    /* 	     <div id="filetable_row_a" class="rowa" type="label" text="row a"/> */
-    /* 	     <div id="filetable_row_b" class="rowb" type="label" text="row b"/> */
-    /* 	     <div id="filetable_row_selected" class="rowselected" type="label" text="row selected"/> */
-    /*     </div> */
-    /*     <div id="filetablescroll" class="fullscaleview"> */
-    /* 	     <div id="filetablevertscroll" class="vertscroll"/> */
-    /* 	     <div id="filetablehoriscroll" class="horiscroll"/> */
-    /*     </div> */
-    /*     <div id="filetableevt" class="fullscaleview"/> */
-    /*   </div> */
-    /* </div> */
-
-    ku_view_t* header  = NULL;
-    ku_view_t* headrow = NULL;
-    ku_view_t* layers  = NULL;
-    ku_view_t* body    = NULL;
-    ku_view_t* scroll  = NULL;
-    ku_view_t* event   = NULL;
-    ku_view_t* row_a   = NULL;
-    ku_view_t* row_b   = NULL;
-    ku_view_t* row_s   = NULL;
-
-    if (view->views->length == 2)
-    {
-	header  = view->views->data[0];
-	headrow = header->views->data[0];
-	layers  = view->views->data[1];
-	body    = layers->views->data[0];
-	scroll  = layers->views->data[1];
-	event   = layers->views->data[2];
-	row_a   = body->views->data[0];
-	row_b   = body->views->data[1];
-	row_s   = body->views->data[2];
-    }
-    if (view->views->length == 1)
-    {
-	layers = view->views->data[0];
-	body   = layers->views->data[0];
-	event  = layers->views->data[1];
-	row_a  = body->views->data[0];
-	row_b  = body->views->data[1];
-	row_s  = body->views->data[2];
-    }
-
-    textstyle_t rowastyle = ku_gen_textstyle_parse(row_a);
-    textstyle_t rowbstyle = ku_gen_textstyle_parse(row_b);
-    textstyle_t rowsstyle = ku_gen_textstyle_parse(row_s);
-    textstyle_t headstyle = headrow == NULL ? (textstyle_t){0} : ku_gen_textstyle_parse(headrow);
-
-    ku_table_t* table = ku_table_create(
-	view->id,
-	body,
-	scroll,
-	event,
-	header,
-	fields,
-	rowastyle,
-	rowbstyle,
-	rowsstyle,
-	headstyle,
-	on_table_event);
-
-    ku_view_remove_from_parent(row_a);
-    ku_view_remove_from_parent(row_b);
-    ku_view_remove_from_parent(row_s);
-    if (headrow) ku_view_remove_from_parent(headrow);
-
-    return table;
-}
-
 void ui_init(int width, int height, float scale, ku_window_t* window)
 {
     ku_text_init();
 
-    ui.window         = window;
-    ui.play_state     = 1; /* TODO load it from config */
+    ui.window     = window;
+    ui.play_state = 1; /* TODO load it from config */
+
     ui.filedatav      = VNEW();
     ui.clipdatav      = VNEW();
     ui.folder_history = MNEW();
@@ -1249,32 +1178,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ui.dragv = GETV(bv, "draglayer");
     vh_drag_attach(ui.dragv, ui_on_drag);
 
-    /* set up focusable */
-
-    ku_view_t* filetableevnt = GETV(bv, "filetableevt");
-    ku_view_t* infotableevt  = GETV(bv, "infotableevt");
-    ku_view_t* cliptableevt  = GETV(bv, "cliptableevt");
-    ku_view_t* previewevt    = GETV(bv, "previewevt");
-    ku_view_t* pathtv        = GETV(bv, "pathtf");
-
-    ui.focusable_filelist = VNEW();
-    ui.focusable_infolist = VNEW();
-    ui.focusable_cliplist = VNEW();
-
-    VADD(ui.focusable_filelist, filetableevnt);
-    VADD(ui.focusable_filelist, previewevt);
-    VADD(ui.focusable_filelist, pathtv);
-
-    VADD(ui.focusable_infolist, filetableevnt);
-    VADD(ui.focusable_infolist, infotableevt);
-    VADD(ui.focusable_infolist, previewevt);
-    VADD(ui.focusable_infolist, pathtv);
-
-    VADD(ui.focusable_cliplist, filetableevnt);
-    VADD(ui.focusable_cliplist, cliptableevt);
-    VADD(ui.focusable_cliplist, previewevt);
-    VADD(ui.focusable_cliplist, pathtv);
-
     /* setup visualizer */
 
     ui.prevcontv = GETV(bv, "previewcont");
@@ -1294,12 +1197,13 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, STRNC("file/last_status"));
     VADDR(fields, mt_number_new_int(180));
 
-    ui.filetable = ui_create_table(GETV(bv, "filetable"), fields);
-    ku_window_activate(ui.window, GETV(bv, "filetableevt")); /* start with file list listening for key up and down */
+    ui.filetablev = GETV(bv, "filetable");
+    vh_table_attach(ui.filetablev, fields, ui_on_table_event);
 
     /* clipboard table */
 
-    ui.cliptable = ui_create_table(GETV(bv, "cliptable"), fields);
+    ui.cliptablev = GETV(bv, "cliptable");
+    vh_table_attach(ui.cliptablev, fields, ui_on_table_event);
 
     REL(fields);
 
@@ -1312,7 +1216,8 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, STRNC("value"));
     VADDR(fields, mt_number_new_int(400));
 
-    ui.infotable = ui_create_table(GETV(bv, "infotable"), fields);
+    ui.infotablev = GETV(bv, "infotable");
+    vh_table_attach(ui.infotablev, fields, ui_on_table_event);
 
     REL(fields);
 
@@ -1323,7 +1228,11 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, STRNC("value"));
     VADDR(fields, mt_number_new_int(200));
 
-    ui.contexttable = ui_create_table(GETV(bv, "contexttable"), fields);
+    ui.contexttablev = GETV(bv, "contexttable");
+    vh_table_attach(ui.contexttablev, fields, ui_on_table_event);
+    ku_view_t* contexttablebodyv = GETV(ui.contexttablev, "contexttable_body");
+    /* hack for context menu popup animation */
+    contexttablebodyv->style.masked = 0;
 
     REL(fields);
 
@@ -1337,7 +1246,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Paste using move")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(50, "Reset clipboard")}));
 
-    ku_table_set_data(ui.contexttable, items);
+    vh_table_set_data(ui.contexttablev, items);
     REL(items);
 
     /* settings table */
@@ -1347,7 +1256,8 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, STRNC("value"));
     VADDR(fields, mt_number_new_int(510));
 
-    ui.settingstable = ui_create_table(GETV(bv, "settingstable"), fields);
+    ui.settingstablev = GETV(bv, "settingstable");
+    vh_table_attach(ui.settingstablev, fields, ui_on_table_event);
 
     REL(fields);
 
@@ -1370,7 +1280,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Cancel input : ESC")}));
     VADDR(items, mapu_pair((mpair_t){"value", STRNF(200, "Cancel popup : ESC")}));
 
-    ku_table_set_data(ui.settingstable, items);
+    vh_table_set_data(ui.settingstablev, items);
     REL(items);
 
     /* preview block */
@@ -1413,17 +1323,16 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     ku_view_t* contextcv    = GETV(bv, "contextpopupcont");
     ku_view_t* contextpopup = GETV(bv, "contextpopup");
-    ku_view_t* contextevt   = GETV(bv, "contexttableevt");
-    ku_view_t* contexttable = GETV(bv, "contexttable");
+    ku_view_t* contextanimv = GETV(bv, "contextpopupanim");
 
-    contextevt->blocks_key      = 1;
+    vh_anim_add(contextanimv, NULL, NULL);
+
     contextpopup->blocks_touch  = 1;
     contextpopup->blocks_scroll = 1;
 
     ui.contextcv = RET(contextcv);
 
     vh_anim_add(contextpopup, NULL, NULL);
-    vh_anim_add(contexttable, NULL, NULL);
 
     vh_touch_add(ui.contextcv, ui_on_touch);
     ku_view_remove_from_parent(ui.contextcv);
@@ -1459,27 +1368,62 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     ui.inputcv->blocks_scroll  = 1;
 
     vh_textinput_add(ui.inputtv, "Generic input", "", ui_on_text_event);
-
     vh_touch_add(ui.inputcv, ui_on_touch);
-
     ku_view_remove_from_parent(ui.inputcv);
 
     /* path bar */
 
     ui.pathtv = GETV(bv, "pathtf");
-
     vh_textinput_add(ui.pathtv, "/home/milgra", "", ui_on_text_event);
 
     /* time label */
 
-    ui.seeklv = GETV(bv, "seektf");
-
+    ui.seeklv   = GETV(bv, "seektf");
     ui.seekbarv = GETV(bv, "seekbar");
 
     /* main gap */
 
     ui.cliptablev = RET(GETV(bv, "cliptable"));
     ui.infotablev = RET(GETV(bv, "infotable"));
+
+    ui.playbtnv  = RET(GETV(bv, "playbtn"));
+    ui.prevbtnv  = RET(GETV(bv, "prevbtn"));
+    ui.nextbtnv  = RET(GETV(bv, "nextbtn"));
+    ui.plusbtnv  = RET(GETV(bv, "plusbtn"));
+    ui.minusbtnv = RET(GETV(bv, "minusbtn"));
+
+    ui_update_control_bar();
+
+    /* set up focusable */
+
+    ku_view_t* filetableevnt   = GETV(ui.filetablev, "filetable_event");
+    ku_view_t* infotableevt    = GETV(ui.infotablev, "infotable_event");
+    ku_view_t* cliptableevt    = GETV(ui.cliptablev, "cliptable_event");
+    ku_view_t* contexttableevt = GETV(ui.contexttablev, "contexttable_event");
+    ku_view_t* previewevt      = GETV(bv, "previewevt");
+    ku_view_t* pathtv          = GETV(bv, "pathtf");
+
+    ui.focusable_filelist = VNEW();
+    ui.focusable_infolist = VNEW();
+    ui.focusable_cliplist = VNEW();
+
+    VADD(ui.focusable_filelist, filetableevnt);
+    VADD(ui.focusable_filelist, previewevt);
+    VADD(ui.focusable_filelist, pathtv);
+
+    VADD(ui.focusable_infolist, filetableevnt);
+    VADD(ui.focusable_infolist, infotableevt);
+    VADD(ui.focusable_infolist, previewevt);
+    VADD(ui.focusable_infolist, pathtv);
+
+    VADD(ui.focusable_cliplist, filetableevnt);
+    VADD(ui.focusable_cliplist, cliptableevt);
+    VADD(ui.focusable_cliplist, previewevt);
+    VADD(ui.focusable_cliplist, pathtv);
+
+    contexttableevt->blocks_key = 1;
+
+    ku_window_activate(ui.window, filetableevnt); /* start with file list listening for key up and down */
 
     if (config_get_bool("sidebar_visible") == 0)
     {
@@ -1493,14 +1437,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 	ku_view_remove_from_parent(ui.cliptablev);
 	ku_window_set_focusable(window, ui.focusable_infolist);
     }
-
-    ui.playbtnv  = RET(GETV(bv, "playbtn"));
-    ui.prevbtnv  = RET(GETV(bv, "prevbtn"));
-    ui.nextbtnv  = RET(GETV(bv, "nextbtn"));
-    ui.plusbtnv  = RET(GETV(bv, "plusbtn"));
-    ui.minusbtnv = RET(GETV(bv, "minusbtn"));
-
-    ui_update_control_bar();
 
     // show texture map for debug
 
@@ -1527,9 +1463,11 @@ void ui_destroy()
     REL(ui.focusable_infolist);
     REL(ui.focusable_cliplist);
 
-    REL(ui.cliptable);
-    REL(ui.infotable);
-    REL(ui.filetable);
+    REL(ui.cliptablev);
+    REL(ui.infotablev);
+    REL(ui.filetablev);
+    REL(ui.contexttablev);
+    REL(ui.settingstablev);
 
     REL(ui.cliptablev);
     REL(ui.infotablev);
@@ -1542,9 +1480,6 @@ void ui_destroy()
     REL(ui.nextbtnv);
     REL(ui.plusbtnv);
     REL(ui.minusbtnv);
-
-    REL(ui.contexttable);
-    REL(ui.settingstable);
 
     REL(ui.settingscv);
     REL(ui.contextcv);

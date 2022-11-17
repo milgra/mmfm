@@ -313,6 +313,7 @@ void vh_textinput_on_anim(vh_anim_event_t event)
 void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
 {
     vh_textinput_t* data = view->handler_data;
+
     if (ev.type == KU_EVENT_MDOWN)
     {
 	// ku_rect_t frame = view->frame.global;
@@ -341,7 +342,7 @@ void vh_textinput_evt(ku_view_t* view, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_TEXT)
     {
-	if (data->limit > 0 && data->glyph_v->length < data->limit)
+	if (data->limit == 0 || (data->limit > 0 && data->glyph_v->length < data->limit))
 	{
 	    data->text = mt_string_append(data->text, ev.text);
 
@@ -482,7 +483,7 @@ void vh_textinput_add(ku_view_t* view, char* text, char* phtext, void (*on_event
     // cursor
 
     data->cursor_v                         = ku_view_new(id_c, (ku_rect_t){50, 12, 2, 0}); // REL 4
-    data->cursor_v->style.background_color = 0xFFFFFFFF;
+    data->cursor_v->style.background_color = data->style.textcolor;
 
     tg_css_add(data->cursor_v);
     vh_anim_add(data->cursor_v, NULL, NULL);

@@ -207,6 +207,7 @@ com_sources = ['src/mmfm/ui.c',
 	       'src/kinetic_ui/handler/vh_tbl_evnt.c',
 	       'src/kinetic_ui/handler/vh_tbl_scrl.c',
 	       'src/kinetic_ui/handler/vh_tbl_head.c',
+	       'src/kinetic_ui/handler/vh_table.c',
 	       'src/kinetic_ui/ku_view.c',
 	       'src/kinetic_ui/egl/ku_gl_atlas.c',
 	       'src/kinetic_ui/egl/ku_gl_floatbuffer.c',
@@ -222,7 +223,6 @@ com_sources = ['src/mmfm/ui.c',
 	       'src/kinetic_ui/ku_png.c',
 	       'src/kinetic_ui/ku_draw.c',
 	       'src/kinetic_ui/ku_text.c',
-	       'src/kinetic_ui/ku_table.c',
 	       'src/kinetic_ui/ku_gen_textstyle.c'] + protos_src + protos_headers
 
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'

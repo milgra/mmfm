@@ -222,7 +222,8 @@ mt_vector_t* mt_string_split(char* str, char* del)
     char*        token;
     mt_vector_t* result = VNEW();
 
-    token = strtok(str, del);
+    char* copy = mt_string_new_cstring(str);
+    token      = strtok(copy, del);
 
     while (token != NULL)
     {
@@ -231,8 +232,10 @@ mt_vector_t* mt_string_split(char* str, char* del)
 
 	VADDR(result, txt);
 
-	token = strtok(NULL, str);
+	token = strtok(NULL, del);
     }
+
+    REL(copy);
 
     return result;
 }

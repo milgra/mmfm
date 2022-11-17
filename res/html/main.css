@@ -13,8 +13,14 @@
     flex-direction: row;
  }
 
-.marginr2 {
-    margin-right: 2px;
+.popupshadow {
+    border-radius: 15px;
+    background-color: #151515FF;
+    box-shadow: 40px #FFFFFF22;
+}
+
+.popupcontainer {
+    align-items: center;
 }
 
 .tablehead {
@@ -45,6 +51,10 @@
     height: 10px;
     bottom: 0px;
     background-color: #ACACAC66;
+}
+
+.marginr2 {
+    margin-right: 2px;
 }
 
 .hgap5 {
@@ -115,21 +125,9 @@
     margin-bottom: 40px;
     overflow: hidden;
 }
-
-.popupcontainer {
-    align-items: center;
-}
-
-.popupshadow {
-    border-radius: 15px;
-    background-color: #151515FF;
-    box-shadow: 40px #FFFFFF22;
-}
-
 .popuptable {
     margin-top: 20px;
     margin-bottom: 20px;
-    overflow: hidden;
 }
 
 .popuptablebody {
@@ -154,6 +152,10 @@
     color: #DEDEDEFF;
     font-size: 16px;
     font-family: "Terminus (TTF):style=Bold";
+}
+
+.rowcolor {
+    background-color: #222222FF;
 }
 
 .rowa {
@@ -376,6 +378,10 @@
     width: 500px;
     height: 280px;
     margin: auto;
+}
+
+.contextanim {
+    overflow: hidden;
 }
 
 #contextpopup {

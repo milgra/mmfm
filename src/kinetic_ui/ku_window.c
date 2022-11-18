@@ -18,7 +18,6 @@ struct _ku_window_t
 
     mt_vector_t* ptrqueue; // views collected by mouse uo and down
     mt_vector_t* movqueue; // views collected by movement events
-    mt_vector_t* actqueue; // views collected by activation
 };
 
 ku_window_t* ku_window_create(int width, int height);
@@ -49,7 +48,6 @@ void ku_window_del(void* p)
     REL(win->views);
     REL(win->ptrqueue);
     REL(win->movqueue);
-    REL(win->actqueue);
     if (win->focusable) REL(win->focusable);
 }
 
@@ -61,7 +59,6 @@ ku_window_t* ku_window_create(int width, int height)
     win->views    = VNEW();
     win->ptrqueue = VNEW();
     win->movqueue = VNEW();
-    win->actqueue = VNEW();
 
     win->width  = width;
     win->height = height;
@@ -84,12 +81,12 @@ void ku_window_remove(ku_window_t* win, ku_view_t* view)
 
 void ku_window_activate(ku_window_t* win, ku_view_t* view)
 {
-    mt_vector_add_unique_data(win->actqueue, view);
+    mt_vector_add_unique_data(win->ptrqueue, view);
 }
 
 void ku_window_deactivate(ku_window_t* win, ku_view_t* view)
 {
-    mt_vector_rem(win->actqueue, view);
+    mt_vector_rem(win->ptrqueue, view);
 }
 
 void ku_window_set_focusable(ku_window_t* window, mt_vector_t* views)
@@ -161,17 +158,20 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	if (ev.type == KU_EVENT_MDOWN) outev.type = KU_EVENT_MDOWN_OUT;
 	if (ev.type == KU_EVENT_MUP) outev.type = KU_EVENT_MUP_OUT;
 
-	for (int i = win->ptrqueue->length - 1; i > -1; i--)
+	if (ev.type == KU_EVENT_MDOWN)
 	{
-	    ku_view_t* v = win->ptrqueue->data[i];
-	    if (v->needs_touch)
+	    for (int i = win->ptrqueue->length - 1; i > -1; i--)
 	    {
-		if (v->handler) (*v->handler)(v, outev);
-		if (v->blocks_touch) break;
+		ku_view_t* v = win->ptrqueue->data[i];
+		if (v->needs_touch)
+		{
+		    if (v->handler) (*v->handler)(v, outev);
+		    if (v->blocks_touch) break;
+		}
 	    }
-	}
 
-	mt_vector_reset(win->ptrqueue);
+	    mt_vector_reset(win->ptrqueue);
+	}
 	ku_view_coll_touched(win->root, ev, win->ptrqueue);
 
 	for (int i = win->ptrqueue->length - 1; i > -1; i--)
@@ -182,7 +182,6 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		if (v->handler) (*v->handler)(v, ev);
 		if (v->blocks_touch) break;
 	    }
-	    if (v->needs_key) mt_vector_add_unique_data(win->actqueue, v);
 	}
     }
     else if (ev.type == KU_EVENT_SCROLL)
@@ -224,7 +223,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		ku_view_t* v = win->focusable->data[0];
 		win->focused = v;
 		if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_FOCUS});
-		mt_vector_add_unique_data(win->actqueue, v);
+		mt_vector_add_unique_data(win->ptrqueue, v);
 	    }
 	    else
 	    {
@@ -238,7 +237,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		    {
 			win->focused = NULL;
 			if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_UNFOCUS});
-			mt_vector_rem(win->actqueue, v);
+			mt_vector_rem(win->ptrqueue, v);
 			break;
 		    }
 		}
@@ -250,15 +249,15 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 		ku_view_t* v = win->focusable->data[index];
 		win->focused = v;
 		if (v->handler) (*v->handler)(v, (ku_event_t){.type = KU_EVENT_FOCUS});
-		mt_vector_add_unique_data(win->actqueue, v);
+		mt_vector_add_unique_data(win->ptrqueue, v);
 	    }
 	}
 
-	for (int i = win->actqueue->length - 1; i > -1; i--)
+	for (int i = win->ptrqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->actqueue->data[i];
+	    ku_view_t* v = win->ptrqueue->data[i];
 
-	    if (v->needs_key)
+	    if (v->needs_key && v->parent)
 	    {
 		if (v->handler) (*v->handler)(v, ev);
 		if (v->blocks_key) break;
@@ -267,9 +266,9 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
     }
     else if (ev.type == KU_EVENT_TEXT)
     {
-	for (int i = win->actqueue->length - 1; i > -1; i--)
+	for (int i = win->ptrqueue->length - 1; i > -1; i--)
 	{
-	    ku_view_t* v = win->actqueue->data[i];
+	    ku_view_t* v = win->ptrqueue->data[i];
 	    if (v->needs_text)
 	    {
 		if (v->handler) (*v->handler)(v, ev);

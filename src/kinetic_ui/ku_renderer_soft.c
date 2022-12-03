@@ -22,7 +22,7 @@ void ku_renderer_software_render(mt_vector_t* views, ku_bitmap_t* bitmap, ku_rec
 
     /* draw dirty rect for debugging */
 
-    /* ku_bitmap_blend_rect(&mmfm.window->bitmap, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h, 0x55FF0000); */
+    /* ku_bitmap_blend_rect(bitmap, (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h, 0x55FF0000); */
     /* ku_wayland_draw_window(mmfm.window, 0, 0, mmfm.window->width, mmfm.window->height); */
 
     /* we need to keep nested masks in mind */

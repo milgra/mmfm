@@ -1,6 +1,8 @@
 # MultiMedia File Manager
 
+- css cleanup
 - video on github page
+- show raw html/css switch without any code
 - legalso elem ne legyen felig takarva cursor down eseten
 - clear makepkg errors
 - tech video, automated ui/full test, logban meg a leakek is lathatoak

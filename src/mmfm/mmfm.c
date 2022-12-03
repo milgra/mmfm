@@ -2,12 +2,12 @@
 #include "config.c"
 #include "evrecorder.c"
 #include "filemanager.c"
+#include "ku_bitmap_ext.c"
 #include "ku_connector_wayland.c"
 #include "ku_gl.c"
 #include "ku_renderer_egl.c"
 #include "ku_renderer_soft.c"
 #include "ku_window.c"
-#include "mt_bitmap_ext.c"
 #include "mt_log.c"
 #include "mt_map.c"
 #include "mt_path.c"
@@ -25,10 +25,10 @@
 
 struct
 {
-    char              replay;
-    char              record;
-    struct wl_window* wlwindow;
-    ku_window_t*      kuwindow;
+    char         replay;
+    char         record;
+    wl_window_t* wlwindow;
+    ku_window_t* kuwindow;
 
     ku_rect_t    dirtyrect;
     int          softrender;
@@ -45,15 +45,15 @@ void init(wl_event_t event)
 
     mmfm.eventqueue = VNEW();
 
-    struct monitor_info* monitor = event.monitors[0];
-
     if (mmfm.softrender)
     {
 	mmfm.wlwindow = ku_wayland_create_window("mmfm", 1200, 600);
+	ku_wayland_show_window(mmfm.wlwindow);
     }
     else
     {
 	mmfm.wlwindow = ku_wayland_create_eglwindow("mmfm", 1200, 600);
+	ku_wayland_show_window(mmfm.wlwindow);
 
 	int max_width  = 0;
 	int max_height = 0;
@@ -66,11 +66,14 @@ void init(wl_event_t event)
 	}
 	ku_renderer_egl_init(max_width, max_height);
     }
+}
 
-    mmfm.kuwindow = ku_window_create(monitor->logical_width, monitor->logical_height);
+void load(wl_window_t* info)
+{
+    mmfm.kuwindow = ku_window_create(info->buffer_width, info->buffer_height, info->scale);
 
     mt_time(NULL);
-    ui_init(monitor->logical_width, monitor->logical_height, monitor->scale, mmfm.kuwindow); // DESTROY 3
+    ui_init(info->buffer_width, info->buffer_height, info->scale, mmfm.kuwindow); // DESTROY 3
     mt_time("ui init");
 
     if (mmfm.record)
@@ -85,8 +88,10 @@ void init(wl_event_t event)
 	evrec_init_player(mmfm.rep_path); // DESTROY 5
     }
 
-    ui_update_layout(monitor->logical_width, monitor->logical_height);
+    ui_update_layout(info->buffer_width, info->buffer_height);
     ui_load_folder(config_get("top_path"));
+
+    ku_window_layout(mmfm.kuwindow);
 }
 
 /* window update */
@@ -94,6 +99,8 @@ void init(wl_event_t event)
 void update(ku_event_t ev)
 {
     /* printf("UPDATE %i %u %i %i\n", ev.type, ev.time, ev.w, ev.h); */
+
+    if (ev.type == KU_EVENT_WINDOW_SHOWN) load(ev.window);
 
     if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
     if (ev.type == KU_EVENT_FRAME) ui_update_player();
@@ -110,14 +117,14 @@ void update(ku_event_t ev)
 
 	    /* mt_log_debug("drt %i %i %i %i", (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h); */
 	    /* mt_log_debug("drt prev %i %i %i %i", (int) mmfm.dirtyrect.x, (int) mmfm.dirtyrect.y, (int) mmfm.dirtyrect.w, (int) mmfm.dirtyrect.h); */
-	    /* mt_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h); */
+	    mt_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
 
 	    /* mt_time(NULL); */
 	    if (mmfm.softrender) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
 	    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
 	    /* mt_time("Render"); */
-	    /* nanosleep((const struct timespec[]){{0, 100000000L}}, NULL); */
 
+	    ku_wayland_request_frame(mmfm.wlwindow);
 	    ku_wayland_draw_window(mmfm.wlwindow, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
 
 	    mmfm.dirtyrect = dirty;
@@ -188,7 +195,7 @@ void update_record(ku_event_t ev)
 
 	    update_session(*event);
 
-	    if (event->type == KU_EVENT_KDOWN && event->keycode == XKB_KEY_Print) update_screenshot(ev.frame);
+	    if (event->type == KU_EVENT_KEY_DOWN && event->keycode == XKB_KEY_Print) update_screenshot(ev.frame);
 	    else ui_update_cursor((ku_rect_t){event->x, event->y, 10, 10});
 	}
 
@@ -224,7 +231,7 @@ void update_replay(ku_event_t ev)
 	{
 	    update_session(*recev);
 
-	    if (recev->type == KU_EVENT_KDOWN && recev->keycode == XKB_KEY_Print) update_screenshot(ev.frame);
+	    if (recev->type == KU_EVENT_KEY_DOWN && recev->keycode == XKB_KEY_Print) update_screenshot(ev.frame);
 	    else ui_update_cursor((ku_rect_t){recev->x, recev->y, 10, 10});
 	}
 
@@ -343,6 +350,7 @@ int main(int argc, char* argv[])
     char* wrk_path    = mt_path_new_normalize(cwd, NULL);                                                                             // REL 5
     char* res_path    = res_par ? mt_path_new_normalize(res_par, wrk_path) : mt_string_new_cstring(PKG_DATADIR);                      // REL 7
     char* cfgdir_path = cfg_par ? mt_path_new_normalize(cfg_par, wrk_path) : mt_path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 8
+    char* img_path    = mt_path_new_append(res_path, "img");                                                                          // REL 9
     char* css_path    = mt_path_new_append(res_path, "html/main.css");                                                                // REL 9
     char* html_path   = mt_path_new_append(res_path, "html/main.html");                                                               // REL 10
     char* cfg_path    = mt_path_new_append(cfgdir_path, "config.kvl");                                                                // REL 12
@@ -358,6 +366,7 @@ int main(int argc, char* argv[])
     mt_log_debug("config path   : %s", cfg_path);
     mt_log_debug("directory path   : %s", dir_path);
     mt_log_debug("state path   : %s", per_path);
+    mt_log_debug("img path      : %s", img_path);
     mt_log_debug("css path      : %s", css_path);
     mt_log_debug("html path     : %s", html_path);
     mt_log_debug("record path   : %s", rec_path);
@@ -380,6 +389,7 @@ int main(int argc, char* argv[])
     // init non-configurable defaults
 
     config_set("top_path", dir_path ? dir_path : wrk_path);
+    config_set("img_path", img_path);
     config_set("wrk_path", wrk_path);
     config_set("cfg_path", cfg_path);
     config_set("per_path", per_path);
@@ -408,6 +418,7 @@ int main(int argc, char* argv[])
     if (rep_par) REL(rep_par); // REL 3
     if (frm_par) REL(frm_par); // REL 4
 
+    REL(img_path);
     REL(wrk_path);    // REL 6
     REL(res_path);    // REL 7
     REL(cfgdir_path); // REL 8

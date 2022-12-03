@@ -2,6 +2,7 @@
 #define ku_wayland_h
 
 #include "ku_bitmap.c"
+#include "ku_draw.c"
 #include "ku_event.c"
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
@@ -23,6 +24,7 @@
 #include <unistd.h>
 #include <wayland-cursor.h>
 #include <wayland-egl.h>
+#include <wayland-server.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include "mt_log.c"
@@ -70,12 +72,12 @@ struct keyboard_info
 
 struct pointer_info
 {
-    int   px;
-    int   py;
-    int   drag;
-    int   down;
-    float scale;
-    uint  lastdown;
+    int      px;
+    int      py;
+    int      drag;
+    int      down;
+    float    scale;
+    uint32_t lastdown;
 };
 
 /* TODO use added, removed and changed events */
@@ -98,15 +100,25 @@ struct _wl_event_t
 enum wl_window_type
 {
     WL_WINDOW_NATIVE,
-    WL_WINDOW_EGL
+    WL_WINDOW_EGL,
+    WL_WINDOW_LAYER,
 };
 
-struct wl_window
+typedef struct _wl_window_t wl_window_t;
+struct _wl_window_t
 {
-    int scale;
-    int width;
-    int height;
-    int fullscreen;
+    int  scale;
+    int  width;
+    int  height;
+    int  buffer_width;
+    int  buffer_height;
+    int  fullscreen;
+    int  hidden;
+    int  margin;
+    char anchor[4];
+
+    int shown;  /* surface_enter is called, scaling is set */
+    int inited; /* egl is swapped or buffer is attached for the first time to trigger surface_enter event */
 
     enum wl_window_type type;
 
@@ -142,32 +154,21 @@ struct wl_window
     EGLDisplay egldisplay;
     EGLSurface eglsurface;
     EGLContext eglcontext;
-};
 
-struct layer_info
-{
     struct zwlr_layer_shell_v1*   layer_shell;   /* active layer shell */
     struct zwlr_layer_surface_v1* layer_surface; /* active layer surface */
-
-    struct monitor_info* monitor; /* related monitor */
-    struct wl_surface*   surface; /* wl surface for layer */
-
-    struct wl_buffer* buffer;   /* wl buffer for surface */
-    void*             shm_data; /* active bufferdata */
-    int               shm_size; /* active bufferdata size */
-    ku_bitmap_t       bitmap;   /* backing bitmap */
 };
 
 void ku_wayland_init(void (*init)(wl_event_t event), void (*update)(ku_event_t), void (*destroy)(), int time_event_delay);
 
-struct wl_window* ku_wayland_create_window(char* title, int width, int height);
-struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height);
+wl_window_t* ku_wayland_create_window(char* title, int width, int height);
+wl_window_t* ku_wayland_create_eglwindow(char* title, int width, int height);
+wl_window_t* ku_wayland_create_generic_layer(struct monitor_info* monitor, int width, int height, int margin, char* anchor);
+void         ku_wayland_show_window(wl_window_t* info);
 
-void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h);
-void ku_wayland_delete_window(struct wl_window* info);
-
-void ku_wayland_create_layer();
-void ku_wayland_delete_layer();
+void ku_wayland_draw_window(wl_window_t* info, int x, int y, int w, int h);
+void ku_wayland_delete_window(wl_window_t* info);
+void ku_wayland_request_frame(wl_window_t* info);
 
 void ku_wayland_exit();
 void ku_wayland_toggle_fullscreen();
@@ -177,7 +178,7 @@ void ku_wayland_set_time_event_delay(int ms);
 
 #if __INCLUDE_LEVEL__ == 0
 
-void ku_wayland_resize_window_buffer(struct wl_window* info);
+void ku_wayland_resize_window_buffer(wl_window_t* info);
 
 struct wlc_t
 {
@@ -211,7 +212,7 @@ struct wlc_t
     int                   monitor_count;
     int                   window_count;
     struct monitor_info** monitors;
-    struct wl_window**    windows;
+    wl_window_t**         windows;
 
     /* TODO remove current monitor */
 
@@ -344,7 +345,7 @@ static void ku_wayland_buffer_release(void* data, struct wl_buffer* wl_buffer)
 static const struct wl_buffer_listener buffer_listener = {
     .release = ku_wayland_buffer_release};
 
-void ku_wayland_create_buffer(struct wl_window* info, int width, int height)
+void ku_wayland_create_buffer(wl_window_t* info, int width, int height)
 {
     if (info->buffer)
     {
@@ -397,7 +398,7 @@ static const struct wl_callback_listener wl_surface_frame_listener;
 
 static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t time)
 {
-    struct wl_window* info = data;
+    wl_window_t* info = data;
 
     /* Count framerate */
     if (time - wlc.last_frame > 1000)
@@ -406,7 +407,8 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
 	wlc.frame_count = 1;
 	wlc.last_frame  = time;
     }
-    else wlc.frame_count++;
+    else
+	wlc.frame_count++;
 
     /* Destroy this callback */
     wl_callback_destroy(cb);
@@ -418,6 +420,7 @@ static void wl_surface_frame_done(void* data, struct wl_callback* cb, uint32_t t
     event.type       = KU_EVENT_FRAME;
     event.time_frame = (float) (event.time - wlc.frame_event.time) / 1000.0;
     event.frame      = wlc.frame_index++;
+    event.window     = (void*) info;
 
     /* Store event to be able to calculate frame delta */
     wlc.frame_event = event;
@@ -434,14 +437,52 @@ static const struct wl_callback_listener wl_surface_frame_listener = {
 
 static void ku_wayland_layer_surface_configure(void* data, struct zwlr_layer_surface_v1* surface, uint32_t serial, uint32_t width, uint32_t height)
 {
-    /* mt_log_debug("layer surface configure serial %u width %i height %i", serial, width, height); */
+    mt_log_debug("layer surface configure serial %u width %i height %i", serial, width, height);
 
     zwlr_layer_surface_v1_ack_configure(surface, serial);
+
+    wl_window_t* info = data;
+
+    if (info->inited == 0)
+    {
+	info->inited = 1;
+
+	ku_wayland_create_buffer(info, info->buffer_width, info->buffer_height);
+
+	ku_event_t event = init_event();
+	event.type       = KU_EVENT_WINDOW_SHOWN;
+	event.w          = info->buffer_width;
+	event.h          = info->buffer_height;
+	event.window     = (void*) info;
+
+	(*wlc.update)(event);
+    }
+    else
+    {
+	if (info->width != width || info->height != height)
+	{
+	    printf("RESZE\n");
+	    info->width         = width;
+	    info->height        = height;
+	    info->buffer_width  = info->width * info->scale;
+	    info->buffer_height = info->height * info->scale;
+
+	    ku_wayland_create_buffer(info, info->buffer_width, info->buffer_height);
+
+	    ku_event_t event = init_event();
+	    event.type       = KU_EVENT_RESIZE;
+	    event.w          = info->buffer_width;
+	    event.h          = info->buffer_height;
+	    event.window     = (void*) info;
+
+	    (*wlc.update)(event);
+	}
+    }
 }
 
 static void ku_wayland_layer_surface_closed(void* _data, struct zwlr_layer_surface_v1* surface)
 {
-    /* mt_log_debug("layer surface configure"); */
+    mt_log_debug("layer surface configure");
 }
 
 struct zwlr_layer_surface_v1_listener layer_surface_listener = {
@@ -453,9 +494,9 @@ struct zwlr_layer_surface_v1_listener layer_surface_listener = {
 
 void xdg_toplevel_configure(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height, struct wl_array* states)
 {
-    /* mt_log_debug("xdg toplevel configure w %i h %i", width, height); */
+    mt_log_debug("xdg toplevel configure w %i h %i", width, height);
 
-    struct wl_window* info = data;
+    wl_window_t* info = data;
 
     if (width > 0 && height > 0)
     {
@@ -472,7 +513,7 @@ void xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel)
 
 void xdg_toplevel_configure_bounds(void* data, struct xdg_toplevel* xdg_toplevel, int32_t width, int32_t height)
 {
-    /* mt_log_debug("xdg toplevel configure bounds w %i h %i", width, height); */
+    mt_log_debug("xdg toplevel configure bounds w %i h %i", width, height);
 }
 
 void xdg_toplevel_wm_capabilities(void* data, struct xdg_toplevel* xdg_toplevel, struct wl_array* capabilities)
@@ -484,66 +525,60 @@ static const struct xdg_toplevel_listener xdg_toplevel_listener = {
     .configure        = xdg_toplevel_configure,
     .close            = xdg_toplevel_close,
     .configure_bounds = xdg_toplevel_configure_bounds,
-    .wm_capabilities  = xdg_toplevel_wm_capabilities};
+    /* .wm_capabilities  = xdg_toplevel_wm_capabilities */
+};
 
 /* xdg surface events */
 
 static void xdg_surface_configure(void* data, struct xdg_surface* xdg_surface, uint32_t serial)
 {
-    /* mt_log_debug("xdg surface configure"); */
-
     xdg_surface_ack_configure(xdg_surface, serial);
 
-    struct wl_window* info = data;
+    wl_window_t* info = data;
 
-    if (info->width != info->new_width && info->height != info->new_height)
-    {
-	ku_event_t event = init_event();
-	event.type       = KU_EVENT_RESIZE;
-	event.w          = info->new_width;
-	event.h          = info->new_height;
+    mt_log_debug("xdg surface configure %i %i %i", info->type, info->width, info->height);
 
-	(*wlc.update)(event);
-    }
+    if (info->inited == 0)
+    {
+	info->inited = 1;
 
-    if (info->type == WL_WINDOW_NATIVE)
-    {
-	/* resize native buffer */
-	ku_wayland_resize_window_buffer(info);
-    }
-    else
-    {
-	if (info->width != info->new_width &&
-	    info->height != info->new_height)
+	if (info->type == WL_WINDOW_EGL) eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
+	if (info->type == WL_WINDOW_NATIVE)
 	{
-	    info->width  = info->new_width;
-	    info->height = info->new_height;
+	    ku_wayland_create_buffer(info, info->width, info->height);
 
-	    info->bitmap.w = info->width;
-	    info->bitmap.h = info->height;
-
-	    /* resize egl window */
-	    wl_egl_window_resize(info->eglwindow, info->width, info->height, 0, 0);
-
-	    /* set opaque */
-	    wl_region_add(info->region, 0, 0, info->width, info->height);
-	    wl_surface_set_opaque_region(info->surface, info->region);
-
-	    /* swap buffers */
-	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
-
-	    /* dispath frame event to render */
-	    ku_event_t event = init_event();
-	    event.type       = KU_EVENT_FRAME;
-	    event.time_frame = (float) (event.time - wlc.frame_event.time) / 1000.0;
-	    event.frame      = wlc.frame_index++;
-
-	    /* Store event to be able to calculate frame delta */
-	    wlc.frame_event = event;
+	    wl_surface_attach(info->surface, info->buffer, 0, 0);
+	    wl_surface_damage(info->surface, 0, 0, info->width, info->height);
+	    wl_surface_commit(info->surface);
 	}
     }
+    else if (info->width != info->new_width || info->height != info->new_height)
+    {
+	info->width         = info->new_width;
+	info->height        = info->new_height;
+	info->buffer_width  = info->width * info->scale;
+	info->buffer_height = info->height * info->scale;
 
-    /* ku_wayland_resize_window_buffer(info); */
+	if (info->type == WL_WINDOW_EGL)
+	{
+	    info->bitmap.w = info->buffer_width;
+	    info->bitmap.h = info->buffer_height;
+	    wl_egl_window_resize(info->eglwindow, info->buffer_width, info->buffer_height, 0, 0);
+	}
+	if (info->type == WL_WINDOW_NATIVE) ku_wayland_create_buffer(info, info->buffer_width, info->buffer_height);
+
+	/* we shouldn't send events before surface enter ( and ku_event_window_shown ) event */
+	if (info->shown)
+	{
+	    ku_event_t event = init_event();
+	    event.type       = KU_EVENT_RESIZE;
+	    event.w          = info->buffer_width;
+	    event.h          = info->buffer_height;
+	    event.window     = (void*) info;
+
+	    (*wlc.update)(event);
+	}
+    }
 }
 
 static const struct xdg_surface_listener xdg_surface_listener = {
@@ -554,9 +589,11 @@ static const struct xdg_surface_listener xdg_surface_listener = {
 
 static void wl_surface_enter(void* userData, struct wl_surface* surface, struct wl_output* output)
 {
-    /* mt_log_debug("wl surface enter"); */
+    mt_log_debug("wl surface enter");
 
-    struct wl_window* info = userData;
+    wl_window_t* info = userData;
+
+    info->shown = 1;
 
     for (int index = 0; index < wlc.monitor_count; index++)
     {
@@ -566,23 +603,35 @@ static void wl_surface_enter(void* userData, struct wl_surface* surface, struct 
 	{
 	    mt_log_debug("output name %s %i %i", monitor->name, monitor->scale, info->scale);
 
-	    if (monitor->scale != info->scale)
+	    info->monitor       = monitor;
+	    info->scale         = monitor->scale;
+	    info->buffer_width  = info->width * info->scale;
+	    info->buffer_height = info->height * info->scale;
+
+	    wl_surface_set_buffer_scale(info->surface, info->scale);
+
+	    if (info->type == WL_WINDOW_EGL)
 	    {
-		info->monitor   = monitor;
-		info->new_scale = monitor->scale;
-
-		/* request re-scale with resizing */
-		if (info->type == WL_WINDOW_NATIVE) ku_wayland_resize_window_buffer(info);
-
-		/* TODO re-scale in case of EGL window also */
+		wl_egl_window_resize(info->eglwindow, info->buffer_width, info->buffer_height, 0, 0);
+		info->bitmap.w = info->buffer_width;
+		info->bitmap.h = info->buffer_height;
 	    }
+	    if (info->type == WL_WINDOW_NATIVE && info->buffer_width != info->bitmap.w) ku_wayland_create_buffer(info, info->buffer_width, info->buffer_height);
+
+	    ku_event_t event = init_event();
+	    event.type       = KU_EVENT_WINDOW_SHOWN;
+	    event.w          = info->buffer_width;
+	    event.h          = info->buffer_height;
+	    event.window     = (void*) info;
+
+	    (*wlc.update)(event);
 	}
     }
 }
 
 static void wl_surface_leave(void* userData, struct wl_surface* surface, struct wl_output* output)
 {
-    /* mt_log_debug("wl surface leave"); */
+    mt_log_debug("wl surface leave");
 }
 
 static const struct wl_surface_listener wl_surface_listener = {
@@ -590,13 +639,15 @@ static const struct wl_surface_listener wl_surface_listener = {
     .leave = wl_surface_leave,
 };
 
-struct wl_window* ku_wayland_create_generic_window(char* title, int width, int height)
+wl_window_t* ku_wayland_create_generic_window(char* title, int width, int height, int type)
 {
-    struct wl_window* info = CAL(sizeof(struct wl_window), NULL, NULL);
+    wl_window_t* info = CAL(sizeof(wl_window_t), NULL, NULL);
 
-    info->new_scale  = 1;
-    info->new_width  = width;
-    info->new_height = height;
+    info->type   = type;
+    info->scale  = 1;
+    info->width  = width;
+    info->height = height;
+    info->hidden = 1;
 
     info->surface      = wl_compositor_create_surface(wlc.compositor);
     info->xdg_surface  = xdg_wm_base_get_xdg_surface(wlc.xdg_wm_base, info->surface);
@@ -609,39 +660,37 @@ struct wl_window* ku_wayland_create_generic_window(char* title, int width, int h
     xdg_toplevel_set_title(info->xdg_toplevel, title);
     xdg_toplevel_set_app_id(info->xdg_toplevel, title);
 
-    wl_surface_commit(info->surface);
-
     return info;
 }
 
 /* creates xdg surface and toplevel */
 
-struct wl_window* ku_wayland_create_window(char* title, int width, int height)
+wl_window_t* ku_wayland_create_window(char* title, int width, int height)
 {
-    struct wl_window* info = ku_wayland_create_generic_window(title, width, height);
+    wl_window_t* info = ku_wayland_create_generic_window(title, width, height, WL_WINDOW_NATIVE);
 
-    info->type     = WL_WINDOW_NATIVE;
     wlc.windows[0] = info;
+    wlc.window_count += 1;
 
-    /* start frame listening */
-
-    info->frame_cb = wl_surface_frame(info->surface);
-    wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+    wl_surface_commit(info->surface);
+    wl_display_roundtrip(wlc.display);
 
     return info;
 }
 
-struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height)
+/* creates egl window
+   window won't be shown, you have to show it with ku_wayland_show_window
+   when shown, a KU_EVENT_WINDOW_SHOWN will be dispatched
+
+   after this function an xdg_surface_configure event will be called
+*/
+
+wl_window_t* ku_wayland_create_eglwindow(char* title, int width, int height)
 {
-    struct wl_window* info = ku_wayland_create_generic_window(title, width, height);
+    wl_window_t* info = ku_wayland_create_generic_window(title, width, height, WL_WINDOW_EGL);
 
-    info->type     = WL_WINDOW_EGL;
     wlc.windows[0] = info;
-
-    /* start frame listening */
-
-    info->frame_cb = wl_surface_frame(info->surface);
-    wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+    wlc.window_count += 1;
 
     /* set opaque region */
 
@@ -741,46 +790,146 @@ struct wl_window* ku_wayland_create_eglwindow(char* title, int width, int height
 	printf("Could not make the current window current !\n");
     }
 
+    wl_surface_commit(info->surface);
+    wl_display_roundtrip(wlc.display);
+
     return info;
 }
 
 /* deletes xdg surface and toplevel */
 
-void ku_wayland_delete_window(struct wl_window* info)
+void ku_wayland_delete_window(wl_window_t* info)
 {
-    if (info->frame_cb)
+    if (info->hidden == 0)
     {
-	wl_callback_destroy(info->frame_cb);
-	info->frame_cb = NULL;
-    }
+	if (info->frame_cb)
+	{
+	    wl_callback_destroy(info->frame_cb);
+	    info->frame_cb = NULL;
+	}
 
-    if (info->type == WL_WINDOW_NATIVE)
+	if (info->type == WL_WINDOW_NATIVE || info->type == WL_WINDOW_EGL)
+	{
+	    if (info->type == WL_WINDOW_NATIVE)
+	    {
+	    }
+	    else if (info->type == WL_WINDOW_EGL)
+	    {
+		eglMakeCurrent(info->egldisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+
+		eglDestroyContext(info->egldisplay, info->eglcontext);
+		eglDestroySurface(info->egldisplay, info->eglsurface);
+
+		wl_region_destroy(info->region);
+		wl_egl_window_destroy(info->eglwindow);
+
+		/* TODO ask wayland devs how to free up egl display properly because now it leaks */
+		eglTerminate(info->egldisplay);
+		eglReleaseThread();
+	    }
+
+	    xdg_surface_destroy(info->xdg_surface);
+	    xdg_toplevel_destroy(info->xdg_toplevel);
+	}
+
+	if (info->type == WL_WINDOW_LAYER)
+	{
+	    zwlr_layer_surface_v1_destroy(info->layer_surface);
+	}
+
+	wl_surface_destroy(info->surface);
+	wl_display_roundtrip(wlc.display);
+    }
+}
+
+void ku_wayland_show_window(wl_window_t* info)
+{
+    if (info->hidden == 1)
     {
+	info->hidden = 0;
+
+	if (info->type == WL_WINDOW_LAYER)
+	{
+	    info->surface = wl_compositor_create_surface(wlc.compositor);
+	    wl_surface_set_buffer_scale(info->surface, info->scale);
+
+	    info->layer_surface = zwlr_layer_shell_v1_get_layer_surface(
+		wlc.layer_shell,
+		info->surface,
+		info->monitor->wl_output,
+		ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
+		"wcp");
+
+	    zwlr_layer_surface_v1_set_size(
+		info->layer_surface,
+		info->width,
+		info->height);
+
+	    uint  af     = 0;
+	    char* anchor = info->anchor;
+	    while (*anchor != '\0')
+	    {
+		if (*anchor == 'l') af |= ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT;
+		if (*anchor == 'r') af |= ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
+		if (*anchor == 't') af |= ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP;
+		if (*anchor == 'b') af |= ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM;
+		anchor++;
+	    }
+
+	    zwlr_layer_surface_v1_set_anchor(
+		info->layer_surface,
+		af);
+
+	    zwlr_layer_surface_v1_set_margin(
+		info->layer_surface,
+		info->margin,
+		info->margin,
+		info->margin,
+		info->margin);
+
+	    zwlr_layer_surface_v1_add_listener(info->layer_surface, &layer_surface_listener, info);
+
+	    /* zwlr_layer_surface_v1_set_keyboard_interactivity(info->layer_surface, 1); */
+
+	    wl_surface_commit(info->surface);
+	    /* wl_display_roundtrip(wlc.display); */
+
+	    /* info->frame_cb = wl_surface_frame(info->surface); */
+	    /* wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info); */
+	}
+	else
+	{
+	    wl_surface_commit(info->surface);
+	    wl_display_roundtrip(wlc.display);
+	}
     }
-    else if (info->type == WL_WINDOW_EGL)
-    {
-	eglMakeCurrent(info->egldisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+}
 
-	eglDestroyContext(info->egldisplay, info->eglcontext);
-	eglDestroySurface(info->egldisplay, info->eglsurface);
+wl_window_t* ku_wayland_create_generic_layer(struct monitor_info* monitor, int width, int height, int margin, char* anchor)
+{
+    wl_window_t* info = CAL(sizeof(wl_window_t), NULL, NULL);
 
-	wl_region_destroy(info->region);
-	wl_egl_window_destroy(info->eglwindow);
+    wlc.windows[0] = info;
+    wlc.window_count += 1;
 
-	/* TODO ask wayland devs how to free up egl display properly because now it leaks */
-	eglTerminate(info->egldisplay);
-	eglReleaseThread();
-    }
+    info->scale         = monitor->scale;
+    info->width         = width;
+    info->height        = height;
+    info->buffer_width  = width * info->scale;
+    info->buffer_height = height * info->scale;
+    info->margin        = margin;
+    info->monitor       = monitor;
+    info->hidden        = 1;
+    memcpy(info->anchor, anchor, 4);
 
-    xdg_surface_destroy(info->xdg_surface);
-    xdg_toplevel_destroy(info->xdg_toplevel);
-    wl_surface_destroy(info->surface);
-    wl_display_roundtrip(wlc.display);
+    info->type = WL_WINDOW_LAYER;
+
+    return info;
 }
 
 /* resizes buffer on surface configure */
 
-void ku_wayland_resize_window_buffer(struct wl_window* info)
+void ku_wayland_resize_window_buffer(wl_window_t* info)
 {
     if (info->new_width != info->width || info->new_height != info->height || info->new_scale != info->scale)
     {
@@ -800,15 +949,12 @@ void ku_wayland_resize_window_buffer(struct wl_window* info)
 
 /* update surface with bitmap data */
 
-void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h)
+void ku_wayland_draw_window(wl_window_t* info, int x, int y, int w, int h)
 {
-    /* Request another frame */
-    if (info->frame_cb == NULL)
+    if (info->hidden == 0)
     {
-	info->frame_cb = wl_surface_frame(info->surface);
-	wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
-
-	if (info->type == WL_WINDOW_NATIVE)
+	/* Reattach backing buffer or swap context */
+	if (info->type == WL_WINDOW_NATIVE || info->type == WL_WINDOW_LAYER)
 	{
 	    wl_surface_attach(info->surface, info->buffer, 0, 0);
 	    wl_surface_damage(info->surface, x, y, w, h);
@@ -819,7 +965,19 @@ void ku_wayland_draw_window(struct wl_window* info, int x, int y, int w, int h)
 	    eglSwapBuffers(wlc.windows[0]->egldisplay, wlc.windows[0]->eglsurface);
 	}
     }
-    else printf("NO DRAW\n");
+}
+
+void ku_wayland_request_frame(wl_window_t* info)
+{
+    if (info->hidden == 0)
+    {
+	/* Request another frame */
+	if (info->frame_cb == NULL)
+	{
+	    info->frame_cb = wl_surface_frame(info->surface);
+	    wl_callback_add_listener(info->frame_cb, &wl_surface_frame_listener, info);
+	}
+    }
 }
 
 /* gesture listener */
@@ -898,12 +1056,56 @@ void ku_wayland_pointer_handle_enter(void* data, struct wl_pointer* wl_pointer, 
 	wl_surface_damage(wlc.cursor_surface, 0, 0, image->width, image->height);
 	wl_surface_commit(wlc.cursor_surface);
     }
+    for (int index = 0; index < wlc.window_count; index++)
+    {
+	wl_window_t* window = wlc.windows[index];
+
+	if (window->surface == surface)
+	{
+	    ku_event_t event = init_event();
+	    event.type       = KU_EVENT_MOUSE_MOVE;
+	    event.drag       = wlc.pointer.drag;
+	    event.x          = (int) wl_fixed_to_double(surface_x) * wlc.monitor->scale;
+	    event.y          = (int) wl_fixed_to_double(surface_y) * wlc.monitor->scale;
+	    event.ctrl_down  = wlc.keyboard.control;
+	    event.shift_down = wlc.keyboard.shift;
+	    event.window     = (void*) window;
+
+	    wlc.pointer.px = event.x;
+	    wlc.pointer.py = event.y;
+
+	    (*wlc.update)(event);
+	}
+    }
 }
+
 void ku_wayland_pointer_handle_leave(void* data, struct wl_pointer* wl_pointer, uint serial, struct wl_surface* surface)
 {
     /* mt_log_debug("pointer handle leave"); */
-    /* TODO assign pointer to surface and dispatch to corresponding window/layer */
+
+    for (int index = 0; index < wlc.window_count; index++)
+    {
+	wl_window_t* window = wlc.windows[index];
+
+	if (window->surface == surface)
+	{
+	    ku_event_t event = init_event();
+	    event.type       = KU_EVENT_MOUSE_MOVE;
+	    event.drag       = wlc.pointer.drag;
+	    event.x          = -100;
+	    event.y          = -100;
+	    event.ctrl_down  = wlc.keyboard.control;
+	    event.shift_down = wlc.keyboard.shift;
+	    event.window     = (void*) window;
+
+	    wlc.pointer.px = event.x;
+	    wlc.pointer.py = event.y;
+
+	    (*wlc.update)(event);
+	}
+    }
 }
+
 void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer, uint time, wl_fixed_t surface_x, wl_fixed_t surface_y)
 {
     /* mt_log_debug("pointer handle motion %f %f", wl_fixed_to_double(surface_x), wl_fixed_to_double(surface_y)); */
@@ -911,7 +1113,7 @@ void ku_wayland_pointer_handle_motion(void* data, struct wl_pointer* wl_pointer,
     wlc.pointer.drag = wlc.pointer.down;
 
     ku_event_t event = init_event();
-    event.type       = KU_EVENT_MMOVE;
+    event.type       = KU_EVENT_MOUSE_MOVE;
     event.drag       = wlc.pointer.drag;
     event.x          = (int) wl_fixed_to_double(surface_x) * wlc.monitor->scale;
     event.y          = (int) wl_fixed_to_double(surface_y) * wlc.monitor->scale;
@@ -941,12 +1143,12 @@ void ku_wayland_pointer_handle_button(void* data, struct wl_pointer* wl_pointer,
 	wlc.pointer.lastdown = time;
 
 	event.dclick     = delay < 300;
-	event.type       = KU_EVENT_MDOWN;
+	event.type       = KU_EVENT_MOUSE_DOWN;
 	wlc.pointer.down = 1;
     }
     else
     {
-	event.type       = KU_EVENT_MUP;
+	event.type       = KU_EVENT_MOUSE_UP;
 	event.drag       = wlc.pointer.drag;
 	wlc.pointer.drag = 0;
 	wlc.pointer.down = 0;
@@ -1095,7 +1297,7 @@ static void keyboard_key(void* data, struct wl_keyboard* wl_keyboard, uint32_t s
 
     ku_event_t event = init_event();
     event.keycode    = sym;
-    event.type       = key_state == WL_KEYBOARD_KEY_STATE_PRESSED ? KU_EVENT_KDOWN : KU_EVENT_KUP;
+    event.type       = key_state == WL_KEYBOARD_KEY_STATE_PRESSED ? KU_EVENT_KEY_DOWN : KU_EVENT_KEY_UP;
     event.ctrl_down  = wlc.keyboard.control;
     event.shift_down = wlc.keyboard.shift;
     (*wlc.update)(event);
@@ -1171,7 +1373,7 @@ static void ku_wayland_xdg_output_handle_logical_position(void* data, struct zxd
 static void ku_wayland_xdg_output_handle_logical_size(void* data, struct zxdg_output_v1* xdg_output, int32_t width, int32_t height)
 {
     struct monitor_info* monitor = data;
-    /* mt_log_debug("xdg output handle logical size, %i %i for monitor %i", width, height, monitor->index); */
+    mt_log_debug("xdg output handle logical size, %i %i for monitor %i", width, height, monitor->index);
 
     monitor->logical_width  = width;
     monitor->logical_height = height;
@@ -1335,6 +1537,7 @@ static void ku_wayland_handle_global(
 
     if (strcmp(interface, wl_compositor_interface.name) == 0)
     {
+	/* TODO LEAKS!!! */
 	wlc.compositor = wl_registry_bind(registry, name, &wl_compositor_interface, 4);
     }
     else if (strcmp(interface, wl_seat_interface.name) == 0)
@@ -1402,7 +1605,7 @@ static void ku_wayland_handle_global(
 
 static void ku_wayland_handle_global_remove(void* data, struct wl_registry* registry, uint32_t name)
 {
-    /* mt_log_debug("handle global remove"); */
+    mt_log_debug("handle global remove");
 }
 
 static const struct wl_registry_listener registry_listener =
@@ -1418,7 +1621,7 @@ void ku_wayland_init(
     int time_event_interval)
 {
     wlc.monitors = CAL(sizeof(struct monitor_info) * 16, NULL, NULL);
-    wlc.windows  = CAL(sizeof(struct wl_window) * 16, NULL, NULL);
+    wlc.windows  = CAL(sizeof(wl_window_t) * 16, NULL, NULL);
 
     wlc.init    = init;
     wlc.update  = update;
@@ -1468,11 +1671,11 @@ void ku_wayland_init(
 
 	    const int nfds = sizeof(fds) / sizeof(*fds);
 
-	    wl_display_dispatch(wlc.display);
+	    /* wl_display_dispatch(wlc.display); */
 
 	    ku_wayland_set_time_event_delay(time_event_interval);
 
-	    while (1)
+	    while (!wlc.exit_flag)
 	    {
 		if (wl_display_flush(wlc.display) < 0)
 		{
@@ -1517,8 +1720,8 @@ void ku_wayland_init(
 
 		if (fds[3].revents & POLLIN) /* stdin events */
 		{
-		    char buffer[2] = {0};
-		    while (fgets(buffer, 2, stdin))
+		    char buffer[3] = {0};
+		    while (fgets(buffer, 3, stdin))
 		    {
 			ku_event_t event = init_event();
 			event.type       = KU_EVENT_STDIN;
@@ -1526,27 +1729,28 @@ void ku_wayland_init(
 			event.text[1]    = '\0';
 
 			(*wlc.update)(event);
+			break;
 		    }
 		}
-
-		if (wlc.exit_flag) break;
 	    }
 
 	    (*wlc.destroy)();
+
+	    wl_surface_destroy(wlc.cursor_surface);
+	    if (wlc.cursor_theme) wl_cursor_theme_destroy(wlc.cursor_theme);
+
+	    wl_compositor_destroy(wlc.compositor);
 	}
-	else mt_log_error("compositor not found");
+	else
+	    mt_log_error("compositor not found");
 
-	wl_surface_destroy(wlc.cursor_surface);
-	if (wlc.cursor_theme)
-	    wl_cursor_theme_destroy(wlc.cursor_theme);
-
-	wl_compositor_destroy(wlc.compositor);
+	for (int m = 0; m < wlc.monitor_count; m++) free(wlc.monitors[m]);
+	for (int w = 0; w < wlc.window_count; w++) REL(wlc.windows[w]);
 
 	wl_display_disconnect(wlc.display);
     }
-    else mt_log_debug("cannot open display");
-
-    REL(wlc.windows[0]);
+    else
+	mt_log_debug("cannot open display");
 
     REL(wlc.monitors);
     REL(wlc.windows);
@@ -1557,6 +1761,7 @@ void ku_wayland_init(
 void ku_wayland_exit()
 {
     wlc.exit_flag = 1;
+    wl_display_flush(wlc.display);
 }
 
 /* request fullscreen */

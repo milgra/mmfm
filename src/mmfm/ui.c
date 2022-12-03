@@ -157,10 +157,10 @@ void ui_update_cursor(ku_rect_t frame)
 
 void ui_update_layout(int w, int h)
 {
-    if (w > h) ui.mainbottomv->style.flexdir = FD_ROW;
-    else ui.mainbottomv->style.flexdir = FD_COL;
+    /* if (w > h) ui.mainbottomv->style.flexdir = FD_ROW; */
+    /* else ui.mainbottomv->style.flexdir = FD_COL; */
 
-    ku_view_layout(ui.basev);
+    /* ku_view_layout(ui.basev, ui.basev->style.scale); */
 }
 
 void ui_rotate_sidebar()
@@ -192,7 +192,7 @@ void ui_rotate_sidebar()
     }
 
     config_write(config_get("cfg_path"));
-    ku_view_layout(top);
+    ku_view_layout(top, ui.basev->style.scale);
 }
 
 /* update player, seek bar position and video textures */
@@ -522,8 +522,8 @@ void ui_open_approve_popup()
 	if (ui.okaycv->parent == NULL)
 	{
 	    ku_view_add_subview(ui.basev, ui.okaycv);
-	    ku_view_layout(ui.basev);
-	    ku_window_activate(ui.window, ui.okaypopup);
+	    ku_view_layout(ui.basev, ui.basev->style.scale);
+	    ku_window_activate(ui.window, ui.okaypopup, 1);
 	}
     }
 }
@@ -573,7 +573,7 @@ void ui_show_context_menu(float x, float y)
 	ku_view_set_frame(contextpopup, iframe);
 
 	ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
-	ku_window_activate(ui.window, contexttableevt);
+	ku_window_activate(ui.window, contexttableevt, 1);
 
 	ku_rect_t start = contextpopup->frame.local;
 
@@ -608,8 +608,8 @@ void ui_show_input_popup(float x, float y, char* text)
     iframe.y         = y;
     ku_view_set_frame(ui.inputbckv, iframe);
     ku_view_add_subview(ui.basev, ui.inputcv);
-    ku_view_layout(ui.basev);
-    ku_window_activate(ui.window, ui.inputtv);
+    ku_view_layout(ui.basev, ui.basev->style.scale);
+    ku_window_activate(ui.window, ui.inputtv, 1);
     vh_textinput_activate(ui.inputtv, 1);
     vh_textinput_set_text(ui.inputtv, text);
     vh_textinput_set_limit(ui.inputtv, 255);
@@ -620,7 +620,7 @@ void ui_show_input_popup(float x, float y, char* text)
 void ui_cancel_input()
 {
     ku_view_remove_subview(ui.basev, ui.inputcv);
-    ku_window_deactivate(ui.window, ui.inputtv);
+    ku_window_activate(ui.window, ui.inputtv, 0);
     vh_textinput_activate(ui.inputtv, 0);
 }
 
@@ -706,24 +706,24 @@ void ui_on_table_event(vh_table_event_t event)
     {
 	/* remove context popup immediately */
 
-	if (event.ev.type == KU_EVENT_KUP && event.ev.keycode == XKB_KEY_Escape)
+	if (event.ev.type == KU_EVENT_KEY_UP && event.ev.keycode == XKB_KEY_Escape)
 	{
 	    if (ui.contextcv->parent)
 	    {
 		ku_view_remove_from_parent(ui.contextcv);
 		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
-		ku_window_deactivate(ui.window, contexttableevt);
+		ku_window_activate(ui.window, contexttableevt, 0);
 	    }
 	}
 
-	if ((event.ev.type == KU_EVENT_MDOWN && event.id == VH_TABLE_EVENT_SELECT) ||
-	    (event.ev.type == KU_EVENT_KDOWN && event.id == VH_TABLE_EVENT_OPEN))
+	if ((event.ev.type == KU_EVENT_MOUSE_DOWN && event.id == VH_TABLE_EVENT_SELECT) ||
+	    (event.ev.type == KU_EVENT_KEY_DOWN && event.id == VH_TABLE_EVENT_OPEN))
 	{
 	    if (ui.contextcv->parent)
 	    {
 		ku_view_remove_from_parent(ui.contextcv);
 		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
-		ku_window_deactivate(ui.window, contexttableevt);
+		ku_window_activate(ui.window, contexttableevt, 0);
 	    }
 
 	    if (event.selected_index == 0)
@@ -991,7 +991,7 @@ void ui_on_btn_event(vh_button_event_t event)
     else if (strcmp(event.view->id, "pathclearbtn") == 0)
     {
 	vh_textinput_set_text(ui.pathtv, "");
-	ku_window_activate(ui.window, ui.pathtv);
+	ku_window_activate(ui.window, ui.pathtv, 1);
 	vh_textinput_activate(ui.pathtv, 1);
     }
     else if (strcmp(event.view->id, "okayacceptbtn") == 0)
@@ -1020,7 +1020,7 @@ void ui_on_btn_event(vh_button_event_t event)
 	if (!ui.settingscv->parent)
 	{
 	    ku_view_add_subview(ui.basev, ui.settingscv);
-	    ku_view_layout(ui.basev);
+	    ku_view_layout(ui.basev, ui.basev->style.scale);
 	}
     }
 }
@@ -1110,7 +1110,7 @@ void ui_on_text_event(vh_textinput_event_t event)
 	if (event.id == VH_TEXTINPUT_RETURN)
 	{
 	    vh_textinput_activate(ui.pathtv, 0);
-	    ku_window_deactivate(ui.window, ui.pathtv);
+	    ku_window_activate(ui.window, ui.pathtv, 0);
 
 	    char* valid_path = STRNC(event.text);
 	    for (;;)
@@ -1128,7 +1128,7 @@ void ui_on_text_event(vh_textinput_event_t event)
 
 	    /* activate file list */
 	    ku_view_t* filetableevnt = GETV(ui.basev, "filetable_event");
-	    ku_window_activate(ui.window, filetableevnt);
+	    ku_window_activate(ui.window, filetableevnt, 1);
 	}
     }
 }
@@ -1157,17 +1157,16 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     mt_vector_t* view_list = VNEW();
 
     ku_gen_html_parse(config_get("html_path"), view_list);
-    ku_gen_css_apply(view_list, config_get("css_path"), config_get("res_path"), 1.0);
+    ku_gen_css_apply(view_list, config_get("css_path"), config_get("img_path"));
     ku_gen_type_apply(view_list, ui_on_btn_event, ui_on_slider_event);
 
     ku_view_t* bv = mt_vector_head(view_list);
 
     ui.basev = RET(bv);
     ku_window_add(ui.window, ui.basev);
-    ku_window_activate(ui.window, ui.basev);
+    ku_window_activate(ui.window, ui.basev, 1);
 
     REL(view_list);
-
     /* listen for keys and shortcuts */
 
     vh_key_add(ui.basev, ui_on_key_down);
@@ -1198,7 +1197,15 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, mt_number_new_int(180));
 
     ui.filetablev = GETV(bv, "filetable");
+
+    printf("BEFORE\n");
+    ku_view_describe(ui.filetablev, 0);
+
+    printf("FILETALBE %s\n", ui.filetablev->id);
     vh_table_attach(ui.filetablev, fields, ui_on_table_event);
+
+    printf("ATER\n");
+    ku_view_describe(ui.filetablev, 0);
 
     /* clipboard table */
 
@@ -1423,7 +1430,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     contexttableevt->blocks_key = 1;
 
-    ku_window_activate(ui.window, filetableevnt); /* start with file list listening for key up and down */
+    ku_window_activate(ui.window, filetableevnt, 1); /* start with file list listening for key up and down */
 
     if (config_get_bool("sidebar_visible") == 0)
     {

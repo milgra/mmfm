@@ -1,10 +1,10 @@
 #include "coder.c"
 #include "config.c"
-#include "evrecorder.c"
 #include "filemanager.c"
 #include "ku_bitmap_ext.c"
 #include "ku_connector_wayland.c"
 #include "ku_gl.c"
+#include "ku_recorder.c"
 #include "ku_renderer_egl.c"
 #include "ku_renderer_soft.c"
 #include "ku_window.c"
@@ -25,25 +25,20 @@
 
 struct
 {
-    char         replay;
-    char         record;
     wl_window_t* wlwindow;
     ku_window_t* kuwindow;
 
-    ku_rect_t    dirtyrect;
-    int          softrender;
-    mt_vector_t* eventqueue;
+    ku_rect_t dirtyrect;
+    int       softrender;
 
-    char* rec_path;
-    char* rep_path;
+    int   autotest;
+    char* pngpath;
 } mmfm = {0};
 
 void init(wl_event_t event)
 {
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
     SDL_Init(SDL_INIT_AUDIO);
-
-    mmfm.eventqueue = VNEW();
 
     if (mmfm.softrender)
     {
@@ -76,17 +71,7 @@ void load(wl_window_t* info)
     ui_init(info->buffer_width, info->buffer_height, info->scale, mmfm.kuwindow); // DESTROY 3
     mt_time("ui init");
 
-    if (mmfm.record)
-    {
-	ui_add_cursor();
-	evrec_init_recorder(mmfm.rec_path); // DESTROY 4
-    }
-
-    if (mmfm.replay)
-    {
-	ui_add_cursor();
-	evrec_init_player(mmfm.rep_path); // DESTROY 5
-    }
+    if (mmfm.autotest) ui_add_cursor();
 
     ui_update_layout(info->buffer_width, info->buffer_height);
     ui_load_folder(config_get("top_path"));
@@ -94,67 +79,15 @@ void load(wl_window_t* info)
     ku_window_layout(mmfm.kuwindow);
 }
 
-/* window update */
-
-void update(ku_event_t ev)
-{
-    /* printf("UPDATE %i %u %i %i\n", ev.type, ev.time, ev.w, ev.h); */
-
-    if (ev.type == KU_EVENT_WINDOW_SHOWN) load(ev.window);
-
-    if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
-    if (ev.type == KU_EVENT_FRAME) ui_update_player();
-
-    ku_window_event(mmfm.kuwindow, ev);
-
-    if (mmfm.wlwindow->frame_cb == NULL)
-    {
-	ku_rect_t dirty = ku_window_update(mmfm.kuwindow, 0);
-
-	if (dirty.w > 0 && dirty.h > 0)
-	{
-	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirtyrect);
-
-	    /* mt_log_debug("drt %i %i %i %i", (int) dirty.x, (int) dirty.y, (int) dirty.w, (int) dirty.h); */
-	    /* mt_log_debug("drt prev %i %i %i %i", (int) mmfm.dirtyrect.x, (int) mmfm.dirtyrect.y, (int) mmfm.dirtyrect.w, (int) mmfm.dirtyrect.h); */
-	    mt_log_debug("sum aftr %i %i %i %i", (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
-
-	    /* mt_time(NULL); */
-	    if (mmfm.softrender) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
-	    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
-	    /* mt_time("Render"); */
-
-	    ku_wayland_request_frame(mmfm.wlwindow);
-	    ku_wayland_draw_window(mmfm.wlwindow, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
-
-	    mmfm.dirtyrect = dirty;
-	}
-    }
-}
-
-void update_session(ku_event_t ev)
-{
-    if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
-    if (ev.type == KU_EVENT_FRAME) ui_update_player();
-
-    ku_window_event(mmfm.kuwindow, ev);
-    ku_window_update(mmfm.kuwindow, 0);
-
-    if (mmfm.softrender) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, mmfm.kuwindow->root->frame.local);
-    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, mmfm.kuwindow->root->frame.local);
-}
-
 /* save window buffer to png */
+/* TODO add these to soft/egl renderers with png encoding */
 
 void update_screenshot(uint32_t frame)
 {
     static int shotindex = 0;
 
-    char* name = mt_string_new_format(20, "screenshot%.3i.png", shotindex++); // REL 1
-    char* path = "";
-
-    if (mmfm.record) path = mt_path_new_append(mmfm.rec_path, name); // REL 2
-    if (mmfm.replay) path = mt_path_new_append(mmfm.rep_path, name); // REL 2
+    char* name = mt_string_new_format(20, "screenshot%.3i.png", shotindex++);
+    char* path = mt_path_new_append(mmfm.pngpath, name);
 
     if (mmfm.softrender)
     {
@@ -169,87 +102,59 @@ void update_screenshot(uint32_t frame)
 	REL(flipped);
 	REL(bitmap);
     }
+
     ui_update_cursor((ku_rect_t){0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height});
 
     printf("SCREENHSOT AT %u : %s\n", frame, path);
 }
 
-/* window update during recording */
+/* window update */
 
-void update_record(ku_event_t ev)
+void update(ku_event_t ev)
 {
-    /* normalize floats for deterministic movements during record/replay */
-    ev.dx         = floor(ev.dx * 10000) / 10000;
-    ev.dy         = floor(ev.dy * 10000) / 10000;
-    ev.ratio      = floor(ev.ratio * 10000) / 10000;
-    ev.time_frame = floor(ev.time_frame * 10000) / 10000;
+    /* printf("UPDATE %i %u %i %i\n", ev.type, ev.time, ev.x, ev.y); */
 
-    if (ev.type == KU_EVENT_FRAME)
+    if (ev.type == KU_EVENT_WINDOW_SHOWN) load(ev.window);
+    if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
+    if (ev.type == KU_EVENT_FRAME) ui_update_player();
+
+    ku_window_event(mmfm.kuwindow, ev);
+
+    if (mmfm.autotest)
     {
-	/* record and send waiting events */
-	for (int index = 0; index < mmfm.eventqueue->length; index++)
-	{
-	    ku_event_t* event = (ku_event_t*) mmfm.eventqueue->data[index];
-	    event->frame      = ev.frame;
-	    evrec_record(*event);
-
-	    update_session(*event);
-
-	    if (event->type == KU_EVENT_KEY_DOWN && event->keycode == XKB_KEY_Print) update_screenshot(ev.frame);
-	    else ui_update_cursor((ku_rect_t){event->x, event->y, 10, 10});
-	}
-
-	mt_vector_reset(mmfm.eventqueue);
-
-	/* send frame event */
-	update_session(ev);
-
-	/* force frame request if needed */
-	if (mmfm.wlwindow->frame_cb == NULL)
-	{
-	    ku_wayland_draw_window(mmfm.wlwindow, 0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height);
-	}
-	else mt_log_error("FRAME CALLBACK NOT NULL!!");
+	/* in case of record/replay do screenshot or move virtual cursor */
+	if (ev.type == KU_EVENT_KEY_DOWN && ev.keycode == XKB_KEY_Print) update_screenshot(ev.frame);
+	else ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10});
     }
-    else
-    {
-	/* queue event */
-	void* event = HEAP(ev);
-	VADD(mmfm.eventqueue, event);
-    }
-}
 
-/* window update during replay */
-
-void update_replay(ku_event_t ev)
-{
-    if (ev.type == KU_EVENT_FRAME)
+    if (mmfm.wlwindow->frame_cb == NULL)
     {
-	// get recorded events
-	ku_event_t* recev = NULL;
-	while ((recev = evrec_replay(ev.frame)) != NULL)
+	ku_rect_t dirty = ku_window_update(mmfm.kuwindow, 0);
+
+	/* in case of record/replay force continuous draw by full size dirty rect */
+	if (mmfm.autotest) dirty = mmfm.kuwindow->root->frame.local;
+
+	if (dirty.w > 0 && dirty.h > 0)
 	{
-	    update_session(*recev);
+	    /* add previous dirty rect to current dirty rect to redraw disappearing parts */
+	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirtyrect);
 
-	    if (recev->type == KU_EVENT_KEY_DOWN && recev->keycode == XKB_KEY_Print) update_screenshot(ev.frame);
-	    else ui_update_cursor((ku_rect_t){recev->x, recev->y, 10, 10});
+	    if (mmfm.softrender) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
+	    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
+
+	    /* frame done request must be requested before draw */
+	    ku_wayland_request_frame(mmfm.wlwindow);
+	    ku_wayland_draw_window(mmfm.wlwindow, (int) sum.x, (int) sum.y, (int) sum.w, (int) sum.h);
+
+	    /* store current dirty rect for next draw */
+	    mmfm.dirtyrect = dirty;
 	}
-
-	/* send frame event */
-	update_session(ev);
-
-	/* force frame request if needed */
-	if (mmfm.wlwindow->frame_cb == NULL) ku_wayland_draw_window(mmfm.wlwindow, 0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height);
-	else mt_log_error("FRAME CALLBACK NOT NULL!!");
     }
 }
 
 void destroy()
 {
     ku_wayland_delete_window(mmfm.wlwindow);
-
-    if (mmfm.replay) evrec_destroy();
-    if (mmfm.record) evrec_destroy();
 
     ui_destroy();
 
@@ -258,9 +163,6 @@ void destroy()
     if (!mmfm.softrender) ku_renderer_egl_destroy();
 
     SDL_Quit();
-
-    if (mmfm.rec_path) REL(mmfm.rec_path); // REL 14
-    if (mmfm.rep_path) REL(mmfm.rep_path); // REL 15
 }
 
 int main(int argc, char* argv[])
@@ -287,13 +189,13 @@ int main(int argc, char* argv[])
 	"\n"
 	"  -h, --help                          Show help message and quit.\n"
 	"  -v                                  Increase verbosity of messages, defaults to errors and warnings only.\n"
-	"  -c --config= [config file] \t use config file for session\n"
-	"  -d --directory= [config file] \t start with directory\n"
-	"  -r --resources= [resources folder] \t use resources dir for session\n"
-	"  -s --record= [recorder file] \t record session to file\n"
-	"  -p --replay= [recorder file] \t replay session from file\n"
-	"  -f --frame= [widthxheight] \t initial window dimension\n"
-	"  --software_render \t use software rendering instead of gl accelerated rendering\n"
+	"  -c --config= [config file]          Use config file for session\n"
+	"  -d --directory= [config file]       Start with directory\n"
+	"  -r --resources= [resources folder]  Use resources dir for session\n"
+	"  -s --record= [recorder file]        Record session to file\n"
+	"  -p --replay= [recorder file]        Replay session from file\n"
+	"  -f --frame= [widthxheight]          Initial window dimension\n"
+	"  --software_render                   Use software rendering instead of gl accelerated rendering\n"
 	"\n";
 
     const struct option long_options[] =
@@ -339,9 +241,6 @@ int main(int argc, char* argv[])
 	}
     }
 
-    if (rec_par) mmfm.record = 1;
-    if (rep_par) mmfm.replay = 1;
-
     srand((unsigned int) time(NULL));
 
     char cwd[PATH_MAX] = {"~"};
@@ -361,16 +260,16 @@ int main(int argc, char* argv[])
 
     // print path info to console
 
-    mt_log_debug("working path  : %s", wrk_path);
-    mt_log_debug("resource path : %s", res_path);
-    mt_log_debug("config path   : %s", cfg_path);
-    mt_log_debug("directory path   : %s", dir_path);
-    mt_log_debug("state path   : %s", per_path);
-    mt_log_debug("img path      : %s", img_path);
-    mt_log_debug("css path      : %s", css_path);
-    mt_log_debug("html path     : %s", html_path);
-    mt_log_debug("record path   : %s", rec_path);
-    mt_log_debug("replay path   : %s", rep_path);
+    mt_log_debug("working path   : %s", wrk_path);
+    mt_log_debug("resource path  : %s", res_path);
+    mt_log_debug("config path    : %s", cfg_path);
+    mt_log_debug("directory path : %s", dir_path);
+    mt_log_debug("state path     : %s", per_path);
+    mt_log_debug("img path       : %s", img_path);
+    mt_log_debug("css path       : %s", css_path);
+    mt_log_debug("html path      : %s", html_path);
+    mt_log_debug("record path    : %s", rec_path);
+    mt_log_debug("replay path    : %s", rep_path);
 
     // init config
 
@@ -396,21 +295,32 @@ int main(int argc, char* argv[])
     config_set("css_path", css_path);
     config_set("html_path", html_path);
 
-    /* this two shouldn't go into the config file because of record/replay */
+    if (rec_path || rep_path) ku_recorder_init(update);
+    if (rec_path || rep_path) mmfm.autotest = 1;
+    if (rec_path)
+    {
+	char* tgt_path = mt_path_new_append(rec_path, "session.rec");
+	ku_recorder_record(tgt_path);
+	REL(tgt_path);
+	mmfm.pngpath = rec_path;
+    }
+    if (rep_path)
+    {
+	char* tgt_path = mt_path_new_append(rep_path, "session.rec");
+	ku_recorder_replay(tgt_path);
+	REL(tgt_path);
+	mmfm.pngpath = rep_path;
+    }
 
-    mmfm.rec_path = rec_path;
-    mmfm.rep_path = rep_path;
-
-    if (rec_path) evrec_init_recorder(rec_path); // DESTROY 4
-    if (rep_path) evrec_init_player(rep_path);
-
-    if (rec_path != NULL) ku_wayland_init(init, update_record, destroy, 0);
-    else if (rep_path != NULL) ku_wayland_init(init, update_replay, destroy, 16);
+    /* proxy events through the recorder in case of record/replay */
+    if (rec_path || rep_path) ku_wayland_init(init, ku_recorder_update, destroy, 0);
     else ku_wayland_init(init, update, destroy, 0);
 
     config_destroy(); // DESTROY 0
 
     // cleanup
+
+    ku_recorder_destroy();
 
     if (cfg_par) REL(cfg_par); // REL 0
     if (res_par) REL(res_par); // REL 1

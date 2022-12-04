@@ -41,6 +41,7 @@ void ku_recorder_init(void (*update)(ku_event_t))
 
 void ku_recorder_record(char* path)
 {
+    kurec.mode = KU_REC_MODE_RECORD;
     FILE* file = fopen(path, "w");
     if (!file) printf("evrec recorder : cannot open file %s\n", path);
     kurec.file = file;
@@ -48,6 +49,7 @@ void ku_recorder_record(char* path)
 
 void ku_recorder_replay(char* path)
 {
+    kurec.mode = KU_REC_MODE_REPLAY;
     FILE* file = fopen(path, "r");
     if (!file) printf("evrec player : cannot open file %s\n", path);
 
@@ -65,8 +67,8 @@ void ku_recorder_replay(char* path)
 
 void ku_recorder_destroy()
 {
-    REL(kurec.eventqueue);
     if (kurec.file) fclose(kurec.file);
+    REL(kurec.eventqueue);
 }
 
 void ku_recorder_update_record(ku_event_t ev)
@@ -77,7 +79,7 @@ void ku_recorder_update_record(ku_event_t ev)
     ev.ratio      = floor(ev.ratio * 10000) / 10000;
     ev.time_frame = floor(ev.time_frame * 10000) / 10000;
 
-    if (ev.type == KU_EVENT_FRAME)
+    if (ev.type == KU_EVENT_FRAME || ev.type == KU_EVENT_TIME || ev.type == KU_EVENT_WINDOW_SHOWN)
     {
 	/* record and send waiting events */
 	for (int index = 0; index < kurec.eventqueue->length; index++)
@@ -85,9 +87,9 @@ void ku_recorder_update_record(ku_event_t ev)
 	    ku_event_t* event = (ku_event_t*) kurec.eventqueue->data[index];
 	    event->frame      = ev.frame;
 
-	    ku_event_write(kurec.file, ev);
+	    ku_event_write(kurec.file, *event);
 
-	    (*kurec.update)(ev);
+	    (*kurec.update)(*event);
 	}
 
 	mt_vector_reset(kurec.eventqueue);
@@ -105,8 +107,10 @@ void ku_recorder_update_record(ku_event_t ev)
 
 void ku_recorder_update_replay(ku_event_t ev)
 {
-    if (ev.type == KU_EVENT_FRAME)
+    if (ev.type == KU_EVENT_FRAME || ev.type == KU_EVENT_WINDOW_SHOWN)
     {
+	(*kurec.update)(ev);
+
 	while (kurec.index < kurec.eventqueue->length)
 	{
 	    ku_event_t* event = kurec.eventqueue->data[kurec.index];
@@ -114,7 +118,7 @@ void ku_recorder_update_replay(ku_event_t ev)
 	    if (event->frame <= ev.frame)
 	    {
 		kurec.index++;
-		(*kurec.update)(ev);
+		(*kurec.update)(*event);
 	    }
 	    else break;
 	}

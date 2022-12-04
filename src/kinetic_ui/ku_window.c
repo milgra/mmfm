@@ -125,7 +125,7 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	{
 	    ku_view_set_frame(win->root, (ku_rect_t){0.0, 0.0, (float) ev.w, (float) ev.h});
 	    ku_view_layout(win->root, win->scale);
-	    ku_view_describe(win->root, 0);
+	    /* ku_view_describe(win->root, 0); */
 	    ku_view_evt(win->root, ev);
 
 	    win->width  = ev.w;

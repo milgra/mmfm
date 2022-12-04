@@ -1,9 +1,19 @@
 #!/bin/bash
 
-cd ..
+exe="$1/vmp"
 
-sh tst/test_rep.sh tst/ui_file
-sh tst/test_rep.sh tst/ui_keyboard
-sh tst/test_rep.sh tst/ui_mouse
+sh tst/test_rep.sh tst/ui_file $exe
 
-exit 0
+error=$?
+if [ $error -eq 0 ]
+then
+    echo "No differences found between master and result images"
+    exit 0
+elif [ $error -eq 1 ]
+then
+    echo "Differences found between master and result images"
+    exit 1
+else
+    echo "Differences found between master and result images"
+    exit 1
+fi

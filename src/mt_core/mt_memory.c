@@ -185,6 +185,7 @@ char mt_memory_release(void* pointer)
 
 #ifdef MT_MEMORY_DEBUG
     if (head->index == MT_MEMORY_DEBUG_INDEX) mt_memory_trace("RELEASE", head);
+    if (head->retaincount == -1) mt_memory_trace("RELEASE RETAINCOUNT -1!!!", head);
 #endif
 
     assert(head->retaincount > -1);

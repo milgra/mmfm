@@ -1198,13 +1198,8 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     ui.filetablev = GETV(bv, "filetable");
 
-    printf("BEFORE\n");
     ku_view_describe(ui.filetablev, 0);
-
-    printf("FILETALBE %s\n", ui.filetablev->id);
     vh_table_attach(ui.filetablev, fields, ui_on_table_event);
-
-    printf("ATER\n");
     ku_view_describe(ui.filetablev, 0);
 
     /* clipboard table */
@@ -1470,16 +1465,7 @@ void ui_destroy()
     REL(ui.focusable_infolist);
     REL(ui.focusable_cliplist);
 
-    REL(ui.cliptablev);
-    REL(ui.infotablev);
-    REL(ui.filetablev);
-    REL(ui.contexttablev);
-    REL(ui.settingstablev);
-
-    REL(ui.cliptablev);
-    REL(ui.infotablev);
     REL(ui.folder_history);
-
     REL(ui.current_folder);
 
     REL(ui.playbtnv);

@@ -1,5 +1,6 @@
 # MultiMedia File Manager
 
+- no last accessed and absolute paths when autotest
 - css cleanup
 - video on github page
 - show raw html/css switch without any code

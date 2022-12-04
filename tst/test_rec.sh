@@ -8,8 +8,10 @@ else
     testdir="$1_test"
     savedir="$1_test/record"
     masterdir="$1_master"
+    echo "MAKING DIR $savedir"
     rm -rf $testdir
     cp -r $basedir $testdir 
+    mkdir -p $savedir
     echo "(RE-)RECORDING $1"
     build/mmfm -r res -v -s $savedir -d $testdir -c $savedir
     echo "RECORDING FINISHED"

@@ -109,19 +109,19 @@ void ku_recorder_update_replay(ku_event_t ev)
 {
     if (ev.type == KU_EVENT_FRAME || ev.type == KU_EVENT_WINDOW_SHOWN)
     {
-	(*kurec.update)(ev);
-
 	while (kurec.index < kurec.eventqueue->length)
 	{
 	    ku_event_t* event = kurec.eventqueue->data[kurec.index];
 
-	    if (event->frame <= ev.frame)
+	    if (event->frame < ev.frame)
 	    {
 		kurec.index++;
 		(*kurec.update)(*event);
 	    }
 	    else break;
 	}
+
+	(*kurec.update)(ev);
     }
 }
 

@@ -124,7 +124,7 @@ void update(ku_event_t ev)
     {
 	/* in case of record/replay do screenshot or move virtual cursor */
 	if (ev.type == KU_EVENT_KEY_DOWN && ev.keycode == XKB_KEY_Print) update_screenshot(ev.frame);
-	else ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10});
+	else if (ev.x > 0 && ev.y > 0) ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10});
     }
 
     if (mmfm.wlwindow->frame_cb == NULL)

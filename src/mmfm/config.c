@@ -56,8 +56,6 @@ void config_read(char* path)
 	}
 
 	REL(keys);
-
-	printf("config loaded from %s, entries : %i\n", path, confmap->count);
     }
 
     REL(data); // REL 0
@@ -67,8 +65,6 @@ void config_write(char* path)
 {
     mt_map_t* data    = MNEW();                                  // REL 0
     char*     dirpath = mt_path_new_remove_last_component(path); // REL 1
-
-    printf("CONFIG DIR %s FILE %s\n", dirpath, path);
 
     MPUTR(confmap, "id", mt_string_new_cstring("config")); // put id in config db
     MPUT(data, "id", confmap);                             // put config db in final data with same id

@@ -14,7 +14,6 @@ void ku_renderer_egl_screenshot(ku_bitmap_t* bitmap, char* path);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "ku_bitmap_ext.c"
 #include "ku_gl.c"
 #include "ku_png.c"
 #include "ku_view.c"
@@ -156,7 +155,13 @@ void ku_renderer_egl_screenshot(ku_bitmap_t* bm, char* path)
 {
     ku_bitmap_t* bitmap = ku_bitmap_new(bm->w, bm->h);
     ku_gl_save_framebuffer(bitmap);
-    ku_bitmap_t* flipped = bm_new_flip_y(bitmap);
+
+    ku_bitmap_t* flipped = ku_bitmap_new(bm->w, bm->h);
+    for (int y = 0; y < bitmap->h; y++)
+    {
+	int src_y = bitmap->h - y - 1;
+	memcpy(flipped->data + y * bitmap->w * 4, bitmap->data + src_y * bitmap->w * 4, bitmap->w * 4);
+    }
 
     ku_png_write(path, flipped);
 

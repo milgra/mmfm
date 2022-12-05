@@ -1,7 +1,6 @@
 #include "coder.c"
 #include "config.c"
 #include "filemanager.c"
-#include "ku_bitmap_ext.c"
 #include "ku_connector_wayland.c"
 #include "ku_gl.c"
 #include "ku_png.c"
@@ -34,6 +33,9 @@ struct
 
     int   autotest;
     char* pngpath;
+
+    int width;
+    int height;
 } mmfm = {0};
 
 void init(wl_event_t event)
@@ -43,12 +45,12 @@ void init(wl_event_t event)
 
     if (mmfm.softrender)
     {
-	mmfm.wlwindow = ku_wayland_create_window("mmfm", 1200, 600);
+	mmfm.wlwindow = ku_wayland_create_window("mmfm", mmfm.width, mmfm.height);
 	ku_wayland_show_window(mmfm.wlwindow);
     }
     else
     {
-	mmfm.wlwindow = ku_wayland_create_eglwindow("mmfm", 1200, 600);
+	mmfm.wlwindow = ku_wayland_create_eglwindow("mmfm", mmfm.width, mmfm.height);
 	ku_wayland_show_window(mmfm.wlwindow);
 
 	int max_width  = 0;
@@ -74,6 +76,7 @@ void load(wl_window_t* info)
 
     ui_update_layout(info->buffer_width, info->buffer_height);
     ui_load_folder(config_get("top_path"));
+    ui_load_file(config_get("opn_path"));
 
     ku_window_layout(mmfm.kuwindow);
 }
@@ -87,6 +90,7 @@ void update(ku_event_t ev)
     if (ev.type == KU_EVENT_WINDOW_SHOWN) load(ev.window);        /* set ui size on window enter, load files */
     if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h); /* change layout if needed */
     if (ev.type == KU_EVENT_FRAME) ui_update_player();            /* update player state if needed */
+    if (!mmfm.kuwindow) return;                                   /* TODO avoid this more gracefully */
 
     ku_window_event(mmfm.kuwindow, ev); /* regular events */
 
@@ -166,7 +170,7 @@ int main(int argc, char* argv[])
 	   "Or donate at www.milgra.com\n\n");
 
     const char* usage =
-	"Usage: sov [options]\n"
+	"Usage: sov [file] [options]\n"
 	"\n"
 	"  -h, --help                          Show help message and quit.\n"
 	"  -v                                  Increase verbosity of messages, defaults to errors and warnings only.\n"
@@ -189,7 +193,8 @@ int main(int argc, char* argv[])
 	    {"software_renderer", optional_argument, 0, 0},
 	    {"replay", optional_argument, 0, 'p'},
 	    {"config", optional_argument, 0, 'c'},
-	    {"frame", optional_argument, 0, 'f'}};
+	    {"frame", optional_argument, 0, 'f'},
+	    {NULL, 0, NULL, 0}};
 
     char* cfg_par = NULL;
     char* res_par = NULL;
@@ -197,18 +202,19 @@ int main(int argc, char* argv[])
     char* rep_par = NULL;
     char* frm_par = NULL;
     char* dir_par = NULL;
+    char* opn_par = NULL;
 
     int option       = 0;
     int option_index = 0;
 
-    while ((option = getopt_long(argc, argv, "vhr:s:p:c:f:d:", long_options, &option_index)) != -1)
+    while ((option = getopt_long(argc, argv, ":vhr:s:p:c:f:d:", long_options, &option_index)) != -1)
     {
 	switch (option)
 	{
 	    case 0:
 		if (option_index == 5) mmfm.softrender = 1;
-		/* printf("option %i %s", option_index, long_options[option_index].name); */
-		/* if (optarg) printf(" with arg %s", optarg); */
+		printf("option %i %s\n", option_index, long_options[option_index].name);
+		if (optarg) printf(" with arg %s\n", optarg);
 		break;
 	    case '?': printf("parsing option %c value: %s\n", option, optarg); break;
 	    case 'c': cfg_par = mt_string_new_cstring(optarg); break; // REL 0
@@ -218,9 +224,12 @@ int main(int argc, char* argv[])
 	    case 'f': frm_par = mt_string_new_cstring(optarg); break; // REL 4
 	    case 'd': dir_par = mt_string_new_cstring(optarg); break; // REL 4
 	    case 'v': mt_log_inc_verbosity(); break;
+	    case ':': printf("MISSING\n"); break;
 	    default: fprintf(stderr, "%s", usage); return EXIT_FAILURE;
 	}
     }
+
+    if (optind < argc) opn_par = mt_string_new_cstring(argv[optind]);
 
     srand((unsigned int) time(NULL));
 
@@ -245,6 +254,7 @@ int main(int argc, char* argv[])
     mt_log_debug("resource path  : %s", res_path);
     mt_log_debug("config path    : %s", cfg_path);
     mt_log_debug("directory path : %s", dir_path);
+    mt_log_debug("open file path : %s", opn_par);
     mt_log_debug("state path     : %s", per_path);
     mt_log_debug("img path       : %s", img_path);
     mt_log_debug("css path       : %s", css_path);
@@ -271,6 +281,7 @@ int main(int argc, char* argv[])
     config_set("top_path", dir_path ? dir_path : wrk_path);
     config_set("img_path", img_path);
     config_set("wrk_path", wrk_path);
+    if (opn_par) config_set("opn_path", opn_par);
     config_set("cfg_path", cfg_path);
     config_set("per_path", per_path);
     config_set("css_path", css_path);
@@ -293,6 +304,19 @@ int main(int argc, char* argv[])
 	mmfm.pngpath = rep_path;
     }
 
+    if (frm_par != NULL)
+    {
+	mmfm.width  = atoi(frm_par);
+	char* next  = strstr(frm_par, "x");
+	mmfm.height = atoi(next + 1);
+    }
+    else
+    {
+	/* TODO calc this based on output size */
+	mmfm.width  = 1200;
+	mmfm.height = 600;
+    }
+
     /* proxy events through the recorder in case of record/replay */
     if (rec_path || rep_path) ku_wayland_init(init, ku_recorder_update, destroy, 0);
     else ku_wayland_init(init, update, destroy, 0);
@@ -303,6 +327,7 @@ int main(int argc, char* argv[])
 
     ku_recorder_destroy();
 
+    if (opn_par) REL(opn_par);
     if (cfg_par) REL(cfg_par); // REL 0
     if (res_par) REL(res_par); // REL 1
     if (rec_par) REL(rec_par); // REL 2

@@ -3,6 +3,7 @@
 
 #include "ku_view.c"
 #include "ku_window.c"
+#include "mt_map.c"
 
 typedef enum _ui_inputmode ui_inputmode;
 enum _ui_inputmode
@@ -25,6 +26,8 @@ void ui_update_cursor(ku_rect_t frame);
 void ui_update_layout(int w, int h);
 void ui_update_player();
 void ui_load_folder(char* folder);
+void ui_load_file(char* path);
+void ui_open_file(mt_map_t* info);
 
 #endif
 
@@ -396,6 +399,21 @@ void ui_load_folder(char* folder)
     }
 }
 
+void ui_load_file(char* path)
+{
+    if (path)
+    {
+	mt_map_t* file = MNEW();
+
+	MPUTR(file, "file/type", mt_string_new_cstring("file"));
+	MPUTR(file, "file/path", mt_string_new_cstring(path));
+
+	ui_open_file(file);
+
+	REL(file);
+    }
+}
+
 void ui_open_folder(mt_map_t* info)
 {
     char* type = MGET(info, "file/type");
@@ -730,7 +748,7 @@ void ui_on_table_event(vh_table_event_t event)
 	    {
 		/* create folder */
 		ui.inputmode             = UI_IM_NEWFOLDER;
-		ku_view_t* filetablebody = GETV(ui.basev, "filetablebody");
+		ku_view_t* filetablebody = GETV(ui.basev, "filetable");
 
 		ku_rect_t rframe = filetablebody->frame.global;
 
@@ -931,7 +949,7 @@ void ui_on_key_down(vh_key_event_t event)
     {
 	ui.inputmode = UI_IM_NEWFOLDER;
 
-	ku_view_t* filetablebody = GETV(ui.basev, "filetablebody");
+	ku_view_t* filetablebody = GETV(ui.basev, "filetable");
 	ku_rect_t  rframe        = filetablebody->frame.global;
 
 	ui_show_input_popup(rframe.x, rframe.y - 5, "new folder");
@@ -1229,9 +1247,11 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     ui.contexttablev = GETV(bv, "contexttable");
     vh_table_attach(ui.contexttablev, fields, ui_on_table_event);
-    ku_view_t* contexttablebodyv = GETV(ui.contexttablev, "contexttable_body");
+
+    vh_table_t* table = ui.contexttablev->handler_data;
+
     /* hack for context menu popup animation */
-    contexttablebodyv->style.masked = 0;
+    table->layr_v->style.masked = 0;
 
     REL(fields);
 

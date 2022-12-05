@@ -1,27 +1,24 @@
 # MultiMedia File Manager
 
 - no last accessed and absolute paths when autotest
-- css cleanup
+- full autotest coverage
+
 - video on github page
 - show raw html/css switch without any code
 - legalso elem ne legyen felig takarva cursor down eseten
 - clear makepkg errors
 - tech video, automated ui/full test, logban meg a leakek is lathatoak
 - left right arrow scroll in scroll views
-- input text scroll or wrap
-- create folder
-- remaining leaks
-- be able to open file directly from command line
+- input text scroll or wrap  
 - get dimensions before image,pdf, video load, resize preview
 - dirty rect drawing for debugging
 - file list ordering head click
 - copy/paste text from wayland clipboard
 - slow click rename
-- scaling
+- test scaling
 - text file load/seek, hexa view, fix meretu chunkokat olvasson
 - linelist component, text fileoknak es hexa viewnak
 - time based animations
-- enter on clipboard dir should open in file list
 - pause/play felvillano ikon over preview
 - CTRL + drag from clipboard - move
 - store table states
@@ -29,3 +26,4 @@
 - search bar
 - shortcutok config fileba vagy kulon fileba
 - listen for folder change event
+- unified css for all applications to make global styling easier

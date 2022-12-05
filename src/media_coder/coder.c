@@ -69,6 +69,7 @@ ku_bitmap_t* coder_load_image(const char* path)
 		    while (av_read_frame(src_ctx, packet) >= 0)
 		    {
 			avcodec_send_packet(codecContext, packet);
+			av_packet_unref(packet);
 		    }
 
 		    avcodec_receive_frame(codecContext, frame);

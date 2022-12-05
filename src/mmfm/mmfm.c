@@ -4,6 +4,7 @@
 #include "ku_bitmap_ext.c"
 #include "ku_connector_wayland.c"
 #include "ku_gl.c"
+#include "ku_png.c"
 #include "ku_recorder.c"
 #include "ku_renderer_egl.c"
 #include "ku_renderer_soft.c"
@@ -67,9 +68,7 @@ void load(wl_window_t* info)
 {
     mmfm.kuwindow = ku_window_create(info->buffer_width, info->buffer_height, info->scale);
 
-    mt_time(NULL);
     ui_init(info->buffer_width, info->buffer_height, info->scale, mmfm.kuwindow); // DESTROY 3
-    mt_time("ui init");
 
     if (mmfm.autotest) ui_add_cursor();
 
@@ -79,52 +78,36 @@ void load(wl_window_t* info)
     ku_window_layout(mmfm.kuwindow);
 }
 
-/* save window buffer to png */
-/* TODO add these to soft/egl renderers with png encoding */
-
-void update_screenshot(uint32_t frame)
-{
-    static int shotindex = 0;
-
-    char* name = mt_string_new_format(20, "screenshot%.3i.png", shotindex++);
-    char* path = mt_path_new_append(mmfm.pngpath, name);
-
-    if (mmfm.softrender)
-    {
-	coder_write_png(path, &mmfm.wlwindow->bitmap);
-    }
-    else
-    {
-	ku_bitmap_t* bitmap = ku_bitmap_new(mmfm.wlwindow->width, mmfm.wlwindow->height);
-	ku_gl_save_framebuffer(bitmap);
-	ku_bitmap_t* flipped = bm_new_flip_y(bitmap); // REL 3
-	coder_write_png(path, flipped);
-	REL(flipped);
-	REL(bitmap);
-    }
-
-    ui_update_cursor((ku_rect_t){0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height});
-
-    printf("SCREENHSOT AT %u : %s\n", frame, path);
-}
-
 /* window update */
 
 void update(ku_event_t ev)
 {
     /* printf("UPDATE %i %u %i %i\n", ev.type, ev.time, ev.x, ev.y); */
 
-    if (ev.type == KU_EVENT_WINDOW_SHOWN) load(ev.window);
-    if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h);
-    if (ev.type == KU_EVENT_FRAME) ui_update_player();
+    if (ev.type == KU_EVENT_WINDOW_SHOWN) load(ev.window);        /* set ui size on window enter, load files */
+    if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h); /* change layout if needed */
+    if (ev.type == KU_EVENT_FRAME) ui_update_player();            /* update player state if needed */
 
-    ku_window_event(mmfm.kuwindow, ev);
+    ku_window_event(mmfm.kuwindow, ev); /* regular events */
 
     if (mmfm.autotest)
     {
-	/* in case of record/replay do screenshot or move virtual cursor */
-	if (ev.type == KU_EVENT_KEY_DOWN && ev.keycode == XKB_KEY_Print) update_screenshot(ev.frame);
-	else if (ev.x > 0 && ev.y > 0) ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10});
+	/* create screenshot if needed */
+	if (ev.type == KU_EVENT_KEY_DOWN && ev.keycode == XKB_KEY_Print)
+	{
+	    static int shotindex = 0;
+
+	    char* name = mt_string_new_format(20, "screenshot%.3i.png", shotindex++);
+	    char* path = mt_path_new_append(mmfm.pngpath, name);
+
+	    if (mmfm.softrender) ku_renderer_soft_screenshot(&mmfm.wlwindow->bitmap, path);
+	    else ku_renderer_egl_screenshot(&mmfm.wlwindow->bitmap, path);
+
+	    ui_update_cursor((ku_rect_t){0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height});
+
+	    printf("SCREENHSOT AT %u : %s\n", ev.frame, path);
+	}
+	else if (ev.x > 0 && ev.y > 0) ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10}); /* update virtual cursor if needed */
     }
 
     if (mmfm.wlwindow->frame_cb == NULL)
@@ -154,11 +137,9 @@ void update(ku_event_t ev)
 
 void destroy()
 {
-    ku_wayland_delete_window(mmfm.wlwindow);
-
     ui_destroy();
-
     REL(mmfm.kuwindow);
+    ku_wayland_delete_window(mmfm.wlwindow);
 
     if (!mmfm.softrender) ku_renderer_egl_destroy();
 

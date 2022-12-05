@@ -1197,10 +1197,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, mt_number_new_int(180));
 
     ui.filetablev = GETV(bv, "filetable");
-
-    ku_view_describe(ui.filetablev, 0);
     vh_table_attach(ui.filetablev, fields, ui_on_table_event);
-    ku_view_describe(ui.filetablev, 0);
 
     /* clipboard table */
 

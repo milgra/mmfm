@@ -142,7 +142,8 @@ int fm_exists(char* path)
 void fm_list(char* fm_path, mt_map_t* files)
 {
     DIR* dirp = opendir(fm_path);
-    chdir(fm_path);
+    int  res  = chdir(fm_path);
+    if (res < 0) mt_log_error("Couldn't change to directory %s", fm_path);
 
     if (dirp != NULL)
     {
@@ -240,7 +241,8 @@ void fm_detail(mt_map_t* file)
     char* path   = MGET(file, "file/path");
     char* name   = MGET(file, "file/basename");
 
-    chdir(parent);
+    int res = chdir(parent);
+    if (res < 0) mt_log_error("Couldn't change to directory %s", path);
 
     /* get user and group */
 

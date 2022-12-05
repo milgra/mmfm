@@ -28,7 +28,8 @@ void ku_png_get_size(char* path, int* width, int* height)
 
     if (fp)
     {
-	fread(header, 1, 8, fp);
+	int res = fread(header, 1, 8, fp);
+	if (res == 0) mt_log_error("fread error");
 
 	if (png_sig_cmp(header, 0, 8) == 0)
 	{
@@ -76,7 +77,8 @@ void ku_png_load_into(char* path, ku_bitmap_t* bitmap)
 
     if (fp)
     {
-	fread(header, 1, 8, fp);
+	int res = fread(header, 1, 8, fp);
+	if (res == 0) mt_log_error("fread error");
 
 	if (png_sig_cmp(header, 0, 8) == 0)
 	{

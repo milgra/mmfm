@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exe="$1/vmp"
+exe="$1/mmfm"
 
 sh tst/test_rep.sh tst/ui_file $exe
 

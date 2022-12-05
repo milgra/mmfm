@@ -652,7 +652,7 @@ void ui_on_table_event(vh_table_event_t event)
 	{
 	    /* TODO : save field order */
 	}
-	else if (event.id == VH_TABLE_EVENT_SELECT)
+	else if (event.id == VH_TABLE_EVENT_SELECT && event.ev.repeat == 0)
 	{
 	    /* show file info and open immediately if possible on simple select */
 

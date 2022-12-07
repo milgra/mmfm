@@ -24,6 +24,8 @@ void  config_set_bool(char* key, int val);
 #include "mt_string.c"
 #include <limits.h>
 
+/* TODO separate permanent and temporary variables, write only permanent vars outs */
+
 mt_map_t* confmap;
 
 void config_init()
@@ -88,9 +90,13 @@ void config_write(char* path)
 
 void config_set(char* key, char* value)
 {
-    char* str = mt_string_new_cstring(value); // REL 0
-    MPUT(confmap, key, str);
-    REL(str); // REL 0
+    if (value)
+    {
+	char* str = mt_string_new_cstring(value); // REL 0
+	MPUT(confmap, key, str);
+	REL(str); // REL 0
+    }
+    else MDEL(confmap, key);
 }
 
 char* config_get(char* key)

@@ -1,8 +1,9 @@
 # MultiMedia File Manager
 
+- delete folder bug
+- popup texture disappearance
 - no last accessed and absolute paths when autotest
 - full autotest coverage
-
 - video on github page
 - show raw html/css switch without any code
 - legalso elem ne legyen felig takarva cursor down eseten

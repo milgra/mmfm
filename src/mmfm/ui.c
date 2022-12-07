@@ -385,7 +385,6 @@ void ui_load_folder(char* folder)
 		mt_map_t* info = ui.filedatav->data[index];
 		char*     path = MGET(info, "file/path");
 
-		printf("LAST VIS %s PATH %s\n", last_visited, path);
 		if (strcmp(path, last_visited) == 0)
 		{
 		    found = 1;

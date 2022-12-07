@@ -62,6 +62,7 @@ void init(wl_event_t event)
 	    if (monitor->logical_width > max_width) max_width = monitor->logical_width;
 	    if (monitor->logical_height > max_height) max_height = monitor->logical_height;
 	}
+
 	ku_renderer_egl_init(max_width, max_height);
     }
 }
@@ -283,11 +284,24 @@ int main(int argc, char* argv[])
     config_set("top_path", dir_path ? dir_path : wrk_path);
     config_set("img_path", img_path);
     config_set("wrk_path", wrk_path);
-    if (opn_par) config_set("opn_path", opn_par);
+    config_set("opn_path", opn_par);
     config_set("cfg_path", cfg_path);
     config_set("per_path", per_path);
     config_set("css_path", css_path);
     config_set("html_path", html_path);
+
+    if (frm_par != NULL)
+    {
+	mmfm.width  = atoi(frm_par);
+	char* next  = strstr(frm_par, "x");
+	mmfm.height = atoi(next + 1);
+    }
+    else
+    {
+	/* TODO calc this based on output size */
+	mmfm.width  = 1200;
+	mmfm.height = 600;
+    }
 
     if (rec_path || rep_path) ku_recorder_init(update);
     if (rec_path || rep_path) mmfm.autotest = 1;
@@ -304,19 +318,6 @@ int main(int argc, char* argv[])
 	ku_recorder_replay(tgt_path);
 	REL(tgt_path);
 	mmfm.pngpath = rep_path;
-    }
-
-    if (frm_par != NULL)
-    {
-	mmfm.width  = atoi(frm_par);
-	char* next  = strstr(frm_par, "x");
-	mmfm.height = atoi(next + 1);
-    }
-    else
-    {
-	/* TODO calc this based on output size */
-	mmfm.width  = 1200;
-	mmfm.height = 600;
     }
 
     /* proxy events through the recorder in case of record/replay */

@@ -13,7 +13,7 @@ else
     cp -r $basedir $testdir 
     mkdir -p $savedir
     echo "(RE-)RECORDING $1"
-    build/mmfm -r res -v -s $savedir -d $testdir -c $savedir
+    build/mmfm -r res -v -s $savedir -d $testdir -c $savedir -f 1200x800
     echo "RECORDING FINISHED"
     rm -rf $masterdir
     cp -r $testdir $masterdir

@@ -1,7 +1,6 @@
 # MultiMedia File Manager
 
-- video space-re ugral
-- context menu over empty parts of table
+- korusos videok nem jatszodnak le
 - drag and drop from clipboard
 - paste two files from clipboard
 - delete folder bug

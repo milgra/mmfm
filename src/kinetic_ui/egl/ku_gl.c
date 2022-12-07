@@ -287,8 +287,6 @@ void ku_gl_add_textures(mt_vector_t* views, int force)
 			break;
 		    }
 
-		    printf("ADDING TEXTURE %s %f %f %i\n", view->id, view->texture.bitmap->w, coords.w, force);
-
 		    coords = ku_gl_atlas_get(kugl.atlas, view->id);
 		}
 

@@ -2,11 +2,10 @@
 
 - korusos videok nem jatszodnak le
 - drag and drop from clipboard
+- remove deleted files from clipboard
 - paste two files from clipboard
 - delete folder bug
 - save autoplay state
-- popup texture disappearance
-- no last accessed and absolute paths when autotest
 - full autotest coverage
 - video on github page
 - show raw html/css switch without any code

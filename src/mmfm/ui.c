@@ -604,6 +604,10 @@ void ui_show_context_menu(float x, float y)
 	ku_rect_t  iframe       = contextpopup->frame.global;
 	iframe.x                = x + 20.0;
 	iframe.y                = y;
+
+	if (iframe.y + iframe.h > ui.window->height) iframe.y = ui.window->height - iframe.h;
+	if (iframe.x + iframe.w > ui.window->width) iframe.x = ui.window->width - iframe.w;
+
 	ku_view_add_subview(ui.basev, ui.contextcv);
 	ku_view_set_frame(contextpopup, iframe);
 
@@ -695,11 +699,8 @@ void ui_on_table_event(vh_table_event_t event)
 	else if (event.id == VH_TABLE_EVENT_CONTEXT)
 	{
 	    /* show context menu on right click */
-	    if (event.rowview)
-	    {
-		ui.rowview_for_context_menu = event.rowview;
-		ui_show_context_menu(event.ev.x, event.ev.y);
-	    }
+	    ui.rowview_for_context_menu = event.rowview;
+	    ui_show_context_menu(event.ev.x, event.ev.y);
 	}
     }
     else if (strcmp(event.view->id, "cliptable") == 0)
@@ -775,7 +776,7 @@ void ui_on_table_event(vh_table_event_t event)
 	    {
 		/* rename, open input popup over rowview */
 
-		if (event.rowview)
+		if (ui.rowview_for_context_menu)
 		{
 		    ui.inputmode     = UI_IM_RENAME;
 		    ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
@@ -953,14 +954,17 @@ void ui_on_key_down(vh_key_event_t event)
     }
     if (event.ev.keycode == XKB_KEY_r && event.ev.ctrl_down)
     {
-	ui.inputmode     = UI_IM_RENAME;
-	ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
+	if (ui.rowview_for_context_menu)
+	{
+	    ui.inputmode     = UI_IM_RENAME;
+	    ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
 
-	vh_table_t* vh    = ui.filetablev->handler_data;
-	mt_map_t*   info  = vh->selected_items->data[0];
-	char*       value = MGET(info, "file/basename");
+	    vh_table_t* vh    = ui.filetablev->handler_data;
+	    mt_map_t*   info  = vh->selected_items->data[0];
+	    char*       value = MGET(info, "file/basename");
 
-	ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
+	    ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
+	}
     }
     if (event.ev.keycode == XKB_KEY_n && event.ev.ctrl_down)
     {

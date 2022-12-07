@@ -76,10 +76,14 @@ void load(wl_window_t* info)
     if (mmfm.autotest) ui_add_cursor();
 
     ui_update_layout(info->buffer_width, info->buffer_height);
-    ui_load_folder(config_get("top_path"));
-    ui_load_file(config_get("opn_path"));
 
     ku_window_layout(mmfm.kuwindow);
+}
+
+void load_data()
+{
+    ui_load_folder(config_get("top_path"));
+    ui_load_file(config_get("opn_path"));
 }
 
 /* window update */
@@ -112,7 +116,7 @@ void update(ku_event_t ev)
 
 	    printf("SCREENHSOT AT %u : %s\n", ev.frame, path);
 	}
-	else if (ev.x > 0 && ev.y > 0) ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10}); /* update virtual cursor if needed */
+	else ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10}); /* update virtual cursor if needed */
     }
 
     if (mmfm.wlwindow->frame_cb == NULL)
@@ -138,6 +142,8 @@ void update(ku_event_t ev)
 	    mmfm.dirtyrect = dirty;
 	}
     }
+
+    if (ev.type == KU_EVENT_WINDOW_SHOWN) load_data(); /* set ui size on window enter, load files */
 }
 
 void destroy()
@@ -303,8 +309,14 @@ int main(int argc, char* argv[])
 	mmfm.height = 600;
     }
 
-    if (rec_path || rep_path) ku_recorder_init(update);
-    if (rec_path || rep_path) mmfm.autotest = 1;
+    if (rec_path || rep_path)
+    {
+	ku_recorder_init(update);
+	mmfm.autotest = 1;
+	config_set("autotest", "autotest");
+    }
+    else config_set("autotest", NULL); /* TODO saved temporary values fuck up things, change this */
+
     if (rec_path)
     {
 	char* tgt_path = mt_path_new_append(rec_path, "session.rec");
@@ -337,6 +349,7 @@ int main(int argc, char* argv[])
     if (rep_par) REL(rep_par); // REL 3
     if (frm_par) REL(frm_par); // REL 4
 
+    if (dir_path) REL(dir_path); // REL 4
     REL(img_path);
     REL(wrk_path);    // REL 6
     REL(res_path);    // REL 7

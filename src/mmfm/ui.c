@@ -360,7 +360,12 @@ void ui_load_folder(char* folder)
 	}
 
 	/* show in path bar */
-	vh_textinput_set_text(ui.pathtv, ui.current_folder);
+	char* pathstr;
+	if (config_get("autotest") == NULL) pathstr = STRNC(ui.current_folder);
+	else pathstr = STRNF(PATH_MAX, "%s/", ui.current_folder + strlen(config_get("top_path")));
+
+	vh_textinput_set_text(ui.pathtv, pathstr);
+	REL(pathstr);
 
 	/* read folder */
 	mt_map_t* files = MNEW();
@@ -511,14 +516,27 @@ void ui_show_info(mt_map_t* info)
     mt_map_keys(info, keys);
     mt_vector_sort(keys, ((int (*)(void*, void*)) strcmp));
 
+    int autotest = config_get("autotest") != NULL;
+
     mt_vector_t* items = VNEW();
     for (int index = 0; index < keys->length; index++)
     {
-	char*     key = keys->data[index];
-	mt_map_t* map = MNEW();
-	MPUT(map, "key", key);
-	MPUT(map, "value", MGET(info, key));
-	VADDR(items, map);
+	char* key = keys->data[index];
+	if (autotest &&
+	    (strstr(key, "file/last_") != NULL ||
+	     strstr(key, "file/inode") != NULL ||
+	     strstr(key, "file/path") != NULL ||
+	     strstr(key, "file/parent") != NULL))
+	{
+	    /* don't show fast changing values in case of autotest */
+	}
+	else
+	{
+	    mt_map_t* map = MNEW();
+	    MPUT(map, "key", key);
+	    MPUT(map, "value", MGET(info, key));
+	    VADDR(items, map);
+	}
     }
 
     REL(keys);
@@ -1130,6 +1148,9 @@ void ui_on_text_event(vh_textinput_event_t event)
 	    ku_window_activate(ui.window, ui.pathtv, 0);
 
 	    char* valid_path = STRNC(event.text);
+	    if (config_get("autotest") == NULL) valid_path = STRNC(event.text);
+	    else valid_path = STRNF(PATH_MAX, "%s/%s", config_get("top_path"), event.text);
+
 	    for (;;)
 	    {
 		if (fm_exists(valid_path)) break;
@@ -1206,12 +1227,16 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, mt_number_new_int(400));
     VADDR(fields, STRNC("file/size"));
     VADDR(fields, mt_number_new_int(120));
-    VADDR(fields, STRNC("file/last_access"));
-    VADDR(fields, mt_number_new_int(180));
-    VADDR(fields, STRNC("file/last_modification"));
-    VADDR(fields, mt_number_new_int(180));
-    VADDR(fields, STRNC("file/last_status"));
-    VADDR(fields, mt_number_new_int(180));
+
+    if (config_get("autotest") == NULL)
+    {
+	VADDR(fields, STRNC("file/last_access"));
+	VADDR(fields, mt_number_new_int(180));
+	VADDR(fields, STRNC("file/last_modification"));
+	VADDR(fields, mt_number_new_int(180));
+	VADDR(fields, STRNC("file/last_status"));
+	VADDR(fields, mt_number_new_int(180));
+    }
 
     ui.filetablev = GETV(bv, "filetable");
     vh_table_attach(ui.filetablev, fields, ui_on_table_event);
@@ -1246,6 +1271,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     ui.contexttablev = GETV(bv, "contexttable");
     vh_table_attach(ui.contexttablev, fields, ui_on_table_event);
+    vh_table_show_scrollbar(ui.contexttablev, 0);
 
     vh_table_t* table = ui.contexttablev->handler_data;
 
@@ -1392,7 +1418,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     /* path bar */
 
     ui.pathtv = GETV(bv, "pathtf");
-    vh_textinput_add(ui.pathtv, "/home/milgra", "", ui_on_text_event);
+    vh_textinput_add(ui.pathtv, "", "", ui_on_text_event);
 
     /* time label */
 

@@ -4,7 +4,7 @@ if [ $# -eq 0 ]; then
     echo "PLEASE PROVIDE TEST FOLDER"
 else
     # move stuff to testdir so all path remain the same during testing and recording
-    basedir="$1_base"
+    basedir="tst/test_files"
     testdir="$1_test"
     savedir="$1_test/record"
     masterdir="$1_master"

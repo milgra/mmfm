@@ -2,7 +2,7 @@
 
 exe="$1/mmfm"
 
-sh tst/test_rep.sh tst/ui_file $exe
+sh tst/test_rep.sh tst/file_info $exe
 
 error=$?
 if [ $error -eq 0 ]

@@ -1,6 +1,10 @@
 # MultiMedia File Manager
 
+- context menu over empty parts of table
+- drag and drop from clipboard
+- paste two files from clipboard
 - delete folder bug
+- save autoplay state
 - popup texture disappearance
 - no last accessed and absolute paths when autotest
 - full autotest coverage

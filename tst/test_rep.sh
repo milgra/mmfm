@@ -3,7 +3,7 @@
 if [ $# -eq 0 ]; then
     echo "PLEASE PROVIDE TEST FOLDER"
 else
-    basedir="$1_base"
+    basedir="tst/test_files"
     testdir="$1_test"
     savedir="$1_test/record"
     masterdir="$1_master"

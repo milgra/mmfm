@@ -1,5 +1,6 @@
 # MultiMedia File Manager
 
+- video space-re ugral
 - context menu over empty parts of table
 - drag and drop from clipboard
 - paste two files from clipboard

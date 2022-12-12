@@ -120,7 +120,7 @@ int fm_rename1(char* old_path, char* new_path)
 
 int fm_copy(char* old_path, char* new_path)
 {
-    char* command = mt_string_new_format(7 + PATH_MAX * 2, "cp -r %s %s", old_path, new_path);
+    char* command = mt_string_new_format(7 + PATH_MAX * 2, "cp -r '%s' '%s'", old_path, new_path);
 
     int res = system(command);
 

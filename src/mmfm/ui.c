@@ -430,13 +430,11 @@ void ui_open_folder(mt_map_t* info)
 
 void ui_update_control_bar()
 {
-    int play_flag = ui.coder_type == CODER_MEDIA_TYPE_VIDEO || ui.coder_type == CODER_MEDIA_TYPE_AUDIO;
     int prev_flag = ui.media_type == UI_MT_DOCUMENT;
     int next_flag = ui.media_type == UI_MT_DOCUMENT;
     int seek_flag = ui.media_type == UI_MT_DOCUMENT || ui.coder_type == CODER_MEDIA_TYPE_VIDEO || ui.coder_type == CODER_MEDIA_TYPE_AUDIO;
     int zoom_flag = ui.coder_type != CODER_MEDIA_TYPE_OTHER || ui.media_type == UI_MT_DOCUMENT;
 
-    vh_button_set_enabled(ui.playbtnv, play_flag);
     vh_button_set_enabled(ui.prevbtnv, prev_flag);
     vh_button_set_enabled(ui.nextbtnv, next_flag);
     vh_button_set_enabled(ui.plusbtnv, zoom_flag);
@@ -573,8 +571,12 @@ void ui_delete_selected_files()
 	    mt_map_t* file = vh->selected_items->data[index];
 	    char*     path = MGET(file, "file/path");
 	    fm_delete(path);
+
+	    VREM(ui.clipdatav, file);
 	}
 	ui_load_folder(ui.current_folder);
+
+	vh_table_set_data(ui.cliptablev, ui.clipdatav);
     }
 }
 
@@ -819,6 +821,8 @@ void ui_on_table_event(vh_table_event_t event)
 			char*     path    = MGET(data, "file/path");
 			char*     name    = MGET(data, "file/basename");
 			char*     newpath = STRNF(PATH_MAX, "%s/%s", ui.current_folder, name);
+
+			printf("COPY %s\n", newpath);
 
 			int res = fm_copy(path, newpath);
 

@@ -2,7 +2,14 @@
 
 exe="$1/mmfm"
 
+echo -e "\nTest file properties view\n"
 sh tst/test_rep.sh tst/file_info $exe
+
+echo -e "\nTest media view/play\n"
+sh tst/test_rep.sh tst/file_play $exe
+
+echo -e "\nTest file operations\n"
+sh tst/test_rep.sh tst/file_ops $exe
 
 error=$?
 if [ $error -eq 0 ]

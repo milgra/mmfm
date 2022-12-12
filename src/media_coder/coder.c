@@ -453,7 +453,7 @@ int coder_load_metadata_into(const char* path, mt_map_t* map)
 
 	avformat_close_input(&pFormatCtx); // CLOSE 0
     }
-    else mt_log_info("coder : skipping %s, probably not a media file", path);
+    else mt_log_debug("coder : skipping %s, probably not a media file", path);
 
     if (format_opts) av_dict_free(&format_opts);
 
@@ -474,15 +474,17 @@ coder_media_type_t coder_get_type(const char* path)
 
     av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
 
+    printf("GET TYPE %s\n", path);
+
     // open the specified path
     if (avformat_open_input(&pFormatCtx, path, NULL, &format_opts) == 0) // CLOSE 0
     {
 	if (pFormatCtx)
 	{
-	    if (pFormatCtx->duration < 0) type = CODER_MEDIA_TYPE_IMAGE;
-
 	    // Retrieve stream information
 	    retv = avformat_find_stream_info(pFormatCtx, NULL);
+
+	    if (pFormatCtx->duration < 0) type = CODER_MEDIA_TYPE_IMAGE;
 
 	    for (unsigned i = 0; i < pFormatCtx->nb_streams; i++)
 	    {

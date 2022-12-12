@@ -1,33 +1,32 @@
 # MultiMedia File Manager
 
+- clear makepkg errors
+
 - korusos videok nem jatszodnak le
 - drag and drop from clipboard
-- remove deleted files from clipboard
-- paste two files from clipboard
-- delete folder bug
+- CTRL + drag from clipboard - move
 - save autoplay state
-- full autotest coverage
-- video on github page
-- show raw html/css switch without any code
-- legalso elem ne legyen felig takarva cursor down eseten
-- clear makepkg errors
-- tech video, automated ui/full test, logban meg a leakek is lathatoak
-- left right arrow scroll in scroll views
-- input text scroll or wrap  
-- get dimensions before image,pdf, video load, resize preview
-- dirty rect drawing for debugging
 - file list ordering head click
-- copy/paste text from wayland clipboard
+- store table states
+- left right arrow scroll in scroll views
+- get dimensions before image,pdf, video load, resize preview
 - slow click rename
 - test scaling
+- copy/paste text from wayland clipboard
 - text file load/seek, hexa view, fix meretu chunkokat olvasson
 - linelist component, text fileoknak es hexa viewnak
-- time based animations
 - pause/play felvillano ikon over preview
-- CTRL + drag from clipboard - move
-- store table states
 - visualization level gombok, kep, oszcilloszkop, binaris
 - search bar
 - shortcutok config fileba vagy kulon fileba
 - listen for folder change event
+
+- video on github page
+- tech video, automated ui/full test, logban meg a leakek is lathatoak
+
+- show raw html/css switch without any code
+- legalso elem ne legyen felig takarva cursor down eseten
+- input text scroll or wrap  
+- dirty rect drawing for debugging
+- time based animations
 - unified css for all applications to make global styling easier

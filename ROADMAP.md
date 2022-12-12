@@ -1,5 +1,6 @@
 # MultiMedia File Manager
 
+- first drag and drop doesn't work
 - clear makepkg errors
 
 - korusos videok nem jatszodnak le

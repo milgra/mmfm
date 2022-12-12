@@ -11,10 +11,11 @@ Welcome to Multimedia File Manager! I put a lot of effort in the making of this 
 5. The file info browser
 6. The content toolbar
 7. The content viewer
-8. Controlling the application  
-9. Handling the file browser
-10. Command line arguments
-11. Customizing the user interface
+8. The file operations context menu
+9. Controlling the application  
+10. Handling the file browser
+11. Command line arguments
+12. Customizing the user interface
 
 ## 1. First start
 
@@ -28,7 +29,7 @@ The application will show you the contents of the current folder.
  
 ## 2. The Main Interface
 
-MMFM's main user interface has four main parts :  
+MMFM's main user interface has five main parts :
 
 - The main toolbar
 - The file browser
@@ -69,7 +70,19 @@ Elements from left to right :
 
 The content viewer shows the currently selected media. Press +/- buttons to zoom in/out, or use the scroll wheel of the mouse, or use pinch gestures on the touchpad to zoom in/out, or use the zoom in/out buttons in the content toolbar. Press space or the play/pause button to toggle auto play.
 
-## 8. Controlling the application
+## 8. The file operations context menu ##
+
+Elements from top to bottom :
+
+1. Create folder button
+2. Rename button
+3. Delete button
+4. Send to clipboard button
+5. Paste using copy button
+6. Paste using move button
+7. Reset clipboard button
+
+## 9. Controlling the application
 
 **To exit the application**  
 Click on the close application button
@@ -77,7 +90,7 @@ Click on the close application button
 **To maximize/minimize the application**  
 Click on the maximize button
 
-## 9. Handling the file browser
+## 10. Handling the file browser
 
 **To scroll the song list**  
 a. scroll over the list  
@@ -90,7 +103,7 @@ Drag on the right edge of the header cell you want to resize.
 **To rearrange the columns**  
 Drag and drop the header cell onto an other cell
 
-## 10. Command line arguments
+## 11. Command line arguments
 
 ```
 -c --config= [config file]	 	 use config file for session
@@ -100,6 +113,6 @@ Drag and drop the header cell onto an other cell
 -f --frame= [widthxheight] 		 initial window dimension
 ```
 
-## 11. Customizing the user interface
+## 12. Customizing the user interface
 
 The user interface uses html for structure description and css for design description. The location of the two file is under settings. Feel free to modify them, but beware, the html/css parser is very strict, follow strictly the original files syntax to achieve success. Also some parts are generated from code and cannot be set by css, I will wire out those parts soon.

@@ -308,7 +308,7 @@ int main(int argc, char* argv[])
     {
 	ku_recorder_init(update);
 	mmfm.autotest = 1;
-	MPUT(mmfm.defaults, "autotest", "autotest");
+	MPUTR(mmfm.defaults, "autotest", STRNC("autotest"));
     }
 
     if (rec_path)

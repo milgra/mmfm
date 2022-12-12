@@ -38,7 +38,9 @@ sudo ninja -C build install
 
 ## User Guide ##
 
-[Open User Guide](doc/USER.md)
+Watch the user guide [video on youtube](https://youtube.com/)
+
+Or open the [User Guide](doc/USER.md)
 
 ## Feedback ##
 

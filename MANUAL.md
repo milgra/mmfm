@@ -1,4 +1,4 @@
-# Multimedia File Manager User Guide
+# MultiMedia File Manager User Guide
 
 Welcome to Multimedia File Manager! I put a lot of effort in the making of this application and I hope that using this application fills your heart with warmth, pride and childlike joy!
 
@@ -6,14 +6,15 @@ Welcome to Multimedia File Manager! I put a lot of effort in the making of this 
 
 1. First start
 2. The main interface
-3. The toolbar
+3. The main toolbar
 4. The file browser
-5. The content viewer
-6. The file info browser
-7. Controlling the application  
-8. Handling the file browser
-9. Command line arguments
-10. Customizing the user interface
+5. The file info browser
+6. The content toolbar
+7. The content viewer
+8. Controlling the application  
+9. Handling the file browser
+10. Command line arguments
+11. Customizing the user interface
 
 ## 1. First start
 
@@ -27,37 +28,48 @@ The application will show you the contents of the current folder.
  
 ## 2. The Main Interface
 
-Zen Music's main user interface has four main parts :  
+MMFM's main user interface has four main parts :  
 
-- The toolbar
+- The main toolbar
 - The file browser
-- The content viewer
 - The file info browser
+- The content toolbar
+- The content viewer
 
-## 3. The toolbar
+## 3. The main toolbar
 
-The toolbar contains the controller buttons and information display.
-
-Buttons from left to right :
+Elements from left to right :
 
 1. close application button
-2. progress info field
-3. the file info browser button
-4. the maximize button
+2. about/help button
+3. progress info field
+4. the sidebar( file info/clipboard ) toggle button
+5. the maximize button
 
 ## 4. The file browser
 
-The file browser shows all files in the current directory. Use the mouse or the arrow keys to navigate through files. Double click on the double dot or press enter on it to go up a directory.
+The file browser shows all files in the current directory. Use the mouse or the arrow keys to navigate through files. Single click or move over a file with the arrow keys to view it. Double click on the double dot or press enter on it to go up a directory.
 
-## 5. The content viewer
-
-The content viewer shows the currently selected media. Press the control key and scroll with the mouse over the media to zoom in/out.
-
-## 6. The file info browser
+## 5. The file info browser
 
 The file info browser shows all information about the currently selected file. To make it visible click on the file info browser button on the toolbar next to the maximize button.
 
-## 7. Controlling the application
+## 6. The content toolbar
+
+Elements from left to right :
+
+1. previous page button
+2. next page button
+3. play/pause button
+4. progress bar
+5. zoom in button
+6. zoom out button
+
+## 7. The content viewer
+
+The content viewer shows the currently selected media. Press +/- buttons to zoom in/out, or use the scroll wheel of the mouse, or use pinch gestures on the touchpad to zoom in/out, or use the zoom in/out buttons in the content toolbar. Press space or the play/pause button to toggle auto play.
+
+## 8. Controlling the application
 
 **To exit the application**  
 Click on the close application button
@@ -65,7 +77,7 @@ Click on the close application button
 **To maximize/minimize the application**  
 Click on the maximize button
 
-## 8. Handling the file browser
+## 9. Handling the file browser
 
 **To scroll the song list**  
 a. scroll over the list  
@@ -78,7 +90,7 @@ Drag on the right edge of the header cell you want to resize.
 **To rearrange the columns**  
 Drag and drop the header cell onto an other cell
 
-## 9. Command line arguments
+## 10. Command line arguments
 
 ```
 -c --config= [config file]	 	 use config file for session
@@ -88,6 +100,6 @@ Drag and drop the header cell onto an other cell
 -f --frame= [widthxheight] 		 initial window dimension
 ```
 
-## 10. Customizing the user interface
+## 11. Customizing the user interface
 
 The user interface uses html for structure description and css for design description. The location of the two file is under settings. Feel free to modify them, but beware, the html/css parser is very strict, follow strictly the original files syntax to achieve success. Also some parts are generated from code and cannot be set by css, I will wire out those parts soon.

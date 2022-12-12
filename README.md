@@ -40,7 +40,7 @@ sudo ninja -C build install
 
 Watch the user guide [video on youtube](https://youtube.com/)
 
-Or rad the [User Guide](MANUAL.md)
+Or read the [User Guide](MANUAL.md)
 
 ## Feedback ##
 

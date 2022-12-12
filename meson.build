@@ -8,43 +8,46 @@ project(
 
 cc = meson.get_compiler('c')
 
-png = cc.find_library('png',static:false)
-freetype = cc.find_library('freetype',static:false)
-math = cc.find_library('m',static:false)
-z = cc.find_library('z',static:false)
-bz2 = cc.find_library('bz2',static:false)
+# os specific libs with find library
+
 rt = cc.find_library('rt',static:false)
-gl = cc.find_library('GL',static:false)
-glew = cc.find_library('GLEW',static:false)
-sdl2 = cc.find_library('SDL2',static:false)
-wegl = cc.find_library('wayland-egl',static:false)
-swscale = cc.find_library('swscale',static:false)
-pthread = cc.find_library('pthread',static:false)
-jpeg = cc.find_library('jpeg',static:false)
-jbig = cc.find_library('jbig2dec',static:false)
-ojpeg = cc.find_library('openjp2',static:false)
-hb = cc.find_library('harfbuzz',static:false)
-gumbo = cc.find_library('gumbo',static:false)
-avutil = cc.find_library('avutil',static:false)
-avcodec = cc.find_library('avcodec',static:false)
-avdevice = cc.find_library('avdevice',static:false)
-avformat = cc.find_library('avformat',static:false)
-avfilter = cc.find_library('avfilter',static:false)
-swresample = cc.find_library('swresample',static:false)
-egl = cc.find_library('EGL',static:false)
+math = cc.find_library('m',static:false)
 
-xkbcommon = dependency('xkbcommon')
-
-# for ffmpeg
-#va = cc.find_library('va',static:false)
-#x11 = cc.find_library('X11',static:false)
-#lvadrm = cc.find_library('va-drm',static:false)
-#lvax11 = cc.find_library('va-x11',static:false)
-#lzma = cc.find_library('lzma',static:false)
-#lvdpau = cc.find_library('vdpau',static:false)
+# static libs with find library
 
 mupdf = cc.find_library('mupdf')
 mupdfthird = cc.find_library('mupdf-third')
+
+# other deps with dependency
+
+z = dependency('zlib',static:false)
+bz2 = dependency('bzip2',static:false)
+
+png = dependency('libpng',static:false)
+freetype = dependency('freetype2',static:false)
+
+gl = dependency('GL',static:false)
+egl = dependency('egl',static:false)
+wegl = dependency('wayland-egl',static:false)
+glew = dependency('GLEW',static:false)
+sdl2 = dependency('SDL2',static:false)
+
+pthread = dependency('threads',static:false)
+jpeg = dependency('libjpeg',static:false)
+jbig = dependency('jbig2dec',static:false)
+ojpeg = dependency('libopenjp2',static:false)
+hb = dependency('harfbuzz',static:false)
+gumbo = dependency('gumbo',static:false)
+
+avutil = dependency('libavutil',static:false,version:'>=57.24.100')
+avcodec = dependency('libavcodec',static:false)
+avdevice = dependency('libavdevice',static:false)
+avformat = dependency('libavformat',static:false)
+avfilter = dependency('libavfilter',static:false)
+
+swscale = dependency('libswscale',static:false)
+swresample = dependency('libswresample',static:false)
+xkbcommon = dependency('xkbcommon',static:false)
 
 wayland_client      = dependency('wayland-client')
 wayland_cursor      = dependency('wayland-cursor')

@@ -32,3 +32,7 @@
 - dirty rect drawing for debugging
 - time based animations
 - unified css for all applications to make global styling easier
+
+- Extracts all stream and metadata info from multimedia files, also shows the raw hexa/ASCII bytes of the file if needed
+- Works without a window manager for super hackers
+- Frequency and scope analyzer visualizers for audio conent

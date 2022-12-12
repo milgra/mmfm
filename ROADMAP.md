@@ -20,6 +20,7 @@
 - search bar
 - shortcutok config fileba vagy kulon fileba
 - listen for folder change event
+- HEIF/HEVC/mpts play error
 
 - video on github page
 - tech video, automated ui/full test, logban meg a leakek is lathatoak

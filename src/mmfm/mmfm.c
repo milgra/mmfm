@@ -36,6 +36,8 @@ struct
 
     int width;
     int height;
+
+    mt_map_t* defaults;
 } mmfm = {0};
 
 void init(wl_event_t event)
@@ -71,7 +73,7 @@ void load(wl_window_t* info)
 {
     mmfm.kuwindow = ku_window_create(info->buffer_width, info->buffer_height, info->scale);
 
-    ui_init(info->buffer_width, info->buffer_height, info->scale, mmfm.kuwindow); // DESTROY 3
+    ui_init(info->buffer_width, info->buffer_height, info->scale, mmfm.kuwindow, mmfm.defaults); // DESTROY 3
 
     if (mmfm.autotest) ui_add_cursor();
 
@@ -82,8 +84,8 @@ void load(wl_window_t* info)
 
 void load_data()
 {
-    ui_load_folder(config_get("top_path"));
-    ui_load_file(config_get("opn_path"));
+    ui_load_folder(MGET(mmfm.defaults, "top_path"));
+    ui_load_file(MGET(mmfm.defaults, "opn_path"));
 }
 
 /* window update */
@@ -273,28 +275,21 @@ int main(int argc, char* argv[])
 
     // init config
 
-    config_init(); // DESTROY 0
-
-    // set defaults before overwriting those with saved vales
-
-    config_set("dark_mode", "false");
-    config_set("res_path", res_path);
+    config_init();
     config_set_bool("sidebar_visible", 1);
-
-    // read config, it overwrites defaults if exists
-
     config_read(cfg_path);
 
-    // init non-configurable defaults
+    mmfm.defaults = MNEW();
 
-    config_set("top_path", dir_path ? dir_path : wrk_path);
-    config_set("img_path", img_path);
-    config_set("wrk_path", wrk_path);
-    config_set("opn_path", opn_par);
-    config_set("cfg_path", cfg_path);
-    config_set("per_path", per_path);
-    config_set("css_path", css_path);
-    config_set("html_path", html_path);
+    MPUT(mmfm.defaults, "res_path", res_path);
+    MPUT(mmfm.defaults, "top_path", dir_path ? dir_path : wrk_path);
+    MPUT(mmfm.defaults, "img_path", img_path);
+    MPUT(mmfm.defaults, "wrk_path", wrk_path);
+    if (opn_par) MPUT(mmfm.defaults, "opn_path", opn_par);
+    MPUT(mmfm.defaults, "cfg_path", cfg_path);
+    MPUT(mmfm.defaults, "per_path", per_path);
+    MPUT(mmfm.defaults, "css_path", css_path);
+    MPUT(mmfm.defaults, "html_path", html_path);
 
     if (frm_par != NULL)
     {
@@ -313,9 +308,8 @@ int main(int argc, char* argv[])
     {
 	ku_recorder_init(update);
 	mmfm.autotest = 1;
-	config_set("autotest", "autotest");
+	MPUT(mmfm.defaults, "autotest", "autotest");
     }
-    else config_set("autotest", NULL); /* TODO saved temporary values fuck up things, change this */
 
     if (rec_path)
     {
@@ -359,6 +353,8 @@ int main(int argc, char* argv[])
     REL(html_path);
     REL(cfg_path);
     REL(per_path);
+
+    REL(mmfm.defaults);
 
 #ifdef MT_MEMORY_DEBUG
     mt_memory_stats();

@@ -19,7 +19,7 @@ enum _ui_media_type
     UI_MT_DOCUMENT,
 };
 
-void ui_init(int width, int height, float scale, ku_window_t* window);
+void ui_init(int width, int height, float scale, ku_window_t* window, mt_map_t* defaults);
 void ui_destroy();
 void ui_add_cursor();
 void ui_update_cursor(ku_rect_t frame);
@@ -70,6 +70,7 @@ void ui_open_file(mt_map_t* info);
 
 struct _ui_t
 {
+    mt_map_t*    defaults;
     ku_window_t* window; /* window for this ui */
 
     ku_view_t* basev;       /* base view */
@@ -194,7 +195,7 @@ void ui_rotate_sidebar()
 	config_set_bool("sidebar_visible", 1);
     }
 
-    config_write(config_get("cfg_path"));
+    config_write(MGET(ui.defaults, "cfg_path"));
     ku_view_layout(top, ui.basev->style.scale);
 }
 
@@ -361,8 +362,8 @@ void ui_load_folder(char* folder)
 
 	/* show in path bar */
 	char* pathstr;
-	if (config_get("autotest") == NULL) pathstr = STRNC(ui.current_folder);
-	else pathstr = STRNF(PATH_MAX, "%s/", ui.current_folder + strlen(config_get("top_path")));
+	if (MGET(ui.defaults, "autotest") == NULL) pathstr = STRNC(ui.current_folder);
+	else pathstr = STRNF(PATH_MAX, "%s/", ui.current_folder + strlen(MGET(ui.defaults, "top_path")));
 
 	vh_textinput_set_text(ui.pathtv, pathstr);
 	REL(pathstr);
@@ -399,7 +400,7 @@ void ui_load_folder(char* folder)
 	    if (found) vh_table_select(ui.filetablev, index, 0);
 	}
 
-	if (config_get("autotest")) ui_show_status("Directory loaded");
+	if (MGET(ui.defaults, "autotest")) ui_show_status("Directory loaded");
 	else ui_show_status("Directory %s loaded", ui.current_folder);
     }
 }
@@ -515,7 +516,7 @@ void ui_show_info(mt_map_t* info)
     mt_map_keys(info, keys);
     mt_vector_sort(keys, ((int (*)(void*, void*)) strcmp));
 
-    int autotest = config_get("autotest") != NULL;
+    int autotest = MGET(ui.defaults, "autotest") != NULL;
 
     mt_vector_t* items = VNEW();
     for (int index = 0; index < keys->length; index++)
@@ -831,7 +832,7 @@ void ui_on_table_event(vh_table_event_t event)
 			}
 			else
 			{
-			    if (config_get("autotest")) ui_show_status("File %s copied", name);
+			    if (MGET(ui.defaults, "autotest")) ui_show_status("File %s copied", name);
 			    else ui_show_status("File %s copied to %s", name, newpath);
 			}
 		    }
@@ -857,7 +858,7 @@ void ui_on_table_event(vh_table_event_t event)
 		    }
 		    else
 		    {
-			if (config_get("autotest")) ui_show_status("File %s moved", name);
+			if (MGET(ui.defaults, "autotest")) ui_show_status("File %s moved", name);
 			else ui_show_status("File %s moved to %s", name, newpath);
 		    }
 		}
@@ -1157,8 +1158,8 @@ void ui_on_text_event(vh_textinput_event_t event)
 	    ku_window_activate(ui.window, ui.pathtv, 0);
 
 	    char* valid_path = STRNC(event.text);
-	    if (config_get("autotest") == NULL) valid_path = STRNC(event.text);
-	    else valid_path = STRNF(PATH_MAX, "%s/%s", config_get("top_path"), event.text);
+	    if (MGET(ui.defaults, "autotest") == NULL) valid_path = STRNC(event.text);
+	    else valid_path = STRNF(PATH_MAX, "%s/%s", MGET(ui.defaults, "top_path"), event.text);
 
 	    for (;;)
 	    {
@@ -1188,11 +1189,12 @@ void ui_on_drag(vh_drag_event_t event)
 	if (ui.draggedv) ku_view_remove_from_parent(ui.draggedv);
 }
 
-void ui_init(int width, int height, float scale, ku_window_t* window)
+void ui_init(int width, int height, float scale, ku_window_t* window, mt_map_t* defaults)
 {
     ku_text_init();
 
     ui.window     = window;
+    ui.defaults   = defaults;
     ui.play_state = 1; /* TODO load it from config */
 
     ui.filedatav      = VNEW();
@@ -1203,8 +1205,8 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
 
     mt_vector_t* view_list = VNEW();
 
-    ku_gen_html_parse(config_get("html_path"), view_list);
-    ku_gen_css_apply(view_list, config_get("css_path"), config_get("img_path"));
+    ku_gen_html_parse(MGET(ui.defaults, "html_path"), view_list);
+    ku_gen_css_apply(view_list, MGET(ui.defaults, "css_path"), MGET(ui.defaults, "img_path"));
     ku_gen_type_apply(view_list, ui_on_btn_event, ui_on_slider_event);
 
     ku_view_t* bv = mt_vector_head(view_list);
@@ -1237,7 +1239,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window)
     VADDR(fields, STRNC("file/size"));
     VADDR(fields, mt_number_new_int(120));
 
-    if (config_get("autotest") == NULL)
+    if (MGET(ui.defaults, "autotest") == NULL)
     {
 	VADDR(fields, STRNC("file/last_access"));
 	VADDR(fields, mt_number_new_int(180));

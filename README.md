@@ -4,6 +4,8 @@ MultiMedia File Manager is a modern, lightning fast media viewer and manager for
 
 MultiMedia File Manager was made for [SwayOS](https://swayos.github.io).
 
+![alt text](screenshot.png)
+
 ## Features ##
 
 - It aims to be the fastest & most responsive doc/media viewer out there

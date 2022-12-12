@@ -399,7 +399,8 @@ void ui_load_folder(char* folder)
 	    if (found) vh_table_select(ui.filetablev, index, 0);
 	}
 
-	ui_show_status("Directory %s loaded", ui.current_folder);
+	if (config_get("autotest")) ui_show_status("Directory loaded");
+	else ui_show_status("Directory %s loaded", ui.current_folder);
     }
 }
 
@@ -822,8 +823,6 @@ void ui_on_table_event(vh_table_event_t event)
 			char*     name    = MGET(data, "file/basename");
 			char*     newpath = STRNF(PATH_MAX, "%s/%s", ui.current_folder, name);
 
-			printf("COPY %s\n", newpath);
-
 			int res = fm_copy(path, newpath);
 
 			if (res < 0)
@@ -832,7 +831,8 @@ void ui_on_table_event(vh_table_event_t event)
 			}
 			else
 			{
-			    ui_show_status("File %s copied to %s", name, newpath);
+			    if (config_get("autotest")) ui_show_status("File %s copied", name);
+			    else ui_show_status("File %s copied to %s", name, newpath);
 			}
 		    }
 		    ui_load_folder(ui.current_folder);
@@ -857,7 +857,8 @@ void ui_on_table_event(vh_table_event_t event)
 		    }
 		    else
 		    {
-			ui_show_status("File %s moved to %s", name, newpath);
+			if (config_get("autotest")) ui_show_status("File %s moved", name);
+			else ui_show_status("File %s moved to %s", name, newpath);
 		    }
 		}
 		ui_load_folder(ui.current_folder);

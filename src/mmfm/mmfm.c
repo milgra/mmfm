@@ -343,21 +343,22 @@ int main(int argc, char* argv[])
     ku_recorder_destroy();
 
     if (opn_par) REL(opn_par);
-    if (cfg_par) REL(cfg_par); // REL 0
-    if (res_par) REL(res_par); // REL 1
-    if (rec_par) REL(rec_par); // REL 2
-    if (rep_par) REL(rep_par); // REL 3
-    if (frm_par) REL(frm_par); // REL 4
+    if (cfg_par) REL(cfg_par);
+    if (res_par) REL(res_par);
+    if (rec_par) REL(rec_par);
+    if (rep_par) REL(rep_par);
+    if (frm_par) REL(frm_par);
+    if (dir_par) REL(dir_par);
 
-    if (dir_path) REL(dir_path); // REL 4
+    if (dir_path) REL(dir_path);
     REL(img_path);
-    REL(wrk_path);    // REL 6
-    REL(res_path);    // REL 7
-    REL(cfgdir_path); // REL 8
-    REL(css_path);    // REL 9
-    REL(html_path);   // REL 10
-    REL(cfg_path);    // REL 12
-    REL(per_path);    // REL 13
+    REL(wrk_path);
+    REL(res_path);
+    REL(cfgdir_path);
+    REL(css_path);
+    REL(html_path);
+    REL(cfg_path);
+    REL(per_path);
 
 #ifdef MT_MEMORY_DEBUG
     mt_memory_stats();

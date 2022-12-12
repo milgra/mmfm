@@ -474,8 +474,6 @@ coder_media_type_t coder_get_type(const char* path)
 
     av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
 
-    printf("GET TYPE %s\n", path);
-
     // open the specified path
     if (avformat_open_input(&pFormatCtx, path, NULL, &format_opts) == 0) // CLOSE 0
     {

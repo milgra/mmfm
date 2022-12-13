@@ -1,5 +1,6 @@
 # MultiMedia File Manager
 
+- context menu paste not selectable
 - first drag and drop doesn't work
 - clear makepkg errors
 

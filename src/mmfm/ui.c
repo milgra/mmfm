@@ -161,10 +161,10 @@ void ui_update_cursor(ku_rect_t frame)
 
 void ui_update_layout(int w, int h)
 {
-    /* if (w > h) ui.mainbottomv->style.flexdir = FD_ROW; */
-    /* else ui.mainbottomv->style.flexdir = FD_COL; */
+    if (w > h) ui.mainbottomv->style.flexdir = FD_ROW;
+    else ui.mainbottomv->style.flexdir = FD_COL;
 
-    /* ku_view_layout(ui.basev, ui.basev->style.scale); */
+    ku_view_layout(ui.basev, ui.basev->style.scale);
 }
 
 void ui_rotate_sidebar()

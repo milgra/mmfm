@@ -56,10 +56,11 @@ sudo apg-get install git meson ninja-build pkg-config libpng-dev libfreetype-dev
 
 On arch based systems :
 ```
-sudo pacman -Qs meson ninja-build pkg-config cmake libpng libjpeg freetype2 etc
+sudo pacman -Qs git meson pkg-config ninja glew wayland-protocols libpng freetype2 libgl libegl wayland wayland-protocols libxkbcommon ffmpeg libmupdf mujs
 ```
+or use the AUR
 
-Run these commands:
+Then run these commands:
 
 ```
 git clone https://github.com/milgra/mmfm.git

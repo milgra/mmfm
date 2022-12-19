@@ -28,7 +28,7 @@ freetype = dependency('freetype2',static:false)
 gl = dependency('GL',static:false)
 egl = dependency('egl',static:false)
 wegl = dependency('wayland-egl',static:false)
-glew = dependency('GLEW',static:false)
+glew = cc.find_library('GLEW',static:false)
 sdl2 = dependency('SDL2',static:false)
 
 pthread = dependency('threads',static:false)

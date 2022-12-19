@@ -37,6 +37,23 @@ MMFM's UI can be structured via html, styled via css.
 
 ## Installation ##
 
+Install the needed dependencies and libraries:
+
+```
+libpng,libjpg,libjbig2dec,libopenjp2,
+libgl,libglew,libegl,libwegl,
+libavutil,libavcodec,libavdevice,libavformat,libavfilter,libswscale,libswresample,
+libsdl2,libfreetype,libharfbuzz,libxkbcommon,
+mupdf,mupdf-third,mujs
+fonts-terminus
+````
+
+On debian based systems :
+```
+sudo apg-get install meson ninja-build pkg-config cmake libpng-dev libjpeg-dev libjbig2dec-dev libopenjp2-7pdev libgl-dev libgles2-mesa-dev libmesa1-dev libglew-dev libegl-dev libwayland-dev wayland-protocols libswscale-dev libavutil-dev libavdevice-dev libharfbuzz-dev libgumbo-dev libsdl2-dev libfreetype-dev libxkbcommon-dev fonts-terminus libmujs-dev libmupdf-dev
+
+```
+
 Run these commands:
 
 ```

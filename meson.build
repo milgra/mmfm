@@ -257,11 +257,11 @@ e = executable('maintest', 'src/tests/test.c')
 
 test('MAIN TEST', e)
 
-scripttests = find_program('tst/test_run.sh')
+# scripttests = find_program('tst/test_run.sh')
 
-test(
-   'SCRIPTED TESTS',
-   scripttests,
-   timeout: 0,
-   workdir : meson.current_source_dir(),
-   args : [meson.current_build_dir(),meson.current_source_dir()])
+#test(
+#   'SCRIPTED TESTS',
+#   scripttests,
+#   timeout: 0,
+#   workdir : meson.current_source_dir(),
+#   args : [meson.current_build_dir(),meson.current_source_dir()])

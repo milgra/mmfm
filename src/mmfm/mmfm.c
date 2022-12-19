@@ -71,9 +71,15 @@ void init(wl_event_t event)
 
 void load(wl_window_t* info)
 {
+    if (mmfm.kuwindow)
+    {
+	ui_destroy();
+	REL(mmfm.kuwindow);
+    }
+
     mmfm.kuwindow = ku_window_create(info->buffer_width, info->buffer_height, info->scale);
 
-    ui_init(info->buffer_width, info->buffer_height, info->scale, mmfm.kuwindow, mmfm.defaults); // DESTROY 3
+    ui_init(info->buffer_width, info->buffer_height, info->scale, mmfm.kuwindow, mmfm.wlwindow, mmfm.defaults); // DESTROY 3
 
     if (mmfm.autotest) ui_add_cursor();
 

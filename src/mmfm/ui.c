@@ -1,6 +1,7 @@
 #ifndef ui_h
 #define ui_h
 
+#include "ku_connector_wayland.c"
 #include "ku_view.c"
 #include "ku_window.c"
 #include "mt_map.c"
@@ -19,7 +20,7 @@ enum _ui_media_type
     UI_MT_DOCUMENT,
 };
 
-void ui_init(int width, int height, float scale, ku_window_t* window, mt_map_t* defaults);
+void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_t* wlwindow, mt_map_t* defaults);
 void ui_destroy();
 void ui_add_cursor();
 void ui_update_cursor(ku_rect_t frame);
@@ -72,6 +73,7 @@ struct _ui_t
 {
     mt_map_t*    defaults;
     ku_window_t* window; /* window for this ui */
+    wl_window_t* wlwindow;
 
     ku_view_t* basev;       /* base view */
     ku_view_t* dragv;       /* drag overlay */
@@ -1054,7 +1056,7 @@ void ui_on_btn_event(vh_button_event_t event)
     }
     else if (strcmp(event.view->id, "maxbtn") == 0)
     {
-	ku_wayland_toggle_fullscreen();
+	ku_wayland_toggle_fullscreen(ui.wlwindow);
     }
     else if (strcmp(event.view->id, "sidebarbtn") == 0)
     {
@@ -1189,11 +1191,12 @@ void ui_on_drag(vh_drag_event_t event)
 	if (ui.draggedv) ku_view_remove_from_parent(ui.draggedv);
 }
 
-void ui_init(int width, int height, float scale, ku_window_t* window, mt_map_t* defaults)
+void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_t* wlwindow, mt_map_t* defaults)
 {
     ku_text_init();
 
     ui.window     = window;
+    ui.wlwindow   = wlwindow;
     ui.defaults   = defaults;
     ui.play_state = 1; /* TODO load it from config */
 

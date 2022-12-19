@@ -50,8 +50,13 @@ fonts-terminus
 
 On debian based systems :
 ```
-sudo apg-get install meson ninja-build pkg-config cmake libpng-dev libjpeg-dev libjbig2dec-dev libopenjp2-7pdev libgl-dev libgles2-mesa-dev libmesa1-dev libglew-dev libegl-dev libwayland-dev wayland-protocols libswscale-dev libavutil-dev libavdevice-dev libharfbuzz-dev libgumbo-dev libsdl2-dev libfreetype-dev libxkbcommon-dev fonts-terminus libmujs-dev libmupdf-dev
+sudo apg-get install git meson ninja-build pkg-config libpng-dev libfreetype-dev libgl-dev libegl-dev libglew-dev libwayland-dev libxkbcommon-dev wayland-protocols libgles2-mesa-dev libsdl2-dev libswscale-dev libjpeg-dev libjbig2dec-dev libopenjp2-7-dev libharfbuzz-dev libavutil-dev libavdevice-dev libmupd-dev
 
+```
+
+On arch based systems :
+```
+sudo pacman -Qs meson ninja-build pkg-config cmake libpng libjpeg freetype2 etc
 ```
 
 Run these commands:

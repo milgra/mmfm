@@ -21,7 +21,6 @@ mupdfthird = cc.find_library('mupdf-third')
 # other deps with dependency
 
 z = dependency('zlib',static:false)
-bz2 = dependency('bzip2',static:false)
 
 png = dependency('libpng',static:false)
 freetype = dependency('freetype2',static:false)
@@ -109,7 +108,6 @@ mmfm_dependencies = [
 		  jbig,
 		  hb,
 		  z,
-		  bz2,
 		  gumbo,
 		  mupdf,
 		  mupdfthird,

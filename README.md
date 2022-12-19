@@ -40,12 +40,12 @@ MMFM's UI can be structured via html, styled via css.
 Install the needed dependencies and libraries:
 
 ```
-libpng,libjpg,libjbig2dec,libopenjp2,
-libgl,libglew,libegl,libwegl,
-libavutil,libavcodec,libavdevice,libavformat,libavfilter,libswscale,libswresample,
-libsdl2,libfreetype,libharfbuzz,libxkbcommon,
-mupdf,mupdf-third,mujs
-fonts-terminus
+git meson ninja-build pkg-config - build tools
+libgl,libglew,libegl,libwegl,libgles2,libfreetype,libxkbcommon,wayland-client,wayland-protocols - for rendering the ui and handling key events
+libpng,libjpg,libjbig2dec,libopenjp2,libharfbuzz - mupdf related
+libavutil,libavcodec,libavdevice,libavformat,libavfilter,libswscale,libswresample,libsdl2 - for media encode/decode
+mupdf,mupdf-third,mujs,gumbo - pdf rendering
+fonts-terminus - for default font
 ````
 
 On debian based systems :

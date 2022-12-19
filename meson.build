@@ -37,6 +37,7 @@ jbig = dependency('jbig2dec',static:false)
 ojpeg = dependency('libopenjp2',static:false)
 hb = dependency('harfbuzz',static:false)
 gumbo = dependency('gumbo',static:false)
+mujs = dependency('mujs',static:false)
 
 avutil = dependency('libavutil',static:false,version:'>=57.24.100')
 avcodec = dependency('libavcodec',static:false)
@@ -109,6 +110,7 @@ mmfm_dependencies = [
 		  hb,
 		  z,
 		  gumbo,
+		  mujs,
 		  mupdf,
 		  mupdfthird,
 		  xkbcommon,

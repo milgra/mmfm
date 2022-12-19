@@ -1,5 +1,8 @@
 # MultiMedia File Manager
 
+- after approve popup go back to file list as focused
+- image eseten seekbar inactive legyen
+- donation links
 - context menu paste not selectable
 - first drag and drop doesn't work
 - clear makepkg errors

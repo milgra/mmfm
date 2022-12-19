@@ -37,7 +37,7 @@ jpeg = dependency('libjpeg',static:false)
 jbig = dependency('jbig2dec',static:false)
 ojpeg = dependency('libopenjp2',static:false)
 hb = dependency('harfbuzz',static:false)
-gumbo = dependency('gumbo',static:false)
+gumbo = dependency('gumbo-parser',static:false)
 
 avutil = dependency('libavutil',static:false,version:'>=57.24.100')
 avcodec = dependency('libavcodec',static:false)

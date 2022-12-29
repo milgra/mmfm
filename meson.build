@@ -129,12 +129,6 @@ if get_option('buildtype') == 'debug'
 endif
 
 mmfm_inc = include_directories(
-	'/usr/include',
-	'/usr/include/GLES2',
-	'/usr/include/EGL',
-	'/usr/include/SDL2',
-	'/usr/include/mupdf',
-	'/usr/include/freetype2',
 	'src/mt_math',
 	'src/mt_core',
 	'src/media_player',
@@ -145,6 +139,29 @@ mmfm_inc = include_directories(
 	'src/kinetic_ui/texture',
 	'src/mmfm',
 	'src/mt_core_ext')
+
+
+if build_machine.system() == 'freebsd'
+   mmfm_inc = [
+   	   mmfm_inc,
+	   include_directories( 
+   	   '/usr/local/include',
+	   '/usr/local/include/GLES2',
+	   '/usr/local/include/EGL',
+	   '/usr/local/include/SDL2',
+	   '/usr/local/include/mupdf',
+	   '/usr/local/include/freetype2')]
+else
+   mmfm_inc = [
+   	   mmfm_inc,
+	   include_directories( 
+   	   '/usr/include',
+	   '/usr/include/GLES2',
+	   '/usr/include/EGL',
+	   '/usr/include/SDL2',
+	   '/usr/include/mupdf',
+	   '/usr/include/freetype2')]
+endif
 
 
 com_sources = ['src/mmfm/ui.c',

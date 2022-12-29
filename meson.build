@@ -151,6 +151,8 @@ if build_machine.system() == 'freebsd'
 	   '/usr/local/include/SDL2',
 	   '/usr/local/include/mupdf',
 	   '/usr/local/include/freetype2')]
+   epoll = cc.find_library('epoll-shim')
+   mmfm_dependencies += epoll
 else
    mmfm_inc = [
    	   mmfm_inc,

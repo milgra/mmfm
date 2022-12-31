@@ -10,8 +10,8 @@ cc = meson.get_compiler('c')
 
 # os specific libs with find library
 
-rt = cc.find_library('rt',static:false)
-math = cc.find_library('m',static:false)
+rt = cc.find_library('rt')
+math = cc.find_library('m')
 
 # static libs with find library
 
@@ -20,34 +20,34 @@ mupdfthird = cc.find_library('mupdf-third')
 
 # other deps with dependency
 
-z = dependency('zlib',static:false)
+z = dependency('zlib')
 
-png = dependency('libpng',static:false)
-freetype = dependency('freetype2',static:false)
+png = dependency('libpng')
+freetype = dependency('freetype2')
 
-gl = dependency('GL',static:false)
-egl = dependency('egl',static:false)
-wegl = dependency('wayland-egl',static:false)
-glew = cc.find_library('GLEW',static:false)
-sdl2 = dependency('SDL2',static:false)
+gl = dependency('GL')
+egl = dependency('egl')
+wegl = dependency('wayland-egl')
+glew = cc.find_library('GLEW')
+sdl2 = dependency('SDL2')
 
-pthread = dependency('threads',static:false)
-jpeg = dependency('libjpeg',static:false)
-jbig = dependency('jbig2dec',static:false)
-ojpeg = dependency('libopenjp2',static:false)
-hb = dependency('harfbuzz',static:false)
-gumbo = dependency('gumbo',static:false)
-mujs = dependency('mujs',static:false)
+pthread = dependency('threads')
+jpeg = dependency('libjpeg')
+jbig = dependency('jbig2dec')
+ojpeg = dependency('libopenjp2')
+hb = dependency('harfbuzz')
+gumbo = dependency('gumbo')
+mujs = dependency('mujs')
 
-avutil = dependency('libavutil',static:false,version:'>=57.24.100')
-avcodec = dependency('libavcodec',static:false)
-avdevice = dependency('libavdevice',static:false)
-avformat = dependency('libavformat',static:false)
-avfilter = dependency('libavfilter',static:false)
+avutil = dependency('libavutil',version:'>=57.24.100')
+avcodec = dependency('libavcodec')
+avdevice = dependency('libavdevice')
+avformat = dependency('libavformat')
+avfilter = dependency('libavfilter')
 
-swscale = dependency('libswscale',static:false)
-swresample = dependency('libswresample',static:false)
-xkbcommon = dependency('xkbcommon',static:false)
+swscale = dependency('libswscale')
+swresample = dependency('libswresample')
+xkbcommon = dependency('xkbcommon')
 
 wayland_client      = dependency('wayland-client')
 wayland_cursor      = dependency('wayland-cursor')

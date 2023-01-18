@@ -58,7 +58,6 @@ On arch based systems :
 ```
 sudo pacman -Qs git meson pkg-config ninja glew wayland-protocols libpng freetype2 libgl libegl wayland wayland-protocols libxkbcommon ffmpeg libmupdf mujs
 ```
-or use the AUR
 
 Then run these commands:
 
@@ -69,10 +68,6 @@ meson build --buildtype=release
 ninja -C build
 sudo ninja -C build install
 ```
-
-### From packages
-
-[![Packaging status](https://repology.org/badge/tiny-repos/mmfm.svg)](https://repology.org/project/mmfm/versions)
 
 ### Usage on floating window managers (GNOME,KDE) ###
 

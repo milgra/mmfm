@@ -1,7 +1,7 @@
 project(
   'mmfm',
   'c',
-  version: '0.43b',
+  version: '0.44b',
   license: 'MIT',
   default_options: ['c_std=gnu99']
 )

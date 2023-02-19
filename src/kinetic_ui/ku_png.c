@@ -70,7 +70,7 @@ void ku_png_get_size(char* path, int* width, int* height)
 
 void ku_png_load_into(char* path, ku_bitmap_t* bitmap)
 {
-    unsigned char header[8];
+  unsigned char header[8];
 
     /* open file and test for it being a png */
     FILE* fp = fopen(path, "rb");
@@ -99,7 +99,7 @@ void ku_png_load_into(char* path, ku_bitmap_t* bitmap)
 
 			int width  = png_get_image_width(png_ptr, info_ptr);
 			int height = png_get_image_height(png_ptr, info_ptr);
-
+			
 			png_bytep* row_pointers;
 
 			png_read_update_info(png_ptr, info_ptr);

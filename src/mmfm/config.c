@@ -51,7 +51,7 @@ void config_read(char* path)
 	mt_vector_t* keys = VNEW(); // REL 1
 	mt_map_keys(cfdb, keys);
 
-	for (int index = 0; index < keys->length; index++)
+	for (size_t index = 0; index < keys->length; index++)
 	{
 	    char* key = keys->data[index];
 	    MPUT(confmap, key, MGET(cfdb, key));

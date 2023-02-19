@@ -6,19 +6,19 @@
 #include "ku_window.c"
 #include "mt_map.c"
 
-typedef enum _ui_inputmode ui_inputmode;
 enum _ui_inputmode
 {
     UI_IM_RENAME,
     UI_IM_NEWFOLDER,
 };
+typedef enum _ui_inputmode ui_inputmode;
 
-typedef enum _ui_media_type ui_media_type;
 enum _ui_media_type
 {
     UI_MT_STREAM,
     UI_MT_DOCUMENT,
 };
+typedef enum _ui_media_type ui_media_type;
 
 void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_t* wlwindow, mt_map_t* defaults);
 void ui_destroy();
@@ -147,7 +147,6 @@ void ui_add_cursor()
 {
     ui.cursorv                         = ku_view_new("ui.cursor", ((ku_rect_t){10, 10, 10, 10}));
     ui.cursorv->style.background_color = 0xFF000099;
-    ui.cursorv->needs_touch            = 0;
     tg_css_add(ui.cursorv);
     ku_window_add(ui.window, ui.cursorv);
 }
@@ -208,14 +207,16 @@ void ui_update_player()
     if (ui.media_state)
     {
 	double rem = 0.01;
-	mp_video_refresh(ui.media_state, &rem, ui.prevcontv->texture.bitmap);
+	mp_video_refresh(ui.media_state, &rem, ui.prevcontv->texture.bitmap, 1);
 	// mp_audio_refresh(ui.media_state, ui.prevcontv->texture.bitmap, ui.prevcontv->texture.bitmap);
+	ui.prevcontv->texture.changed = 1;
 
 	double time = roundf(mp_get_master_clock(ui.media_state) * 10.0) / 10.0;
 
 	if (ui.play_state == 0 && !ui.media_state->paused)
 	{
-	    if (time > 0.1) mp_pause(ui.media_state);
+	    if (time > 0.1)
+		mp_pause(ui.media_state);
 	}
 
 	if (time != ui.last_update && !isnan(time))
@@ -235,8 +236,6 @@ void ui_update_player()
 
 	    vh_slider_set(ui.seekbarv, ratio);
 	}
-
-	ui.prevcontv->texture.changed = 1;
     }
 }
 
@@ -348,7 +347,7 @@ void ui_load_folder(char* folder)
 {
     if (folder)
     {
-	vh_table_t* vh            = ui.filetablev->handler_data;
+	vh_table_t* vh            = ui.filetablev->evt_han_data;
 	int         prev_selected = vh->selected_index;
 
 	/* prev selected should stay after delete */
@@ -357,15 +356,19 @@ void ui_load_folder(char* folder)
 	    prev_selected = 0;
 
 	    /* store folder as last visited */
-	    if (ui.current_folder) MPUT(ui.folder_history, ui.current_folder, folder);
-	    if (ui.current_folder) REL(ui.current_folder);
-	    ui.current_folder = mt_path_new_normalize1(folder);
+	    if (ui.current_folder)
+		MPUT(ui.folder_history, ui.current_folder, folder);
+	    if (ui.current_folder)
+		REL(ui.current_folder);
+	    ui.current_folder = mt_path_new_normalize(folder);
 	}
 
 	/* show in path bar */
 	char* pathstr;
-	if (MGET(ui.defaults, "autotest") == NULL) pathstr = STRNC(ui.current_folder);
-	else pathstr = STRNF(PATH_MAX, "%s/", ui.current_folder + strlen(MGET(ui.defaults, "top_path")));
+	if (MGET(ui.defaults, "autotest") == NULL)
+	    pathstr = STRNC(ui.current_folder);
+	else
+	    pathstr = STRNF(PATH_MAX, "%s/", ui.current_folder + strlen(MGET(ui.defaults, "top_path")));
 
 	vh_textinput_set_text(ui.pathtv, pathstr);
 	REL(pathstr);
@@ -374,20 +377,23 @@ void ui_load_folder(char* folder)
 	mt_map_t* files = MNEW();
 	fm_list(ui.current_folder, files);
 
-	mt_vector_reset(ui.filedatav);
-	mt_map_values(files, ui.filedatav);
-	mt_vector_sort(ui.filedatav, ui_comp_entry);
+	if (files->count > 0)
+	{
+	    mt_vector_reset(ui.filedatav);
+	    mt_map_values(files, ui.filedatav);
+	    mt_vector_sort(ui.filedatav, ui_comp_entry);
 
-	vh_table_set_data(ui.filetablev, ui.filedatav);
-	vh_table_select(ui.filetablev, prev_selected, 0);
+	    vh_table_set_data(ui.filetablev, ui.filedatav);
+	    vh_table_select(ui.filetablev, prev_selected, 0);
+	}
 	REL(files);
 
 	/* jump to item if there is a last visited item */
 	char* last_visited = MGET(ui.folder_history, ui.current_folder);
 	if (last_visited)
 	{
-	    int index = 0;
-	    int found = 0;
+	    size_t index = 0;
+	    size_t found = 0;
 	    for (index = 0; index < ui.filedatav->length; index++)
 	    {
 		mt_map_t* info = ui.filedatav->data[index];
@@ -399,11 +405,14 @@ void ui_load_folder(char* folder)
 		    break;
 		}
 	    }
-	    if (found) vh_table_select(ui.filetablev, index, 0);
+	    if (found)
+		vh_table_select(ui.filetablev, index, 0);
 	}
 
-	if (MGET(ui.defaults, "autotest")) ui_show_status("Directory loaded");
-	else ui_show_status("Directory %s loaded", ui.current_folder);
+	if (MGET(ui.defaults, "autotest"))
+	    ui_show_status("Directory loaded");
+	else
+	    ui_show_status("Directory %s loaded", ui.current_folder);
     }
 }
 
@@ -465,7 +474,8 @@ void ui_open_file(mt_map_t* info)
 
 	if (strstr(path, ".pdf") != NULL)
 	{
-	    if (ui.pdf_path) REL(ui.pdf_path);
+	    if (ui.pdf_path)
+		REL(ui.pdf_path);
 	    ui.pdf_path       = RET(path);
 	    ui.pdf_page       = -1;
 	    ui.pdf_page_count = pdf_count(path);
@@ -521,7 +531,7 @@ void ui_show_info(mt_map_t* info)
     int autotest = MGET(ui.defaults, "autotest") != NULL;
 
     mt_vector_t* items = VNEW();
-    for (int index = 0; index < keys->length; index++)
+    for (size_t index = 0; index < keys->length; index++)
     {
 	char* key = keys->data[index];
 	if (autotest &&
@@ -553,7 +563,7 @@ void ui_show_info(mt_map_t* info)
 
 void ui_open_approve_popup()
 {
-    vh_table_t* vh = ui.filetablev->handler_data;
+    vh_table_t* vh = ui.filetablev->evt_han_data;
     if (vh->selected_items->length > 0)
     {
 	if (ui.okaycv->parent == NULL)
@@ -567,10 +577,10 @@ void ui_open_approve_popup()
 
 void ui_delete_selected_files()
 {
-    vh_table_t* vh = ui.filetablev->handler_data;
+    vh_table_t* vh = ui.filetablev->evt_han_data;
     if (vh->selected_items->length > 0)
     {
-	for (int index = 0; index < vh->selected_items->length; index++)
+	for (size_t index = 0; index < vh->selected_items->length; index++)
 	{
 	    mt_map_t* file = vh->selected_items->data[index];
 	    char*     path = MGET(file, "file/path");
@@ -730,14 +740,15 @@ void ui_on_table_event(vh_table_event_t event)
 	}
 	else if (event.id == VH_TABLE_EVENT_DROP)
 	{
+	    mt_log_debug("DROP");
 	    /* add dragged data to clipboard table */
 
 	    if (ui.dragdatav)
 	    {
-		for (int index = 0; index < ui.dragdatav->length; index++)
+		for (size_t index = 0; index < ui.dragdatav->length; index++)
 		{
 		    mt_map_t* file = ui.dragdatav->data[index];
-		    mt_vector_add_unique_data(ui.clipdatav, file);
+		    mt_vector_add(ui.clipdatav, file);
 		}
 
 		vh_table_set_data(ui.cliptablev, ui.clipdatav);
@@ -787,7 +798,7 @@ void ui_on_table_event(vh_table_event_t event)
 		    ui.inputmode     = UI_IM_RENAME;
 		    ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
 
-		    vh_table_t* vh = ui.filetablev->handler_data;
+		    vh_table_t* vh = ui.filetablev->evt_han_data;
 
 		    mt_map_t* info  = vh->selected_items->data[0];
 		    char*     value = MGET(info, "file/basename");
@@ -804,11 +815,11 @@ void ui_on_table_event(vh_table_event_t event)
 	    else if (event.selected_index == 3)
 	    {
 		/* send items to clipboard table */
-		vh_table_t* vh = ui.filetablev->handler_data;
-		for (int index = 0; index < vh->selected_items->length; index++)
+		vh_table_t* vh = ui.filetablev->evt_han_data;
+		for (size_t index = 0; index < vh->selected_items->length; index++)
 		{
 		    mt_map_t* file = vh->selected_items->data[index];
-		    mt_vector_add_unique_data(ui.clipdatav, file);
+		    mt_vector_add(ui.clipdatav, file);
 		}
 
 		vh_table_set_data(ui.cliptablev, ui.clipdatav);
@@ -819,7 +830,7 @@ void ui_on_table_event(vh_table_event_t event)
 
 		if (ui.current_folder)
 		{
-		    for (int index = 0; index < ui.clipdatav->length; index++)
+		    for (size_t index = 0; index < ui.clipdatav->length; index++)
 		    {
 			mt_map_t* data    = ui.clipdatav->data[index];
 			char*     path    = MGET(data, "file/path");
@@ -834,8 +845,10 @@ void ui_on_table_event(vh_table_event_t event)
 			}
 			else
 			{
-			    if (MGET(ui.defaults, "autotest")) ui_show_status("File %s copied", name);
-			    else ui_show_status("File %s copied to %s", name, newpath);
+			    if (MGET(ui.defaults, "autotest"))
+				ui_show_status("File %s copied", name);
+			    else
+				ui_show_status("File %s copied to %s", name, newpath);
 			}
 		    }
 		    ui_load_folder(ui.current_folder);
@@ -845,7 +858,7 @@ void ui_on_table_event(vh_table_event_t event)
 	    {
 		/* paste items in clipboard table using move */
 
-		for (int index = 0; index < ui.clipdatav->length; index++)
+		for (size_t index = 0; index < ui.clipdatav->length; index++)
 		{
 		    mt_map_t* data    = ui.clipdatav->data[index];
 		    char*     path    = MGET(data, "file/path");
@@ -860,8 +873,10 @@ void ui_on_table_event(vh_table_event_t event)
 		    }
 		    else
 		    {
-			if (MGET(ui.defaults, "autotest")) ui_show_status("File %s moved", name);
-			else ui_show_status("File %s moved to %s", name, newpath);
+			if (MGET(ui.defaults, "autotest"))
+			    ui_show_status("File %s moved", name);
+			else
+			    ui_show_status("File %s moved to %s", name, newpath);
 		    }
 		}
 		ui_load_folder(ui.current_folder);
@@ -937,12 +952,12 @@ void ui_on_key_down(vh_key_event_t event)
 
     if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
     {
-	vh_table_t* vh = ui.filetablev->handler_data;
-	for (int index = 0; index < vh->selected_items->length; index++)
+	vh_table_t* vh = ui.filetablev->evt_han_data;
+	for (size_t index = 0; index < vh->selected_items->length; index++)
 	{
-	    vh_table_t* vh   = ui.filetablev->handler_data;
+	    vh_table_t* vh   = ui.filetablev->evt_han_data;
 	    mt_map_t*   file = vh->selected_items->data[index];
-	    mt_vector_add_unique_data(ui.clipdatav, file);
+	    mt_vector_add(ui.clipdatav, file);
 	}
 
 	vh_table_set_data(ui.cliptablev, ui.clipdatav);
@@ -967,7 +982,7 @@ void ui_on_key_down(vh_key_event_t event)
 	    ui.inputmode     = UI_IM_RENAME;
 	    ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
 
-	    vh_table_t* vh    = ui.filetablev->handler_data;
+	    vh_table_t* vh    = ui.filetablev->evt_han_data;
 	    mt_map_t*   info  = vh->selected_items->data[0];
 	    char*       value = MGET(info, "file/basename");
 
@@ -1114,7 +1129,7 @@ void ui_on_text_event(vh_textinput_event_t event)
 
 	    if (ui.inputmode == UI_IM_RENAME)
 	    {
-		vh_table_t* vh = ui.filetablev->handler_data;
+		vh_table_t* vh = ui.filetablev->evt_han_data;
 		if (vh->selected_items->length > 0)
 		{
 		    mt_map_t* file   = vh->selected_items->data[0];
@@ -1222,7 +1237,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     /* listen for keys and shortcuts */
 
     vh_key_add(ui.basev, ui_on_key_down);
-    ui.basev->needs_key = 1;
 
     /* setup drag layer */
 
@@ -1287,7 +1301,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     vh_table_attach(ui.contexttablev, fields, ui_on_table_event);
     vh_table_show_scrollbar(ui.contexttablev, 0);
 
-    vh_table_t* table = ui.contexttablev->handler_data;
+    vh_table_t* table = ui.contexttablev->evt_han_data;
 
     /* hack for context menu popup animation */
     table->layr_v->style.masked = 0;
@@ -1369,10 +1383,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     /* settings popup */
 
     ku_view_t* settingscv    = GETV(bv, "settingspopupcont");
-    ku_view_t* settingspopup = GETV(bv, "settingspopup");
-
-    settingspopup->blocks_touch  = 1;
-    settingspopup->blocks_scroll = 1;
 
     ui.settingscv = RET(settingscv);
     ku_view_remove_from_parent(ui.settingscv);
@@ -1385,9 +1395,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
 
     vh_anim_add(contextanimv, NULL, NULL);
 
-    contextpopup->blocks_touch  = 1;
-    contextpopup->blocks_scroll = 1;
-
     ui.contextcv = RET(contextcv);
 
     vh_anim_add(contextpopup, NULL, NULL);
@@ -1399,10 +1406,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
 
     ku_view_t* okaycv    = GETV(bv, "okaypopupcont");
     ku_view_t* okaypopup = GETV(bv, "okaypopup");
-
-    okaypopup->blocks_key    = 1;
-    okaypopup->blocks_touch  = 1;
-    okaypopup->blocks_scroll = 1;
 
     ui.okaycv    = RET(okaycv);
     ui.okaypopup = RET(okaypopup);
@@ -1420,10 +1423,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     ui.inputcv   = RET(GETV(bv, "inputcont"));
     ui.inputbckv = GETV(bv, "inputbck");
     ui.inputtv   = GETV(bv, "inputtf");
-
-    ui.inputbckv->blocks_touch = 1;
-    ui.inputcv->blocks_touch   = 1;
-    ui.inputcv->blocks_scroll  = 1;
 
     vh_textinput_add(ui.inputtv, "Generic input", "", ui_on_text_event);
     vh_touch_add(ui.inputcv, ui_on_touch);
@@ -1457,7 +1456,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     ku_view_t* filetableevnt   = GETV(ui.filetablev, "filetable_event");
     ku_view_t* infotableevt    = GETV(ui.infotablev, "infotable_event");
     ku_view_t* cliptableevt    = GETV(ui.cliptablev, "cliptable_event");
-    ku_view_t* contexttableevt = GETV(ui.contexttablev, "contexttable_event");
+    /* ku_view_t* contexttableevt = GETV(ui.contexttablev, "contexttable_event"); */
     ku_view_t* previewevt      = GETV(bv, "previewevt");
     ku_view_t* pathtv          = GETV(bv, "pathtf");
 
@@ -1479,8 +1478,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     VADD(ui.focusable_cliplist, previewevt);
     VADD(ui.focusable_cliplist, pathtv);
 
-    contexttableevt->blocks_key = 1;
-
     ku_window_activate(ui.window, filetableevnt, 1); /* start with file list listening for key up and down */
 
     if (config_get_bool("sidebar_visible") == 0)
@@ -1499,7 +1496,6 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     // show texture map for debug
 
     /* ku_view_t* texmap    = ku_view_new("texmap", ((ku_rect_t){0, 0, 150, 150})); */
-    /* texmap->needs_touch  = 0; */
     /* texmap->texture.full = 1; */
     /* texmap->style.right  = 0; */
     /* texmap->style.top    = 0; */
@@ -1515,7 +1511,8 @@ void ui_destroy()
 	ui.media_state = NULL;
     }
 
-    if (ui.pdf_path) REL(ui.pdf_path);
+    if (ui.pdf_path)
+	REL(ui.pdf_path);
 
     REL(ui.focusable_filelist);
     REL(ui.focusable_infolist);

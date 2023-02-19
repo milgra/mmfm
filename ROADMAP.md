@@ -1,5 +1,6 @@
 # MultiMedia File Manager
 
+- hold gesture to image scroller also
 - after approve popup go back to file list as focused
 - image eseten seekbar inactive legyen
 - donation links

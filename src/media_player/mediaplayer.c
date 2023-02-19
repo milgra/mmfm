@@ -144,7 +144,7 @@ struct MediaState_t
     uint8_t*           audio_buf1;
     unsigned int       audio_buf_size; /* in bytes */
     unsigned int       audio_buf1_size;
-    int                audio_buf_index; /* in bytes */
+    unsigned int       audio_buf_index; /* in bytes */
     int                audio_write_buf_size;
     int                audio_volume;
     int                muted;
@@ -179,7 +179,7 @@ void          mp_unmute(MediaState_t* ms);
 void          mp_set_volume(MediaState_t* ms, float volume);
 void          mp_set_position(MediaState_t* ms, float ratio);
 void          mp_set_visutype(MediaState_t* ms, int visutype);
-void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, ku_bitmap_t* bm);
+void          mp_video_refresh(MediaState_t* opaque, double* remaining_time, ku_bitmap_t* bm, int display);
 void          mp_audio_refresh(MediaState_t* opaque, ku_bitmap_t* bml, ku_bitmap_t* bmr);
 double        mp_get_master_clock(MediaState_t* ms);
 
@@ -564,9 +564,9 @@ int mp_audio_decode_frame(MediaState_t* is)
     is->audio_clock_serial = af->serial;
 #ifdef DEBUG
     {
-	static double last_clock;
+	/* static double last_clock; */
 	// printf("audio: delay=%0.3f clock=%0.3f clock0=%0.3f\n", is->audio_clock - last_clock, is->audio_clock, audio_clock0);
-	last_clock = is->audio_clock;
+	/* last_clock = is->audio_clock; */
     }
 #endif
     return resampled_data_size;
@@ -805,7 +805,7 @@ int mp_stream_open(MediaState_t* ms, int stream_index)
     AVFormatContext* format = ms->format;
     int              ret    = -1;
 
-    if (stream_index >= 0 || stream_index < format->nb_streams)
+    if (stream_index >= 0 || stream_index < (int) format->nb_streams)
     {
 	AVCodecContext* codecctx = avcodec_alloc_context3(NULL);
 
@@ -861,7 +861,8 @@ int mp_stream_open(MediaState_t* ms, int stream_index)
 					mt_log_error("Cannot create thread %s", SDL_GetError());
 				    }
 				}
-				else mt_log_error("Cannot init decoder");
+				else
+				    mt_log_error("Cannot init decoder");
 				break;
 
 			    case AVMEDIA_TYPE_AUDIO:
@@ -915,11 +916,14 @@ int mp_stream_open(MediaState_t* ms, int stream_index)
 
 					    SDL_PauseAudioDevice(audio_dev, 0);
 					}
-					else mt_log_error("Cannot init decoder");
+					else
+					    mt_log_error("Cannot init decoder");
 				    }
-				    else mt_log_error("Cannot open audio output");
+				    else
+					mt_log_error("Cannot open audio output");
 				}
-				else mt_log_error("Cannot copy channel layout");
+				else
+				    mt_log_error("Cannot copy channel layout");
 
 				break;
 			    }
@@ -927,7 +931,8 @@ int mp_stream_open(MediaState_t* ms, int stream_index)
 				break;
 			}
 		    }
-		    else mt_log_error("No decoder could be found for codec %s", avcodec_get_name(codecctx->codec_id));
+		    else
+			mt_log_error("No decoder could be found for codec %s", avcodec_get_name(codecctx->codec_id));
 
 		    av_dict_free(&opts);
 		}
@@ -937,13 +942,17 @@ int mp_stream_open(MediaState_t* ms, int stream_index)
 		    mt_log_error("Couldn't open codec");
 		}
 	    }
-	    else mt_log_error("Cannot read codec parameters");
+	    else
+		mt_log_error("Cannot read codec parameters");
 	}
-	else ret = AVERROR(ENOMEM);
+	else
+	    ret = AVERROR(ENOMEM);
 
-	if (ret < 0) avcodec_free_context(&codecctx);
+	if (ret < 0)
+	    avcodec_free_context(&codecctx);
     }
-    else mt_log_debug("Invalid stream index");
+    else
+	mt_log_debug("Invalid stream index");
 
     return ret;
 }
@@ -953,7 +962,8 @@ void mp_stream_close(MediaState_t* ms, int stream_index)
     AVFormatContext*   format = ms->format;
     AVCodecParameters* codecpar;
 
-    if (stream_index < 0 || stream_index >= format->nb_streams) return;
+    if (stream_index < 0 || stream_index >= (int) format->nb_streams)
+	return;
     codecpar = format->streams[stream_index]->codecpar;
 
     switch (codecpar->codec_type)
@@ -1214,8 +1224,9 @@ int mp_read_thread(void* arg)
 
 			if (!paused && vidend && audend)
 			{
-			    mp_stream_seek(ms, 0, 0, 0);
-			    ms->finished = 1;
+			  // mp_stream_seek(ms, 0, 0, 0);
+			  mp_stream_toggle_pause(ms);
+			  ms->finished = 1;
 			}
 
 			/* read next packet */
@@ -1528,7 +1539,7 @@ void video_display(MediaState_t* ms, ku_bitmap_t* bm)
 }
 
 /* called to display each frame */
-void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm)
+void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm, int display)
 {
     double time;
 
@@ -1537,7 +1548,8 @@ void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm)
     time = av_gettime_relative() / 1000000.0;
     if (ms->force_refresh || ms->last_vis_time + rdftspeed1 < time)
     {
-	video_display(ms, bm);
+	if (display)
+	    video_display(ms, bm);
 	ms->last_vis_time = time;
     }
     *remaining_time = FFMIN(*remaining_time, ms->last_vis_time + rdftspeed1 - time);
@@ -1564,9 +1576,11 @@ void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm)
 		goto retry;
 	    }
 
-	    if (lastvp->serial != vp->serial) ms->frame_timer = av_gettime_relative() / 1000000.0;
+	    if (lastvp->serial != vp->serial)
+		ms->frame_timer = av_gettime_relative() / 1000000.0;
 
-	    if (ms->paused) goto display;
+	    if (ms->paused)
+		goto display;
 
 	    /* compute nominal last_duration */
 	    last_duration = vp_duration(ms, lastvp, vp);
@@ -1603,11 +1617,13 @@ void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm)
 	    frame_queue_next(&ms->vidfq);
 	    ms->force_refresh = 1;
 
-	    if (ms->step_frame && !ms->paused) mp_stream_toggle_pause(ms);
+	    if (ms->step_frame && !ms->paused)
+		mp_stream_toggle_pause(ms);
 	}
     display:
 	/* display picture */
-	if (ms->force_refresh && ms->vidfq.rindex_shown) video_display(ms, bm);
+	if (ms->force_refresh && ms->vidfq.rindex_shown && display)
+	    video_display(ms, bm);
     }
     ms->force_refresh = 0;
 }

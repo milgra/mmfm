@@ -3,7 +3,8 @@ project(
   'c',
   version: '0.44b',
   license: 'MIT',
-  default_options: ['c_std=gnu99']
+  default_options: ['c_std=gnu99',
+  		    'warning_level=3']
 )
 
 cc = meson.get_compiler('c')
@@ -121,6 +122,7 @@ mmfm_version = '"@0@"'.format(meson.project_version())
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'
 add_project_arguments('-DPKG_DATADIR="' + pkg_datadir + '"',
 		      '-DMMFM_VERSION=@0@'.format(mmfm_version),
+		      '-Wno-unused-parameter',
 		      language: 'c')
 add_project_arguments('-Wno-unused-but-set-variable', language: 'c')
 
@@ -272,15 +274,32 @@ executable(
   install: true,
 )
 
-e = executable('maintest', 'src/tests/test.c')
+mt_core_test = executable(
+	   'mt_core_test',
+	   ['src/mt_core/mt_log.c',
+	    'src/mt_core/mt_memory.c',
+	    'src/mt_core/mt_vector.c',
+	    'src/mt_core/mt_map.c',
+	    'src/mt_core/mt_string.c',
+	    'src/mt_core/mt_channel.c',
+	    'src/mt_core/mt_path.c',
+	    'src/mt_core_test/mt_core_test.c',
+	    'src/mt_core_test/mt_memory_test.c',
+	    'src/mt_core_test/mt_vector_test.c',
+	    'src/mt_core_test/mt_map_test.c',
+	    'src/mt_core_test/mt_string_test.c',
+	    'src/mt_core_test/mt_channel_test.c',
+	    'src/mt_core_test/mt_path_test.c'
+	    ],
+	    include_directories: ['src/mt_core'])
 
-test('MAIN TEST', e)
+test('MT_CORE_TEST', mt_core_test)
 
-# scripttests = find_program('tst/test_run.sh')
+scripttests = find_program('tst/test_run.sh')
 
-#test(
-#   'SCRIPTED TESTS',
-#   scripttests,
-#   timeout: 0,
-#   workdir : meson.current_source_dir(),
-#   args : [meson.current_build_dir(),meson.current_source_dir()])
+test(
+  'SCRIPTED TESTS',
+  scripttests,
+  timeout: 0,
+  workdir : meson.current_source_dir(),
+  args : [meson.current_build_dir(),meson.current_source_dir()])

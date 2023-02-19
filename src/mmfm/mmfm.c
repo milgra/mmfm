@@ -104,7 +104,7 @@ void update(ku_event_t ev)
     if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h); /* change layout if needed */
     if (ev.type == KU_EVENT_FRAME) ui_update_player();            /* update player state if needed */
     if (!mmfm.kuwindow) return;                                   /* TODO avoid this more gracefully */
-
+    
     ku_window_event(mmfm.kuwindow, ev); /* regular events */
 
     if (mmfm.autotest)
@@ -192,8 +192,8 @@ int main(int argc, char* argv[])
 	"  -c --config= [config file]          Use config file for session\n"
 	"  -d --directory= [config file]       Start with directory\n"
 	"  -r --resources= [resources folder]  Use resources dir for session\n"
-	"  -s --record= [recorder file]        Record session to file\n"
-	"  -p --replay= [recorder file]        Replay session from file\n"
+	"  -R --record= [recorder file]        Record session to file\n"
+	"  -P --replay= [recorder file]        Replay session from file\n"
 	"  -f --frame= [widthxheight]          Initial window dimension\n"
 	"  --software_render                   Use software rendering instead of gl accelerated rendering\n"
 	"\n";
@@ -204,9 +204,9 @@ int main(int argc, char* argv[])
 	    {"verbose", no_argument, NULL, 'v'},
 	    {"resources", optional_argument, 0, 'r'},
 	    {"directory", optional_argument, 0, 'd'},
-	    {"record", optional_argument, 0, 's'},
+	    {"record", optional_argument, 0, 'R'},
 	    {"software_renderer", optional_argument, 0, 0},
-	    {"replay", optional_argument, 0, 'p'},
+	    {"replay", optional_argument, 0, 'P'},
 	    {"config", optional_argument, 0, 'c'},
 	    {"frame", optional_argument, 0, 'f'},
 	    {NULL, 0, NULL, 0}};
@@ -222,20 +222,22 @@ int main(int argc, char* argv[])
     int option       = 0;
     int option_index = 0;
 
-    while ((option = getopt_long(argc, argv, ":vhr:s:p:c:f:d:", long_options, &option_index)) != -1)
+    while ((option = getopt_long(argc, argv, ":vhr:R:P:c:f:d:", long_options, &option_index)) != -1)
     {
 	switch (option)
 	{
 	    case 0:
-		if (option_index == 5) mmfm.softrender = 1;
+		if (option_index == 5)
+		    mmfm.softrender = 1;
 		printf("option %i %s\n", option_index, long_options[option_index].name);
-		if (optarg) printf(" with arg %s\n", optarg);
+		if (optarg)
+		    printf(" with arg %s\n", optarg);
 		break;
 	    case '?': printf("parsing option %c value: %s\n", option, optarg); break;
 	    case 'c': cfg_par = mt_string_new_cstring(optarg); break; // REL 0
 	    case 'r': res_par = mt_string_new_cstring(optarg); break; // REL 1
-	    case 's': rec_par = mt_string_new_cstring(optarg); break; // REL 2
-	    case 'p': rep_par = mt_string_new_cstring(optarg); break; // REL 3
+	    case 'R': rec_par = mt_string_new_cstring(optarg); break; // REL 2
+	    case 'P': rep_par = mt_string_new_cstring(optarg); break; // REL 3
 	    case 'f': frm_par = mt_string_new_cstring(optarg); break; // REL 4
 	    case 'd': dir_par = mt_string_new_cstring(optarg); break; // REL 4
 	    case 'v': mt_log_inc_verbosity(); break;
@@ -244,26 +246,28 @@ int main(int argc, char* argv[])
 	}
     }
 
-    if (optind < argc) opn_par = mt_string_new_cstring(argv[optind]);
+    if (optind < argc)
+	opn_par = mt_string_new_cstring(argv[optind]);
 
     srand((unsigned int) time(NULL));
 
     char  cwd[PATH_MAX] = {"~"};
     char* res           = getcwd(cwd, sizeof(cwd));
 
-    if (res == NULL) mt_log_error("getcwd error");
+    if (res == NULL)
+	mt_log_error("getcwd error");
 
-    char* wrk_path    = mt_path_new_normalize(cwd, NULL);                                                                             // REL 5
-    char* res_path    = res_par ? mt_path_new_normalize(res_par, wrk_path) : mt_string_new_cstring(PKG_DATADIR);                      // REL 7
-    char* cfgdir_path = cfg_par ? mt_path_new_normalize(cfg_par, wrk_path) : mt_path_new_normalize("~/.config/mmfm", getenv("HOME")); // REL 8
-    char* img_path    = mt_path_new_append(res_path, "img");                                                                          // REL 9
-    char* css_path    = mt_path_new_append(res_path, "html/main.css");                                                                // REL 9
-    char* html_path   = mt_path_new_append(res_path, "html/main.html");                                                               // REL 10
-    char* cfg_path    = mt_path_new_append(cfgdir_path, "config.kvl");                                                                // REL 12
-    char* per_path    = mt_path_new_append(cfgdir_path, "state.kvl");                                                                 // REL 13
-    char* rec_path    = rec_par ? mt_path_new_normalize(rec_par, wrk_path) : NULL;                                                    // REL 14
-    char* rep_path    = rep_par ? mt_path_new_normalize(rep_par, wrk_path) : NULL;                                                    // REL 15
-    char* dir_path    = dir_par ? mt_path_new_normalize(dir_par, wrk_path) : NULL;                                                    // REL 15
+    char* wrk_path    = mt_path_new_normalize(cwd);                                                         // REL 5
+    char* res_path    = res_par ? mt_path_new_normalize(res_par) : mt_string_new_cstring(PKG_DATADIR);      // REL 7
+    char* cfgdir_path = cfg_par ? mt_path_new_normalize(cfg_par) : mt_path_new_normalize("~/.config/mmfm"); // REL 8
+    char* img_path    = mt_path_new_append(res_path, "img");                                                // REL 9
+    char* css_path    = mt_path_new_append(res_path, "html/main.css");                                      // REL 9
+    char* html_path   = mt_path_new_append(res_path, "html/main.html");                                     // REL 10
+    char* cfg_path    = mt_path_new_append(cfgdir_path, "config.kvl");                                      // REL 12
+    char* per_path    = mt_path_new_append(cfgdir_path, "state.kvl");                                       // REL 13
+    char* rec_path    = rec_par ? mt_path_new_normalize(rec_par) : NULL;                                    // REL 14
+    char* rep_path    = rep_par ? mt_path_new_normalize(rep_par) : NULL;                                    // REL 15
+    char* dir_path    = dir_par ? mt_path_new_normalize(dir_par) : NULL;                                    // REL 15
 
     // print path info to console
 
@@ -291,7 +295,8 @@ int main(int argc, char* argv[])
     MPUT(mmfm.defaults, "top_path", dir_path ? dir_path : wrk_path);
     MPUT(mmfm.defaults, "img_path", img_path);
     MPUT(mmfm.defaults, "wrk_path", wrk_path);
-    if (opn_par) MPUT(mmfm.defaults, "opn_path", opn_par);
+    if (opn_par)
+	MPUT(mmfm.defaults, "opn_path", opn_par);
     MPUT(mmfm.defaults, "cfg_path", cfg_path);
     MPUT(mmfm.defaults, "per_path", per_path);
     MPUT(mmfm.defaults, "css_path", css_path);
@@ -319,22 +324,20 @@ int main(int argc, char* argv[])
 
     if (rec_path)
     {
-	char* tgt_path = mt_path_new_append(rec_path, "session.rec");
-	ku_recorder_record(tgt_path);
-	REL(tgt_path);
+	ku_recorder_record(rec_path);
 	mmfm.pngpath = rec_path;
     }
     if (rep_path)
     {
-	char* tgt_path = mt_path_new_append(rep_path, "session.rec");
-	ku_recorder_replay(tgt_path);
-	REL(tgt_path);
+	ku_recorder_replay(rep_path);
 	mmfm.pngpath = rep_path;
     }
 
     /* proxy events through the recorder in case of record/replay */
-    if (rec_path || rep_path) ku_wayland_init(init, ku_recorder_update, destroy, 0);
-    else ku_wayland_init(init, update, destroy, 0);
+    if (rec_path || rep_path)
+	ku_wayland_init(init, ku_recorder_update, destroy, 0);
+    else
+	ku_wayland_init(init, update, destroy, 0);
 
     config_destroy(); // DESTROY 0
 
@@ -342,15 +345,23 @@ int main(int argc, char* argv[])
 
     ku_recorder_destroy();
 
-    if (opn_par) REL(opn_par);
-    if (cfg_par) REL(cfg_par);
-    if (res_par) REL(res_par);
-    if (rec_par) REL(rec_par);
-    if (rep_par) REL(rep_par);
-    if (frm_par) REL(frm_par);
-    if (dir_par) REL(dir_par);
+    if (opn_par)
+	REL(opn_par);
+    if (cfg_par)
+	REL(cfg_par);
+    if (res_par)
+	REL(res_par);
+    if (rec_par)
+	REL(rec_par);
+    if (rep_par)
+	REL(rep_par);
+    if (frm_par)
+	REL(frm_par);
+    if (dir_par)
+	REL(dir_par);
 
-    if (dir_path) REL(dir_path);
+    if (dir_path)
+	REL(dir_path);
     REL(img_path);
     REL(wrk_path);
     REL(res_path);

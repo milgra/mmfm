@@ -35,3 +35,5 @@
 - Extracts all stream and metadata info from multimedia files, also shows the raw hexa/ASCII bytes of the file if needed
 - Works without a window manager for super hackers
 - Frequency and scope analyzer visualizers for audio conent
+
+KineticUI is a UI renderer / UI component framework I created to bring MacOS level UI and UX to UNIX-like operating systems. It does kinetic scrolling, hold on two finger touch, edge bounce, zoom on pinch, glyph animations and much more. But one of it's most important feature is deterministic session recording and replaying to automate UI and functional testing. If you create screenshots during session recording with the built-in screenshot tool, those screenshots will be re-created during session replay and you can compare them for changes. If there is no random, time-bound or backgrounud thread-bound information in the screemshots then they should be identical on pixel-level. Check out MultiMedia File Manager ( www.github.com/milgra/mmfm ), Visual Music Player ( www.github.com/milgra/vmp ) , Sway Overview ( www.github.com/milgra/sov ) or Wayland Control Panel (www.github.com/milgra/wcp ) to see KineticUI in action!

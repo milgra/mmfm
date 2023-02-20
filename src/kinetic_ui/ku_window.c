@@ -176,22 +176,24 @@ void ku_window_event(ku_window_t* win, ku_event_t ev)
 	if (ev.type == KU_EVENT_MOUSE_UP)
 	    outev.type = KU_EVENT_MOUSE_UP_OUT;
 
-	/* disables drop on different table */
-	/* if (ev.type == KU_EVENT_MOUSE_DOWN) */
-	/* { */
-	for (size_t i = win->ptrqueue->length; i-- > 0;)
+	/* binding this to only mouse down disables drop on different table */
+	/* but enables out of mouse input field activation */
+	if (ev.type == KU_EVENT_MOUSE_DOWN ||
+	    (ev.type == KU_EVENT_MOUSE_UP && ev.drag))
 	{
-	    ku_view_t* v = win->ptrqueue->data[i];
-	    if (v->evt_han)
+	    for (size_t i = win->ptrqueue->length; i-- > 0;)
 	    {
-		if (!(*v->evt_han)(v, outev))
-		    break;
+		ku_view_t* v = win->ptrqueue->data[i];
+		if (v->evt_han)
+		{
+		    if (!(*v->evt_han)(v, outev))
+			break;
+		}
 	    }
-	}
 
-	mt_vector_reset(win->ptrqueue);
-	ku_view_coll_touched(win->root, ev, win->ptrqueue);
-	/* } */
+	    mt_vector_reset(win->ptrqueue);
+	    ku_view_coll_touched(win->root, ev, win->ptrqueue);
+	}
 
 	for (size_t i = win->ptrqueue->length; i-- > 0;)
 	{

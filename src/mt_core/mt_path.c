@@ -110,9 +110,19 @@ char* mt_path_new_filename(char* path)
 
 char* mt_path_new_normalize(char* path)
 {
+    char* extpath = mt_string_new_cstring("");
     char* newpath = CAL(PATH_MAX, NULL, NULL);
 
-    realpath(path, newpath);
+    if (path[0] == '~')
+    {
+	/* replace tilde with home dir */
+	extpath = mt_string_append(extpath, getenv("HOME"));
+	extpath = mt_string_append_sub(extpath, path, 1, strlen(path) - 1);
+    }
+    else
+	extpath = mt_string_append(extpath, path);
+
+    realpath(extpath, newpath);
 
     /* char cwd[PATH_MAX] = {"~"}; */
     /* getcwd(cwd, sizeof(cwd)); */

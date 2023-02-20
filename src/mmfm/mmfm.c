@@ -100,11 +100,15 @@ void update(ku_event_t ev)
 {
     /* printf("UPDATE %i %u %i %i\n", ev.type, ev.time, ev.x, ev.y); */
 
-    if (ev.type == KU_EVENT_WINDOW_SHOWN) load(ev.window);        /* set ui size on window enter, load files */
-    if (ev.type == KU_EVENT_RESIZE) ui_update_layout(ev.w, ev.h); /* change layout if needed */
-    if (ev.type == KU_EVENT_FRAME) ui_update_player();            /* update player state if needed */
-    if (!mmfm.kuwindow) return;                                   /* TODO avoid this more gracefully */
-    
+    if (ev.type == KU_EVENT_WINDOW_SHOWN)
+	load(ev.window); /* set ui size on window enter, load files */
+    if (ev.type == KU_EVENT_RESIZE)
+	ui_update_layout(ev.w, ev.h); /* change layout if needed */
+    if (ev.type == KU_EVENT_FRAME)
+	ui_update_player(); /* update player state if needed */
+    if (!mmfm.kuwindow)
+	return; /* TODO avoid this more gracefully */
+
     ku_window_event(mmfm.kuwindow, ev); /* regular events */
 
     if (mmfm.autotest)
@@ -117,14 +121,17 @@ void update(ku_event_t ev)
 	    char* name = mt_string_new_format(20, "screenshot%.3i.png", shotindex++);
 	    char* path = mt_path_new_append(mmfm.pngpath, name);
 
-	    if (mmfm.softrender) ku_renderer_soft_screenshot(&mmfm.wlwindow->bitmap, path);
-	    else ku_renderer_egl_screenshot(&mmfm.wlwindow->bitmap, path);
+	    if (mmfm.softrender)
+		ku_renderer_soft_screenshot(&mmfm.wlwindow->bitmap, path);
+	    else
+		ku_renderer_egl_screenshot(&mmfm.wlwindow->bitmap, path);
 
 	    ui_update_cursor((ku_rect_t){0, 0, mmfm.wlwindow->width, mmfm.wlwindow->height});
 
 	    printf("SCREENHSOT AT %u : %s\n", ev.frame, path);
 	}
-	else ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10}); /* update virtual cursor if needed */
+	else
+	    ui_update_cursor((ku_rect_t){ev.x, ev.y, 10, 10}); /* update virtual cursor if needed */
     }
 
     if (mmfm.wlwindow->frame_cb == NULL)
@@ -132,15 +139,18 @@ void update(ku_event_t ev)
 	ku_rect_t dirty = ku_window_update(mmfm.kuwindow, 0);
 
 	/* in case of record/replay force continuous draw by full size dirty rect */
-	if (mmfm.autotest) dirty = mmfm.kuwindow->root->frame.local;
+	if (mmfm.autotest)
+	    dirty = mmfm.kuwindow->root->frame.local;
 
 	if (dirty.w > 0 && dirty.h > 0)
 	{
 	    /* add previous dirty rect to current dirty rect to redraw disappearing parts */
 	    ku_rect_t sum = ku_rect_add(dirty, mmfm.dirtyrect);
 
-	    if (mmfm.softrender) ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
-	    else ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
+	    if (mmfm.softrender)
+		ku_renderer_software_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
+	    else
+		ku_renderer_egl_render(mmfm.kuwindow->views, &mmfm.wlwindow->bitmap, sum);
 
 	    /* frame done request must be requested before draw */
 	    ku_wayland_request_frame(mmfm.wlwindow);
@@ -151,7 +161,8 @@ void update(ku_event_t ev)
 	}
     }
 
-    if (ev.type == KU_EVENT_WINDOW_SHOWN) load_data(); /* set ui size on window enter, load files */
+    if (ev.type == KU_EVENT_WINDOW_SHOWN)
+	load_data(); /* set ui size on window enter, load files */
 }
 
 void destroy()
@@ -325,12 +336,12 @@ int main(int argc, char* argv[])
     if (rec_path)
     {
 	ku_recorder_record(rec_path);
-	mmfm.pngpath = rec_path;
+	mmfm.pngpath = mt_path_new_append(dir_path, "screenshots");
     }
     if (rep_path)
     {
 	ku_recorder_replay(rep_path);
-	mmfm.pngpath = rep_path;
+	mmfm.pngpath = mt_path_new_append(dir_path, "screenshots");
     }
 
     /* proxy events through the recorder in case of record/replay */

@@ -1,7 +1,7 @@
 project(
   'mmfm',
   'c',
-  version: '0.5b',
+  version: '0.51b',
   license: 'MIT',
   default_options: ['c_std=gnu99',
   		    'warning_level=3']

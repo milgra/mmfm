@@ -62,6 +62,7 @@ void* mt_memory_calloc(
     void (*descriptor)(void*, int)) /* optional descriptor for describing memory area */
 {
     char* bytes = calloc(1, sizeof(struct mt_memory_head) + size);
+
     if (bytes != NULL)
     {
 	struct mt_memory_head* head = (struct mt_memory_head*) bytes;

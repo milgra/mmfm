@@ -1,7 +1,7 @@
 project(
   'mmfm',
   'c',
-  version: '0.44b',
+  version: '0.5b',
   license: 'MIT',
   default_options: ['c_std=gnu99',
   		    'warning_level=3']
@@ -11,7 +11,6 @@ cc = meson.get_compiler('c')
 
 # os specific libs with find library
 
-rt = cc.find_library('rt')
 math = cc.find_library('m')
 
 # static libs with find library
@@ -91,7 +90,6 @@ mmfm_dependencies = [
 		  wayland_client,
 		  wayland_cursor,
 		  png,
-		  rt,
 		  freetype,
 		  math,
 		  gl,
@@ -104,7 +102,6 @@ mmfm_dependencies = [
 		  avfilter,
 		  swresample,
 		  swscale,
-		  pthread,
 		  jpeg,
 		  ojpeg,
 		  jbig,

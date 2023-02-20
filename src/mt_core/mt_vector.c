@@ -305,8 +305,6 @@ void mt_vector_sort(mt_vector_t* vector, int (*comp)(void* left, void* right))
 	/* create cache */
 	/* TODO make it local to make it thread safe */
 
-	mt_log_debug("SORT %lu", vector->length);
-
 	cache  = CAL(sizeof(mtvn_t) * vector->length, NULL, NULL);
 	cachei = 1;
 

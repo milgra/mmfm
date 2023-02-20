@@ -33,6 +33,7 @@ char* mt_path_new_append(char* root, char* component)
 
 char* mt_path_new_remove_last_component(char* path)
 {
+    /* TODO use POSIX dirname */
     int index;
     for (index = strlen(path) - 2; index > 0; index--)
     {
@@ -49,29 +50,37 @@ char* mt_path_new_remove_last_component(char* path)
 	memcpy(str, path, index);
 	return str;
     }
-    else return mt_string_new_cstring("/");
+    else
+	return mt_string_new_cstring("/");
 }
 
 char* mt_path_new_extension(char* path)
 {
-    int index;
-    for (index = strlen(path) - 1; index > -1; --index)
-    {
-	if (path[index] == '.')
-	{
-	    index++;
-	    break;
-	}
-    }
+    char* ext = strrchr(path, '.');
+    char* res = NULL;
+    if (ext)
+	res = mt_string_new_cstring(ext + 1);
 
-    int   len = strlen(path) - index;
-    char* ext = CAL(len + 1, NULL, mt_string_describe);
-    memcpy(ext, path + index, len);
-    return ext;
+    /* int index; */
+    /* for (index = strlen(path) - 1; index > -1; --index) */
+    /* { */
+    /* 	if (path[index] == '.') */
+    /* 	{ */
+    /* 	    index++; */
+    /* 	    break; */
+    /* 	} */
+    /* } */
+
+    /* int   len = strlen(path) - index; */
+    /* char* ext = CAL(len + 1, NULL, mt_string_describe); */
+    /* memcpy(ext, path + index, len); */
+    return res;
 }
 
 char* mt_path_new_filename(char* path)
 {
+    /* TODO use POSIX basename */
+
     int dotindex;
     for (dotindex = strlen(path) - 1; dotindex > -1; --dotindex)
     {
@@ -101,28 +110,50 @@ char* mt_path_new_filename(char* path)
 
 char* mt_path_new_normalize(char* path)
 {
-    char cwd[PATH_MAX] = {"~"};
-    getcwd(cwd, sizeof(cwd));
+    char* newpath = CAL(PATH_MAX, NULL, NULL);
 
-    char* newpath = NULL;
+    realpath(path, newpath);
 
-    if (path[0] == '~')
-    {
-	newpath = mt_string_new_cstring(getenv("HOME"));
-	newpath = mt_string_append_sub(newpath, path, 1, strlen(path) - 1);
-    }
-    else if (path[0] == '\0')
-    {
-	newpath = mt_string_new_cstring("/");
-    }
-    else if (path[0] != '/')
-    {
-	newpath = mt_string_new_format(PATH_MAX, "%s/%s", cwd, path);
-    }
-    else
-    {
-	newpath = mt_string_new_cstring(path);
-    }
+    /* char cwd[PATH_MAX] = {"~"}; */
+    /* getcwd(cwd, sizeof(cwd)); */
+
+    /* char* newpath = NULL; */
+
+    /* if (path[0] == '~') */
+    /* { */
+    /* 	/\* replace tilde with home dir *\/ */
+    /* 	newpath = mt_string_new_cstring(getenv("HOME")); */
+    /* 	newpath = mt_string_append_sub(newpath, path, 1, strlen(path) - 1); */
+    /* } */
+    /* else if (path[0] == '\0') */
+    /* { */
+    /* 	/\* empty path to root path *\/ */
+    /* 	newpath = mt_string_new_cstring("/"); */
+    /* } */
+    /* else if (path[0] != '/') */
+    /* { */
+    /* 	/\* insert working directory in case of relative path *\/ */
+    /* 	newpath = mt_string_new_format(PATH_MAX, "%s/%s", cwd, path); */
+    /* } */
+    /* else */
+    /* { */
+    /* 	newpath = mt_string_new_cstring(path); */
+    /* } */
+
+    /* /\* remove last component in case of double dot *\/ */
+
+    /* size_t len = strlen(newpath); */
+    /* if (len > 3 && newpath[len - 1] == '.' && newpath[len - 2] == '.') */
+    /* { */
+    /* 	for (size_t index = len - 3; index-- > 0;) */
+    /* 	{ */
+    /* 	    if (newpath[index] == '/') */
+    /* 	    { */
+    /* 		newpath[index] = '\0'; */
+    /* 		break; */
+    /* 	    } */
+    /* 	} */
+    /* } */
 
     return newpath;
 }

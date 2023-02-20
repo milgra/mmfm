@@ -1,14 +1,7 @@
 # MultiMedia File Manager
 
 - hold gesture to image scroller also
-- after approve popup go back to file list as focused
-- image eseten seekbar inactive legyen
-- donation links
-- context menu paste not selectable
 - first drag and drop doesn't work
-- clear makepkg errors
-
-- korusos videok nem jatszodnak le
 - drag and drop from clipboard
 - CTRL + drag from clipboard - move
 - save autoplay state
@@ -27,6 +20,7 @@
 - shortcutok config fileba vagy kulon fileba
 - listen for folder change event
 - HEIF/HEVC/mpts play error
+- korusos videok nem jatszodnak le
 
 - video on github page
 - tech video, automated ui/full test, logban meg a leakek is lathatoak

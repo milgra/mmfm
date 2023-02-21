@@ -171,6 +171,7 @@ com_sources = ['src/mmfm/ui.c',
 	       'src/mmfm/kvlist.c',
 	       'src/mmfm/mmfm.c',
 	       'src/mmfm/pdf.c',
+	       'src/mt_core_ext/ku_bitmap_ext.c',
 	       'src/mt_core_ext/mt_string_ext.c',
 	       'src/mt_core_ext/mt_map_ext.c',
 

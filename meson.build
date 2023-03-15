@@ -1,7 +1,7 @@
 project(
   'mmfm',
   'c',
-  version: '0.51b',
+  version: '0.52b',
   license: 'MIT',
   default_options: ['c_std=gnu99',
   		    'warning_level=3']
@@ -25,10 +25,9 @@ z = dependency('zlib')
 png = dependency('libpng')
 freetype = dependency('freetype2')
 
-gl = dependency('GL')
+glesv2 = dependency('glesv2')
 egl = dependency('egl')
 wegl = dependency('wayland-egl')
-glew = cc.find_library('GLEW')
 sdl2 = dependency('SDL2')
 
 pthread = dependency('threads')
@@ -92,8 +91,7 @@ mmfm_dependencies = [
 		  png,
 		  freetype,
 		  math,
-		  gl,
-		  glew,
+		  glesv2,
 		  sdl2,
 		  avutil,
 		  avcodec,
@@ -141,27 +139,8 @@ mmfm_inc = include_directories(
 
 
 if build_machine.system() == 'freebsd'
-   mmfm_inc = [
-   	   mmfm_inc,
-	   include_directories( 
-   	   '/usr/local/include',
-	   '/usr/local/include/GLES2',
-	   '/usr/local/include/EGL',
-	   '/usr/local/include/SDL2',
-	   '/usr/local/include/mupdf',
-	   '/usr/local/include/freetype2')]
    epoll = cc.find_library('epoll-shim')
    mmfm_dependencies += epoll
-else
-   mmfm_inc = [
-   	   mmfm_inc,
-	   include_directories( 
-   	   '/usr/include',
-	   '/usr/include/GLES2',
-	   '/usr/include/EGL',
-	   '/usr/include/SDL2',
-	   '/usr/include/mupdf',
-	   '/usr/include/freetype2')]
 endif
 
 

@@ -2,6 +2,7 @@
 #include "config.c"
 #include "filemanager.c"
 #include "ku_connector_wayland.c"
+#include "ku_gen_textstyle.c"
 #include "ku_gl.c"
 #include "ku_png.c"
 #include "ku_recorder.c"
@@ -206,6 +207,7 @@ int main(int argc, char* argv[])
 	"  -R --record= [recorder file]        Record session to file\n"
 	"  -P --replay= [recorder file]        Replay session from file\n"
 	"  -f --frame= [widthxheight]          Initial window dimension\n"
+	"  --font= [font path]                 Force font\n"
 	"  --software_render                   Use software rendering instead of gl accelerated rendering\n"
 	"\n";
 
@@ -220,6 +222,7 @@ int main(int argc, char* argv[])
 	    {"replay", optional_argument, 0, 'P'},
 	    {"config", optional_argument, 0, 'c'},
 	    {"frame", optional_argument, 0, 'f'},
+	    {"font", optional_argument, 0, 0},
 	    {NULL, 0, NULL, 0}};
 
     char* cfg_par = NULL;
@@ -229,6 +232,7 @@ int main(int argc, char* argv[])
     char* frm_par = NULL;
     char* dir_par = NULL;
     char* opn_par = NULL;
+    char* fnt_par = NULL;
 
     int option       = 0;
     int option_index = 0;
@@ -240,6 +244,8 @@ int main(int argc, char* argv[])
 	    case 0:
 		if (option_index == 5)
 		    mmfm.softrender = 1;
+		if (option_index == 9)
+		    fnt_par = mt_string_new_cstring(optarg);
 		printf("option %i %s\n", option_index, long_options[option_index].name);
 		if (optarg)
 		    printf(" with arg %s\n", optarg);
@@ -279,6 +285,7 @@ int main(int argc, char* argv[])
     char* rec_path    = rec_par ? mt_path_new_normalize(rec_par) : NULL;                                    // REL 14
     char* rep_path    = rep_par ? mt_path_new_normalize(rep_par) : NULL;                                    // REL 15
     char* dir_path    = dir_par ? mt_path_new_normalize(dir_par) : NULL;                                    // REL 15
+    char* font_path   = fnt_par ? mt_path_new_normalize(fnt_par) : NULL;
 
     // print path info to console
 
@@ -291,6 +298,7 @@ int main(int argc, char* argv[])
     mt_log_debug("img path       : %s", img_path);
     mt_log_debug("css path       : %s", css_path);
     mt_log_debug("html path      : %s", html_path);
+    mt_log_debug("font path      : %s", font_path);
     mt_log_debug("record path    : %s", rec_path);
     mt_log_debug("replay path    : %s", rep_path);
 
@@ -312,6 +320,11 @@ int main(int argc, char* argv[])
     MPUT(mmfm.defaults, "per_path", per_path);
     MPUT(mmfm.defaults, "css_path", css_path);
     MPUT(mmfm.defaults, "html_path", html_path);
+
+    if (font_path != NULL)
+    {
+	ku_gen_textstyle_force_font(font_path);
+    }
 
     if (frm_par != NULL)
     {
@@ -370,9 +383,13 @@ int main(int argc, char* argv[])
 	REL(frm_par);
     if (dir_par)
 	REL(dir_par);
+    if (fnt_par)
+	REL(fnt_par);
 
     if (dir_path)
 	REL(dir_path);
+    if (font_path)
+	REL(font_path);
     REL(img_path);
     REL(wrk_path);
     REL(res_path);

@@ -31,7 +31,7 @@
 
 .tableback {
     font-size: 60px;
-    font-family: "Terminus (TTF):style=Bold";
+    font-family: "Terminus:style=Bold:size=16";
     color: #353535FF;
     background-color: #222222FF;
     text-align: center;
@@ -92,29 +92,36 @@
 .font16center {
     font-size: 16px;
     text-align: center;
-    font-family: "Terminus (TTF):style=Bold";
+    font-family: "Terminus:style=Bold:size=16";
+    word-wrap: break-word;
+    line-height: 16px;
 }
 
 .font16left {
     font-size: 16px;
     text-align: left;
-    font-family: "Terminus (TTF):style=Bold";
+    font-family: "Terminus:style=Bold:size=16";
     word-wrap: break-word;
     line-height: 16px;
 }
 
 .statustf {
-    blocks: no;
+    
     color: #DEDEDEFF;
 }
 
 .seektf {
-    blocks: no;
+    
     color: #FFFFFFFF;
 }
 
 .okaytf {
-    blocks: no;
+    
+    color: #FFFFFFFF;
+}
+
+.alerttf {
+    margin: 20px;
     color: #FFFFFFFF;
 }
 
@@ -148,7 +155,7 @@
 .rowtext {
     color: #DEDEDEFF;
     font-size: 16px;
-    font-family: "Terminus (TTF):style=Bold";
+    font-family: "Terminus:style=Bold:size=16";
 }
 
 .rowcolor {
@@ -295,89 +302,95 @@
     width: 30px;
     height: 30px;
     background-image: url("close.png");
-    blocks: no;
+    
 }
 
 .accepticon {
     width: 30px;
     height: 30px;
     background-image: url("accept.png");
-    blocks: no;
+    
 }
 
 #previcon {
     width: 28px;
     height: 28px;
     background-image: url("prev.png");
-    blocks: no;
+    
 }
 
 #nexticon {
     width: 28px;
     height: 28px;
     background-image: url("next.png");
-    blocks: no;
+    
 }
 
 #playicon {
     width: 28px;
     height: 28px;
     background-image: url("play.png");
-    blocks: no;
+    
 }
 
 #pauseicon {
     width: 28px;
     height: 28px;
     background-image: url("pause.png");
-    blocks: no;
+    
 }
 
 #maxicon {
     width: 30px;
     height: 30px;
     background-image: url("max.png");
-    blocks: no;
+    
 }
 
 #settingsicon {
     width: 30px;
     height: 30px;
     background-image: url("settings.png");
-    blocks: no;
+    
 }
 
 #sidebaricon {
     width: 30px;
     height: 30px;
     background-image: url("sidebar.png");
-    blocks: no;
+    
 }
 
 #clipboardicon {
     width: 30px;
     height: 30px;
     background-image: url("max.png");
-    blocks: no;
+    
 }
 
 #plusicon {
     width: 28px;
     height: 28px;
     background-image: url("plus.png");
-    blocks: no;
+    
 }
 
 #minusicon {
     width: 28px;
     height: 28px;
     background-image: url("minus.png");
-    blocks: no;
+    
 }
 
 #settingspopup {
     width: 500px;
     height: 500px;
+    margin: auto;
+}
+
+#alertpopup {
+    width: 500px;
+    height: 150px;
     margin: auto;
 }
 
@@ -411,12 +424,12 @@
 
 #inputtf {
     margin-left: 5px;
-    blocks: no;
+    
     color: #232323FF;
 }
 
 #pathtf {
-    blocks: no;
+    
     color: #FFFFFFFF;
 }
 
@@ -424,12 +437,12 @@
     width: 30px;
     height: 30px;
     background-image: url("closeblack.png");
-    blocks: no;
+    
 }
 
 .upicon {
     width: 30px;
     height: 30px;
     background-image: url("up.png");
-    blocks: no;
+    
 }

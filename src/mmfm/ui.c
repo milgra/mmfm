@@ -29,6 +29,7 @@ void ui_update_player();
 void ui_load_folder(char* folder);
 void ui_load_file(char* path);
 void ui_open_file(mt_map_t* info);
+void ui_open_alert_popup(char* text);
 
 #endif
 
@@ -94,6 +95,9 @@ struct _ui_t
     ku_view_t* inputcv;    /* input popup container view */
     ku_view_t* okaycv;     /* okay popup container view */
     ku_view_t* okaypopup;  /* okay popup view for grabbing key events */
+    ku_view_t* alertcv;    /* alert popup container view */
+    ku_view_t* alerttv;    /* alert popup text view */
+    ku_view_t* alertpopup; /* alert popup view for grabbing key events */
 
     ku_view_t* seekbarv;
     ku_view_t* minusbtnv;
@@ -107,6 +111,8 @@ struct _ui_t
     ku_view_t* infotablev;
     ku_view_t* contexttablev;
     ku_view_t* settingstablev;
+
+    mt_vector_t* focusables;
 
     mt_vector_t* focusable_filelist; /* focusable views in file list only mode */
     mt_vector_t* focusable_infolist; /* focusable views in file + info list mode */
@@ -139,6 +145,12 @@ struct _ui_t
     int   pdf_page_count;
     int   pdf_page;
     char* pdf_path;
+
+    /* resize from decoder thread */
+
+    int content_resize;
+    int content_x;
+    int content_y;
 } ui;
 
 /* adds cursor for replay/record */
@@ -177,21 +189,23 @@ void ui_rotate_sidebar()
 	ku_view_remove_from_parent(ui.infotablev);
 	ku_view_add_subview(top, ui.cliptablev);
 
-	ku_window_set_focusable(ui.window, ui.focusable_cliplist);
+	ui.focusables = ui.focusable_cliplist;
 
 	config_set_bool("sidebar_visible", 1);
     }
     else if (ui.cliptablev->parent)
     {
 	ku_view_remove_from_parent(ui.cliptablev);
-	ku_window_set_focusable(ui.window, ui.focusable_filelist);
+
+	ui.focusables = ui.focusable_filelist;
 
 	config_set_bool("sidebar_visible", 0);
     }
     else
     {
 	ku_view_add_subview(top, ui.infotablev);
-	ku_window_set_focusable(ui.window, ui.focusable_infolist);
+
+	ui.focusables = ui.focusable_infolist;
 
 	config_set_bool("sidebar_visible", 1);
     }
@@ -235,6 +249,12 @@ void ui_update_player()
 	    double ratio = time / ui.media_state->duration;
 
 	    vh_slider_set(ui.seekbarv, ratio);
+	}
+
+	if (ui.content_resize)
+	{
+	    ui.content_resize = 0;
+	    vh_cv_body_set_content_size(ui.prevbodyv, ui.content_x, ui.content_y);
 	}
     }
 }
@@ -313,7 +333,9 @@ void ui_toggle_pause()
 
 void ui_on_mp_event(ms_event_t event)
 {
-    vh_cv_body_set_content_size(ui.prevbodyv, (int) event.rect.x, (int) event.rect.y);
+    ui.content_resize = 1;
+    ui.content_x      = (int) event.rect.x;
+    ui.content_y      = (int) event.rect.y;
 }
 
 /* entry comparator for folder loading */
@@ -509,6 +531,11 @@ void ui_open_file(mt_map_t* info)
 
 		    REL(image);
 		}
+		else
+		{
+		    mt_log_debug("Cannot decode file, try comopiling ffmpeg with support for file type");
+		    ui_open_alert_popup("Cannot decode file, try re-compiling ffmpeg with support for this file type.");
+		}
 	    }
 
 	    ui.media_type = UI_MT_STREAM;
@@ -572,6 +599,17 @@ void ui_open_approve_popup()
 	    ku_view_layout(ui.basev, ui.basev->style.scale);
 	    ku_window_activate(ui.window, ui.okaypopup, 1);
 	}
+    }
+}
+
+void ui_open_alert_popup(char* text)
+{
+    if (ui.alertcv->parent == NULL)
+    {
+	ku_view_add_subview(ui.basev, ui.alertcv);
+	ku_view_layout(ui.basev, ui.basev->style.scale);
+	ku_window_activate(ui.window, ui.alertpopup, 1);
+	tg_text_set1(ui.alerttv, text);
     }
 }
 
@@ -681,8 +719,10 @@ void ui_cancel_input()
 
 /* events from all tables */
 
-void ui_on_table_event(vh_table_event_t event)
+int ui_on_table_event(vh_table_event_t event)
 {
+    int cancel = 0;
+
     if (strcmp(event.view->id, "filetable") == 0)
     {
 	if (event.id == VH_TABLE_EVENT_FIELDS_UPDATE)
@@ -697,6 +737,8 @@ void ui_on_table_event(vh_table_event_t event)
 	    ui_show_info(event.selected_items->data[0]);
 
 	    ui.rowview_for_context_menu = event.rowview;
+
+	    cancel = 1;
 	}
 	else if (event.id == VH_TABLE_EVENT_OPEN)
 	{
@@ -720,95 +762,6 @@ void ui_on_table_event(vh_table_event_t event)
 	}
 	else if (event.id == VH_TABLE_EVENT_KEY_DOWN)
 	{
-	    if (event.ev.keycode == XKB_KEY_space)
-	    {
-		if (ui.media_type == UI_MT_DOCUMENT)
-		    ui_show_pdf_page(ui.pdf_page + 1);
-		else if (ui.coder_type == CODER_MEDIA_TYPE_VIDEO || ui.coder_type == CODER_MEDIA_TYPE_AUDIO)
-		    ui_toggle_pause();
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_Right)
-	    {
-		if (ui.media_type == UI_MT_DOCUMENT)
-		    ui_show_pdf_page(ui.pdf_page + 1);
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_Left)
-	    {
-		if (ui.media_type == UI_MT_DOCUMENT)
-		    ui_show_pdf_page(ui.pdf_page - 1);
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
-	    {
-		vh_table_t* vh = ui.filetablev->evt_han_data;
-		for (size_t index = 0; index < vh->selected_items->length; index++)
-		{
-		    vh_table_t* vh   = ui.filetablev->evt_han_data;
-		    mt_map_t*   file = vh->selected_items->data[index];
-		    mt_vector_add(ui.clipdatav, file);
-		}
-
-		vh_table_set_data(ui.cliptablev, ui.clipdatav);
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_v && event.ev.ctrl_down)
-	    {
-		if (ui.rowview_for_context_menu)
-		{
-		    ku_rect_t frame = ui.rowview_for_context_menu->frame.global;
-		    ui_show_context_menu(frame.x, frame.y);
-		}
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_s && event.ev.ctrl_down)
-	    {
-		ui_rotate_sidebar();
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_r && event.ev.ctrl_down)
-	    {
-		if (ui.rowview_for_context_menu)
-		{
-		    ui.inputmode     = UI_IM_RENAME;
-		    ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
-
-		    vh_table_t* vh    = ui.filetablev->evt_han_data;
-		    mt_map_t*   info  = vh->selected_items->data[0];
-		    char*       value = MGET(info, "file/basename");
-
-		    ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
-		}
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_n && event.ev.ctrl_down)
-	    {
-		ui.inputmode = UI_IM_NEWFOLDER;
-
-		ku_view_t* filetablebody = GETV(ui.basev, "filetable");
-		ku_rect_t  rframe        = filetablebody->frame.global;
-
-		ui_show_input_popup(rframe.x, rframe.y - 5, "new folder");
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_plus || event.ev.keycode == XKB_KEY_KP_Add)
-	    {
-		ku_view_t* evview = ku_view_get_subview(ui.basev, "previewevt");
-		vh_cv_evnt_zoom(evview, 0.1);
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_minus || event.ev.keycode == XKB_KEY_KP_Subtract)
-	    {
-		ku_view_t* evview = ku_view_get_subview(ui.basev, "previewevt");
-		vh_cv_evnt_zoom(evview, -0.1);
-	    }
-
-	    if (event.ev.keycode == XKB_KEY_Delete)
-		ui_open_approve_popup();
-
-	    if (event.ev.keycode == XKB_KEY_d && event.ev.ctrl_down)
-		ui_open_approve_popup();
 	}
     }
     else if (strcmp(event.view->id, "cliptable") == 0)
@@ -821,8 +774,11 @@ void ui_on_table_event(vh_table_event_t event)
 	{
 	    /* show file info and open immediately if possible on simple select */
 
-	    ui_open_file(event.selected_items->data[0]);
-	    ui_show_info(event.selected_items->data[0]);
+	    if (event.selected_items->length > 0)
+	    {
+		ui_open_file(event.selected_items->data[0]);
+		ui_show_info(event.selected_items->data[0]);
+	    }
 	}
 	else if (event.id == VH_TABLE_EVENT_OPEN)
 	{
@@ -983,6 +939,8 @@ void ui_on_table_event(vh_table_event_t event)
 		vh_table_set_data(ui.cliptablev, ui.clipdatav);
 	    }
 	}
+
+	cancel = 1;
     }
     else if (strcmp(event.view->id, "settingstable") == 0)
     {
@@ -997,6 +955,8 @@ void ui_on_table_event(vh_table_event_t event)
 		ui_show_status("Link opened in the browser");
 	}
     }
+
+    return cancel;
 }
 
 /* content view event, click at the moment */
@@ -1032,15 +992,129 @@ void on_cv_event(vh_cv_evnt_event_t event)
 
 void ui_on_touch(vh_touch_event_t event)
 {
-    if (strcmp(event.view->id, "inputcont") == 0) ui_cancel_input();
-    else if (strcmp(event.view->id, "contextpopupcont") == 0) ku_view_remove_from_parent(ui.contextcv);
+    if (strcmp(event.view->id, "inputcont") == 0)
+	ui_cancel_input();
+    else if (strcmp(event.view->id, "contextpopupcont") == 0)
+	ku_view_remove_from_parent(ui.contextcv);
 }
 
 /* global key events */
 
+void ui_on_key_event(vh_key_event_t event)
+{
+    if (event.ev.keycode == XKB_KEY_c && event.ev.ctrl_down)
+    {
+	vh_table_t* vh = ui.filetablev->evt_han_data;
+	for (size_t index = 0; index < vh->selected_items->length; index++)
+	{
+	    vh_table_t* vh   = ui.filetablev->evt_han_data;
+	    mt_map_t*   file = vh->selected_items->data[index];
+	    mt_vector_add(ui.clipdatav, file);
+	}
+
+	vh_table_set_data(ui.cliptablev, ui.clipdatav);
+    }
+    if (event.ev.keycode == XKB_KEY_space)
+    {
+	if (ui.media_type == UI_MT_DOCUMENT)
+	    ui_show_pdf_page(ui.pdf_page + 1);
+	else if (ui.coder_type == CODER_MEDIA_TYPE_VIDEO || ui.coder_type == CODER_MEDIA_TYPE_AUDIO)
+	    ui_toggle_pause();
+    }
+
+    if (event.ev.keycode == XKB_KEY_Right)
+    {
+	if (ui.media_type == UI_MT_DOCUMENT)
+	    ui_show_pdf_page(ui.pdf_page + 1);
+    }
+
+    if (event.ev.keycode == XKB_KEY_Left)
+    {
+	if (ui.media_type == UI_MT_DOCUMENT)
+	    ui_show_pdf_page(ui.pdf_page - 1);
+    }
+
+    if (event.ev.keycode == XKB_KEY_v && event.ev.ctrl_down)
+    {
+	if (ui.rowview_for_context_menu)
+	{
+	    ku_rect_t frame = ui.rowview_for_context_menu->frame.global;
+	    ui_show_context_menu(frame.x, frame.y);
+	}
+    }
+
+    if (event.ev.keycode == XKB_KEY_s && event.ev.ctrl_down)
+    {
+	ui_rotate_sidebar();
+    }
+
+    if (event.ev.keycode == XKB_KEY_r && event.ev.ctrl_down)
+    {
+	if (ui.rowview_for_context_menu)
+	{
+	    ui.inputmode     = UI_IM_RENAME;
+	    ku_rect_t rframe = ui.rowview_for_context_menu->frame.global;
+
+	    vh_table_t* vh    = ui.filetablev->evt_han_data;
+	    mt_map_t*   info  = vh->selected_items->data[0];
+	    char*       value = MGET(info, "file/basename");
+
+	    ui_show_input_popup(rframe.x, rframe.y - 5, value ? value : "");
+	}
+    }
+
+    if (event.ev.keycode == XKB_KEY_n && event.ev.ctrl_down)
+    {
+	ui.inputmode = UI_IM_NEWFOLDER;
+
+	ku_view_t* filetablebody = GETV(ui.basev, "filetable");
+	ku_rect_t  rframe        = filetablebody->frame.global;
+
+	ui_show_input_popup(rframe.x, rframe.y - 5, "new folder");
+    }
+
+    if (event.ev.keycode == XKB_KEY_plus || event.ev.keycode == XKB_KEY_KP_Add)
+    {
+	ku_view_t* evview = ku_view_get_subview(ui.basev, "previewevt");
+	vh_cv_evnt_zoom(evview, 0.1);
+    }
+
+    if (event.ev.keycode == XKB_KEY_minus || event.ev.keycode == XKB_KEY_KP_Subtract)
+    {
+	ku_view_t* evview = ku_view_get_subview(ui.basev, "previewevt");
+	vh_cv_evnt_zoom(evview, -0.1);
+    }
+
+    if (event.ev.keycode == XKB_KEY_Delete)
+	ui_open_approve_popup();
+
+    if (event.ev.keycode == XKB_KEY_d && event.ev.ctrl_down)
+	ui_open_approve_popup();
+
+    if (event.ev.keycode == XKB_KEY_Tab)
+    {
+	for (size_t index = 0; index < ui.focusables->length; index++)
+	{
+	    ku_view_t* view = ui.focusables->data[index];
+	    ku_window_activate(ui.window, view, 0);
+	}
+
+	ku_view_t* first = RET(ui.focusables->data[0]);
+	if (first->evt_han)
+	    (*first->evt_han)(first, (ku_event_t){.type = KU_EVENT_UNFOCUS});
+	mt_vector_rem(ui.focusables, first);
+	mt_vector_add(ui.focusables, first);
+	REL(first);
+	first = ui.focusables->data[0];
+	if (first->evt_han)
+	    (*first->evt_han)(first, (ku_event_t){.type = KU_EVENT_FOCUS});
+	ku_window_activate(ui.window, first, 1);
+    }
+}
+
 void ui_on_popup_key_event(vh_key_event_t event)
 {
-    if (event.view == ui.okaycv)
+    if (event.view == ui.okaypopup)
     {
 	if (event.ev.keycode == XKB_KEY_Return && ui.okaycv->parent)
 	{
@@ -1055,6 +1129,11 @@ void ui_on_popup_key_event(vh_key_event_t event)
 	{
 	    ku_view_remove_from_parent(ui.okaycv);
 	    ku_window_activate(ui.window, ui.okaypopup, 0);
+	}
+	if (ui.alertcv->parent)
+	{
+	    ku_view_remove_from_parent(ui.alertcv);
+	    ku_window_activate(ui.window, ui.alertpopup, 0);
 	}
 	if (ui.contextcv->parent)
 	{
@@ -1121,6 +1200,10 @@ void ui_on_btn_event(vh_button_event_t event)
     {
 	ku_view_remove_from_parent(ui.okaycv);
 	ui_delete_selected_files();
+    }
+    else if (strcmp(event.view->id, "alertacceptbtn") == 0)
+    {
+	ku_view_remove_from_parent(ui.alertcv);
     }
     else if (strcmp(event.view->id, "okayclosebtn") == 0)
     {
@@ -1293,6 +1376,7 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     ui.basev = RET(bv);
     ku_window_add(ui.window, ui.basev);
     ku_window_activate(ui.window, ui.basev, 1);
+    vh_key_add(ui.basev, ui_on_key_event);
 
     REL(view_list);
 
@@ -1471,6 +1555,22 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     vh_touch_add(ui.okaycv, ui_on_touch);
     ku_view_remove_from_parent(ui.okaycv);
 
+    /* alert popup */
+
+    ku_view_t* alertcv    = GETV(bv, "alertpopupcont");
+    ku_view_t* alerttv    = GETV(bv, "alerttf");
+    ku_view_t* alertpopup = GETV(bv, "alertpopup");
+
+    assert(alertcv && alerttv && alertpopup);
+
+    ui.alertcv    = RET(alertcv);
+    ui.alerttv    = RET(alerttv);
+    ui.alertpopup = RET(alertpopup);
+
+    vh_key_add(alertpopup, ui_on_popup_key_event);
+    vh_touch_add(ui.alertcv, ui_on_touch);
+    ku_view_remove_from_parent(ui.alertcv);
+
     /* status bar */
 
     ui.statuslv = GETV(bv, "statustf");
@@ -1480,6 +1580,8 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
     ui.inputcv   = RET(GETV(bv, "inputcont"));
     ui.inputbckv = GETV(bv, "inputbck");
     ui.inputtv   = GETV(bv, "inputtf");
+
+    assert(ui.inputcv && ui.inputbckv && ui.inputtv);
 
     vh_textinput_add(ui.inputtv, "Generic input", "", ui_on_text_event);
     vh_touch_add(ui.inputcv, ui_on_touch);
@@ -1542,12 +1644,12 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
 	ku_view_remove_from_parent(ui.cliptablev);
 	ku_view_remove_from_parent(ui.infotablev);
 
-	ku_window_set_focusable(window, ui.focusable_filelist);
+	ui.focusables = ui.focusable_filelist;
     }
     else
     {
 	ku_view_remove_from_parent(ui.cliptablev);
-	ku_window_set_focusable(window, ui.focusable_infolist);
+	ui.focusables = ui.focusable_infolist;
     }
 
     // show texture map for debug
@@ -1588,6 +1690,7 @@ void ui_destroy()
     REL(ui.contextcv);
     REL(ui.inputcv);
     REL(ui.okaycv);
+    REL(ui.alertcv);
 
     REL(ui.filedatav);
     REL(ui.clipdatav);

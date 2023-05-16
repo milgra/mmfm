@@ -1521,7 +1521,7 @@ void video_image_display(MediaState_t* ms, ku_bitmap_t* bm)
 
     vp = frame_queue_peek_last(&ms->vidfq);
 
-    if (!vp->uploaded)
+    if (!vp->uploaded && vp->frame->width > 0 && vp->frame->height > 0)
     {
 	if (upload_texture(NULL, vp->frame, &ms->img_convert_ctx, bm) < 0)
 	{
@@ -1549,7 +1549,9 @@ void mp_video_refresh(MediaState_t* ms, double* remaining_time, ku_bitmap_t* bm,
     if (ms->force_refresh || ms->last_vis_time + rdftspeed1 < time)
     {
 	if (display)
+	{
 	    video_display(ms, bm);
+	}
 	ms->last_vis_time = time;
     }
     *remaining_time = FFMIN(*remaining_time, ms->last_vis_time + rdftspeed1 - time);

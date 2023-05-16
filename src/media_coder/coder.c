@@ -59,98 +59,107 @@ ku_bitmap_t* coder_load_image(const char* path)
 
 		if (codecContext != NULL)
 		{
-		    avcodec_parameters_to_context(codecContext, param);
-		    avcodec_open2(codecContext, codec, NULL); // CLOSE 1
+		    int ret = avcodec_parameters_to_context(codecContext, param);
 
-		    AVPacket* packet = av_packet_alloc(); // FREE 2
-		    AVFrame*  frame  = av_frame_alloc();  // FREE 3
-
-		    while (av_read_frame(src_ctx, packet) >= 0)
+		    if (ret >= 0)
 		    {
-			avcodec_send_packet(codecContext, packet);
+
+			ret = avcodec_open2(codecContext, codec, NULL); // CLOSE 1
+
+			if (ret >= 0)
+			{
+
+			    AVPacket* packet = av_packet_alloc(); // FREE 2
+			    AVFrame*  frame  = av_frame_alloc();  // FREE 3
+
+			    while (av_read_frame(src_ctx, packet) >= 0)
+			    {
+				avcodec_send_packet(codecContext, packet);
+			    }
+
+			    avcodec_receive_frame(codecContext, frame);
+
+			    enum AVPixelFormat pixFormat;
+			    switch (frame->format)
+			    {
+				case AV_PIX_FMT_YUVJ420P:
+				    pixFormat = AV_PIX_FMT_YUV420P;
+				    break;
+				case AV_PIX_FMT_YUVJ422P:
+				    pixFormat = AV_PIX_FMT_YUV422P;
+				    break;
+				case AV_PIX_FMT_YUVJ444P:
+				    pixFormat = AV_PIX_FMT_YUV444P;
+				    break;
+				case AV_PIX_FMT_YUVJ440P:
+				    pixFormat = AV_PIX_FMT_YUV440P;
+				    break;
+				default:
+				    pixFormat = frame->format;
+				    break;
+			    }
+
+			    coder_sws_context = sws_getCachedContext(
+				coder_sws_context,
+				frame->width,
+				frame->height,
+				pixFormat,
+				frame->width,
+				frame->height,
+				AV_PIX_FMT_RGBA,
+				SWS_POINT,
+				NULL,
+				NULL,
+				NULL); // FREE 4
+
+			    if (coder_sws_context != NULL)
+			    {
+				int stride[4] = {0};
+
+				av_image_fill_linesizes(stride, AV_PIX_FMT_RGBA, frame->width);
+
+				stride[0] = FFALIGN(stride[0], 16);
+
+				/* if (res < 0) */
+				/* { */
+				/*     fprintf(stderr, "av_image_fill_linesizes failed\n"); */
+				/*     goto end; */
+				/* } */
+				/* for (p = 0; p < 4; p++) */
+				/* { */
+				/*     srcStride[p] = FFALIGN(srcStride[p], 16); */
+				/*     if (srcStride[p]) */
+				/* 	src[p] = av_mallocz(srcStride[p] * srcH + 16); */
+				/*     if (srcStride[p] && !src[p]) */
+				/*     { */
+				/* 	perror("Malloc"); */
+				/* 	res = -1; */
+				/* 	goto end; */
+				/*     } */
+
+				bitmap = ku_bitmap_new_aligned(frame->width, frame->height, 16); // REL 0
+				/* TODO compare with fill linesizes, show error */
+				stride[0] = bitmap->w * 4;
+
+				uint8_t* scaledpixels[1];
+				scaledpixels[0] = bitmap->data;
+
+				sws_scale(
+				    coder_sws_context,
+				    (const uint8_t* const*) frame->data,
+				    frame->linesize,
+				    0,
+				    bitmap->h,
+				    scaledpixels,
+				    stride);
+			    }
+
+			    av_frame_free(&frame);   // FREE 0
+			    av_packet_free(&packet); // FREE 1
+
+			    avcodec_free_context(&codecContext);
+			}
 		    }
-
-		    avcodec_receive_frame(codecContext, frame);
-
-		    enum AVPixelFormat pixFormat;
-		    switch (frame->format)
-		    {
-			case AV_PIX_FMT_YUVJ420P:
-			    pixFormat = AV_PIX_FMT_YUV420P;
-			    break;
-			case AV_PIX_FMT_YUVJ422P:
-			    pixFormat = AV_PIX_FMT_YUV422P;
-			    break;
-			case AV_PIX_FMT_YUVJ444P:
-			    pixFormat = AV_PIX_FMT_YUV444P;
-			    break;
-			case AV_PIX_FMT_YUVJ440P:
-			    pixFormat = AV_PIX_FMT_YUV440P;
-			    break;
-			default:
-			    pixFormat = frame->format;
-			    break;
-		    }
-
-		    coder_sws_context = sws_getCachedContext(
-			coder_sws_context,
-			frame->width,
-			frame->height,
-			pixFormat,
-			frame->width,
-			frame->height,
-			AV_PIX_FMT_RGBA,
-			SWS_POINT,
-			NULL,
-			NULL,
-			NULL); // FREE 4
-
-		    if (coder_sws_context != NULL)
-		    {
-			int stride[4] = {0};
-
-			av_image_fill_linesizes(stride, AV_PIX_FMT_RGBA, frame->width);
-
-			stride[0] = FFALIGN(stride[0], 16);
-
-			/* if (res < 0) */
-			/* { */
-			/*     fprintf(stderr, "av_image_fill_linesizes failed\n"); */
-			/*     goto end; */
-			/* } */
-			/* for (p = 0; p < 4; p++) */
-			/* { */
-			/*     srcStride[p] = FFALIGN(srcStride[p], 16); */
-			/*     if (srcStride[p]) */
-			/* 	src[p] = av_mallocz(srcStride[p] * srcH + 16); */
-			/*     if (srcStride[p] && !src[p]) */
-			/*     { */
-			/* 	perror("Malloc"); */
-			/* 	res = -1; */
-			/* 	goto end; */
-			/*     } */
-
-			bitmap = ku_bitmap_new_aligned(frame->width, frame->height, 16); // REL 0
-			/* TODO compare with fill linesizes, show error */
-			stride[0] = bitmap->w * 4;
-
-			uint8_t* scaledpixels[1];
-			scaledpixels[0] = bitmap->data;
-
-			sws_scale(
-			    coder_sws_context,
-			    (const uint8_t* const*) frame->data,
-			    frame->linesize,
-			    0,
-			    bitmap->h,
-			    scaledpixels,
-			    stride);
-		    }
-
-		    av_frame_free(&frame);   // FREE 0
-		    av_packet_free(&packet); // FREE 1
-
-		    avcodec_free_context(&codecContext);
 		}
 		else
 		    mt_log_error("Cannot allocate context");
@@ -379,8 +388,9 @@ int coder_load_metadata_into(const char* path, mt_map_t* map)
 
 		if (retv >= 0)
 		{
-		    int dur = pFormatCtx->duration / 1000000;
-		    if (dur < 0) dur = 0;
+		    int dur = pFormatCtx->duration / AV_TIME_BASE;
+		    if (dur < 0)
+			dur = 0;
 		    char* dur_s = CAL(20, NULL, mt_string_describe);
 		    snprintf(dur_s, 20, "%i:%.2i", (short) dur / 60, dur - (short) (dur / 60) * 60);
 		    MPUT(map, "duration", dur_s);
@@ -448,13 +458,15 @@ int coder_load_metadata_into(const char* path, mt_map_t* map)
 		}
 	    }
 	}
-	else mt_log_info("coder : skpping %s, no media context present", path);
+	else
+	    mt_log_info("coder : skpping %s, no media context present", path);
 
 	avformat_close_input(&pFormatCtx); // CLOSE 0
     }
     /* else mt_log_info("coder : skipping %s, probably not a media file", path); */
 
-    if (format_opts) av_dict_free(&format_opts);
+    if (format_opts)
+	av_dict_free(&format_opts);
 
     avformat_free_context(pFormatCtx); // FREE 0
 
@@ -480,13 +492,16 @@ coder_media_type_t coder_get_type(const char* path)
 	    // Retrieve stream information
 	    avformat_find_stream_info(pFormatCtx, NULL);
 
-	    if (pFormatCtx->duration < 0)
+	    int duration = pFormatCtx->duration / AV_TIME_BASE;
+
+	    if (duration <= 0)
 		type = CODER_MEDIA_TYPE_IMAGE;
 
 	    for (unsigned i = 0; i < pFormatCtx->nb_streams; i++)
 	    {
 		AVCodecParameters* param = pFormatCtx->streams[i]->codecpar;
-		const AVCodec*     codec = avcodec_find_encoder(pFormatCtx->streams[i]->codecpar->codec_id);
+
+		const AVCodec* codec = avcodec_find_encoder(pFormatCtx->streams[i]->codecpar->codec_id);
 		if (codec)
 		{
 		    if (param->codec_type == AVMEDIA_TYPE_AUDIO)

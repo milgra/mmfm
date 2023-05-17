@@ -246,9 +246,6 @@ int main(int argc, char* argv[])
 		    mmfm.softrender = 1;
 		if (option_index == 9)
 		    fnt_par = mt_string_new_cstring(optarg);
-		printf("option %i %s\n", option_index, long_options[option_index].name);
-		if (optarg)
-		    printf(" with arg %s\n", optarg);
 		break;
 	    case '?': printf("parsing option %c value: %s\n", option, optarg); break;
 	    case 'c': cfg_par = mt_string_new_cstring(optarg); break; // REL 0

@@ -90,14 +90,14 @@ struct _ui_t
     ku_view_t* pathtv;   /* path text view */
     ku_view_t* inputtv;  /* input text view */
 
-    ku_view_t* settingscv; /* settings popup container view */
-    ku_view_t* contextcv;  /* context popup container view */
-    ku_view_t* inputcv;    /* input popup container view */
-    ku_view_t* okaycv;     /* okay popup container view */
-    ku_view_t* okaypopup;  /* okay popup view for grabbing key events */
-    ku_view_t* alertcv;    /* alert popup container view */
-    ku_view_t* alerttv;    /* alert popup text view */
-    ku_view_t* alertpopup; /* alert popup view for grabbing key events */
+    ku_view_t* settingscv;       /* settings popup container view */
+    ku_view_t* contextpopupcont; /* context popup container view */
+    ku_view_t* inputcv;          /* input popup container view */
+    ku_view_t* okaycv;           /* okay popup container view */
+    ku_view_t* okaypopup;        /* okay popup view for grabbing key events */
+    ku_view_t* alertcv;          /* alert popup container view */
+    ku_view_t* alerttv;          /* alert popup text view */
+    ku_view_t* alertpopup;       /* alert popup view for grabbing key events */
 
     ku_view_t* seekbarv;
     ku_view_t* minusbtnv;
@@ -648,44 +648,57 @@ void ui_show_drag_view()
     REL(docview);
 }
 
+void on_contextanim_end(vh_anim_event_t event)
+{
+    if (strcmp(event.view->id, "contextpopup") == 0 && event.view->texture.alpha == 0.0)
+    {
+	ku_view_remove_from_parent(ui.contextpopupcont);
+    }
+}
+
 /* show context menu */
 
 void ui_show_context_menu(float x, float y)
 {
-    if (ui.contextcv->parent == NULL)
+    if (ui.contextpopupcont->parent == NULL)
     {
-	ku_view_t* contextpopup = ui.contextcv->views->data[0];
+	ku_view_t* contextpopup = ui.contextpopupcont->views->data[0];
 	ku_rect_t  iframe       = contextpopup->frame.global;
 	iframe.x                = x + 20.0;
 	iframe.y                = y;
 
-	if (iframe.y + iframe.h > ui.window->height) iframe.y = ui.window->height - iframe.h;
-	if (iframe.x + iframe.w > ui.window->width) iframe.x = ui.window->width - iframe.w;
+	if (iframe.y + iframe.h > ui.window->height)
+	    iframe.y = ui.window->height - iframe.h;
+	if (iframe.x + iframe.w > ui.window->width)
+	    iframe.x = ui.window->width - iframe.w;
 
-	ku_view_add_subview(ui.basev, ui.contextcv);
+	ku_view_add_subview(ui.basev, ui.contextpopupcont);
 	ku_view_set_frame(contextpopup, iframe);
 
-	ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
+	ku_view_t* contexttableevt = GETV(ui.contextpopupcont, "contexttable_event");
 	ku_window_activate(ui.window, contexttableevt, 1);
 
 	ku_rect_t start = contextpopup->frame.local;
 
 	ku_rect_t end = start;
 
-	start.x += 40;
-	start.w -= 80;
+	/* start.x += 40; */
+	/* start.w -= 80; */
 	start.h = 10;
+	start.y -= 5;
 	ku_view_set_frame(contextpopup, start);
 
 	vh_anim_frame(contextpopup, start, end, 0, 15, AT_EASE);
+	vh_anim_alpha(contextpopup, 0.0, 1.0, 20, AT_EASE);
 
 	ku_view_t* contextanim = GETV(contextpopup, "contextpopupanim");
 
 	start = contextanim->frame.local;
 	end   = start;
 
-	start.w -= 80;
+	/* start.w -= 80; */
 	start.h = 10;
+	start.y -= 5;
 	ku_view_set_frame(contextanim, start);
 
 	vh_anim_frame(contextanim, start, end, 0, 15, AT_EASE);
@@ -809,10 +822,10 @@ int ui_on_table_event(vh_table_event_t event)
 
 	if (event.ev.type == KU_EVENT_KEY_UP && event.ev.keycode == XKB_KEY_Escape)
 	{
-	    if (ui.contextcv->parent)
+	    if (ui.contextpopupcont->parent)
 	    {
-		ku_view_remove_from_parent(ui.contextcv);
-		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
+		ku_view_remove_from_parent(ui.contextpopupcont);
+		ku_view_t* contexttableevt = GETV(ui.contextpopupcont, "contexttable_event");
 		ku_window_activate(ui.window, contexttableevt, 0);
 	    }
 	}
@@ -820,10 +833,10 @@ int ui_on_table_event(vh_table_event_t event)
 	if ((event.ev.type == KU_EVENT_MOUSE_DOWN && event.id == VH_TABLE_EVENT_SELECT) ||
 	    (event.ev.type == KU_EVENT_KEY_DOWN && event.id == VH_TABLE_EVENT_OPEN))
 	{
-	    if (ui.contextcv->parent)
+	    if (ui.contextpopupcont->parent)
 	    {
-		ku_view_remove_from_parent(ui.contextcv);
-		ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
+		ku_view_remove_from_parent(ui.contextpopupcont);
+		ku_view_t* contexttableevt = GETV(ui.contextpopupcont, "contexttable_event");
 		ku_window_activate(ui.window, contexttableevt, 0);
 	    }
 
@@ -995,7 +1008,10 @@ void ui_on_touch(vh_touch_event_t event)
     if (strcmp(event.view->id, "inputcont") == 0)
 	ui_cancel_input();
     else if (strcmp(event.view->id, "contextpopupcont") == 0)
-	ku_view_remove_from_parent(ui.contextcv);
+    {
+	ku_view_t* contextpopup = ui.contextpopupcont->views->data[0];
+	vh_anim_alpha(contextpopup, 1.0, 0.0, 20, AT_EASE);
+    }
 }
 
 /* global key events */
@@ -1135,11 +1151,11 @@ void ui_on_popup_key_event(vh_key_event_t event)
 	    ku_view_remove_from_parent(ui.alertcv);
 	    ku_window_activate(ui.window, ui.alertpopup, 0);
 	}
-	if (ui.contextcv->parent)
+	if (ui.contextpopupcont->parent)
 	{
-	    ku_view_remove_from_parent(ui.contextcv);
+	    ku_view_remove_from_parent(ui.contextpopupcont);
 
-	    ku_view_t* contexttableevt = GETV(ui.contextcv, "contexttable_event");
+	    ku_view_t* contexttableevt = GETV(ui.contextpopupcont, "contexttable_event");
 	    ku_window_activate(ui.window, contexttableevt, 0);
 	}
 	if (ui.settingscv->parent)
@@ -1530,18 +1546,18 @@ void ui_init(int width, int height, float scale, ku_window_t* window, wl_window_
 
     /* context popup */
 
-    ku_view_t* contextcv    = GETV(bv, "contextpopupcont");
-    ku_view_t* contextpopup = GETV(bv, "contextpopup");
-    ku_view_t* contextanimv = GETV(bv, "contextpopupanim");
+    ku_view_t* contextpopupcont = GETV(bv, "contextpopupcont");
+    ku_view_t* contextpopup     = GETV(bv, "contextpopup");
+    ku_view_t* contextanimv     = GETV(bv, "contextpopupanim");
 
     vh_anim_add(contextanimv, NULL, NULL);
 
-    ui.contextcv = RET(contextcv);
+    ui.contextpopupcont = RET(contextpopupcont);
 
-    vh_anim_add(contextpopup, NULL, NULL);
+    vh_anim_add(contextpopup, on_contextanim_end, NULL);
 
-    vh_touch_add(ui.contextcv, ui_on_touch);
-    ku_view_remove_from_parent(ui.contextcv);
+    vh_touch_add(ui.contextpopupcont, ui_on_touch);
+    ku_view_remove_from_parent(ui.contextpopupcont);
 
     /* okay popup */
 
@@ -1687,7 +1703,7 @@ void ui_destroy()
     REL(ui.minusbtnv);
 
     REL(ui.settingscv);
-    REL(ui.contextcv);
+    REL(ui.contextpopupcont);
     REL(ui.inputcv);
     REL(ui.okaycv);
     REL(ui.alertcv);

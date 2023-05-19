@@ -1,5 +1,8 @@
 # MultiMedia File Manager
 
+- external file drag and drop
+- kurzor valtozzon at column move eseten
+- play button active amikor mnme kene
 - hold gesture to image scroller also
 - first drag and drop doesn't work
 - drag and drop from clipboard

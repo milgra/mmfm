@@ -13,11 +13,6 @@ cc = meson.get_compiler('c')
 
 math = cc.find_library('m')
 
-# static libs with find library
-
-mupdf = cc.find_library('mupdf')
-mupdfthird = cc.find_library('mupdf-third')
-
 # other deps with dependency
 
 z = dependency('zlib')
@@ -84,6 +79,17 @@ foreach p : protocols
   )
 endforeach
 
+if build_machine.system() == 'freebsd'
+   mupdf = cc.find_library('mupdf',dirs: ['/usr/local/lib/'])
+   mupdfthird = cc.find_library('mupdf-third',dirs: ['/usr/local/lib/'])
+   epoll = dependency('epoll-shim')
+   pthread = dependency('threads')
+   mmfm_dependencies += pthread
+   mmfm_dependencies += epoll
+else
+   mupdf = cc.find_library('mupdf')
+   mupdfthird = cc.find_library('mupdf-third')
+endif
 
 mmfm_dependencies = [
 		  wayland_client,
@@ -136,17 +142,6 @@ mmfm_inc = include_directories(
 	'src/kinetic_ui/texture',
 	'src/mmfm',
 	'src/mt_core_ext')
-
-
-if build_machine.system() == 'freebsd'
-   mupdf = cc.find_library('mupdf',dirs: ['/usr/local/lib/'])
-   mupdfthird = cc.find_library('mupdf-third',dirs: ['/usr/local/lib/'])
-   epoll = dependency('epoll-shim')
-   pthread = dependency('threads')
-   mmfm_dependencies += pthread
-   mmfm_dependencies += epoll
-endif
-
 
 com_sources = ['src/mmfm/ui.c',
 	       'src/mmfm/config.c',

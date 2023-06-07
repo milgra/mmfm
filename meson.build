@@ -139,7 +139,11 @@ mmfm_inc = include_directories(
 
 
 if build_machine.system() == 'freebsd'
-   epoll = cc.find_library('epoll-shim')
+   mupdf = cc.find_library('mupdf',dirs: ['/usr/local/lib/'])
+   mupdfthird = cc.find_library('mupdf-third',dirs: ['/usr/local/lib/'])
+   epoll = dependency('epoll-shim')
+   pthread = dependency('threads')
+   mmfm_dependencies += pthread
    mmfm_dependencies += epoll
 endif
 
@@ -268,7 +272,8 @@ mt_core_test = executable(
 	    'src/mt_core_test/mt_channel_test.c',
 	    'src/mt_core_test/mt_path_test.c'
 	    ],
-	    include_directories: ['src/mt_core'])
+	    include_directories: ['src/mt_core'],
+	    dependencies: mmfm_dependencies)
 
 test('MT_CORE_TEST', mt_core_test)
 

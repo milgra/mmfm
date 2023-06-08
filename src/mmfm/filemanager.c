@@ -26,7 +26,9 @@ void fm_detail(mt_map_t* file);
 #include <fcntl.h>
 #include <grp.h>
 #include <limits.h>
-#include <linux/stat.h>
+#ifdef __linux__
+    #include <linux/stat.h>
+#endif
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>

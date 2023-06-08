@@ -79,18 +79,6 @@ foreach p : protocols
   )
 endforeach
 
-if build_machine.system() == 'freebsd'
-   mupdf = cc.find_library('mupdf',dirs: ['/usr/local/lib/'])
-   mupdfthird = cc.find_library('mupdf-third',dirs: ['/usr/local/lib/'])
-   epoll = dependency('epoll-shim')
-   pthread = dependency('threads')
-   mmfm_dependencies += pthread
-   mmfm_dependencies += epoll
-else
-   mupdf = cc.find_library('mupdf')
-   mupdfthird = cc.find_library('mupdf-third')
-endif
-
 mmfm_dependencies = [
 		  wayland_client,
 		  wayland_cursor,
@@ -118,6 +106,18 @@ mmfm_dependencies = [
 		  xkbcommon,
 		  egl,
 		  wegl]
+
+if build_machine.system() == 'freebsd'
+   mupdf = cc.find_library('mupdf',dirs: ['/usr/local/lib/'])
+   mupdfthird = cc.find_library('mupdf-third',dirs: ['/usr/local/lib/'])
+   epoll = dependency('epoll-shim')
+   pthread = dependency('threads')
+   mmfm_dependencies += pthread
+   mmfm_dependencies += epoll
+else
+   mupdf = cc.find_library('mupdf')
+   mupdfthird = cc.find_library('mupdf-third')
+endif
 
 mmfm_version = '"@0@"'.format(meson.project_version())
 pkg_datadir = join_paths(get_option('prefix'), get_option('datadir')) / 'mmfm'

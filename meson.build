@@ -101,8 +101,6 @@ mmfm_dependencies = [
 		  z,
 		  gumbo,
 		  mujs,
-		  mupdf,
-		  mupdfthird,
 		  xkbcommon,
 		  egl,
 		  wegl]
@@ -114,9 +112,13 @@ if build_machine.system() == 'freebsd'
    pthread = dependency('threads')
    mmfm_dependencies += pthread
    mmfm_dependencies += epoll
+   mmfm_dependencies += mupdf
+   mmfm_dependencies += mupdfthird
 else
    mupdf = cc.find_library('mupdf')
    mupdfthird = cc.find_library('mupdf-third')
+   mmfm_dependencies += mupdf
+   mmfm_dependencies += mupdfthird
 endif
 
 mmfm_version = '"@0@"'.format(meson.project_version())

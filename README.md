@@ -35,7 +35,13 @@ To reset the clipboard, select "Reset clipboard" from the file operations contex
 To use these files in the file list view, select "Paste using copy" or "Paste using move" from the file ops menu or drag and drop files from the clipboard table on the file list table.
 MMFM's UI can be structured via html, styled via css.
 
-## Installation ##
+## Try it! ##
+
+[https://github.com/milgra/mmfm/releases/download/0.53b/mmfm.app.tar.gz]
+
+Extract the archive and call mmfm.app/mmfm. It is a standalone application bundle running on all distributions.
+
+## Build ##
 
 Install the needed dependencies and libraries:
 
@@ -52,11 +58,6 @@ On debian based systems :
 ```
 sudo apg-get install git meson ninja-build pkg-config libpng-dev libfreetype-dev libgl-dev libegl-dev libglew-dev libwayland-dev libxkbcommon-dev wayland-protocols libgles2-mesa-dev libsdl2-dev libswscale-dev libjpeg-dev libjbig2dec-dev libopenjp2-7-dev libharfbuzz-dev libavutil-dev libavdevice-dev libmupdf-dev libmujs-dev libgumbo-dev
 
-```
-
-On arch based systems :
-```
-sudo pacman -Qs git meson pkg-config ninja glew wayland-protocols libpng freetype2 libgl libegl wayland wayland-protocols libxkbcommon ffmpeg libmupdf mujs
 ```
 
 Then run these commands:

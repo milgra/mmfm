@@ -1,6 +1,9 @@
 # MultiMedia File Manager
 
+- drag and drop not working
 - external file drag and drop
+- delete accept + enter belep a folderbe ha az kovetkezik
+- switchable texture smoothing for preview
 - kurzor valtozzon at column move eseten
 - play button active amikor mnme kene
 - hold gesture to image scroller also

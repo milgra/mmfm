@@ -60,7 +60,11 @@ sudo apg-get install git meson ninja-build pkg-config libpng-dev libfreetype-dev
 
 ```
 
-Then run these commands:
+On void linuxe :
+
+```
+sudo xbps-install -y meson ninja cmake pkg-config libpng-devel freetype-devel libglvnd-devel glew-devel wayland-devel libxkbcommon-devel SDL2-devel jpeg-devel jbig2dec-devel libopenjpeg2-devel harfbuzz-devel mupdf-devel gumbo-parser-devel mujs-devel
+```
 
 ```
 git clone https://github.com/milgra/mmfm.git
